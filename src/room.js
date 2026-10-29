@@ -1,0 +1,52 @@
+const roomMedia={background:'__ROOM_BACKGROUND__',bird:'__ROOM_BIRD__'};
+const roomState={tray:false,busy:false,lastTouch:0,touchCount:0,stock:s.roomStock||{seed:6,berry:4,meal:2}};
+const roomFoods={seed:{name:'香香谷粒',glyph:'🌾',gain:12},berry:{name:'莓果小点',glyph:'🍓',gain:18},meal:{name:'丰盛鸟粮',glyph:'🥣',gain:25}};
+const roomButton=(action,label,cls='')=>`<button data-room-action="${action}" class="${cls}">${label}</button>`;
+function roomHome(){
+  const level=s.hunger>=95?'吃饱饱啦，来摸摸头吧。':s.hunger<40?'肚子咕咕叫，想吃点谷粒。':'阳光正好，陪我待一会儿吧。';
+  return `<section class="pet-room" aria-label="小鸟的江南小窝"><img class="room-bg" src="${roomMedia.background}" alt="洒满日光的江南小屋，木地板和藤编小窝"><div class="room-shade"></div><div class="room-head"><button class="room-profile" data-go="flock" aria-label="切换小鸟"><img class="room-avatar" src="${roomMedia.bird}" alt=""><span><strong>${esc(s.name)}</strong><small>卜叽岛 · 小鸟伙伴</small></span><span class="switch">⌄</span></button><button class="room-wallet" data-do="points">✦ <span data-room-points>${s.points}</span> 羽力</button></div><div class="room-status" aria-label="小鸟当前状态">${roomStat('hunger','饱食',s.hunger)}${roomStat('water','水分',s.water)}${roomStat('mood','心情',s.clean?96:88)}</div><div class="room-location">${ico('map-pin')}杭州 · 江南小窝</div><div class="room-toolbox">${roomButton('clean',ico('sparkles')+'<span>清洁</span>','room-tool')}${roomButton('supply',ico('gift')+'<span>补给</span>','room-tool '+(s.daily?'':'has-reward'))}${roomButton('help',ico('circle-help')+'<span>玩法</span>','room-tool')}</div><div class="room-speech" id="room-speech" role="status" aria-live="polite">${level}</div><div class="actor-stage"><div class="actor-shadow"></div><button class="room-actor" data-room-action="touch" aria-label="摸摸小鸟"><img src="${roomMedia.bird}" alt="戴草帽、背绿布袋的蓝色小鸟"></button><span class="actor-spark" aria-hidden="true">✦</span></div>${s.clean?'':roomButton('clean','💩','room-poop')}<div class="room-caption">点点我，或选一份喜欢的食物</div><div class="room-dock">${roomButton('open-food',ico('wheat')+'喂食')}${roomButton('water',ico('droplets')+'添水')}${roomButton('touch',ico('hand')+'摸摸')}</div><div class="room-sheet" ${roomState.tray?'':'hidden'}><div class="room-sheet-handle"></div><div class="room-sheet-head"><div><h3>今天，想吃点什么？</h3><small>点一下投喂，也可以拖到小鸟身上</small></div>${roomButton('close-food',ico('x'))}</div><div class="room-foods">${Object.entries(roomFoods).map(([key,f])=>`<button class="food-choice" data-room-food="${key}" aria-label="喂${f.name}，剩余 ${roomState.stock[key]} 份"><span class="food-stock">×${roomState.stock[key]}</span><span class="food-glyph">${f.glyph}</span><strong>${f.name}</strong><small>饱食 ＋${f.gain}</small></button>`).join('')}</div><div class="room-sheet-foot"><span>免费体验补给 · 投喂消耗 1 份</span>${roomButton('supply','领今日补给')}</div></div></section>`;
+}
+function roomStat(key,label,value){return `<div class="room-stat ${key}"><div class="stat-heading"><span>${label}</span><b data-room-value="${key}">${key==='mood'?'开心':value+'%'}</b></div><div class="room-track"><i data-room-track="${key}" style="width:${value}%"></i></div></div>`;}
+function updateRoomStats(){for(const [key,val] of [['hunger',s.hunger],['water',s.water]]){const el=root.querySelector(`[data-room-value="${key}"]`);if(el)el.textContent=val+'%';const track=root.querySelector(`[data-room-track="${key}"]`);if(track)track.style.width=val+'%';}const pts=root.querySelector('[data-room-points]');if(pts)pts.textContent=s.points;root.querySelector('#balance').textContent=s.points;}
+function roomSay(text){const el=root.querySelector('#room-speech');if(el)el.textContent=text;}
+function roomCelebrate(){const stage=root.querySelector('.actor-stage');if(!stage)return;stage.classList.remove('celebrate');void stage.offsetWidth;stage.classList.add('celebrate');}
+function roomFloat(text){const room=root.querySelector('.pet-room');if(!room)return;const el=document.createElement('div');el.className='reward-float';el.textContent=text;room.appendChild(el);setTimeout(()=>el.remove(),1500);}
+function roomSetActor(state){const actor=root.querySelector('.room-actor');if(!actor)return;actor.className='room-actor '+state;}
+function roomWait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+async function roomFeed(key,origin){
+  if(roomState.busy||s.page!=='home')return;
+  const f=roomFoods[key];if(!f)return;
+  if(roomState.stock[key]<=0){toast('这份食物吃完啦，换一种或领取补给吧');return;}
+  if(s.hunger>=100){roomSay('已经吃饱啦，留一点下次吃吧！');toast('饱食已满，本次不消耗食物');return;}
+  roomState.busy=true;const room=root.querySelector('.pet-room');room.classList.add('busy');
+  root.querySelectorAll('[data-room-food]').forEach(el=>el.disabled=true);
+  const bounds=room.getBoundingClientRect(),actor=root.querySelector('.room-actor').getBoundingClientRect();
+  const from=origin||{x:bounds.left+bounds.width/2,y:bounds.bottom-100};
+  const to={x:actor.left+actor.width*.5,y:actor.top+actor.height*.46};
+  const food=document.createElement('span');food.className='flying-food';food.textContent=f.glyph;food.setAttribute('aria-hidden','true');room.appendChild(food);
+  food.style.left=(from.x-bounds.left)+'px';food.style.top=(from.y-bounds.top)+'px';
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const anim=food.animate([{left:(from.x-bounds.left)+'px',top:(from.y-bounds.top)+'px',opacity:1,scale:1},{left:(to.x-bounds.left)+'px',top:(to.y-bounds.top)+'px',opacity:1,scale:.7}],{duration:reduced?1:550,easing:'cubic-bezier(.2,.65,.3,1)',fill:'forwards'});
+  try{await anim.finished;}catch(e){}
+  if(s.page!=='home'){food.remove();roomState.busy=false;return;}
+  roomSetActor('is-eating');roomSay('咔嚓咔嚓，'+f.name+'真香！');
+  await roomWait(reduced?20:650);food.remove();
+  roomState.stock[key]--;const gain=Math.min(f.gain,100-s.hunger);s.hunger+=gain;
+  let reward='饱食 ＋'+gain;if(!s.interactionReward){s.interactionReward=true;s.points+=5;reward+=' · 羽力 ＋5';}
+  save();updateRoomStats();
+  const choice=root.querySelector(`[data-room-food="${key}"]`);if(choice){choice.querySelector('.food-stock').textContent='×'+roomState.stock[key];choice.setAttribute('aria-label',`喂${f.name}，剩余 ${roomState.stock[key]} 份`);}
+  roomSetActor('is-happy');roomCelebrate();roomFloat(reward);roomSay(s.hunger>=100?'吃得圆滚滚啦，谢谢你！':'好吃！今天也被你好好照顾啦。');
+  await roomWait(reduced?20:700);roomSetActor('');roomState.busy=false;room.classList.remove('busy');root.querySelectorAll('[data-room-food]').forEach(el=>el.disabled=false);
+}
+async function roomWater(){if(roomState.busy)return;if(s.water>=100){roomSay('水喝够啦，谢谢你惦记我。');return;}roomState.busy=true;roomSetActor('is-drinking');roomSay('咕嘟咕嘟，清水甜甜的。');roomFloat('💧 添一碗清水');await roomWait(1000);s.water=Math.min(100,s.water+20);save();updateRoomStats();roomSetActor('is-happy');roomCelebrate();await roomWait(650);roomSetActor('');roomState.busy=false;}
+function roomTouch(){if(roomState.busy)return;const now=Date.now();roomState.touchCount=now-roomState.lastTouch<800?roomState.touchCount+1:1;roomState.lastTouch=now;if(roomState.touchCount>=4){roomSetActor('is-angry');roomSay('哎呀，轻一点！小鸟要炸毛啦。');roomState.touchCount=0;}else{roomSetActor('is-happy');roomCelebrate();roomSay('摸摸脑袋，好喜欢和你待在一起。');if(!s.interactionReward){s.interactionReward=true;s.points+=5;save();updateRoomStats();roomFloat('首次互动 · 羽力 ＋5');}}setTimeout(()=>{if(!roomState.busy)roomSetActor('');},1000);}
+function roomClean(){if(roomState.busy)return;if(s.clean){roomSay('小窝已经干干净净啦！');return;}s.clean=true;s.points+=5;save();root.querySelector('.room-poop')?.remove();updateRoomStats();roomSetActor('is-happy');roomSay('亮晶晶的小窝，谢谢你！');roomFloat('清洁完成 · 羽力 ＋5');const room=root.querySelector('.pet-room');for(let i=0;i<5;i++){const el=document.createElement('span');el.className='clean-spark';el.textContent='✦';el.style.left=(22+i*13)+'%';el.style.top=(50+(i%2)*13)+'%';el.style.color='#fff8c9';room.appendChild(el);setTimeout(()=>el.remove(),1300);}setTimeout(()=>roomSetActor(''),1000);}
+function roomSupply(){if(s.daily){toast('今日补给已领取，现有食物可以继续使用');return;}s.daily=true;s.points+=20;for(const key of Object.keys(roomState.stock))roomState.stock[key]+=3;save();render();toast('补给到账：各 3 份食物、免费清水、20 羽力');}
+function bindRoom(){
+  if(s.page!=='home')return;
+  const room=root.querySelector('.pet-room');
+  room.addEventListener('click',e=>{const action=e.target.closest('[data-room-action]')?.dataset.roomAction;if(!action)return;if(roomState.busy){toast('小鸟正在享用，稍等一下哦');return;}if(action==='open-food'||action==='close-food'){roomState.tray=action==='open-food';room.classList.toggle('tray-open',roomState.tray);room.querySelector('.room-sheet').hidden=!roomState.tray;room.querySelector('.room-dock').hidden=roomState.tray;}if(action==='touch')roomTouch();if(action==='water')roomWater();if(action==='clean')roomClean();if(action==='supply')roomSupply();if(action==='help')dialog('和小鸟一起的小日子','<p>点小鸟或“摸摸”，它会开心地回应；连续快速触摸，它也会闹点小脾气。</p><p>点“喂食”展开食物栏，点选食物或拖到小鸟身上即可投喂。吃饱后不会继续消耗食物。</p><p>添水、清洁和每日补给都可以体验。当前为预制角色素材加轻量动画演示。</p>');});
+  room.querySelectorAll('[data-room-food]').forEach(button=>{let gesture=null,ghost=null,skipClick=false;button.addEventListener('pointerdown',e=>{if(roomState.busy)return;gesture={x:e.clientX,y:e.clientY,moved:false};button.setPointerCapture(e.pointerId);});button.addEventListener('pointermove',e=>{if(!gesture)return;if(Math.hypot(e.clientX-gesture.x,e.clientY-gesture.y)>9)gesture.moved=true;if(!gesture.moved)return;if(!ghost){ghost=document.createElement('span');ghost.className='flying-food';ghost.textContent=roomFoods[button.dataset.roomFood].glyph;room.appendChild(ghost);}const r=room.getBoundingClientRect();ghost.style.left=(e.clientX-r.left)+'px';ghost.style.top=(e.clientY-r.top)+'px';});button.addEventListener('pointerup',e=>{if(!gesture)return;const dragged=gesture.moved;gesture=null;ghost?.remove();ghost=null;if(!dragged)return;skipClick=true;const actor=room.querySelector('.room-actor').getBoundingClientRect();if(e.clientX>=actor.left&&e.clientX<=actor.right&&e.clientY>=actor.top&&e.clientY<=actor.bottom)roomFeed(button.dataset.roomFood,{x:e.clientX,y:e.clientY});else toast('拖到小鸟身上松手，或直接点一下食物');setTimeout(()=>skipClick=false,250);});button.addEventListener('pointercancel',()=>{gesture=null;ghost?.remove();ghost=null;});button.addEventListener('click',()=>{if(skipClick)return;const rect=button.getBoundingClientRect();roomFeed(button.dataset.roomFood,{x:rect.left+rect.width/2,y:rect.top+rect.height*.4});});});
+  room.classList.toggle('tray-open',roomState.tray);
+  if(roomState.tray)room.querySelector('.room-dock').hidden=true;
+}
