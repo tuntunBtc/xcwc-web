@@ -1,0 +1,154 @@
+#bjd-review.is-illustrated{--parchment:#fff0d0;--brown-ink:#624c2d;--moss:#526d3f;--paper:#fcf3df;--white:#fff9e9;--ink:#574a31;--sub:#938064;--line:#e3d1ae;--sage:#edf0d9;--green:#587546;--on:#fff9e8;background:#e8e3d3;color-scheme:light}
+#bjd-review.is-illustrated .phone{width:min(100%,430px);background:#eee2be;box-shadow:0 20px 65px #54432930;border:1px solid #ddc99c;border-radius:22px}
+#bjd-review.is-illustrated .brandbar{display:none}
+#bjd-review.is-illustrated main{padding:0;min-height:0}
+#bjd-review .painted-prop{display:block;background-image:var(--painted-props);background-size:300% 300%;background-repeat:no-repeat;width:48px;height:48px;flex:none;pointer-events:none}
+#bjd-review .painted-prop{position:relative;overflow:hidden;background-image:none}
+#bjd-review .painted-prop>img{position:absolute;width:300%;height:300%;max-width:none;object-fit:fill;display:block;pointer-events:none}
+#bjd-review .city-atlas-layer{position:absolute;inset:0;overflow:hidden;display:block;pointer-events:none}
+#bjd-review .city-atlas-layer>img{position:absolute;width:300%;height:200%;max-width:none;object-fit:fill;display:block;pointer-events:none}
+#bjd-review .canopy-img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+#bjd-review .illustrated-head{left:14px;right:14px;top:17px;gap:9px;align-items:center}
+#bjd-review .illustrated-head .room-profile{min-width:0;flex:1;gap:5px;background:linear-gradient(130deg,#fff9e4,#f9e9c5);border:2px solid #f6e2b6;border-radius:28px 24px 27px 25px;padding:4px 7px 5px 4px;box-shadow:0 4px 8px #70532824}
+#bjd-review .avatar-link{padding:0!important;flex:none;height:43px;width:43px}
+#bjd-review .illustrated-head .room-avatar{width:43px;height:43px;background:#d8e9d2;border:2px solid #fff9e4}
+#bjd-review .bird-identity{flex:1;min-width:0}
+#bjd-review .name-edit{display:flex;align-items:center;gap:5px;padding:0;max-width:100%;color:#4e402b}
+#bjd-review .name-edit strong{font-family:"Songti SC",serif;font-size:16px;font-weight:600;max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
+#bjd-review .name-edit svg{width:12px;height:12px;color:#9b825d;flex:none}
+#bjd-review .bird-identity small{font-size:9px;white-space:nowrap;display:flex;align-items:center;gap:2px;color:#8a7757;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+#bjd-review .bird-identity small svg{width:10px;height:10px;flex:none}
+#bjd-review .level-preview{background:#fff9e3a8;border-radius:15px;padding:5px 6px;flex:none;width:54px;color:#8d7951}
+#bjd-review .level-preview span{font-size:10px;white-space:nowrap}
+#bjd-review .level-preview>i{display:block;margin-top:4px;height:5px;background:#dedbbb;border-radius:10px;overflow:hidden}
+#bjd-review .level-preview b{display:block;width:64%;height:100%;background:#94a267}
+#bjd-review .hud-arrow{padding:0 2px;font:24px/1 serif;color:#8f7854}
+#bjd-review .illustrated-head .room-wallet{padding:5px 7px 5px 1px;border:2px solid #f1d4a6;background:linear-gradient(125deg,#fff5dc,#f6dfb5);display:flex;gap:1px;align-items:center;color:#6d512b;border-radius:26px;box-shadow:0 4px 8px #70532820;min-height:46px;flex:none}
+#bjd-review .room-wallet .painted-prop{width:27px;height:32px}
+#bjd-review .room-wallet>span{font-size:11px;white-space:nowrap}
+#bjd-review .room-wallet b{font-weight:500}
+#bjd-review .room-wallet>i{font-size:15px;font-style:normal;width:19px;height:19px;display:grid;place-items:center;background:#c89a56;border:1px solid #f8d89e;color:#fff7df;border-radius:50%;margin-left:3px}
+#bjd-review.is-illustrated .room-status{left:17px;right:82px;top:88px;gap:6px}
+#bjd-review.is-illustrated .room-stat{background:linear-gradient(135deg,#fff9e4,#f9eccb);border:2px solid #f8e5ba;border-radius:17px 15px 16px 13px;padding:8px 8px 9px;box-shadow:0 3px 5px #61472516}
+#bjd-review.is-illustrated .stat-heading{color:#6d5a3a;font-size:10px}
+#bjd-review.is-illustrated .stat-heading>span:before{content:"◒";color:#c19a4d;padding-right:3px}
+#bjd-review.is-illustrated .water .stat-heading>span:before{content:"♦";color:#6ba3b8}
+#bjd-review.is-illustrated .mood .stat-heading>span:before{content:"♥";color:#d8907e}
+#bjd-review.is-illustrated .room-stat b{color:#6d5a3a;font-size:10px}
+#bjd-review.is-illustrated .room-stat .room-track{background:#e0d9b7;height:5px}
+#bjd-review.is-illustrated .room-stat .room-track i{background:#96a26d}
+#bjd-review.is-illustrated .room-stat.water .room-track i{background:#6daac4}
+#bjd-review.is-illustrated .room-stat.mood .room-track i{background:#d4ac59}
+#bjd-review .illustrated-location{top:158px;left:18px;background:linear-gradient(125deg,#ffefc8,#f5dcaa);padding:7px 11px;border:2px solid #c7a26b;border-radius:15px;letter-spacing:0;color:#7a603b;font-size:11px;box-shadow:0 3px 8px #523c1920;text-shadow:none}
+#bjd-review .illustrated-location>span{font:21px/1 serif;margin-left:7px}
+#bjd-review.is-illustrated .room-location svg{width:15px;height:15px}
+#bjd-review.is-illustrated .room-bg{object-position:center}
+#bjd-review.is-illustrated .room-shade{background:linear-gradient(180deg,#2b3c1620,transparent 27%,transparent 70%,#61401c22)}
+#bjd-review .illustrated-tools{top:100px;right:13px;gap:8px}
+#bjd-review .illustrated-tools .room-tool{width:51px;min-height:67px;padding:0;gap:0;background:transparent;box-shadow:none;border:0;border-radius:0;position:relative;isolation:isolate;color:#775c33}
+#bjd-review .illustrated-tools .room-tool:before{content:"";position:absolute;top:0;left:0;width:51px;height:51px;border:2px solid #ead0a0;border-radius:50%;background:radial-gradient(circle at 40% 30%,#fff9df,#e9d0a0);box-shadow:0 4px 5px #51321d30;z-index:-1}
+#bjd-review .illustrated-tools .room-tool .painted-prop{width:49px;height:49px}
+#bjd-review .illustrated-tools .room-tool>span:not(.painted-prop){border:1px solid #e7c796;border-radius:11px 8px 10px 7px;padding:1px 11px;background:#fff0cc;min-width:49px;margin-top:-3px;box-shadow:0 3px 5px #51321d22;font:12px/1.45 "Songti SC",serif;white-space:nowrap}
+#bjd-review .illustrated-tools .room-tool.has-reward:after{width:9px;height:9px;top:0;right:0;margin:0;background:#d97b6e;border:1px solid #fff3cd}
+#bjd-review.is-illustrated .room-speech{top:36%;left:48%;font-family:"Songti SC",serif;font-size:13px;color:#705936;padding:11px 16px;background:#fff5d8;border:1px solid #efd8a4;border-radius:20px 19px 22px 17px;box-shadow:0 4px 8px #5e431e24}
+#bjd-review.is-illustrated .room-speech:after{background:#fff5d8}
+#bjd-review.is-illustrated .actor-stage{top:46%;height:34%;width:57%;left:48%}
+#bjd-review.is-illustrated .room-poop{left:24%;bottom:23%;font-size:23px}
+#bjd-review.is-illustrated .room-caption{bottom:125px;color:#fbf2d9;text-shadow:0 1px 5px #4b3a1b;letter-spacing:1px;font-size:10px}
+#bjd-review .illustrated-dock{left:17px;right:17px;bottom:22px;gap:10px;padding:5px 3px;background:linear-gradient(180deg,#bb874d,#78502a);border:3px solid #a17640;border-radius:15px 13px 16px 12px;box-shadow:0 4px 3px #47301955,inset 0 2px 2px #e4bf78;overflow:visible}
+#bjd-review .illustrated-dock button,#bjd-review .illustrated-dock button:first-child{padding:2px 4px 5px;min-height:90px;background:linear-gradient(135deg,#fff6dc,#f6dfb3);border:2px solid #d0a26a;border-radius:23px 20px 19px 16px;box-shadow:0 2px 2px #6e411c66,inset 0 2px 1px #fff7dd;display:flex;flex-direction:column;gap:0;color:#71532b}
+#bjd-review .illustrated-dock .painted-prop{width:73px;height:60px}
+#bjd-review .illustrated-dock button>span:last-child{background:#fff1cebd;padding:1px 8px;border-radius:6px;width:100%;font:600 16px/1.2 "Songti SC",serif;white-space:nowrap}
+#bjd-review .illustrated-dock i{font-style:normal;font-size:20px;margin-left:6px;color:#977247}
+#bjd-review.is-illustrated .room-sheet{background:linear-gradient(140deg,#fff7df,#f3e3bf);border-top:3px solid #c9a36a;box-shadow:0 -5px 0 #8f683736,0 -15px 40px #46361e33}
+#bjd-review.is-illustrated .room-sheet-head h3{color:#725431;font-family:"Songti SC",serif;font-size:17px}
+#bjd-review.is-illustrated .food-choice{background:#fff3d5;border-color:#e4cca1;box-shadow:inset 0 1px #fff9e9}
+#bjd-review.is-illustrated .room-sheet-head button{background:#efdfb9;color:#826c45}
+#bjd-review.is-illustrated .room-sheet-foot button{background:#e1e5bd;color:#637344}
+#bjd-review.is-illustrated .pet-room.tray-open .actor-stage{top:27%;height:30%;width:50%;left:48%}
+#bjd-review.is-illustrated .pet-room.tray-open .room-speech{top:21.5%;font-size:11px;padding:8px 13px}
+#bjd-review.is-illustrated .pet-room.tray-open .room-toolbox{top:155px;gap:8px}
+#bjd-review.is-illustrated .pet-room.tray-open .room-tool:nth-child(n+3){display:none}
+#bjd-review.is-illustrated .pet-room.tray-open .room-caption{display:none}
+#bjd-review.is-illustrated .bottom{position:relative;margin:0 12px 13px;padding:13px 5px 12px;background:linear-gradient(110deg,#fff6de,#f5e5bd 48%,#fff2d2);border-top:3px solid #e7ce9e;border-bottom:3px solid #c4a06b;border-radius:16px 14px 13px 12px;box-shadow:0 4px 0 #76512b,0 6px 8px #47341f44;gap:0;isolation:isolate}
+#bjd-review.is-illustrated .bottom:before,#bjd-review.is-illustrated .bottom:after{content:"";position:absolute;top:-6px;bottom:-7px;width:10px;border-radius:7px;background:linear-gradient(90deg,#ae8553,#fff0c1 45%,#ae7e43);box-shadow:1px 2px 3px #6d4a2850;z-index:1}
+#bjd-review.is-illustrated .bottom:before{left:-5px}#bjd-review.is-illustrated .bottom:after{right:-5px}
+#bjd-review.is-illustrated .bottom button{width:20%;min-width:0;color:#927748;font:12px/1.5 "Songti SC",serif;gap:4px}
+#bjd-review.is-illustrated .bottom svg{width:23px;height:23px;stroke-width:1.6}
+#bjd-review.is-illustrated .bottom button.active{color:#55713c;font-weight:600}
+#bjd-review.is-illustrated .bottom button.active svg{fill:#a4b47e66;stroke-width:2}
+#bjd-review.is-travel .phone{background:linear-gradient(180deg,#687b40,#e9d5a2 45%,#d3bd8d)}
+#bjd-review .city-travel{position:relative;color:#654d2e;background:#efe0bb;min-height:720px}
+#bjd-review .travel-hero{height:292px;position:relative;overflow:hidden;background:#9fb58f;isolation:isolate}
+#bjd-review .travel-landscape{position:absolute;inset:0;background-image:var(--city-atlas);background-size:300% 200%;background-position:0 0;filter:saturate(.85);z-index:-3}
+#bjd-review .travel-landscape:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#314c2844,transparent 70%),linear-gradient(180deg,#24421d44,transparent 40%,#c4b37b22)}
+#bjd-review .travel-canopy{position:absolute;inset:-20px -40px 0;background-image:var(--treehouse);background-size:cover;background-position:center 0;mask-image:linear-gradient(#000 0%,#000 12%,transparent 52%);pointer-events:none;z-index:-2}
+#bjd-review .wood-sign{position:absolute;top:113px;left:24px;transform:rotate(-3deg);width:185px}
+#bjd-review .wood-sign:before,#bjd-review .wood-sign:after{content:"";position:absolute;top:-30px;width:3px;height:36px;background:#bda16c;box-shadow:1px 0 #79643c}
+#bjd-review .wood-sign:before{left:18px}#bjd-review .wood-sign:after{right:18px}
+#bjd-review .wood-sign h1{position:relative;font:600 35px/1.3 "Songti SC","STSong",serif;color:#fff0ca;letter-spacing:2px;margin:0;padding:8px 12px;background:repeating-linear-gradient(0deg,#906333 0px,#a5733e 4px,#966536 7px,#b4874c 30px);border:3px solid #bd945d;border-radius:15px 11px 15px 12px;box-shadow:0 4px 0 #5d3f21,0 8px 12px #2e3d1c40;text-shadow:0 2px #67421f;white-space:nowrap}
+#bjd-review .wood-sign h1:after{content:"❀";position:absolute;left:-10px;bottom:-10px;font-size:24px;color:#fff8dc;text-shadow:1px 2px #b09a65}
+#bjd-review .wood-sign p{font:600 13px/1.4 "Songti SC",serif;color:#73532c;background:#f5dfae;border:2px solid #ac834e;border-radius:10px;padding:5px;text-align:center;box-shadow:0 3px 0 #674723;margin:6px 0 0}
+#bjd-review .travel-message{position:absolute;left:26px;bottom:20px;padding:11px 13px;background:linear-gradient(120deg,#fff3d2,#ead4a3);border:2px solid #d9b47a;border-radius:14px 10px 17px 12px;transform:rotate(-3deg);color:#81613a;font:12px/1.8 "Songti SC",serif;box-shadow:0 4px 8px #61462a30;z-index:1}
+#bjd-review .travel-message span{color:#b88c4f;margin-left:5px}
+#bjd-review .hero-travel-bird{position:absolute;right:12px;bottom:9px;width:43%;height:169px;object-fit:contain;filter:drop-shadow(0 6px 3px #4c442b40);z-index:2}
+#bjd-review .travel-parchment{position:relative;background:linear-gradient(110deg,#f9edcd,#f7e8c7 45%,#ebd7ae);padding:0 16px 10px;border-radius:30px 30px 0 0;margin-top:-9px;z-index:3;box-shadow:0 -5px 9px #69622d15}
+#bjd-review .travel-filters{display:flex;gap:3px;padding:5px 2px;margin:0 -4px 9px;background:#fff8e4b3;border-radius:30px;border:1px solid #eadbb9;position:relative;top:4px}
+#bjd-review .travel-filters button{flex:1;min-width:0;display:flex;gap:5px;align-items:center;justify-content:center;padding:8px 2px;font-size:12px;color:#8a6f48;border-radius:25px;white-space:nowrap}
+#bjd-review .travel-filters button.selected{background:linear-gradient(120deg,#6d8550,#536d3f);color:#fff2cf;box-shadow:inset 0 1px #8f9f6d}
+#bjd-review .travel-filters svg{width:15px;height:15px;flex:none}
+#bjd-review .travel-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 9px;padding-top:5px}
+#bjd-review .travel-card{position:relative;min-width:0;text-align:left;padding:8px 6px 7px;background:linear-gradient(130deg,#fff6dd,#f3dfb8);border:2px solid #edd9b0;border-radius:14px 11px 13px 10px;box-shadow:1px 4px 5px #8b663a26;overflow:hidden;display:flex;flex-direction:column}
+#bjd-review .travel-card:before{content:"❧";position:absolute;left:-1px;top:-7px;color:#9b9d5c;font-size:20px;z-index:2;transform:rotate(-25deg)}
+#bjd-review .travel-card.is-unlocked{border-color:#bbbd8d;box-shadow:0 0 0 1px #fdf4dc,1px 4px 6px #77633226}
+#bjd-review .travel-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:2px;position:relative;min-height:38px}
+#bjd-review .travel-card h2{font:600 20px/1.15 "Songti SC",serif;color:#4f432c;white-space:nowrap;margin:0}
+#bjd-review .travel-card-head small{font-size:8px;color:#9a835e;display:block;margin-top:3px;letter-spacing:.3px}
+#bjd-review .travel-card-head>svg{width:13px;height:13px;flex:none;margin-top:1px;color:#8c6d3d}
+#bjd-review .unlocked-seal{font:10px/1.3 "Songti SC",serif;background:#7a975d;color:#fff7da;padding:3px 5px;border-radius:12px;white-space:nowrap;align-self:flex-start}
+#bjd-review .travel-card-head .unlocked-seal{position:absolute;right:-4px;top:22px;z-index:3;font-size:9px;padding:2px 4px}
+#bjd-review .travel-art{height:102px;background-image:var(--city-atlas);background-size:300% 200%;background-repeat:no-repeat;position:relative;overflow:hidden;border-radius:5px 5px 9px 8px;margin:2px -2px 0}
+#bjd-review .travel-art:after{content:"";position:absolute;left:0;right:0;bottom:0;height:17px;background:linear-gradient(transparent,#f5e6c8)}
+#bjd-review .travel-bird{position:absolute;right:-5px;bottom:0;width:72%;height:76px;object-fit:contain;z-index:2;filter:drop-shadow(0 3px 2px #586a3555)}
+#bjd-review .mystery-bird{position:absolute;right:1px;bottom:1px;width:52px;height:51px;background:#796344;border:2px solid #fff6de;border-radius:47% 44% 30% 32%;font:500 29px/1.7 serif;color:#fff4d9;text-align:center;z-index:2;box-shadow:inset 0 0 0 2px #ac9877}
+#bjd-review .mystery-bird:before{content:"";position:absolute;left:10px;top:-6px;width:12px;height:15px;background:#796344;border-radius:90% 0;transform:rotate(-26deg);z-index:-1}
+#bjd-review .travel-card-foot{display:flex;align-items:center;justify-content:space-between;color:#806039;margin-top:4px;gap:2px;min-height:29px}
+#bjd-review .travel-card-foot span{font-size:9px;line-height:1.45;flex:1;text-align:center}
+#bjd-review .travel-card-foot i{font:22px/1 serif;font-style:normal;flex:none}
+#bjd-review .travel-note{font-size:9px;text-align:center;color:#aa936a;margin:10px 0 0}
+#bjd-review .travel-empty{text-align:center;padding:40px 18px;color:#846b46}
+#bjd-review .travel-empty h2{font-size:20px}
+#bjd-review .travel-empty p{color:#99815c;margin:12px 0 20px}
+#bjd-review .detail-art{height:303px;background-image:var(--city-atlas);background-size:300% 200%;position:relative;isolation:isolate}
+#bjd-review .detail-art:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#3f582c88,transparent 72%);z-index:-1}
+#bjd-review .detail-art:after{z-index:1;pointer-events:none}
+#bjd-review .detail-back,#bjd-review .detail-title,#bjd-review .detail-art>img{z-index:2}
+#bjd-review .detail-back{position:absolute;left:18px;top:91px;background:#fff2d7e8;border:1px solid #dcb77d;padding:6px 9px;border-radius:12px;display:flex;gap:4px;align-items:center;font-size:11px;color:#775a32}
+#bjd-review .detail-back svg{width:14px;height:14px}
+#bjd-review .detail-title{position:absolute;left:23px;bottom:28px;color:#fff6dc}
+#bjd-review .detail-title span{font-size:10px;letter-spacing:2px}
+#bjd-review .detail-title h1{font:600 28px/1.4 "Songti SC",serif;text-shadow:0 2px 4px #41512a;margin:5px 0}
+#bjd-review .detail-title p{font-size:11px;color:#fff1cd}
+#bjd-review .detail-art>img{position:absolute;right:17px;bottom:13px;width:36%;height:150px;object-fit:contain;filter:drop-shadow(0 5px 3px #30442255)}
+#bjd-review .detail-parchment{padding-top:20px;padding-bottom:22px}
+#bjd-review .detail-section-title{display:flex;justify-content:space-between;align-items:center}
+#bjd-review .detail-section-title h2{font:600 19px/1.4 "Songti SC",serif;color:#765831}
+#bjd-review .detail-intro{font-size:11px;color:#9c825c;margin:6px 0 13px}
+#bjd-review .scene-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#bjd-review .scene-choice{background:#fff4d9;border:2px solid #e2c79b;border-radius:13px;padding:6px;text-align:left;overflow:hidden;color:#765a35}
+#bjd-review .scene-choice.chosen{border-color:#8ca365;background:#f5efd3}
+#bjd-review .scene-choice img{width:100%;height:116px;object-fit:cover;object-position:center 65%;border-radius:8px;display:block}
+#bjd-review .scene-choice strong{display:block;font:600 14px/1.5 "Songti SC",serif;margin:7px 4px 1px}
+#bjd-review .scene-choice>span{font-size:10px;color:#968261;display:block;margin:0 4px 3px}
+#bjd-review .city-feature{display:flex;width:100%;align-items:center;gap:12px;padding:8px 13px;background:#fff1d1;border:1px solid #e5cda2;border-radius:12px;margin-top:12px;text-align:left}
+#bjd-review .city-feature .painted-prop{width:46px;height:46px}
+#bjd-review .city-feature>span:not(.painted-prop){flex:1}
+#bjd-review .city-feature strong{display:block;font-size:13px;font-weight:500;color:#7c5c34}
+#bjd-review .city-feature small{display:block;font-size:10px;color:#9a8159;margin-top:3px}
+#bjd-review .city-feature>i{font-size:23px;font-style:normal;color:#a78a5a}
+#bjd-review .detail-return{margin-top:19px}
+#bjd-review .locked-city-preview{height:150px;background-image:var(--city-atlas);background-size:300% 200%;border-radius:12px;margin:14px 0}
+#bjd-review.is-illustrated #bjd-modal .dialog{background:linear-gradient(125deg,#fff5db,#f4e2bd);border:2px solid #d6b47e;box-shadow:0 16px 55px #30251255}
+#bjd-review.is-illustrated #bjd-modal .dialog p{color:#8c7452}
+@media(max-width:520px){#bjd-review.is-illustrated{padding:0;background:#f5e7c6}#bjd-review.is-illustrated .reviewbar,#bjd-review.is-illustrated .reviewnote{display:none}#bjd-review.is-illustrated .phone{border:0;border-radius:0;width:100%;box-shadow:none}#bjd-review .travel-hero{height:clamp(263px,70vw,300px)}#bjd-review .wood-sign{top:108px;left:22px;width:174px}#bjd-review .wood-sign h1{font-size:32px}#bjd-review .wood-sign p{font-size:12px}#bjd-review .travel-message{left:23px;bottom:17px;font-size:11px;padding:9px 11px}#bjd-review .hero-travel-bird{right:8px;width:43%;height:155px}#bjd-review .travel-art{height:clamp(86px,25vw,110px)}}
+@media(max-width:360px){#bjd-review .illustrated-head{left:9px;right:9px;gap:5px;top:13px}#bjd-review .avatar-link,#bjd-review .illustrated-head .room-avatar{width:35px;height:35px}#bjd-review .illustrated-head .room-profile{gap:3px;padding:4px;border-radius:22px}#bjd-review .name-edit strong{font-size:14px;max-width:55px}#bjd-review .name-edit{gap:3px}#bjd-review .bird-identity small{font-size:8px;max-width:82px}#bjd-review .level-preview{width:43px;padding:4px 2px}#bjd-review .level-preview span{font-size:9px}#bjd-review .illustrated-head .room-wallet{min-height:39px;padding:4px 5px 4px 0}#bjd-review .room-wallet .painted-prop{width:20px;height:27px}#bjd-review .room-wallet>span{font-size:10px}#bjd-review .room-wallet>i{width:17px;height:17px;font-size:12px}#bjd-review .hud-arrow{font-size:18px}#bjd-review.is-illustrated .room-status{top:79px;left:12px;right:72px;gap:4px}#bjd-review.is-illustrated .room-stat{padding:7px 5px;border-radius:13px}#bjd-review.is-illustrated .stat-heading{font-size:9px}#bjd-review.is-illustrated .room-stat b{font-size:9px}#bjd-review .illustrated-tools{right:10px;top:93px;gap:5px}#bjd-review .illustrated-tools .room-tool{width:45px;min-height:59px}#bjd-review .illustrated-tools .room-tool:before{width:45px;height:45px}#bjd-review .illustrated-tools .room-tool .painted-prop{width:43px;height:43px}#bjd-review .illustrated-tools .room-tool>span:not(.painted-prop){font-size:11px;min-width:44px}#bjd-review .illustrated-location{top:145px;left:12px;font-size:10px}#bjd-review .illustrated-dock{left:12px;right:12px;gap:6px}#bjd-review .illustrated-dock .painted-prop{width:61px;height:54px}#bjd-review .illustrated-dock button,#bjd-review .illustrated-dock button:first-child{min-height:82px}#bjd-review .illustrated-dock button>span:last-child{font-size:14px}#bjd-review .travel-parchment{padding-left:12px;padding-right:12px}#bjd-review .travel-grid{gap:8px 7px}#bjd-review .travel-card{padding:8px 4px 6px}#bjd-review .travel-card h2{font-size:18px}#bjd-review .travel-card-head small{font-size:7px}#bjd-review .travel-card-foot span{font-size:8px}#bjd-review .travel-filters button{font-size:11px}#bjd-review .wood-sign{left:17px;top:100px;width:157px}#bjd-review .wood-sign h1{font-size:28px}#bjd-review .wood-sign p{font-size:11px}#bjd-review .travel-message{left:18px;bottom:12px;font-size:10px}#bjd-review .hero-travel-bird{height:142px;right:5px}}

@@ -1,0 +1,35 @@
+const {chromium}=require('playwright');
+const assert=require('node:assert/strict');
+const delay=ms=>new Promise(r=>setTimeout(r,ms));
+const shots='/Users/beluga/Documents/ChatGPT/星辰/xcwc-reference';
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+ const page=await browser.newPage({viewport:{width:430,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:8766/',{waitUntil:'domcontentloaded'});const frame=page.frameLocator('iframe');await frame.locator('.pet-room').waitFor();
+ await frame.locator('.bottom svg').first().waitFor();assert.equal(await frame.locator('.bottom button').count(),5);assert.equal(await frame.locator('.illustrated-tools button').count(),5);
+ const validProps=await frame.locator('.painted-prop img').evaluateAll(async imgs=>{await Promise.all(imgs.map(i=>i.decode()));return imgs.every(i=>i.complete&&i.naturalWidth>0);});assert(validProps,'missing illustrated props');
+ await page.screenshot({path:shots+'/reference-home-final.png',fullPage:true});
+ await frame.locator('[data-room-action="open-food"]').click();await delay(350);
+ const actor=await frame.locator('.room-actor').boundingBox(),tray=await frame.locator('.room-sheet').boundingBox();assert(actor.y+actor.height<=tray.y+2,'tray overlaps bird');
+ await frame.locator('[data-room-food="seed"]').click();await delay(2100);assert.equal(await frame.locator('[data-room-value="hunger"]').innerText(),'77%');
+ await frame.locator('[data-room-action="close-food"]').click();
+ await frame.locator('.bottom [data-go="city"]').click();assert.equal(await frame.locator('.travel-card').count(),6);
+ await page.screenshot({path:shots+'/reference-city-final.png',fullPage:true});
+ console.log('stage: filters');await frame.locator('[data-ref-filter="unlocked"]').click();assert.equal(await frame.locator('.travel-card').count(),1);
+ await frame.locator('[data-ref-filter="locked"]').click();assert.equal(await frame.locator('.travel-card').count(),5);
+ await frame.locator('[data-ref-filter="all"]').click();
+ console.log('stage: city detail');await frame.locator('[data-ref-city="杭州"]').click();await frame.locator('.city-detail').waitFor();
+ await frame.locator('[data-ref-scene="indoor"]').click();await frame.locator('.bottom [data-go="home"]').click();
+ await frame.locator('.illustrated-location').click();await frame.locator('.city-detail').waitFor();assert.match(await frame.locator('.scene-choice.chosen').innerText(),/江南书屋/);
+ await frame.locator('[data-ref-scene="treehouse"]').click();await frame.locator('[data-ref-action="back-cities"]').click();
+ console.log('stage: locked claim');await frame.locator('[data-ref-city="苏州"]').click();await frame.locator('[data-ref-action="claim-city-bird"]').click();
+ await frame.locator('#bird-name').fill('苏苏');await frame.locator('[data-do="adopt"]').click();
+ await frame.locator('.bottom [data-go="city"]').click();assert.equal(await frame.locator('.travel-card.is-unlocked').count(),2);
+ await frame.locator('[data-ref-city="南京"]').click();await frame.locator('[data-ref-action="browse-city-birds"]').click();assert.match(await frame.locator('main').innerText(),/城市记忆/);
+ await frame.locator('.bottom [data-go="home"]').click();await frame.locator('.name-edit').click();await frame.locator('#rename-input').fill('小苏');await frame.locator('[data-do="savename"]').click();assert.match(await frame.locator('.name-edit').innerText(),/小苏/);
+ console.log('stage: reload');await page.reload({waitUntil:'domcontentloaded'});await frame.locator('.pet-room').waitFor();assert.match(await frame.locator('.name-edit').innerText(),/小苏/);
+ console.log('stage: responsive');for(const width of [320,390,430,1024]){await page.setViewportSize({width,height:1000});for(const name of ['home','city']){await frame.locator('.bottom [data-go="'+name+'"]').click();assert(!(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)),'outer overflow '+width);assert(!(await frame.locator('body').evaluate(()=>document.documentElement.scrollWidth>innerWidth)),'inner overflow '+width);}}
+ assert.equal(await page.locator('iframe').getAttribute('sandbox'),'allow-scripts');assert.deepEqual(errors,[]);
+ console.log(JSON.stringify({passed:true,checks:['five-tab navigation','painted assets loaded','feeding retained','food tray avoids actor','six-city layout','all/unlocked/locked filters','city scenes persist','locked-city guidance','simulated claim unlocks city','rename persists','320–1024px layouts','sandbox retained'],errors},null,2));
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1);});
