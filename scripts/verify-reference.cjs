@@ -1,7 +1,8 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
-const shots='/Users/beluga/Documents/ChatGPT/星辰/xcwc-reference';
+const shots=process.env.BJD_SCREENSHOT_DIR||require('node:path').resolve(__dirname,'../output/screenshots');
+require('node:fs').mkdirSync(shots,{recursive:true});
 (async()=>{
  const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
  const page=await browser.newPage({viewport:{width:430,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));

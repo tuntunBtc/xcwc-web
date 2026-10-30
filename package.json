@@ -1,0 +1,10 @@
+{
+  "name": "xcwc-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "卜叽岛小鸟伙伴前端交互原型",
+  "scripts": {
+    "build": "python3 scripts/build-room.py",
+    "preview": "node scripts/preview-server.cjs"
+  }
+}

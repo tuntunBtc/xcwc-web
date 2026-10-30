@@ -4,7 +4,7 @@
 
 - 房间背景：[room-background.png](room-background.png)
 - 透明角色：[bird-transparent.png](bird-transparent.png)
-- 角色参考：`/Users/beluga/Documents/ChatGPT/星辰/xcwc-reference/bird.png`
+- 角色参考：[reference-bird.png](reference-bird.png)
 
 ## 房间背景最终提示词
 

@@ -1,0 +1,16 @@
+<main class="phone">
+<section class="hero">
+<header class="topbar"><button class="profile" data-action="profile"><img src="assets/bird-transparent.png" alt=""><span><strong>加载中</strong><small>和小鸟一起出发</small></span></button><button class="points" data-action="points"><span>✧</span><b>—</b> 叽分 <i>＋</i></button></header>
+<div class="hero-copy"><span class="eyebrow">A LITTLE BIRD, A BIG WORLD</span><h1>城市之旅<span>把喜欢的城市，<br>一点点收进回忆里。</span></h1><p>认领一只小鸟，开启一座城。</p></div>
+<img class="hero-bird" src="assets/bird-transparent.png" alt="戴着斗笠，张开翅膀的旅行小鸟">
+<div class="journey-tag"><span>✿</span> 下一站，和你一起</div>
+</section>
+<section class="collection">
+<div class="section-heading"><div><span class="eyebrow">MY CITY COLLECTION</span><h2>我的城市手账 <span id="progress">1 / 6</span></h2></div><span class="stamp">沿途皆美好</span></div>
+<div class="progress-track"><div id="progress-bar"></div></div>
+<div class="tabs" role="tablist" aria-label="城市状态"><button role="tab" aria-selected="true" data-filter="all">全部城市 <small>6</small></button><button role="tab" aria-selected="false" data-filter="unlocked">已解锁 <small id="unlocked-count">1</small></button><button role="tab" aria-selected="false" data-filter="locked">未解锁 <small id="locked-count">5</small></button></div>
+<div class="grid" id="city-grid"></div><div class="empty" id="empty" hidden>✿<h3>旅程才刚刚开始</h3><p>认领城市小鸟后，记得回来开启城市。</p><button data-filter="all">看看全部城市</button></div>
+<p class="footnote">每一只小鸟，都藏着一座城的故事。<br><span>更多城市，正在飞来的路上 ···</span></p>
+</section>
+</main><dialog id="sheet"><div id="sheet-content"></div></dialog>
+<dialog id="success"><button class="close" data-action="close-success" aria-label="关闭">×</button><div class="success-picture"></div><div class="success-copy"><span class="eyebrow">A NEW CHAPTER BEGINS</span><h2 id="success-title"></h2><p>这一站，正式写进你的旅行手账。<br>城市已永久解锁。</p><button class="primary" data-action="close-success">收下这份美好</button></div></dialog>

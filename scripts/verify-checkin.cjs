@@ -1,0 +1,40 @@
+const {chromium}=require('playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const base=process.env.CHECKIN_TEST_BASE||'http://127.0.0.1:8767';
+if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('此测试只允许本地隔离服务');
+async function api(path,{token,method='GET',body}={}){const res=await fetch(base+'/api'+path,{method,headers:{...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});if(!res.ok)throw Error(path+' '+res.status+' '+await res.text());return res.json();}
+(async()=>{
+ console.log('stage: account and real ownership');const fixture=JSON.parse(fs.readFileSync('output/checkin-runtime/ui-fixture.json','utf8'));
+ const username='ck_ui_'+Date.now().toString(36),password='checkin-ui-test-password';
+ const session=await api('/auth/register',{method:'POST',body:{username,password}});
+ for(const [i,bird] of fixture.slice(0,4).entries())await api('/birds/'+bird.id+'/claim',{token:session.token,method:'POST',body:{code:bird.claimCode,name:['西湖啾啾','苏州团团','南京栗栗','西安侠侠'][i]}});
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
+ const context=await browser.newContext({viewport:{width:390,height:900}});const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')console.log('browser:',m.text().slice(0,400));});
+ await page.goto(base+'/register.html',{waitUntil:'domcontentloaded'});await page.locator('#username').fill(username);await page.locator('#password').fill(password);await page.locator('button[value="login"]').click();await page.locator('#account-panel').waitFor({state:'visible'});
+ await page.locator('a[href="/?page=photo"]').click();const frame=page.frameLocator('iframe');await frame.locator('.checkin-page').waitFor();await frame.locator('.bird-card:not([disabled])').first().waitFor();
+ assert.equal(await frame.locator('.bird-card:not([disabled])').count(),4);assert.equal(await frame.locator('.bird-card[disabled]').count(),1);
+ assert.equal(await frame.locator('.bird-card').last().getAttribute('disabled'),'');assert.equal(await frame.locator('#ck-selectedCount').innerText(),'1');
+ console.log('stage: composer');await frame.locator('.bird-card:not([disabled])').first().click();assert.equal(await frame.locator('#ck-selectedCount').innerText(),'0');assert(await frame.locator('#ck-generate').isDisabled());await frame.locator('.bird-card:not([disabled])').first().click();await frame.locator('#ck-file').setInputFiles('src/checkin-assets/lake.jpg');await frame.locator('#ck-dropzone.has-image').waitFor({timeout:8000}).catch(async e=>{console.log('upload debug',await frame.locator('#ck-toast').textContent(),await frame.locator('.section-desc').first().textContent(),errors);throw e;});
+ await frame.locator('.bird-card:not([disabled])').nth(1).click();await frame.locator('.bird-card:not([disabled])').nth(2).click();assert.equal(await frame.locator('#ck-selectedCount').innerText(),'3');
+ await frame.locator('.bird-card:not([disabled])').nth(3).click();assert.equal(await frame.locator('#ck-selectedCount').innerText(),'3');
+ await frame.locator('#ck-size').evaluate(el=>{el.value='30';el.dispatchEvent(new Event('input',{bubbles:true}));});
+ const canvas=frame.locator('#ck-preview');const pos=await canvas.boundingBox();await page.mouse.move(pos.x+pos.width*.82,pos.y+pos.height*.65);await page.mouse.down();await page.mouse.move(pos.x+pos.width*.72,pos.y+pos.height*.57,{steps:8});await page.mouse.up();
+ const preview=await canvas.evaluate(c=>c.toDataURL('image/jpeg',.9));
+ await frame.locator('#ck-generate').click();await frame.locator('#ck-albumCount').filter({hasText:'1'}).waitFor();assert.equal(await frame.locator('#ck-points').innerText(),'1');assert(await frame.locator('#ck-generate').isDisabled());
+ const first=await api('/me/checkins',{token:session.token});assert.equal(first.total,1);assert.equal(first.items[0].birdIds.length,3);
+ const image=await fetch(base+first.items[0].imageUrl,{headers:{Authorization:'Bearer '+session.token}});assert.equal(image.status,200);const sha=data=>require('node:crypto').createHash('sha256').update(data).digest('hex');const saved=Buffer.from(await image.arrayBuffer());fs.writeFileSync('output/checkin-saved.jpg',saved);fs.writeFileSync('output/checkin-preview.jpg',Buffer.from(preview.split(',')[1],'base64'));assert.equal(sha(saved),sha(Buffer.from(preview.split(',')[1],'base64')));
+ assert.equal((await api('/me/points',{token:session.token})).balance,1);
+ await frame.locator('#ck-location').fill('第二站');await frame.locator('#ck-location').dispatchEvent('input');await frame.locator('#ck-generate').click();await frame.locator('#ck-albumCount').filter({hasText:'2'}).waitFor();assert.equal(await frame.locator('#ck-points').innerText(),'2');
+ assert.equal(await frame.locator('.memory-body>strong').first().innerText(),'第二站');
+ console.log('stage: lost acknowledgement retry');
+ let dropped=false;await page.route('**/api/checkins',async route=>{if(route.request().method()==='POST'&&!dropped){dropped=true;await route.fetch();await route.abort('failed');}else await route.continue();});
+ await frame.locator('#ck-location').fill('断网重试');await frame.locator('#ck-generate').click();await page.locator('#xcwc-checkin-notice').filter({hasText:'原样重试'}).waitFor();
+ await frame.locator('#ck-generate').waitFor({state:'visible'});await frame.locator('#ck-generate').click();await frame.locator('#ck-albumCount').filter({hasText:'3'}).waitFor();assert.equal((await api('/me/points',{token:session.token})).balance,3);assert.equal((await api('/me/checkins',{token:session.token})).total,3);
+ const downloaded=page.waitForEvent('download');await frame.locator('#ck-download').click();assert((await downloaded).suggestedFilename().endsWith('.jpg'));console.log('stage: saved works');await frame.locator('.memory').first().click();await frame.locator('#ck-viewer').waitFor({state:'visible'});await frame.locator('.close').click();
+ await page.screenshot({path:'output/screenshots/checkin-integrated.png',fullPage:true});
+ await page.reload({waitUntil:'domcontentloaded'});await frame.locator('#ck-albumCount').filter({hasText:'3'}).waitFor();assert.equal(await frame.locator('#ck-points').innerText(),'3');
+ console.log('stage: new session');const second=await browser.newContext({viewport:{width:390,height:900},isMobile:true,hasTouch:true});const otherPage=await second.newPage();
+ await otherPage.goto(base+'/register.html');await otherPage.locator('#username').fill(username);await otherPage.locator('#password').fill(password);await otherPage.locator('button[value="login"]').click();await otherPage.locator('#account-panel').waitFor({state:'visible'});await otherPage.locator('a[href="/?page=photo"]').click();const secondFrame=otherPage.frameLocator('iframe');await secondFrame.locator('#ck-albumCount').filter({hasText:'3'}).waitFor();assert.equal(await secondFrame.locator('#ck-points').innerText(),'3');
+ for(const width of [320,390,520,1024]){await page.setViewportSize({width,height:900});assert(!(await frame.locator('body').evaluate(()=>document.documentElement.scrollWidth>innerWidth)),'overflow '+width);}
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,checks:['existing login','real owned IDs and locked catalogue','three-bird limit','drag and scale','server JPEG equals preview','success +1','second work +1','album newest first','lost acknowledgement retry pays once','viewer','reload','separate session same album and balance','320–1024px layout'],errors},null,2));await browser.close();
+})().catch(error=>{console.error(error);process.exit(1);});
