@@ -1,5 +1,4 @@
 from pathlib import Path
-import base64
 import html
 import re
 import json
@@ -12,12 +11,19 @@ def data_image(name):
     return '__XCWC_ASSET_ORIGIN__/assets/' + name
 
 frame = (ROOT / 'src/frame.html').read_text(encoding='utf-8')
+# The legacy prototype also stays on the shared, independently cacheable character.
+frame, legacy_bird_replacements = re.subn(
+    r"const asset='data:image/png;base64,[^']*';",
+    lambda _: "const asset='" + data_image('birds/huangying/happy-hero-640.webp') + "';",
+    frame, count=1)
+if legacy_bird_replacements != 1:
+    raise RuntimeError('Expected one legacy inline bird asset in frame.html')
 css = (ROOT / 'src/room.css').read_text(encoding='utf-8')
 css += '\n' + (ROOT / 'src/reference-pages.css').read_text(encoding='utf-8')
 js = (ROOT / 'src/room.js').read_text(encoding='utf-8')
-js = js.replace('__ROOM_BACKGROUND__', data_image('room-background.png')).replace('__ROOM_BIRD__', data_image('bird-transparent.png'))
+js = js.replace('__ROOM_BACKGROUND__', data_image('room-background.png')).replace('__ROOM_BIRD__', data_image('birds/huangying/happy-hero-640.webp'))
 reference_js = (ROOT / 'src/reference-pages.js').read_text(encoding='utf-8')
-for token, filename in [('__REFERENCE_TREEHOUSE__', 'treehouse-background.png'), ('__REFERENCE_CITIES__', 'city-landscapes.png'), ('__REFERENCE_PROPS__', 'painted-props.png')]:
+for token, filename in [('__REFERENCE_TREEHOUSE__', 'scenes/treehouse-960.webp'), ('__REFERENCE_CITIES__', 'scenes/city-landscapes-1200.webp'), ('__REFERENCE_PROPS__', 'ui/painted-props-768.webp')]:
     reference_js = reference_js.replace(token, data_image(filename))
 start = frame.index('function home(){')
 end = frame.index('function adopt(){', start)
@@ -38,15 +44,25 @@ vendor_scripts = {
     'https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js': 'floating-ui.dom.js',
 }
 for url, filename in vendor_scripts.items():
-    code = (ROOT / 'vendor' / filename).read_text(encoding='utf-8').replace('</script', '<\\/script')
+    if not (ROOT / 'vendor' / filename).is_file():
+        raise FileNotFoundError('Missing local vendor script: ' + filename)
     pattern = r'<script([^>]*?)\s+src="' + re.escape(url) + r'"([^>]*)>\s*</script>'
-    frame = re.sub(pattern, lambda match: '<script' + match.group(1).replace(' async', '') + match.group(2) + '>' + code + '</script>', frame)
+    def local_vendor_script(match):
+        attributes = re.sub(r'\s+async(?:=(?:"[^"]*"|\'[^\']*\'|[^\s>]+))?', '', match.group(1) + match.group(2))
+        return '<script' + attributes + ' src="__XCWC_ASSET_ORIGIN__/vendor/' + filename + '"></script>'
+    frame, replacements = re.subn(pattern, local_vendor_script, frame)
+    if replacements != 1:
+        raise RuntimeError('Expected one script reference for ' + filename)
+# Sandboxed srcdoc has an opaque origin: allow only this controlled static origin.
+frame = frame.replace('script-src ', 'script-src __XCWC_ASSET_ORIGIN__ ', 1)
 frame = frame.replace("home:'小窝 · 点小鸟触摸互动；连续轻点可体验炸毛反馈。每只小鸟独立保存状态。积分、补给和每日上限均为评审示例。'", "home:'沉浸式喂养体验 · 点击或拖动食物投喂，试试添水、摸头和清洁。角色使用预制透明素材与轻量动画；补给、羽力数值为演示规则。'")
 # Adopt the confirmed checkin snapshot as scoped source, retaining the existing photo route.
 checkin_assets = {}
 for file in (ROOT / 'src/checkin-assets').iterdir():
     if file.is_file():
-        checkin_assets[file.name] = '__XCWC_ASSET_ORIGIN__/assets/checkin/' + file.name
+        checkin_assets[file.name] = (data_image('birds/huangying/happy-sticker-400.webp')
+            if re.fullmatch(r'bird(?:-\d+)?\.png', file.name)
+            else '__XCWC_ASSET_ORIGIN__/assets/checkin/' + file.name)
 checkin_css = (ROOT / 'src/checkin-page.css').read_text(encoding='utf-8')
 for name, url in checkin_assets.items():
     checkin_css = checkin_css.replace('assets/' + name, url)
@@ -59,7 +75,7 @@ app = app.replace('export ', '')
 app = app.replace('function toast(text){', "function toast(text){if(destroyed)return;rpc('notice',{message:text}).catch(()=>{});")
 app = app.replace('const host=root.querySelector(".checkin-page");', 'const host=root.querySelector(".checkin-page");host.querySelectorAll("[data-checkin-asset]").forEach(image=>image.src=checkinAssets[image.dataset.checkinAsset]);')
 app = app.replace('showViewer();', 'showViewer().catch(error=>{if(!destroyed)toast(error.message)});')
-asset_script = 'const checkinAssets=' + json.dumps(checkin_assets,ensure_ascii=False) + ';for(const name of Object.keys(checkinAssets))checkinAssets[name]=referenceImageUrl(checkinAssets[name]);\n'
+asset_script = 'const checkinAssets=' + json.dumps(checkin_assets,ensure_ascii=False) + ';\n'
 rpc = (ROOT / 'src/checkin-rpc.js').read_text(encoding='utf-8')
 frame = frame.replace('function photoPage(){', rpc + '\n' + asset_script + 'const checkinTemplate=' + json.dumps(template,ensure_ascii=False) + ';\n' + app + '\nfunction photoPage(){',1)
 start = frame.index('function photoPage(){');end = frame.index('function wardrobe(){',start)
@@ -75,11 +91,13 @@ frame = frame.replace('</head>', '<style>' + checkin_css + '</style></head>',1)
 frame = frame.replace('img-src blob: data:', 'img-src __XCWC_ASSET_ORIGIN__ blob: data:',1)
 # Confirmed shop V1.0: native route module with isolated styles and shared app state.
 shop_root = ROOT / 'src/shop'
-shop_assets = {p.stem: 'data:image/webp;base64,' + base64.b64encode(p.read_bytes()).decode('ascii') for p in (shop_root/'assets').glob('*.webp')}
-shop_setup = 'const shopAssets=' + json.dumps(shop_assets) + ';for(const key of Object.keys(shopAssets))shopAssets[key]=referenceImageUrl(shopAssets[key]);\n'
+shop_product_source = (shop_root/'products.js').read_text(encoding='utf-8')
+shop_ids = re.findall(r"\bid:'([^']+)'", shop_product_source)
+shop_assets = {product_id: data_image('birds/huangying/happy-card-400.webp') for product_id in shop_ids}
+shop_setup = 'const shopAssets=' + json.dumps(shop_assets) + ';\n'
 shop_setup += 'const shopCss=' + json.dumps((shop_root/'shop.css').read_text(encoding='utf-8')) + ';\n'
-shop_setup += 'const shopTemplate=' + json.dumps((shop_root/'template.html').read_text(encoding='utf-8')) + '.replace("__SHOP_HERO__",shopAssets.hero);\n'
-shop_setup += (shop_root/'shop.js').read_text(encoding='utf-8').replace('__SHOP_PRODUCTS__',(shop_root/'products.js').read_text(encoding='utf-8'))
+shop_setup += 'const shopTemplate=' + json.dumps((shop_root/'template.html').read_text(encoding='utf-8')) + ';\n'
+shop_setup += (shop_root/'shop.js').read_text(encoding='utf-8').replace('__SHOP_PRODUCTS__',shop_product_source)
 start=frame.index('function shop(){');end=frame.index('function profile(){',start)
 frame=frame[:start]+shop_setup+"\nfunction shop(){return `<section id='xcwc-shop' aria-label='小鸟商城'></section>`;}\n"+frame[end:]
 frame=frame.replace('referenceChrome();}',"referenceChrome();if(s.page==='shop')mountShop();}")
@@ -97,6 +115,8 @@ frame=runpy.run_path(str(ROOT/'scripts/integrate-pages.py'))['integrate_pages'](
 frame = frame.replace('crypto.randomUUID()', 'xcwcRandomId()')
 frame = frame.replace('function accountRpc(', "function xcwcRandomId(){const b=new Uint8Array(16);crypto.getRandomValues(b);return Array.from(b,n=>n.toString(16).padStart(2,'0')).join('');}\nfunction accountRpc(",1)
 shell = (ROOT / 'src/shell.html').read_text(encoding='utf-8')
+# The srcdoc inherits its parent policy as well; allow local static vendor scripts.
+shell = shell.replace('script-src ', "script-src 'self' ", 1)
 shell = re.sub(r'data-srcdoc=".*?"', lambda _: 'data-srcdoc="' + html.escape(frame, quote=True) + '"', shell, count=1, flags=re.S)
 shell = shell.replace('<title>bujidao-ui.html</title>', '<title>卜叽岛 · 小鸟的江南小窝</title>')
 shell = shell.replace('</head>', '<style>body{background:#eceee6} @media(max-width:520px){body{padding:0}iframe{height:100vh;max-width:100%}}</style></head>', 1)
@@ -121,6 +141,7 @@ shell = shell.replace('crypto.randomUUID()', 'window.xcwcRandomId()')
 shell = re.sub(r'[ \t]+\n', '\n', shell)
 (ROOT / 'dist/index.html').write_text(shell, encoding='utf-8')
 shutil.copytree(ROOT/'assets', ROOT/'dist/assets', dirs_exist_ok=True)
+shutil.copytree(ROOT/'vendor', ROOT/'dist/vendor', dirs_exist_ok=True)
 shutil.copytree(ROOT/'src/checkin-assets', ROOT/'dist/assets/checkin', dirs_exist_ok=True)
 account=ROOT/'src/account';(ROOT/'dist/preview').mkdir(exist_ok=True)
 for name in ['registration.js','registration.css','points.js','session-store.js']:

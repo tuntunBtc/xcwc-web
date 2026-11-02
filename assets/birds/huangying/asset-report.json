@@ -1,0 +1,77 @@
+{
+  "source_policy": "Do not modify originals. White variants use the current library happy WebP. Transparent variants use only reviewed cutout source.",
+  "format": "WebP lossy, stripped incidental metadata, exact alpha preservation",
+  "variants": [
+    {
+      "file": "happy-avatar-192.webp",
+      "width": 192,
+      "height": 192,
+      "bytes": 2952,
+      "source": "/Users/beluga/Code/xcwc/小鸟资料库/小黄莺/小黄莺_开心.webp",
+      "source_bytes": 1397820,
+      "source_sha256": "9855b9f41b08d4bb33795215be7d88a3e6cbe98d9c52cc55d197802aefb3bf04",
+      "sha256": "c7b53126aec7abf313d3675e1af01d2e7d569c2b996e6d2c3110971e4bfebcd2",
+      "alpha": false,
+      "quality": 80,
+      "resampling": "Lanczos; no upscaling; whole image preserved",
+      "reduction_percent": 99.79
+    },
+    {
+      "file": "happy-card-400.webp",
+      "width": 400,
+      "height": 329,
+      "bytes": 10438,
+      "source": "/Users/beluga/Code/xcwc/小鸟资料库/小黄莺/小黄莺_开心.webp",
+      "source_bytes": 1397820,
+      "source_sha256": "9855b9f41b08d4bb33795215be7d88a3e6cbe98d9c52cc55d197802aefb3bf04",
+      "sha256": "c56c0b04e30b47aec2740479cea4777776eb36ea9ed3316a4bf19689b1938462",
+      "alpha": false,
+      "quality": 84,
+      "resampling": "Lanczos; no upscaling; whole image preserved",
+      "reduction_percent": 99.25
+    },
+    {
+      "file": "happy-hero-640.webp",
+      "width": 640,
+      "height": 526,
+      "bytes": 77016,
+      "source": "/Users/beluga/.codex/generated_images/01a19a2c-5a54-7951-a14e-34ea814ceecb/exec-ffb3440d-e053-46d2-909b-810269f0eb41.png",
+      "source_bytes": 2201793,
+      "source_sha256": "e1f9b06078e965faca33ae02dd12591dfbac006214c2e20b52d310f1e3002ec1",
+      "sha256": "c853595f32587b97ca6be4ea9f278a1119fe8add4f6ba1e767b307c5db5caf1b",
+      "alpha": true,
+      "quality": 84,
+      "resampling": "Lanczos; no upscaling; whole image preserved",
+      "reduction_percent": 96.5
+    },
+    {
+      "file": "happy-sticker-400.webp",
+      "width": 400,
+      "height": 329,
+      "bytes": 35098,
+      "source": "/Users/beluga/.codex/generated_images/01a19a2c-5a54-7951-a14e-34ea814ceecb/exec-ffb3440d-e053-46d2-909b-810269f0eb41.png",
+      "source_bytes": 2201793,
+      "source_sha256": "e1f9b06078e965faca33ae02dd12591dfbac006214c2e20b52d310f1e3002ec1",
+      "sha256": "e8ca91c3c9e5a209c0c478ccdf3082873ed42c3b393d3ac10717007797d1952d",
+      "alpha": true,
+      "quality": 84,
+      "resampling": "Lanczos; no upscaling; whole image preserved",
+      "reduction_percent": 98.41
+    },
+    {
+      "file": "happy-avatar-transparent-192.webp",
+      "width": 192,
+      "height": 158,
+      "bytes": 10838,
+      "source": "/Users/beluga/.codex/generated_images/01a19a2c-5a54-7951-a14e-34ea814ceecb/exec-ffb3440d-e053-46d2-909b-810269f0eb41.png",
+      "source_bytes": 2201793,
+      "source_sha256": "e1f9b06078e965faca33ae02dd12591dfbac006214c2e20b52d310f1e3002ec1",
+      "sha256": "5937e2611f5963e671897cc81aff40523e9aa85e08c29893bb2df21b2e954f07",
+      "alpha": true,
+      "quality": 80,
+      "resampling": "Lanczos; no upscaling; whole image preserved",
+      "reduction_percent": 99.51
+    }
+  ],
+  "total_bytes": 136342
+}

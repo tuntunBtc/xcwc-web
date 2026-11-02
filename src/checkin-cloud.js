@@ -4,7 +4,8 @@ const ownedUrls=new Set(),albumUrls=new Map(),rpcController=new AbortController(
 const rememberUrl=url=>{ownedUrls.add(url);return url;};
 const rpc=(operation,args={})=>checkinRpc(operation,args,rpcController.signal);
 const readBlob=url=>fetch(url).then(response=>response.blob());
-function assetFor(city){return checkinAssets[({'hangzhou':'bird-0.png','suzhou':'bird-1.png','nanjing':'bird-2.png','xian':'bird.png','chengdu':'bird-4.png','wuhan':'bird-5.png'})[city]||'bird-0.png'];}
+function assetFor(city){return birdAssets.sticker;}
+
 async function loadAlbum(append=false){
  const version=++historyVersion;const page=await rpc('history',{cursor:append?nextCursor:null});if(destroyed)return;
  const loaded=await Promise.all(page.items.map(async work=>{let image=albumUrls.get(work.id);if(!image){const blob=await rpc('image',{id:work.id});if(destroyed)return null;image=rememberUrl(URL.createObjectURL(blob));albumUrls.set(work.id,image);}return {...work,image,createdAt:new Date(work.createdAt).getTime()};}));

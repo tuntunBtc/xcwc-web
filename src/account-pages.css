@@ -64,3 +64,18 @@
 #bjd-review .account-menu-icon{background:#e9edda;color:#667b43}
 
 #bjd-review .account-page-head p{font-size:13px;line-height:1.7}#bjd-review .account-menu-meta{font-size:12px}#bjd-review .account-page .account-menu button{min-height:64px}#bjd-review .profile-card-copy span{font-size:12px}#bjd-review .account-section{margin-top:24px}
+
+/* Shared parchment scroll: decoration only, retaining every route's layout box. */
+#bjd-review .phone>.bottom{isolation:isolate;overflow:visible;background:transparent;border-color:transparent;border-radius:0;box-shadow:none}
+#bjd-review .phone>.bottom::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;clip-path:inset(0);border:0;border-radius:0;background:url('__XCWC_ASSET_ORIGIN__/assets/navigation/huangying-scroll-1440.webp') center/100% 133% no-repeat;box-shadow:none}
+#bjd-review .phone>.bottom::after{content:none}
+#bjd-review .phone>.bottom button{position:relative;color:#79603a;font-family:"Songti SC","STSong",serif;font-size:12px;font-weight:500;background:transparent;border-radius:8px;isolation:isolate;justify-content:center;gap:2px}
+#bjd-review .phone>.bottom button.active{color:#4f6835;font-weight:600;background:transparent;border-radius:8px}
+#bjd-review .phone>.bottom button.active::before{content:"";position:absolute;inset:3px 6px;z-index:-1;pointer-events:none;border-radius:9px;background:linear-gradient(110deg,#fffdf0a6,#fff9e580);box-shadow:inset 0 0 8px #fffce780}
+#bjd-review .phone>.bottom svg{--icon-size:26px;width:26px;height:26px;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 .5px 0 #886e3940)}
+#bjd-review .phone>.bottom button.active svg{fill:none;stroke:#57713b;stroke-width:2}
+#bjd-review .phone>.bottom button.active[data-go="home"] svg{fill:#78905433;stroke:#536d36}
+#bjd-review .phone>.bottom button>span{letter-spacing:1px;line-height:17.6px}
+
+/* Reallocate the check-in nav's own padding to keep its original outer height. */
+#bjd-review.is-checkin .phone>.bottom{padding-top:9px;padding-bottom:14px}

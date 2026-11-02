@@ -52,7 +52,7 @@ async function loadBird() {
   if (!birdId) { panel.innerHTML = '<h2>实体小鸟登记</h2><p>请扫描每只小鸟专属的二维码，或碰触 NFC 标签。已有账号可登录查看登记记录。</p>'; return; }
   if (!/^[a-f0-9]{32}$/.test(birdId)) throw new Error('链接中的小鸟编号格式不正确。');
   bird = await api(`/birds/${encodeURIComponent(birdId)}`);
-  panel.innerHTML = `<img class="bird-image" src="${escape(bird.image)}" alt="蓝色燕叽"><h2>${escape(bird.name)}</h2><p>${escape(bird.cityName)} · ${escape(bird.typeName)} · ${escape(bird.skinName)}</p><p>批次：${escape(bird.batchNo || "未指定")}（图片暂为统一示意图）</p><p class="bird-id">编号 ${escape(bird.id)}</p><p>${bird.claimed ? '已认领。主人登录后可在下方查看自己的登记记录。' : '登录后可免费领养并立即孵化，不需要隐藏码。'}</p>`;
+  panel.innerHTML = `<img class="bird-image" src="${escape('/assets/birds/huangying/happy-avatar-192.webp')}" width="192" height="192" decoding="async" alt="小黄莺"><h2>${escape(bird.name)}</h2><p>${escape(bird.cityName)} · ${escape(bird.typeName)} · ${escape(bird.skinName)}</p><p>批次：${escape(bird.batchNo || "未指定")}（图片暂为统一示意图）</p><p class="bird-id">编号 ${escape(bird.id)}</p><p>${bird.claimed ? '已认领。主人登录后可在下方查看自己的登记记录。' : '登录后可免费领养并立即孵化，不需要隐藏码。'}</p>`;
   account();
 }
 
