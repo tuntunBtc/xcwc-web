@@ -1,6 +1,6 @@
 <section class="adopt-v1" aria-label="碰一碰领养小鸟">
   <div class="scene" role="group" aria-label="城市小鸟领养插画">
-    <img class="scene-art" src="assets/adopt-v1/huangying-adoption-900.webp" alt="江南湖景与花木插画，包含小黄莺、悬挂卷轴、资料卡、取名区和领养按钮。">
+    <img class="scene-art" src="assets/adopt-v1/felt/scene-900.webp" alt="毛绒小黄莺从印着西湖塔景的蛋壳中探出身子，身后是垂柳、湖水与暖色灯笼。" fetchpriority="high" width="900" height="675">
     <button class="hit back" type="button" data-action="back" aria-label="返回小窝"></button>
     <div class="nfc-status" role="status" aria-live="polite"><span class="nfc-dot" aria-hidden="true"></span><span data-role="recognition">正在读取小鸟资料</span></div>
     <h1 class="scene-title">领养你的<br>城市小鸟</h1>
@@ -8,21 +8,21 @@
 
     <section class="scroll-card" aria-label="小鸟公开资料">
       <h2 data-role="bird-name">等待识别</h2>
-      <p class="bird-city"><span aria-hidden="true">⌖</span> <span data-role="city-line">城市资料待确认</span></p>
+      <p class="bird-city"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 22s8-8.5 8-14A8 8 0 0 0 4 8c0 5.5 8 14 8 14Z" fill="currentColor"/><circle cx="12" cy="8" r="3" fill="#fff0da"/></svg><span data-role="city-line">城市资料待确认</span></p>
       <p class="scroll-detail"><span data-role="type">款式待确认</span><br><span data-role="skin">出厂肤色待确认</span></p>
     </section>
 
     <div class="trait-row" aria-label="性格资料">
       <span class="trait-label">性格<br>档案</span>
-      <span class="trait-pill" data-role="trait-one">资料待接入</span>
-      <span class="trait-pill" data-role="trait-two">资料待接入</span>
-      <span class="trait-pill" data-role="trait-three">资料待接入</span>
+      <span class="trait-pill trait-one" data-role="trait-one">资料待接入</span>
+      <span class="trait-pill trait-two" data-role="trait-two">资料待接入</span>
+      <span class="trait-pill trait-three" data-role="trait-three">资料待接入</span>
     </div>
 
   </div>
   <div class="adoption-details">
     <section class="identity" aria-label="实体小鸟资料卡">
-      <div class="identity-heading"><h2>这次相遇的小鸟</h2><span data-role="identity-state">等待识别</span></div>
+      <div class="identity-heading"><h2><span class="chick" aria-hidden="true">🐤</span>这次相遇的小鸟</h2><span data-role="identity-state">等待识别</span></div>
       <dl class="identity-grid">
         <div><dt>所属城市</dt><dd data-role="city">—</dd></div>
         <div><dt>小鸟款式</dt><dd data-role="type-card">—</dd></div>
@@ -32,7 +32,7 @@
     </section>
 
     <form class="name-form" novalidate>
-      <label class="name-heading" for="adopt-v1-name">给小鸟取个名字吧～</label>
+      <label class="name-heading" for="adopt-v1-name"><span class="chick" aria-hidden="true">🐤</span>给小鸟取个名字吧～</label>
       <div class="name-field">
         <input id="adopt-v1-name" name="nickname" autocomplete="off" placeholder="请输入 1–6 个字" aria-describedby="name-hint" disabled>
         <button class="random-name" type="button" data-action="random" aria-label="随机取名" disabled><span aria-hidden="true">⚄</span><span>随机取名</span></button>

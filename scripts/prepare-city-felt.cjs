@@ -1,0 +1,6 @@
+// Encode generated scene plates only; original references and outputs stay intact.
+const fs=require('node:fs'),path=require('node:path');
+const sharp=require(process.env.SHARP_MODULE||'/Users/beluga/.codex/visualizations/2026/11/02/01a19b06-f75f-7821-9dc8-b9f7e9dab6df/image-tools/node_modules/sharp');
+const root=path.resolve(__dirname,'..'),source=process.env.CITY_IMAGE_SOURCE||'/Users/beluga/.codex/generated_images/01a19b06-f75f-7821-9dc8-b9f7e9dab6df';
+const jobs=[['exec-48a9a69e-cbbd-442f-bb6b-8290639c537c.png','hero-960.webp',960,84],['exec-ac3d39dd-c8e0-4b8b-9af9-bc2979582f13.png','cities-1200.webp',1200,86]];
+(async()=>{const out=path.join(root,'assets/city/felt');fs.mkdirSync(out,{recursive:true});const report=[];for(const [input,name,width,quality] of jobs){const target=path.join(out,name);await sharp(path.join(source,input)).resize({width,withoutEnlargement:true}).webp({quality,effort:6}).toFile(target);const m=await sharp(target).metadata();report.push({file:name,width:m.width,height:m.height,bytes:fs.statSync(target).size,source:input,quality});}fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2)+'\n','utf8');console.log(report);})().catch(error=>{console.error(error);process.exitCode=1});

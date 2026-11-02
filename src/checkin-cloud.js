@@ -14,7 +14,7 @@ async function loadAlbum(append=false){
  $('#ck-viewAll').textContent=nextCursor?'查看更多 ↗':'收起 / 展开 ↗';
 }
 async function sourceBlob(){
- const canvas=document.createElement('canvas');const scale=Math.min(1,Math.sqrt(20_000_000/(photo.naturalWidth*photo.naturalHeight)),6000/Math.max(photo.naturalWidth,photo.naturalHeight));canvas.width=Math.max(1,Math.round(photo.naturalWidth*scale));canvas.height=Math.max(1,Math.round(photo.naturalHeight*scale));canvas.getContext('2d').drawImage(photo,0,0,canvas.width,canvas.height);return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('原照片处理失败')),'image/jpeg',.92));
+ const canvas=document.createElement('canvas');const scale=Math.min(1,Math.sqrt(12_000_000/(photo.naturalWidth*photo.naturalHeight)),4096/Math.max(photo.naturalWidth,photo.naturalHeight));canvas.width=Math.max(1,Math.round(photo.naturalWidth*scale));canvas.height=Math.max(1,Math.round(photo.naturalHeight*scale));canvas.getContext('2d').drawImage(photo,0,0,canvas.width,canvas.height);return new Promise((resolve,reject)=>canvas.toBlob(blob=>{canvas.width=canvas.height=1;blob?resolve(blob):reject(new Error('原照片处理失败'));},'image/jpeg',.92));
 }
 async function showViewer(){
  const viewport=await rpc('viewport');if(destroyed)return;const dialog=$('#ck-viewer');dialog.style.position='absolute';dialog.style.top=Math.max(0,viewport.top+24)+'px';dialog.style.margin='0 auto';dialog.style.maxHeight=Math.max(250,viewport.height-48)+'px';$('#ck-viewerImage').style.maxHeight=Math.max(180,viewport.height-185)+'px';dialog.showModal();

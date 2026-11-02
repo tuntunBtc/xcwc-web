@@ -44,29 +44,42 @@ function createNestBirdAudio(signal){
  return {prepare,play,dispose:stop};
 }
 
+function selectNestEmotion(bird,interaction=null){
+ if(bird&&interaction?.birdId===bird.id&&['happy','shy'].includes(interaction.emotion))return interaction.emotion;
+ if(bird&&bird.hunger<30)return 'hungry';
+ if(bird&&bird.water<30)return 'unwell';
+ return 'happy';
+}
+
 function mountNest(){
- const shadow=mountIsolated('xcwc-nest',nestCss,nestTemplate),$=q=>shadow.querySelector(q),controller=new AbortController(),{signal}=controller;let alive=true,busy=false,pendingPet=null,happyTimer,displayedBirdId=null;
+ const shadow=mountIsolated('xcwc-nest',nestCss,nestTemplate),$=q=>shadow.querySelector(q),controller=new AbortController(),{signal}=controller;let alive=true,busy=false,pendingPet=null,happyTimer,displayedBirdId=null,interactionEmotion=null;
  const birdAudio=createNestBirdAudio(signal);
- const feltBird={avatar:"__XCWC_ASSET_ORIGIN__/assets/nest/felt/avatar-192.webp",idle:"__XCWC_ASSET_ORIGIN__/assets/nest/felt/idle-640.webp"};
+ const feltBird={avatar:"__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/happy-192.webp",happy:"__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/happy.webp",shy:"__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/shy.webp",hungry:"__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/hungry.webp",unwell:"__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/unwell.webp"};
  // Only the scene background is local; navigation geometry is shared across routes.
  const homeChrome=document.createElement('style');homeChrome.dataset.nestChrome='';homeChrome.textContent=`
- #bjd-review.is-integrated:has(#xcwc-nest) .phone{background:#bad493 url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/scene-720.webp') center top/cover no-repeat}
+ #bjd-review.is-integrated:has(#xcwc-nest) .phone{background:#bad493 url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/scene-720.webp') center top/100% 100% no-repeat}
  #bjd-review.is-integrated:has(#xcwc-nest) .phone>main{background:#bad493}
- #bjd-review.is-integrated:has(#xcwc-nest) .bottom{background:transparent;border-color:transparent}
- #bjd-review.is-integrated:has(#xcwc-nest) .bottom::before{inset:0;background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/panel-720.webp') center/100% 110% no-repeat}
- #bjd-review.is-integrated:has(#xcwc-nest) .bottom button{color:#875d3b;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;font-weight:600}
- #bjd-review.is-integrated:has(#xcwc-nest) .bottom button.active{color:#65995d}
- #bjd-review.is-integrated:has(#xcwc-nest) .bottom button.active::before{background:radial-gradient(ellipse,#c6e3b881,transparent 80%);box-shadow:none}
- #bjd-review.is-integrated:has(#xcwc-nest) .bottom svg{stroke:#a98562;stroke-width:2;filter:drop-shadow(0 1px 2px #b58a5a30)}
- #bjd-review.is-integrated:has(#xcwc-nest) .bottom button.active svg{stroke:#70a467;fill:#cae2b44d;filter:drop-shadow(0 0 3px #a8d39a)}
+
  `;document.head.append(homeChrome);
  pageCleanup=()=>{homeChrome.remove();alive=false;birdAudio.dispose();controller.abort();clearTimeout(happyTimer);shadow.querySelectorAll('dialog[open]').forEach(d=>d.close())};installDialogClose(shadow,signal);
  const say=text=>{$('#speech').textContent=text},sheet=html=>{$('#sheet-content').innerHTML=html;openPageDialog($('#sheet')).catch(e=>pageNotice(e.message))};
- function happy(){$('.actor').classList.remove('happy');void $('.actor').offsetWidth;$('.actor').classList.add('happy');clearTimeout(happyTimer);happyTimer=setTimeout(()=>$('.actor').classList.remove('happy'),1100)}
- function update(){if(!alive)return;const bird=ownedCurrent();$('#name').textContent=bird?.name||'等待小鸟入住';$('.identity-text small').textContent=bird?'⌖ '+bird.cityName+' · 江南小窝':'⌖ 我的小窝';$('#points').textContent=liveAccount.wallet?.balance??'—';for(const im of shadow.querySelectorAll('.avatar img'))im.src=feltBird.avatar;for(const im of shadow.querySelectorAll('.actor img'))im.src=feltBird.idle;$('#bird').setAttribute('aria-label',bird?'摸摸'+bird.name:'领取后陪伴小鸟');$('.actor').style.opacity='1';$('#daily .dot').hidden=!!liveAccount.careDaily?.supplyClaimed;$('#daily>span').textContent='补给';$('#hunger').textContent=bird?bird.hunger+'%':'—';$('#water').textContent=bird?bird.water+'%':'—';$('#hunger-bar').style.width=(bird?.hunger||0)+'%';$('#water-bar').style.width=(bird?.water||0)+'%';$('#mood-bar').style.width=bird?(Math.min(bird.hunger,bird.water)<30?'35%':'80%'):'0';$('#mood').textContent=bird?(Math.min(bird.hunger,bird.water)<30?'想吃点东西':'开心'):'—';if(bird&&displayedBirdId!==bird.id){say('阳光正好，\n陪我待一会儿吧～ ♥');displayedBirdId=bird.id}if(!bird){displayedBirdId=null;say('碰一碰实体小鸟并打开链接，把第一位伙伴领回小窝。领取无需登录。');}}
+ function renderBird(){const image=$('.actor img'),emotion=selectNestEmotion(ownedCurrent(),interactionEmotion);image.dataset.emotion=emotion;if(image.getAttribute('src')!==feltBird[emotion])image.src=feltBird[emotion]}
+ function happy(emotion='happy'){const bird=ownedCurrent();if(!bird)return;interactionEmotion={birdId:bird.id,emotion};renderBird();$('.actor').classList.remove('happy');void $('.actor').offsetWidth;$('.actor').classList.add('happy');clearTimeout(happyTimer);happyTimer=setTimeout(()=>{if(!alive)return;interactionEmotion=null;$('.actor').classList.remove('happy');renderBird()},1100)}
+ function update(){if(!alive)return;const bird=ownedCurrent();$('#nest').classList.toggle('is-empty',!bird);$('#name').textContent=bird?.name||'等待小鸟入住';$('.identity-text small').textContent=bird?'⌖ '+bird.cityName+' · 江南小窝':'⌖ 我的小窝';$('#points').textContent=liveAccount.wallet?.balance??'—';for(const im of shadow.querySelectorAll('.avatar img'))im.src=feltBird.avatar;renderBird();$('#bird').setAttribute('aria-label',bird?'摸摸'+bird.name:'领取后陪伴小鸟');$('.actor').style.opacity='1';$('#daily .dot').hidden=!!liveAccount.careDaily?.supplyClaimed;$('#daily>span').textContent='补给';$('#hunger').textContent=bird?bird.hunger+'%':'—';$('#water').textContent=bird?bird.water+'%':'—';$('#hunger-bar').style.width=(bird?.hunger||0)+'%';$('#water-bar').style.width=(bird?.water||0)+'%';$('#mood-bar').style.width=bird?(Math.min(bird.hunger,bird.water)<30?'35%':'80%'):'0';$('#mood').textContent=bird?(bird.hunger<30?'想吃点东西':bird.water<30?'想喝点水':'开心'):'—';if(bird&&displayedBirdId!==bird.id){say('阳光正好，\n陪我待一会儿吧～ ♥');displayedBirdId=bird.id}if(!bird){displayedBirdId=null;say('碰一碰实体小鸟并打开链接，把第一位伙伴领回小窝。领取无需登录。');}}
  async function switchBird(){await refreshAccount(signal);if(!alive)return;update();if(!liveAccount.account)return accountRpc('login',{page:'home'});sheet('<h2>今天，想陪谁？</h2><p>按真实实体编号切换，昵称相同也不会混选。</p><div class="birds"></div>');for(const pet of liveAccount.birds){const button=document.createElement('button');button.className='bird-choice'+(pet.id===liveAccount.currentId?' selected':'');button.dataset.birdId=pet.id;const image=document.createElement('img');image.src=birdArt(pet,'avatar');image.alt='';const name=document.createElement('strong');name.textContent=pet.name;const meta=document.createElement('small');meta.textContent=pet.cityName+' · '+pet.id.slice(-6);button.append(image,name,meta);button.onclick=async()=>{await accountRpc('selectBird',{birdId:pet.id},signal);liveAccount.currentId=pet.id;pendingPet=null;update();$('#sheet').close();say(pet.name+'来啦，今天也陪着你。');loadOutfit()};$('.birds').append(button)}if(!liveAccount.birds.length)$('.birds').textContent='本机还没有领取小鸟，请碰一碰实体小鸟并打开链接。'}
  async function loadOutfit(){try{const data=await accountRpc('wardrobe',{},signal);if(!alive)return;const outfit=data.outfits.find(x=>x.birdId===liveAccount.currentId);$('.actor').classList.remove('aura-lake','aura-sunset');if(['lake','sunset'].includes(outfit?.visualKey))$('.actor').classList.add('aura-'+outfit.visualKey)}catch{}}
- shadow.addEventListener('click',async event=>{const button=event.target.closest('[data-action]');if(!button)return;const action=button.dataset.action;
+ let backgroundRefresh=null;
+ async function refreshVisibleNest(){
+  if(!alive||signal.aborted||document.hidden||busy||!liveAccount.ready||backgroundRefresh)return;
+  const current=new AbortController();backgroundRefresh=current;
+  const cancel=()=>current.abort();signal.addEventListener('abort',cancel,{once:true});
+  try{await refreshAccount(current.signal);if(alive&&!busy&&!current.signal.aborted)update()}catch{/* Background refresh is retried when visible or on the next interval. */}
+  finally{signal.removeEventListener('abort',cancel);if(backgroundRefresh===current)backgroundRefresh=null}
+ }
+ const refreshTimer=setInterval(refreshVisibleNest,60000);
+ signal.addEventListener('abort',()=>{clearInterval(refreshTimer);backgroundRefresh?.abort()},{once:true});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)backgroundRefresh?.abort();else refreshVisibleNest()},{signal});
+ shadow.addEventListener('click',async event=>{backgroundRefresh?.abort();const button=event.target.closest('[data-action]');if(!button)return;const action=button.dataset.action;
   // Only real interactions unlock audio; navigation, dialogs and empty nests stay silent.
   const soundTicket=['touch','do-feed','water','clean'].includes(action)&&ownedCurrent()&&!busy?birdAudio.prepare():null;
   try{
@@ -81,7 +94,7 @@ function mountNest(){
     const bird=ownedCurrent();if(!bird)return pageNotice('请先领取小鸟');if(busy)return;busy=true;button.disabled=true;
     try{const result=await accountRpc('care',{birdId:bird.id,action:({'save-rename':'rename','do-feed':'feed'})[action]||action,name:$('#local-nickname')?.value},signal);await refreshAccount(signal);if(alive){update();happy();birdAudio.play(action,soundTicket);$('#sheet').close();say(result.message);pageNotice(result.message)}}finally{busy=false;button.disabled=false}return;
    }
-   if(action==='touch'){say('嘿嘿，最喜欢你摸摸我啦 ♡');happy();birdAudio.play(action,soundTicket);const bird=ownedCurrent();if(!bird)return pageNotice('碰一碰实体小鸟，把第一位伙伴领回小窝吧');if(busy)return;busy=true;pendingPet??={birdId:bird.id,requestId:crypto.randomUUID()};try{const result=await accountRpc('pet',pendingPet,signal);pendingPet=null;liveAccount.wallet=await accountRpc('wallet',{},signal);if(alive){update();pageNotice(result.replayed?'已确认上次抚摸，未重复奖励':'小鸟收到你的陪伴，叽分 +1')}}catch(e){if(['REWARD_COOLDOWN','DAILY_LIMIT'].includes(e.code))pendingPet=null;if(alive)pageNotice(e.message)}finally{busy=false}return}
+   if(action==='touch'){const bird=ownedCurrent();if(!bird)return pageNotice('碰一碰实体小鸟，把第一位伙伴领回小窝吧');say('嘿嘿，最喜欢你摸摸我啦 ♡');happy('shy');birdAudio.play(action,soundTicket);if(busy)return;busy=true;pendingPet??={birdId:bird.id,requestId:crypto.randomUUID()};try{const result=await accountRpc('pet',pendingPet,signal);pendingPet=null;liveAccount.wallet=await accountRpc('wallet',{},signal);if(alive){update();pageNotice(result.replayed?'已确认上次抚摸，未重复奖励':'小鸟收到你的陪伴，叽分 +1')}}catch(e){if(['REWARD_COOLDOWN','DAILY_LIMIT'].includes(e.code))pendingPet=null;if(alive)pageNotice(e.message)}finally{busy=false}return}
   }catch(e){if(alive)pageNotice(e.message)}
  },{signal});
  update();refreshAccount(signal).then(()=>{if(alive){update();loadOutfit()}}).catch(e=>{if(alive){say('本机记录暂时无法读取，请重试，不会覆盖已有缓存。');sheet('<h2>连接暂不可用</h2><p>'+esc(e.message)+'</p><button class="primary" data-action="retry">重新加载</button>')}});

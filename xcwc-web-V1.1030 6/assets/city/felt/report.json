@@ -1,0 +1,18 @@
+[
+  {
+    "file": "hero-960.webp",
+    "width": 960,
+    "height": 720,
+    "bytes": 151408,
+    "source": "exec-48a9a69e-cbbd-442f-bb6b-8290639c537c.png",
+    "quality": 84
+  },
+  {
+    "file": "cities-1200.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 283116,
+    "source": "exec-ac3d39dd-c8e0-4b8b-9af9-bc2979582f13.png",
+    "quality": 86
+  }
+]

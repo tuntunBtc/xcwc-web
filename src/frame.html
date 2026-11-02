@@ -1816,7 +1816,8 @@ html>body{padding:0}</style>
 
   const syncHostStyles = (globals) => {
     applyHostStyleVariables(globals?.visualizationStyleVariables);
-    const sandboxDocument = globalThis.frameElement?.ownerDocument;
+    // An opaque sandbox cannot inspect its parent's document in WebKit.
+    const sandboxDocument = document;
     if (sandboxDocument != null && globals?.visualizationTheme != null) {
       let colorSchemeMeta = sandboxDocument.querySelector(
         'meta[name="color-scheme"]',

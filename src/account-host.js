@@ -5,7 +5,7 @@
  const trusted=location.protocol==='https:'||['127.0.0.1','localhost','[::1]'].includes(location.hostname);
  __ADOPTION_ENTRY__
  const adoptionEntry=()=>parseAdoptionEntry(location.search);
- let observed=session()?.token||null,revision=0;
+ let observed=session()?.token||null,revision=0,resettingLocalData=false;
  const identity=()=>({account:session()?.username||null,revision});
  function changed(){const token=session()?.token||null;if(token===observed)return;observed=token;revision++;for(const c of pending.values())c.abort();frame?.contentWindow?.postMessage({channel:'xcwc-account-change',...identity()},'*');}
  window.addEventListener('resize',()=>frame?.contentWindow?.postMessage({channel:'xcwc-account-viewport',height:innerHeight},'*'));
@@ -27,6 +27,7 @@
   const m=event.data;if(event.source!==frame?.contentWindow||m?.channel!=='xcwc-account'||typeof m.id!=='string'||m.id.length>80)return;
   if(m.operation==='cancel'){pending.get(m.id)?.abort();return}changed();const c=new AbortController(),timer=setTimeout(()=>c.abort(),20000);pending.set(m.id,c);const a=m.args||{},start=revision,requestOwner=session()?.token;let value;
   try{
+   if(resettingLocalData&&!['resetLocalData','viewport','scrollTop'].includes(m.operation))throw Error('正在清除本机数据，请稍候');
    const localOps=['bootstrap','identity','adoptionMine','adoptionConfirm','wallet','ledger','wardrobe','pet','care','selectBird','redeem','equip'];
    if(localOps.includes(m.operation)){
     value=await window.xcwcGuestOperation(m.operation,a,async()=>{const entry=adoptionEntry();if(entry.error||a.code!==entry.code)throw Error('请确认当前实体小鸟链接');const bird=await api(adoptionLookupPath(entry.code),{signal:c.signal});if(!matchesAdoptionBird(entry.code,bird))throw Error('实体资料与链接不一致');return bird});
@@ -49,6 +50,11 @@
     case 'equip':value=await api('/birds/'+birdId(a.birdId)+'/skin',{method:'PUT',body:{skinId:a.skinId==null?null:skinId(a.skinId)},signal:c.signal});break;
     case 'cartRead':value={ids:readCart(),...identity()};break;
     case 'cartWrite':{if(!Array.isArray(a.ids)||a.ids.length>100||a.ids.some(x=>typeof x!=='string'||!/^[a-z0-9_-]{1,64}$/.test(x)))throw Error('购物车内容无效');localStorage.setItem(cartKey(),JSON.stringify([...new Set(a.ids)]));value={ids:readCart(),...identity()};break}
+    case 'resetLocalData':{
+     if(a.confirmation!=='CLEAR_LOCAL_EXPERIENCE')throw Error('请先确认清除全部本机数据');
+     resettingLocalData=true;for(const [id,request]of pending)if(id!==m.id)request.abort();
+     try{value=await window.xcwcResetLocalData()}catch(error){resettingLocalData=false;throw error}break;
+    }
     case 'login':{const page=['home','city','photo','shop','profile','wardrobe'].includes(a.page)?a.page:'home';if(a.context?.source==='nest'&&/^[a-f0-9]{32}$/.test(a.context.birdId||''))sessionStorage.setItem('xcwc.return-context',JSON.stringify({source:'nest',birdId:a.context.birdId,returnTo:'home'}));location.assign('/account.html?returnTo='+page);return}
     case 'logout':await api('/auth/logout',{method:'POST',signal:c.signal});window.xcwcSession.clear();changed();value=identity();break;
     case 'returnContext':{try{value=JSON.parse(sessionStorage.getItem('xcwc.return-context')||'null')}catch{value=null}sessionStorage.removeItem('xcwc.return-context');break}
@@ -56,7 +62,8 @@
     case 'viewport':value={top:Math.max(0,-frame.getBoundingClientRect().top),height:innerHeight};break;
     default:throw Error('未开放的账号操作');
    }
-   if((start!==revision||requestOwner!==session()?.token)&&!['logout','adoptionLogin','identity'].includes(m.operation))throw Error('账号已变化，请重新进入');frame.contentWindow.postMessage({channel:'xcwc-account-result',id:m.id,ok:true,value},'*');
+   if((start!==revision||requestOwner!==session()?.token)&&!['logout','adoptionLogin','identity','resetLocalData'].includes(m.operation))throw Error('账号已变化，请重新进入');frame.contentWindow.postMessage({channel:'xcwc-account-result',id:m.id,ok:true,value},'*');
+   if(m.operation==='resetLocalData'&&value?.cleared)setTimeout(()=>location.replace('/?page=profile'),150);
   }catch(e){frame.contentWindow?.postMessage({channel:'xcwc-account-result',id:m.id,ok:false,value:{code:e.code||'NETWORK_ERROR',message:e.name==='AbortError'?'请求已取消或超时，请重试':e.message}},'*')}
   finally{clearTimeout(timer);pending.delete(m.id)}
  });

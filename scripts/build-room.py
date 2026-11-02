@@ -60,7 +60,7 @@ frame = frame.replace("home:'小窝 · 点小鸟触摸互动；连续轻点可�
 checkin_assets = {}
 for file in (ROOT / 'src/checkin-assets').iterdir():
     if file.is_file():
-        checkin_assets[file.name] = (data_image('birds/huangying/happy-sticker-400.webp')
+        checkin_assets[file.name] = (data_image('nest/felt/emotions/happy-400.webp')
             if re.fullmatch(r'bird(?:-\d+)?\.png', file.name)
             else '__XCWC_ASSET_ORIGIN__/assets/checkin/' + file.name)
 checkin_css = (ROOT / 'src/checkin-page.css').read_text(encoding='utf-8')
@@ -68,7 +68,7 @@ for name, url in checkin_assets.items():
     checkin_css = checkin_css.replace('assets/' + name, url)
 template = (ROOT / 'src/checkin-template.html').read_text(encoding='utf-8')
 template = re.sub(r'src="assets/([^"]+)"', r'data-checkin-asset="\1"', template)
-app = (ROOT / 'src/checkin-page.js').read_text(encoding='utf-8')
+app = (ROOT / 'src/checkin-photo.js').read_text(encoding='utf-8') + '\n' + (ROOT / 'src/checkin-page.js').read_text(encoding='utf-8')
 for token, file in [('__CHECKIN_CLOUD__','checkin-cloud.js'),('__CHECKIN_GENERATE__','checkin-generate.js'),('__CHECKIN_INITIALIZE__','checkin-initialize.js'),('__CHECKIN_MODEL__','checkin-model.mjs')]:
     app = app.replace(token, (ROOT / 'src' / file).read_text(encoding='utf-8'))
 app = app.replace('export ', '')
@@ -130,6 +130,7 @@ shell = shell.replace('</body>', '<script>'+(ROOT/'src/account-session.js').read
 guest_host=(ROOT/'src/guest-host.js').read_text(encoding='utf-8').replace('__GUEST_MODEL__',(ROOT/'src/guest-store.mjs').read_text(encoding='utf-8').replace('export ',''))
 shell = shell.replace('</body>','<script>'+guest_host+'</script></body>',1)
 shell = shell.replace('</body>','<script>'+(ROOT/'src/guest-album.js').read_text(encoding='utf-8')+'</script></body>',1)
+shell = shell.replace('</body>','<script>'+(ROOT/'src/local-data-reset.js').read_text(encoding='utf-8')+'</script></body>',1)
 shell = shell.replace('</body>', '<script>' + (ROOT/'src/checkin-host.js').read_text(encoding='utf-8') + '</script></body>',1)
 shell=shell.replace('const initialGlobals = {', "if(new URLSearchParams(location.search).get('page')==='shop'){state={...state,privateContent:{...state?.privateContent,page:'shop',initialShop:true}};}\n  const initialGlobals = {",1)
 account_host=(ROOT/'src/account-host.js').read_text(encoding='utf-8').replace('__ADOPTION_ENTRY__',(ROOT/'src/adopt/entry.mjs').read_text(encoding='utf-8').replace('export ',''))

@@ -1,0 +1,38 @@
+[
+  {
+    "source": "exec-fe65d47e-9b39-4322-842d-c6dfe08c2155.png",
+    "file": "pill-v2-800.webp",
+    "size": [
+      800,
+      267
+    ],
+    "bytes": 56102
+  },
+  {
+    "source": "exec-9293a8e5-e933-48f1-9125-43cc2f05b816.png",
+    "file": "bubble-v2-500.webp",
+    "size": [
+      500,
+      263
+    ],
+    "bytes": 30362
+  },
+  {
+    "source": "exec-5edb5055-fcbd-4b53-b219-26b287625ef7.png",
+    "file": "tool-panel-v2-224.webp",
+    "size": [
+      224,
+      249
+    ],
+    "bytes": 17548
+  },
+  {
+    "source": "exec-148c5cde-de11-4c11-8d76-6e2c3b0a05b6.png",
+    "file": "hud-icons-v2-768.webp",
+    "size": [
+      768,
+      512
+    ],
+    "bytes": 66776
+  }
+]

@@ -1,0 +1,9 @@
+# 小窝互动卡片 V2
+
+`interaction-cards-v2.png`：本轮仅用于小窝底部喂食、添水、摸摸三个按钮的透明、无文字三列精灵图。字体、箭头、点击区域由原 HTML 控制，不把业务文案烘焙进图片。保留既有公共素材不覆盖。
+
+生成工具：内置 image_gen，通过 imagegen skill，以用户 2026-11-02 图一为风格和内容参考。原始生成文件保留在 Codex generated_images，本目录为正式源码引用的项目副本。
+
+生成提示词：
+
+> Use this reference ONLY to recreate its three BOTTOM INTERACTION CARDS as one production UI sprite sheet. Output exactly three separate equally sized cards in a single horizontal row, each centered in one equal-width cell with the same scale, perspective and margins. Outside the three cards fully transparent. No other part of the screenshot. NO TEXT, NO letters, NO symbols, NO chevrons. Warm hand-painted whimsical 3D cozy woodland bird game look closely matching reference. Each card has a light brown thick carved rounded wood frame, creamy parchment interior, small tasteful green leaves and tiny white flowers along frame, soft dimensional shadows, plus a curved blank cream label ribbon filling bottom 30 percent to hold live HTML text. Card one: round wooden bowl of colorful mixed seeds and grains with tiny wooden spoon. Card two: shallow blue turquoise ceramic water bowl with realistic clear blue water and a little lotus flower, matching reference. Card three: a fluffy vivid blue and ivory bird with RED face mask and closed happy eyes being gently stroked by a human hand; crop character portrait inside card, same character as main reference bird, no hat. Objects in upper 70 percent, label blank lower 30 percent. All three wood/cream card frames visually identical. Overall wide 3:1 canvas sprite sheet, exactly three identical equal-sized cells, card ratio about 1.4:1, generous 8 percent transparent horizontal gap within each cell, no overlap between cards, don't crop anything. This is actual web asset, not a screenshot or UI mockup.

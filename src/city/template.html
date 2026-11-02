@@ -1,16 +1,22 @@
-<main class="phone">
-<section class="hero">
-<header class="topbar"><button class="profile" data-action="profile"><img src="assets/birds/huangying/happy-avatar-192.webp" width="192" height="192" decoding="async" alt=""><span><strong>加载中</strong><small>和小鸟一起出发</small></span></button><button class="points" data-action="points"><span>✧</span><b>—</b> 叽分 <i>＋</i></button></header>
-<div class="hero-copy"><span class="eyebrow">A LITTLE BIRD, A BIG WORLD</span><h1>城市之旅<span>把喜欢的城市，<br>一点点收进回忆里。</span></h1><p>认领一只小鸟，开启一座城。</p></div>
-<img class="hero-bird" src="assets/birds/huangying/happy-hero-640.webp" width="640" height="526" decoding="async" alt="戴绿叶冠的小黄莺">
-<div class="journey-tag"><span>✿</span> 下一站，和你一起</div>
-</section>
-<section class="collection">
-<div class="section-heading"><div><span class="eyebrow">MY CITY COLLECTION</span><h2>我的城市手账 <span id="progress">1 / 6</span></h2></div><span class="stamp">沿途皆美好</span></div>
-<div class="progress-track"><div id="progress-bar"></div></div>
-<div class="tabs" role="tablist" aria-label="城市状态"><button role="tab" aria-selected="true" data-filter="all">全部城市 <small>6</small></button><button role="tab" aria-selected="false" data-filter="unlocked">已解锁 <small id="unlocked-count">1</small></button><button role="tab" aria-selected="false" data-filter="locked">未解锁 <small id="locked-count">5</small></button></div>
-<div class="grid" id="city-grid"></div><div class="empty" id="empty" hidden>✿<h3>旅程才刚刚开始</h3><p>认领城市小鸟后，记得回来开启城市。</p><button data-filter="all">看看全部城市</button></div>
-<p class="footnote">每一只小鸟，都藏着一座城的故事。<br><span>更多城市，正在飞来的路上 ···</span></p>
-</section>
-</main><dialog id="sheet"><div id="sheet-content"></div></dialog>
-<dialog id="success"><button class="close" data-action="close-success" aria-label="关闭">×</button><div class="success-picture"></div><div class="success-copy"><span class="eyebrow">A NEW CHAPTER BEGINS</span><h2 id="success-title"></h2><p>这一站，正式写进你的旅行手账。<br>城市已永久解锁。</p><button class="primary" data-action="close-success">收下这份美好</button></div></dialog>
+<main class="phone city-page">
+  <section class="hero" aria-label="城市之旅">
+    <button class="back" data-action="back" aria-label="返回小窝"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h12"/></svg></button>
+    <header class="topbar">
+      <button class="profile" data-action="profile" aria-label="查看我的小鸟"><img src="assets/nest/felt/emotions/happy-192.webp" width="192" height="174" decoding="async" alt=""><span><strong>我的小鸟</strong><small>和小鸟一起出发</small></span><i aria-hidden="true">›</i></button>
+      <button class="points" data-action="points" aria-label="查看本机叽分"><span aria-hidden="true">✦</span><b>—</b><small>叽分</small><i aria-hidden="true">＋</i></button>
+    </header>
+    <div class="hero-copy"><span class="eyebrow">A LITTLE BIRD, A BIG WORLD</span><h1>城市之旅<span aria-hidden="true">✿</span></h1><p class="hero-description">把喜欢的城市，<br>一点点收进回忆里。</p><p class="hero-rule">认领一只小鸟，开启一座城。</p></div>
+    <div class="journey-tag"><span aria-hidden="true">✿</span> 下一站，和你一起</div>
+  </section>
+  <section class="collection" aria-label="我的城市手账">
+    <div class="handbook">
+      <div class="section-heading"><div><span class="eyebrow">MY CITY COLLECTION</span><h2>我的城市手账 <span id="progress">— / 6</span></h2></div><span class="stamp" aria-hidden="true">沿途皆美好<span>✿</span></span></div>
+      <div class="progress-track" role="presentation"><div id="progress-bar"></div></div>
+    </div>
+    <div class="tabs" role="tablist" aria-label="城市状态"><button role="tab" aria-selected="true" data-filter="all">全部城市 <small>6</small></button><button role="tab" aria-selected="false" data-filter="unlocked">已解锁 <small id="unlocked-count">—</small></button><button role="tab" aria-selected="false" data-filter="locked">未解锁 <small id="locked-count">—</small></button></div>
+    <div class="grid" id="city-grid" aria-live="polite"></div>
+    <div class="empty" id="empty" hidden><span aria-hidden="true">✿</span><h3>旅程才刚刚开始</h3><p>领取城市小鸟后，再来记录这一站。</p><button data-filter="all">看看全部城市</button></div>
+    <p class="footnote">城市状态来自本机领取缓存 · 不代表云端购买权益</p>
+  </section>
+</main>
+<dialog id="sheet" aria-label="城市小鸟详情"><div id="sheet-content"></div></dialog>

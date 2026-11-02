@@ -30,9 +30,9 @@ function mountIntegrated(){if(s.page==='home')mountNest();if(s.page==='city')mou
     frame=frame.replace("referenceChrome();if(s.page==='shop')mountShop();}","referenceChrome();mountIntegrated();if(s.page==='shop')mountShop().catch(e=>pageNotice(e.message));}",1)
     start=frame.index('function referenceChrome(){');end=frame.index("root.addEventListener('click'",start)
     frame=frame[:start]+'''function referenceChrome(){
-window.parent.postMessage({channel:'xcwc-shop',operation:'layout',active:['home','city','shop','adopt','profile','wardrobe','flock'].includes(s.page)},'*');
-root.classList.remove('is-illustrated','is-travel','is-room');root.classList.toggle('is-integrated',['home','city','shop','adopt','profile','wardrobe','flock'].includes(s.page));
-const active=['flock','wardrobe'].includes(s.page)?'home':s.page;
+window.parent.postMessage({channel:'xcwc-shop',operation:'layout',active:['home','city','shop','adopt','photo','profile','wardrobe','flock'].includes(s.page)},'*');
+root.classList.remove('is-illustrated','is-travel','is-room');root.classList.toggle('is-integrated',['home','city','shop','adopt','photo','profile','wardrobe','flock'].includes(s.page));
+const active=['photo','flock','wardrobe'].includes(s.page)?'home':s.page;
 root.querySelector('.bottom').innerHTML=[['home','house','小窝'],['city','map','城市'],['shop','shopping-bag','商城'],['profile','user-round','我的']].map(([p,i,t])=>`<button data-go="${p}" class="${active===p?'active':''}" ${active===p?'aria-current="page"':''}>${ico(i)}<span>${t}</span></button>`).join('');
 if(globalThis.lucide)lucide.createIcons({attrs:{width:18,height:18}});
 }

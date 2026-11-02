@@ -6,7 +6,7 @@ const $=selector=>host.querySelector(selector);
 let birds=[];
 const presets=[{name:'清新自然',filter:'none'},{name:'暖阳胶片',filter:'sepia(.28) saturate(.85) contrast(.93)'},{name:'柔和风景',filter:'saturate(.75) brightness(1.09)'},{name:'黑白记忆',filter:'grayscale(1) contrast(.9)'}];
 const images=new Map(),landscape=new Image();landscape.crossOrigin='anonymous';landscape.src=checkinAssets['lake.jpg'];
-let selected=[],active=null,poses=arrangement(selected),style=0,photo=null,uploaded=false,busy=false,dirty=false,entries=[],examples=[],activeDownload='',uploadUrl='',uploadVersion=0,db=null,ready=false;
+let selected=[],active=null,poses=arrangement(selected),style=0,photo=null,uploaded=false,busy=false,readingPhoto=false,localMode=false,dirty=false,entries=[],examples=[],activeDownload='',uploadUrl='',uploadVersion=0,db=null,ready=false;
 // Use the image load lifecycle without requiring Image.decode() support.
 function loadImage(im){return new Promise((resolve,reject)=>{
  const loaded=()=>{cleanup();im.naturalWidth?resolve(im):reject(new Error('图片为空'));};
@@ -25,8 +25,8 @@ let imageReady=Promise.all([loadImage(landscape),...birds.map(b=>{const im=new I
 function toast(text){$('#ck-toast').textContent=text;$('#ck-toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#ck-toast').classList.remove('show'),3000)}
 function birdFor(id){return birds.find(b=>b.id===id)}
 function ratio(id){const im=images.get(id);return im?.naturalHeight/im?.naturalWidth||1}
-function eligible(){return ready&&authenticated&&uploaded&&selected.length>0&&dirty&&!busy}
-function syncGenerate(){const button=$('#ck-generate');button.disabled=!eligible();$('.generate-text').textContent=busy?'正在收藏回忆…':!selected.length?'先选一只小鸟':!uploaded?'上传照片，开启合照':!dirty?'已收藏，调整后再合照':'生成合照';$('#ck-points').textContent=balance}
+function eligible(){return ready&&authenticated&&uploaded&&selected.length>0&&dirty&&!busy&&!readingPhoto}
+function syncGenerate(){const button=$('#ck-generate');button.disabled=!eligible();$('.generate-text').textContent=busy?'正在收藏回忆…':readingPhoto?'正在处理照片…':!selected.length?'先选一只小鸟':!uploaded?'上传照片，开启合照':!dirty?'已收藏，调整后再合照':'生成合照';$('#ck-points').textContent=balance}
 function renderBirdList(){const nodes=birds.map(b=>{const button=document.createElement('button');button.type='button';button.dataset.birdId=b.id;button.className='bird-card'+(selected.includes(b.id)?' selected':'')+(!b.adopted?' locked':'');button.disabled=!b.adopted;button.setAttribute('aria-label',b.name+(b.adopted?'，已领养':'，未领养，已锁定'));if(b.adopted)button.setAttribute('aria-pressed',String(selected.includes(b.id)));const portrait=document.createElement('span');portrait.className='bird-portrait';const im=document.createElement('img');im.src=b.src;im.alt='';portrait.append(im);const badge=document.createElement('span');badge.className='bird-badge';badge.innerHTML=`<svg><use href="#ck-${b.adopted?'check':'lock'}"/></svg>`;portrait.append(badge);const title=document.createElement('strong');title.textContent=b.name;const sub=document.createElement('small');sub.textContent=b.adopted?'已领养':'未领养';button.append(portrait,title,sub);button.onclick=()=>{if(busy)return;const result=chooseBird(selected,b.id,birds);if(result.error)return toast(result.error);selected=result.selected;poses=arrangement(selected);active=selected.at(-1)||null;renderBirdList();update()};return button});$('#ck-birdList').replaceChildren(...nodes);$('#ck-selectedCount').textContent=selected.length;$('#ck-selectedSummary').textContent=selected.length?'已选 '+selected.map(id=>birdFor(id).name).join('、'):'选一位小伙伴，一起出发吧'}
 $('#ck-styles').innerHTML=presets.map((p,i)=>`<button class="style ${i===0?'selected':''}" data-style="${i}" aria-label="${p.name}" aria-pressed="${i===0}"><span class="style-thumb" style="filter:${p.filter}"><img src="${checkinAssets['bird-0.png']}" alt=""></span><span>${p.name}</span><i>✓</i></button>`).join('');
 $('#ck-styles').onclick=e=>{if(busy)return;const b=e.target.closest('button');if(!b)return;style=Number(b.dataset.style);host.querySelectorAll('.style').forEach((el,i)=>{el.classList.toggle('selected',i===style);el.setAttribute('aria-pressed',String(i===style))});update()};
@@ -37,17 +37,27 @@ function syncSelection(){const box=$('#ck-birdSelection');box.hidden=!active||!p
 function setSize(value){if(!active||busy)return;poses[active].size=Math.max(12,Math.min(55,Number(value)));update()}
 $('#ck-size').oninput=e=>setSize(e.target.value);$('#ck-smaller').onclick=()=>setSize(poses[active]?.size-3);$('#ck-larger').onclick=()=>setSize(poses[active]?.size+3);$('#ck-resetBird').onclick=()=>{if(busy)return;poses=arrangement(selected);update()};$('#ck-location').oninput=()=>{if(!busy)update()};
 async function upload(file){
- if(busy||!file)return;
+ if(busy||readingPhoto||!file)return;
  const token=++uploadVersion;let url='';
  try{
-  if(!photoTypeAllowed(file))return toast('请选择 JPG、PNG、WEBP 或苹果 HEIC 照片');
+  const heic=await isCheckinHeic(file);
+  if(!photoTypeAllowed(file)&&!heic)return toast('请选择手机拍摄的照片或 JPG、PNG、WEBP 图片');
   if(file.size>15*1024*1024)return toast('照片超过 15 MB，换一张小一点的吧');
+  readingPhoto=true;$('#ck-file').disabled=true;syncGenerate();
   toast('正在读取照片…');
   url=rememberUrl(URL.createObjectURL(file));let im=new Image();im.src=url;
   try{await loadImage(im);}catch{
    // A data URL also works in iOS containers that fail to display file blob URLs.
    const data=await photoDataUrl(file);if(destroyed||token!==uploadVersion)return;
-   im=new Image();im.src=data;await loadImage(im);
+   im=new Image();im.src=data;
+   try{await loadImage(im);}catch(error){
+    if(!heic)throw error;
+    toast('正在本机处理苹果照片，请稍候…');
+    const converted=await convertCheckinHeic(file);if(destroyed||token!==uploadVersion)return;
+    URL.revokeObjectURL(url);ownedUrls.delete(url);
+    url=rememberUrl(URL.createObjectURL(converted));im=new Image();im.src=url;
+    try{await loadImage(im);}catch{im=new Image();im.src=await photoDataUrl(converted);await loadImage(im);}
+   }
   }
   await imageReady;if(destroyed||token!==uploadVersion)return;
   if(uploadUrl){URL.revokeObjectURL(uploadUrl);ownedUrls.delete(uploadUrl);}
@@ -55,16 +65,16 @@ async function upload(file){
   $('#ck-uploadThumb').src=im.src;$('#ck-uploadThumb').hidden=false;
   $('#ck-dropzone').classList.add('has-image');$('.replace').hidden=false;$('#ck-editor').open=true;
   update();toast('照片就位！可以拖动每只小鸟调整位置');
- }catch{
-  if(!destroyed&&token===uploadVersion)toast('照片没能打开，请尝试选择 JPG 照片或截图后重试');
+ }catch(error){
+  if(!destroyed&&token===uploadVersion)toast(error.message?.includes('组件加载失败')?error.message:'照片没能打开，可能文件损坏或格式暂不支持，请换一张照片重试');
  }finally{
   if(url){URL.revokeObjectURL(url);ownedUrls.delete(url);}
-  if(!destroyed&&token===uploadVersion)$('#ck-file').value='';
+  if(!destroyed&&token===uploadVersion){readingPhoto=false;$('#ck-file').disabled=false;$('#ck-file').value='';syncGenerate();}
  }
 }
 $('#ck-file').onchange=e=>upload(e.target.files[0]);$('#ck-dropzone').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();if(!busy)$('#ck-file').click()}};$('#ck-dropzone').onclick=e=>{if(busy)e.preventDefault()};for(const ev of ['dragenter','dragover'])$('#ck-dropzone').addEventListener(ev,e=>{e.preventDefault();$('#ck-dropzone').classList.add('drag')});for(const ev of ['dragleave','drop'])$('#ck-dropzone').addEventListener(ev,e=>{e.preventDefault();$('#ck-dropzone').classList.remove('drag');if(ev==='drop')upload(e.dataTransfer.files[0])});
 function formatDate(time){const d=new Date(time);return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`}
-function renderGallery(){entries=sortedMemories(entries);const display=entries;$('#ck-gallery').replaceChildren(...display.map(entry=>{const b=document.createElement('button');b.className='memory';const img=document.createElement('img');img.src=entry.image;img.alt=entry.label+'的合照';img.loading='lazy';const body=document.createElement('span');body.className='memory-body';const title=document.createElement('strong');title.textContent=entry.label;const meta=document.createElement('span');meta.className='memory-meta';const date=document.createElement('time');date.dateTime=new Date(entry.createdAt).toISOString();date.textContent=formatDate(entry.createdAt);const badge=document.createElement('small');badge.textContent=entry.example?'示例':entry.reward===1?'+1 叽分':'已收藏';meta.append(date,badge);body.append(title,meta);b.append(img,body);b.onclick=()=>{activeDownload=entry.image;$('#ck-viewerImage').src=entry.image;$('#ck-viewerMeta').textContent=entry.label+' · '+new Date(entry.createdAt).toLocaleString('zh-CN',{hour12:false});activeWorkId=entry.id;showViewer().then(async()=>{const id=entry.id;const detail=await rpc('detail',{id});if(!destroyed&&activeWorkId===id)$('#ck-viewerMeta').textContent=detail.label+' · '+new Date(detail.createdAt).toLocaleString('zh-CN',{hour12:false});}).catch(error=>{if(!destroyed)toast(error.message)})};return b}));$('#ck-albumCount').textContent=albumTotal;$('#ck-albumFoot').textContent=entries.length?'最新的回忆排在最前面 · 已保存到你的账号':'还没有合照，和小鸟一起收藏第一张回忆吧';syncGenerate()}
+function renderGallery(){entries=sortedMemories(entries);const display=entries;$('#ck-gallery').replaceChildren(...display.map(entry=>{const b=document.createElement('button');b.className='memory';const img=document.createElement('img');img.src=entry.image;img.alt=entry.label+'的合照';img.loading='lazy';const body=document.createElement('span');body.className='memory-body';const title=document.createElement('strong');title.textContent=entry.label;const meta=document.createElement('span');meta.className='memory-meta';const date=document.createElement('time');date.dateTime=new Date(entry.createdAt).toISOString();date.textContent=formatDate(entry.createdAt);const badge=document.createElement('small');badge.textContent=entry.example?'示例':entry.reward===1?'+1 叽分':'已收藏';meta.append(date,badge);body.append(title,meta);b.append(img,body);b.onclick=()=>{activeDownload=entry.image;$('#ck-viewerImage').src=entry.image;$('#ck-viewerMeta').textContent=entry.label+' · '+new Date(entry.createdAt).toLocaleString('zh-CN',{hour12:false});activeWorkId=entry.id;showViewer().then(async()=>{const id=entry.id;const detail=await rpc('detail',{id});if(!destroyed&&activeWorkId===id)$('#ck-viewerMeta').textContent=detail.label+' · '+new Date(detail.createdAt).toLocaleString('zh-CN',{hour12:false});}).catch(error=>{if(!destroyed)toast(error.message)})};return b}));$('#ck-albumCount').textContent=albumTotal;$('#ck-albumFoot').textContent=entries.length?(localMode?'最新的回忆排在最前面 · 已保存在本机相册':'最新的回忆排在最前面 · 已保存到你的账号'):'还没有合照，和小鸟一起收藏第一张回忆吧';syncGenerate()}
 __CHECKIN_GENERATE__
 async function download(src){try{const image=src.startsWith('blob:')?await readBlob(src):await rpc('image',{id:src});await rpc('download',{image});}catch(error){toast(error.message)}}
 $('#ck-download').onclick=()=>{if(ready)$('#ck-preview').toBlob(blob=>rpc('download',{image:blob}).catch(e=>toast(e.message)),'image/jpeg',.95)};$('.close').onclick=()=>$('#ck-viewer').close();$('#ck-viewer').onclick=e=>{if(e.target===$('#ck-viewer'))$('#ck-viewer').close()};$('.viewer-download').onclick=()=>download(activeDownload);$('#ck-viewAll').onclick=async()=>{try{if(nextCursor){await loadAlbum(true);$('#ck-gallery').classList.add('expanded');$('#ck-viewAll').textContent=nextCursor?'查看更多 ↗':'收起 ↙';}else{const expanded=$('#ck-gallery').classList.toggle('expanded');$('#ck-viewAll').textContent=expanded?'收起 ↙':'查看全部 ↗';}}catch(e){toast(e.message)}};
