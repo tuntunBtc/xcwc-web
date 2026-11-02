@@ -1,0 +1,20 @@
+<section class="adoption-page" aria-label="领养城市小鸟">
+  <header class="page-header"><button type="button" data-action="back" aria-label="返回小窝">‹</button><span>领养小鸟</span><button type="button" data-action="help" aria-label="领取说明">?</button></header>
+  <section class="hero" aria-label="城市小鸟相遇插画">
+    <div class="artboard"><img src="assets/adopt/westlake-scene.webp" alt="花木与西湖插画中，一只斗笠小鸟探出蛋壳" class="hero-art">
+      <p class="recognition" role="status" data-role="recognition">NFC 正在识别小鸟</p>
+      <h1>领养你的<br>城市小鸟</h1>
+      <p class="ribbon" data-role="ribbon">把一份小小的陪伴，带回家。</p>
+      <div class="scroll"><span class="scroll-eyebrow">城市小鸟</span><h2 data-role="hero-name">等待相遇</h2><p data-role="hero-city">来自远方的伙伴</p><span class="scroll-rule"></span><p class="scroll-copy">来自杭州西湖的小旅鸟，喜欢湖风、花影和慢慢逛城，是你城市旅行的好伙伴。</p></div>
+          <section class="identity-card"><div class="section-heading"><h2>这次相遇的小鸟</h2><span data-role="identity-state">等待识别</span></div><dl class="attributes"><div><dt>所属城市</dt><dd data-role="city">—</dd></div><div><dt>小鸟款式</dt><dd data-role="type">—</dd></div><div><dt>出厂皮肤</dt><dd data-role="skin">—</dd></div></dl><details><summary>小鸟身份<span data-role="code-suffix">查看编号</span></summary><p class="entity-code" data-role="code">未提供小鸟编码</p><p>属性由实体资料确定，不能在此修改。</p></details></section><div class="traits" aria-label="小鸟性格属性"><span class="trait-label">性格<br>属性</span><span class="trait-gentle">温柔治愈</span><span class="trait-travel">热爱旅行</span><span class="trait-curious">好奇探索</span></div>
+    </div>
+  </section>
+  <div class="adoption-content">
+
+    <form class="nickname-form" novalidate><div class="section-heading"><label for="adoption-name">给小鸟取个名字吧～</label></div><div class="nickname-field"><input id="adoption-name" name="nickname" maxlength="12" autocomplete="off" placeholder="请输入 1～6 个字" aria-describedby="name-hint"><button type="button" data-action="random"><span aria-hidden="true">🎲</span> 随机取名</button></div><p id="name-hint">给这位城市旅伴一个专属名字。</p><p class="validation" role="alert" hidden></p><button class="primary" type="button" data-action="confirm" disabled><span aria-hidden="true">🥚</span> 孵化并领养 <span aria-hidden="true">›</span></button><p class="action-note" data-role="action-note">确认后即可开启和小鸟的陪伴旅程。</p></form>
+    <section class="service-message" role="status" aria-live="polite" hidden><h2 data-role="message-title"></h2><p data-role="message-copy"></p><button class="secondary" type="button" data-action="retry" hidden>重新读取资料</button><button class="secondary" type="button" data-action="home" hidden>回到我的小窝</button></section>
+    <footer>每个账号独立陪伴，同一账号不重复领取。<br>获得鸟蛋后，可前往城市页手动解锁对应城市。</footer>
+  </div>
+  <dialog id="adoption-login" aria-labelledby="adoption-login-title"><button class="close" type="button" data-action="close-login" aria-label="关闭登录框">×</button><span class="eyebrow">让相遇有个归处</span><h2 id="adoption-login-title">登录，把它带回小窝。</h2><p>名字和这只小鸟都会留在这里，登录后再确认领养。</p><form class="login-form"><label for="adoption-username">账号</label><input id="adoption-username" name="username" autocomplete="username" pattern="[a-z0-9_]{4,32}" minlength="4" maxlength="32" required><label for="adoption-password">密码</label><input id="adoption-password" name="password" type="password" autocomplete="current-password" minlength="10" maxlength="72" required><p class="login-error" role="alert"></p><button class="primary" type="button" name="mode" value="login">登录并返回</button><button class="secondary" type="button" name="mode" value="register">注册并登录</button></form></dialog>
+  <dialog id="adoption-info" aria-labelledby="adoption-info-title"><button class="close" type="button" data-action="close-info" aria-label="关闭说明">×</button><h2 id="adoption-info-title"></h2><p data-role="info-copy"></p><button class="primary" type="button" data-action="close-info">知道啦</button></dialog>
+</section>

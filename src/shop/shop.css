@@ -6,3 +6,14 @@
 .app{min-height:0}:host:before{display:none}
 
 .overlay{position:fixed;inset:0}.app{padding-bottom:12px}
+:host{--paper:var(--xcwc-paper,#faf5e9);--ink:var(--xcwc-ink,#443c2c);--green:var(--xcwc-green,#52694a);--muted:var(--xcwc-muted,#98907c);background:var(--xcwc-paper,#faf5e9)}.card{border-radius:var(--xcwc-card-radius,14px)}
+
+/* Shared warm-paper finish, preserving each scene and layout. */
+:host{--ink:#534027;--muted:#8b785b;--green:#667b43;--paper:#fff7e6}
+button{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible{outline:3px solid #84934d;outline-offset:3px}
+.hud .identity,.hud .wallet{box-shadow:0 3px 12px #573f2226;border-color:#ecd7ad}
+@media(hover:hover){button:not(:disabled):hover{filter:brightness(1.025)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+/* Mobile readability and comfortable tap targets. */
+.masthead{height:64px;padding-inline:18px}.toolbar{padding-inline:16px}.products{padding-inline:16px;gap:16px 12px}.filter{min-height:42px}.card{border-radius:18px;box-shadow:0 4px 14px #71512b12}.card h2{font-size:16px}.description{font-size:12px;line-height:1.6}.egg{font-size:10px;line-height:1.5}.add{width:40px;height:40px}.close{min-width:44px;min-height:44px}.intro p{font-size:12px;line-height:1.7}

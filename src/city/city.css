@@ -2,3 +2,14 @@
 
 :host{display:block;min-height:0;margin:0;padding:0;width:100%;background:#fff7e6;gap:0}.phone{width:100%;max-width:none;margin:0;border:0;border-radius:0;box-shadow:none}.bottom,.bottom-nav,.preview-controls,.desktop-note,.design-note{display:none!important}[hidden]{display:none!important}dialog{position:absolute;max-height:calc(100vh - 48px);overflow:auto;margin:0 auto}button:disabled{opacity:.55;cursor:default}.service-note{font-size:11px;line-height:1.8;padding:10px 14px;color:#85765c;background:#fff8e9}.retry{min-height:44px;padding:8px 15px;border-radius:10px;background:#62794a;color:#fffbea}
 :host{height:auto;max-width:480px}.collection{padding-bottom:26px}.profile strong{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.status-unknown{font-size:10px;color:#8b785e;text-align:center}.bird-row img{object-fit:contain}.city-card:disabled{opacity:1}
+:host{--ink:var(--xcwc-ink,#4b3726);--muted:var(--xcwc-muted,#93806b);--green:var(--xcwc-green,#4e6845);--paper:var(--xcwc-paper,#fbf3e2);background:var(--xcwc-paper,#fbf3e2)}.city-card{border-radius:var(--xcwc-card-radius,14px)}
+
+/* Shared warm-paper finish, preserving each scene and layout. */
+:host{--ink:#534027;--muted:#8b785b;--green:#667b43;--paper:#fff7e6}
+button{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible{outline:3px solid #84934d;outline-offset:3px}
+.hud .identity,.hud .wallet{box-shadow:0 3px 12px #573f2226;border-color:#ecd7ad}
+@media(hover:hover){button:not(:disabled):hover{filter:brightness(1.025)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+/* Mobile readability and comfortable tap targets. */
+.tabs button{min-height:44px}.city-card{border-radius:18px;box-shadow:0 4px 14px #71512b16}.city-card:focus-visible{outline:3px solid #84934d;outline-offset:3px}

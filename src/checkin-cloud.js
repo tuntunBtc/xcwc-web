@@ -1,3 +1,4 @@
+let activeWorkId=null;
 let historyVersion=0,destroyed=false,authenticated=false,balance=0,nextCursor=null,albumTotal=0,originalFile=null,pendingSubmission=null;
 const ownedUrls=new Set(),albumUrls=new Map(),rpcController=new AbortController();
 const rememberUrl=url=>{ownedUrls.add(url);return url;};

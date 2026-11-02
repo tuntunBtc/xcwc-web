@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <title>燕叽 · 实体小鸟登记</title>
+  <link rel="stylesheet" href="/preview/registration.css">
+</head>
+<body>
+  <main class="registration">
+    <header><a href="/">← 本地养鸟演示</a><span>YANJI · 云端登记</span><a id="xcwc-return" href="/?page=photo">返回应用 →</a></header>
+    <h1>给小鸟，一个家。</h1>
+    <p>扫描小鸟二维码或碰触 NFC 后，在这里登记你的实体小鸟。</p>
+    <section id="bird-panel" aria-live="polite"><p>正在连接登记服务…</p></section>
+    <section class="card" id="auth-panel">
+      <h2>先认识你</h2>
+      <p>此处使用独立账号，不是微信授权。请保存账号和密码；首版没有密码找回功能，不要使用其他平台的常用密码。</p>
+      <form id="auth-form">
+        <label for="username">账号（4～32 位小写字母、数字或下划线）</label>
+        <input id="username" name="username" autocomplete="username" pattern="[a-z0-9_]{4,32}" minlength="4" maxlength="32" required>
+        <label for="password">密码（至少 10 位，最多 72 个 UTF-8 字节）</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" minlength="10" maxlength="72" required>
+        <div class="actions"><button type="submit" name="mode" value="login">登录</button><button type="submit" name="mode" value="register" class="secondary">注册并登录</button></div>
+      </form>
+    </section>
+    <section class="card" id="account-panel" hidden><h2 id="account-name"></h2><p>登录状态在本浏览器保留至会话到期，最长 7 天。主动退出或会话失效后需要重新登录。</p><button id="logout" class="secondary">退出登录</button></section>
+    <section class="card" id="claim-panel" hidden>
+      <h2>登记这只小鸟</h2>
+      <form id="claim-form">
+        <label for="bird-name">给它取个名字（1～6 个字）</label><input id="bird-name" name="name" maxlength="12" value="燕叽">
+        <button type="submit">确认认领</button>
+      </form>
+      <p>确认后免费领养并立即孵化；同一账号不会重复领取。</p>
+    </section>
+    <p id="notice" role="status" aria-live="polite"></p>
+    <section id="mine-panel" class="card" hidden><h2>我登记的小鸟</h2><div id="mine-list"></div></section>
+    <section id="points-panel" class="card" hidden>
+      <h2>陪伴叽分 · <span id="points-balance">加载中…</span></h2>
+      <p id="points-rules"></p>
+      <h3>皮肤小铺</h3><p>首批皮肤为装饰光晕，保留原小鸟形象。解锁后可供账号内所有小鸟穿戴。</p><div id="skin-shop"></div>
+      <h3>最近 50 条叽分流水</h3><div id="points-history"></div>
+    </section>
+    <footer>此页真实保存领养关系；首页喂养、步数和开蛋仍是独立的本地演示，暂未与云端养成同步。请仅通过可信 HTTPS 链接登录和确认领养。</footer>
+  </main>
+  <script src="/preview/session.js"></script><script type="module" src="/preview/registration.js"></script>
+<script src="/preview/return.js"></script></body>
+</html>

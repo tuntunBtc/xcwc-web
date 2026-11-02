@@ -24,15 +24,14 @@
         <div class="actions"><button type="submit" name="mode" value="login">登录</button><button type="submit" name="mode" value="register" class="secondary">注册并登录</button></div>
       </form>
     </section>
-    <section class="card" id="account-panel" hidden><h2 id="account-name"></h2><p>本次登录仅保存在当前浏览器标签会话中。关闭后可凭账号密码重新登录，登记关系仍保存在服务器。</p><button id="logout" class="secondary">退出登录</button></section>
+    <section class="card" id="account-panel" hidden><h2 id="account-name"></h2><p>登录状态在本浏览器保留至会话到期，最长 7 天。主动退出或会话失效后需要重新登录。</p><button id="logout" class="secondary">退出登录</button></section>
     <section class="card" id="claim-panel" hidden>
       <h2>登记这只小鸟</h2>
       <form id="claim-form">
-        <label for="claim-code">包装内隐藏领养码</label><input id="claim-code" name="code" pattern="[0-9a-fA-F]{32}" maxlength="32" autocomplete="off" required>
-        <label for="bird-name">给它取个名字</label><input id="bird-name" name="name" maxlength="12" value="燕叽">
+        <label for="bird-name">给它取个名字（1～6 个字）</label><input id="bird-name" name="name" maxlength="12" value="燕叽">
         <button type="submit">确认认领</button>
       </form>
-      <p>公开二维码和 NFC 只识别小鸟，不能替代包装内的领养凭证。</p>
+      <p>确认后免费领养并立即孵化；同一账号不会重复领取。</p>
     </section>
     <p id="notice" role="status" aria-live="polite"></p>
     <section id="mine-panel" class="card" hidden><h2>我登记的小鸟</h2><div id="mine-list"></div></section>
@@ -42,7 +41,7 @@
       <h3>皮肤小铺</h3><p>首批皮肤为装饰光晕，保留原小鸟形象。解锁后可供账号内所有小鸟穿戴。</p><div id="skin-shop"></div>
       <h3>最近 50 条叽分流水</h3><div id="points-history"></div>
     </section>
-    <footer>此页真实保存领养关系；首页喂养、步数和开蛋仍是独立的本地演示，暂未与云端养成同步。请仅通过可信 HTTPS 链接提交账号和领养码。</footer>
+    <footer>此页真实保存领养关系；首页喂养、步数和开蛋仍是独立的本地演示，暂未与云端养成同步。请仅通过可信 HTTPS 链接登录和确认领养。</footer>
   </main>
   <script type="module" src="/preview/registration.js"></script>
 </body>
