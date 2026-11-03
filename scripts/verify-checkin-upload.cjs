@@ -7,7 +7,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
  for(const engine of (process.env.XCWC_BROWSER==='webkit'?[webkit]:[chromium,...(fs.existsSync(webkit.executablePath())?[webkit]:[])])){
  const browser=await engine.launch({headless:true,...(engine===chromium?{executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
  try{
- const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const errors=[],decoderRequests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/vendor/heic-to-'))decoderRequests.push(r.url());});
+ const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const errors=[],decoderRequests=[],photoNetwork=[];page.on('request',r=>{if(/\/api\/(?:me\/)?checkins(?:[/?]|$)/.test(r.url())||!['GET','HEAD'].includes(r.method()))photoNetwork.push(r.method()+' '+r.url());});page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/vendor/heic-to-'))decoderRequests.push(r.url());});
  await page.addInitScript(()=>{HTMLImageElement.prototype.decode=()=>Promise.reject(Error('decode unavailable'));});
  await page.goto(base,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>!!window.xcwcGuest);
@@ -53,7 +53,24 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
  await frame.locator('#ck-generate').click();try{await frame.locator('#ck-albumCount').filter({hasText:'1'}).waitFor();}catch(error){console.error('SAVE DIAGNOSTICS',await frame.locator('#ck-toast').textContent(),await frame.locator('.section-desc').textContent(),errors);throw error;}
  await page.reload({waitUntil:'domcontentloaded'});await frame.locator('#ck-albumCount').filter({hasText:'1'}).waitFor();
  await frame.locator('.memory').first().click();await frame.locator('#ck-viewer[open]').waitFor();const viewerBox=await frame.locator('#ck-viewer').boundingBox();assert(viewerBox&&viewerBox.y>=0&&viewerBox.y+viewerBox.height<=844,'album dialog stays within mobile viewport');assert(await frame.locator('#ck-viewerImage').evaluate(im=>im.complete&&im.naturalWidth>0));await frame.locator('#ck-viewer .close').click();
- assert.deepEqual(errors,[]);console.log('PASS '+engine.name()+': native chooser, real HEIC local decode, header sniffing, lazy decoder, MIME variants, FileReader fallback, corrupt file, retry, save/reload');
+ // Export the stored image through the host Blob URL without a server request.
+ await frame.locator('.memory').first().click();await frame.locator('#ck-viewer[open]').waitFor();
+ const downloaded=page.waitForEvent('download');await frame.locator('.viewer-download').click();
+ const download=await downloaded;assert.equal(await download.failure(),null);assert.match(download.url(),/^blob:/);
+ await frame.locator('#ck-viewer .close').click();
+ // Missing local storage must report failure, never fall back to cloud photo APIs.
+ await page.evaluate(()=>{window.xcwcLocalAlbum=undefined;});
+ for(const operation of ['create','history','image','original']){
+  const failure=await file.evaluate((el,op)=>new Promise((resolve,reject)=>{
+   const id='local-album-probe-'+op;
+   const timer=setTimeout(()=>{window.removeEventListener('message',receive);reject(Error('local album probe timed out'));},5000);
+   function receive(event){if(event.source!==window.parent||event.data?.channel!=='xcwc-checkin-result'||event.data.id!==id)return;clearTimeout(timer);window.removeEventListener('message',receive);resolve(event.data.value?.code);}
+   window.addEventListener('message',receive);window.parent.postMessage({channel:'xcwc-checkin',id,operation:op,args:{}},'*');
+  }),operation);
+  assert.equal(failure,'LOCAL_ALBUM_UNAVAILABLE');
+ }
+ assert.deepEqual(photoNetwork,[],'choosing, converting, saving, reading and downloading photos never use server photo APIs or network writes');
+ assert.deepEqual(errors,[]);console.log('PASS '+engine.name()+': native chooser, real HEIC local decode, header sniffing, lazy decoder, MIME variants, FileReader fallback, corrupt file, retry, save/reload, local Blob download, no photo network traffic or cloud fallback');
  }finally{await browser.close();}
  }
 })().catch(error=>{console.error(error);process.exitCode=1});

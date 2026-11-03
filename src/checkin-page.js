@@ -5,7 +5,7 @@ __CHECKIN_MODEL__
 const $=selector=>host.querySelector(selector);
 let birds=[];
 const presets=[{name:'清新自然',filter:'none'},{name:'暖阳胶片',filter:'sepia(.28) saturate(.85) contrast(.93)'},{name:'柔和风景',filter:'saturate(.75) brightness(1.09)'},{name:'黑白记忆',filter:'grayscale(1) contrast(.9)'}];
-const images=new Map(),landscape=new Image();landscape.crossOrigin='anonymous';landscape.src=checkinAssets['lake.jpg'];
+const images=new Map(),landscape=new Image();
 let selected=[],active=null,poses=arrangement(selected),style=0,photo=null,uploaded=false,busy=false,readingPhoto=false,localMode=false,dirty=false,entries=[],examples=[],activeDownload='',uploadUrl='',uploadVersion=0,db=null,ready=false;
 // Use the image load lifecycle without requiring Image.decode() support.
 function loadImage(im){return new Promise((resolve,reject)=>{
@@ -21,12 +21,21 @@ function photoTypeAllowed(file){
  ((!type||type==='application/octet-stream')&&/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name||''));
 }
 function photoDataUrl(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reader.onabort=()=>reject(new Error('照片读取失败'));reader.readAsDataURL(file);});}
-let imageReady=Promise.all([loadImage(landscape),...birds.map(b=>{const im=new Image();images.set(b.id,im);im.src=b.src;return loadImage(im)})]);
+async function loadCheckinAsset(im,key){
+ try{
+  // The host fetches only allowlisted public assets with its same origin.
+  // A local Blob avoids requiring CORS headers for the opaque sandbox canvas.
+  const blob=await rpc('canvasAsset',{key});if(destroyed)throw Error('页面已离开');
+  im.src=rememberUrl(URL.createObjectURL(blob));return await loadImage(im);
+ }catch{throw Object.assign(new Error('合照素材加载失败，请刷新页面后重试'),{code:'CHECKIN_ASSET_FAILED'});}
+}
+// Initialize owns asset loading and its errors; do not start an unobserved promise here.
+let imageReady=Promise.resolve();
 function toast(text){$('#ck-toast').textContent=text;$('#ck-toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#ck-toast').classList.remove('show'),3000)}
 function birdFor(id){return birds.find(b=>b.id===id)}
 function ratio(id){const im=images.get(id);return im?.naturalHeight/im?.naturalWidth||1}
 function eligible(){return ready&&authenticated&&uploaded&&selected.length>0&&dirty&&!busy&&!readingPhoto}
-function syncGenerate(){const button=$('#ck-generate');button.disabled=!eligible();$('.generate-text').textContent=busy?'正在收藏回忆…':readingPhoto?'正在处理照片…':!selected.length?'先选一只小鸟':!uploaded?'上传照片，开启合照':!dirty?'已收藏，调整后再合照':'生成合照';$('#ck-points').textContent=balance}
+function syncGenerate(){const button=$('#ck-generate');button.disabled=!eligible();$('.generate-text').textContent=busy?'正在收藏回忆…':readingPhoto?'正在处理照片…':!selected.length?'先选一只小鸟':!uploaded?'选择照片，开启合照':!dirty?'已收藏，调整后再合照':'生成合照';$('#ck-points').textContent=balance}
 function renderBirdList(){const nodes=birds.map(b=>{const button=document.createElement('button');button.type='button';button.dataset.birdId=b.id;button.className='bird-card'+(selected.includes(b.id)?' selected':'')+(!b.adopted?' locked':'');button.disabled=!b.adopted;button.setAttribute('aria-label',b.name+(b.adopted?'，已领养':'，未领养，已锁定'));if(b.adopted)button.setAttribute('aria-pressed',String(selected.includes(b.id)));const portrait=document.createElement('span');portrait.className='bird-portrait';const im=document.createElement('img');im.src=b.src;im.alt='';portrait.append(im);const badge=document.createElement('span');badge.className='bird-badge';badge.innerHTML=`<svg><use href="#ck-${b.adopted?'check':'lock'}"/></svg>`;portrait.append(badge);const title=document.createElement('strong');title.textContent=b.name;const sub=document.createElement('small');sub.textContent=b.adopted?'已领养':'未领养';button.append(portrait,title,sub);button.onclick=()=>{if(busy)return;const result=chooseBird(selected,b.id,birds);if(result.error)return toast(result.error);selected=result.selected;poses=arrangement(selected);active=selected.at(-1)||null;renderBirdList();update()};return button});$('#ck-birdList').replaceChildren(...nodes);$('#ck-selectedCount').textContent=selected.length;$('#ck-selectedSummary').textContent=selected.length?'已选 '+selected.map(id=>birdFor(id).name).join('、'):'选一位小伙伴，一起出发吧'}
 $('#ck-styles').innerHTML=presets.map((p,i)=>`<button class="style ${i===0?'selected':''}" data-style="${i}" aria-label="${p.name}" aria-pressed="${i===0}"><span class="style-thumb" style="filter:${p.filter}"><img src="${checkinAssets['bird-0.png']}" alt=""></span><span>${p.name}</span><i>✓</i></button>`).join('');
 $('#ck-styles').onclick=e=>{if(busy)return;const b=e.target.closest('button');if(!b)return;style=Number(b.dataset.style);host.querySelectorAll('.style').forEach((el,i)=>{el.classList.toggle('selected',i===style);el.setAttribute('aria-pressed',String(i===style))});update()};
@@ -66,7 +75,7 @@ async function upload(file){
   $('#ck-dropzone').classList.add('has-image');$('.replace').hidden=false;$('#ck-editor').open=true;
   update();toast('照片就位！可以拖动每只小鸟调整位置');
  }catch(error){
-  if(!destroyed&&token===uploadVersion)toast(error.message?.includes('组件加载失败')?error.message:'照片没能打开，可能文件损坏或格式暂不支持，请换一张照片重试');
+  if(!destroyed&&token===uploadVersion)toast(error.code==='CHECKIN_ASSET_FAILED'||error.message?.includes('组件加载失败')?error.message:'照片没能打开，可能文件损坏或格式暂不支持，请换一张照片重试');
  }finally{
   if(url){URL.revokeObjectURL(url);ownedUrls.delete(url);}
   if(!destroyed&&token===uploadVersion){readingPhoto=false;$('#ck-file').disabled=false;$('#ck-file').value='';syncGenerate();}
@@ -81,14 +90,37 @@ $('#ck-download').onclick=()=>{if(ready)$('#ck-preview').toBlob(blob=>rpc('downl
 const stage=$('#ck-canvasStage'),preview=$('#ck-preview'),pointers=new Map();let gesture=null;
 function point(e){const r=preview.getBoundingClientRect();return {x:(e.clientX-r.left)*1000/r.width,y:(e.clientY-r.top)*1010/r.height}}
 function hit(p){return [...selected].reverse().find(id=>{const r=rectFor(poses[id],ratio(id));return p.x>=r.x&&p.x<=r.x+r.w&&p.y>=r.y&&p.y<=r.y+r.h})}
-function startGesture(resize=false){const pts=[...pointers.values()];if(!active||!pts.length){gesture=null;return}const pose={...poses[active]};gesture=pts.length>1?{type:'pinch',pose,distance:Math.max(1,Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)),mid:{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}:{type:resize?'resize':'drag',pose,start:pts[0]}}
-stage.onpointerdown=e=>{if(!ready||busy||e.button>0)return;const p=point(e),resize=e.target.closest('#ck-resizeHandle'),id=hit(p);if(!resize&&!id&&!pointers.size)return;if(!pointers.size&&!resize)active=id;e.preventDefault();pointers.set(e.pointerId,p);stage.setPointerCapture(e.pointerId);stage.classList.add('manipulating');preview.focus({preventScroll:true});syncSelection();startGesture(!!resize)};
-stage.onpointermove=e=>{const p=point(e);if(!pointers.has(e.pointerId)){preview.style.cursor=hit(p)?'grab':'default';return}e.preventDefault();pointers.set(e.pointerId,p);if(!gesture||!active)return;const pts=[...pointers.values()],pose=poses[active];if(gesture.type==='pinch'&&pts.length>1){pose.cx=gesture.pose.cx+(pts[0].x+pts[1].x)/2-gesture.mid.x;pose.cy=gesture.pose.cy+(pts[0].y+pts[1].y)/2-gesture.mid.y;pose.size=gesture.pose.size*Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)/gesture.distance}else if(gesture.type==='resize')pose.size=gesture.pose.size+((p.x-gesture.start.x)+(p.y-gesture.start.y))/25.2;else{pose.cx=gesture.pose.cx+p.x-gesture.start.x;pose.cy=gesture.pose.cy+p.y-gesture.start.y}update()};
+function startGesture(){
+ const pts=[...pointers.values()];if(!active||!pts.length){gesture=null;return}
+ const pose={...poses[active]};
+ gesture=pts.length===2?{type:'pinch',pose,distance:Math.max(1,Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)),mid:{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2}}:{type:hit(pts[0])===active?'drag':'pending',pose,start:pts[0]};
+}
+stage.onpointerdown=e=>{
+ if(!ready||busy||e.button>0||pointers.size>=2)return;
+ const p=point(e),id=hit(p);
+ // A first touch beside the bird may be the beginning of a two-finger pinch.
+ if(!pointers.size){if(id)active=id;else if(e.pointerType!=='touch'||!active)return;}
+ else if(gesture?.type==='pending'&&id)active=id;
+ e.preventDefault();pointers.set(e.pointerId,p);stage.setPointerCapture(e.pointerId);stage.classList.add('manipulating');preview.focus({preventScroll:true});syncSelection();startGesture();
+};
+stage.onpointermove=e=>{
+ const p=point(e);if(!pointers.has(e.pointerId)){preview.style.cursor=hit(p)?'grab':'default';return}
+ e.preventDefault();pointers.set(e.pointerId,p);if(!gesture||!active||gesture.type==='pending')return;
+ const pts=[...pointers.values()],pose=poses[active];
+ if(gesture.type==='pinch'&&pts.length===2){
+  const distance=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);
+  pose.size=gesture.pose.size*distance/gesture.distance;
+  constrain(pose,ratio(active));
+  const scale=pose.size/gesture.pose.size;
+  pose.cx=(pts[0].x+pts[1].x)/2+(gesture.pose.cx-gesture.mid.x)*scale;
+  pose.cy=(pts[0].y+pts[1].y)/2+(gesture.pose.cy-gesture.mid.y)*scale;
+ }else{pose.cx=gesture.pose.cx+p.x-gesture.start.x;pose.cy=gesture.pose.cy+p.y-gesture.start.y}
+ update();
+};
 function endPointer(e){pointers.delete(e.pointerId);if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);startGesture();if(!pointers.size)stage.classList.remove('manipulating')}
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(ev,endPointer);
 stage.addEventListener('wheel',e=>{const id=hit(point(e));if(!id||busy)return;e.preventDefault();active=id;setSize(poses[id].size+(e.deltaY<0?2:-2))},{passive:false});
 preview.onkeydown=e=>{if(!active||busy)return;const step=e.shiftKey?20:5,p=poses[active];if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();p.cx+=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;p.cy+=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;update()}else if(['+','=','-','_'].includes(e.key)){e.preventDefault();setSize(p.size+(['-','_'].includes(e.key)?-2:2))}};
-$('#ck-resizeHandle').onkeydown=e=>{if(['ArrowUp','ArrowRight','ArrowDown','ArrowLeft'].includes(e.key)){e.preventDefault();setSize(poses[active].size+(['ArrowUp','ArrowRight'].includes(e.key)?2:-2))}};
 
 $('.viewer-original').onclick=async event=>{const id=activeWorkId;if(!id)return;const button=event.currentTarget;button.disabled=true;try{const image=await rpc('original',{id});if(!destroyed&&id===activeWorkId)await rpc('download',{image});}catch(error){if(!destroyed)toast(error.message)}finally{button.disabled=false}};
 
