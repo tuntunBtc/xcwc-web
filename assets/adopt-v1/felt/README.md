@@ -33,3 +33,9 @@ Use case: background-extraction. Asset type: transparent UI button background. E
 ```text
 Use case: precise-object-edit. Asset type: blank lower page background matching the supplied adoption UI reference. Edit reference is the attached felt adoption page. Recreate only the lower grassy meadow background seen AROUND its lower cards and bottom navigation, removing ALL cards, all panels, all navigation, all buttons, all text, all birds, no lake or sky. A front-facing softly lit field of tiny moss green curly plush wool grass with sparse tiny pink, white, yellow felt daisies mostly close to left/right outside edges and lower corners, same pale peach and moss green color and fuzzy textile style from reference. Center mostly quiet green meadow texture, moderate fine detail at website size. No large mushrooms, no new objects, no tree, no branches. Important: isotropic short curled fibers and small leaves, never vertically stretched grass strands. Portrait 2:3 seamless-looking natural meadow backdrop, from foreground bottom to slightly softer midground top. Exact reference soft sunlight. No letters, numbers, labels, watermarks or UI.
 ```
+
+## 顶部状态底条清理（2026-11-04，仅本地待确认）
+
+- 保留原 `scene-900.webp`；新 `status-cleanup-324.webp` 为 324×68 透明 WebP 补片，约 28 KB，覆盖原场景像素区域 x=280、y=4。CSS 使用同一 900×675 场景坐标比例，10 px 透明渐变边缘，仅用于领养页首屏。
+- 使用内置 imagegen；生成原稿归档于 `小鸟资料库/领养页状态条清理-2026-11-04/scene-clean-generated.png`，完整提示及验证见对应任务记录。只取原稿的状态条局部修复区域，不用生成稿替换整张场景，保留区域外原图。
+- 运行补片由 Sharp 缩放、裁取和渐变透明后无损 WebP 保存。统一 `media:optimize` 审核登记，无重复有损压缩；首屏加载，尺寸和 SHA-256 见 `config/media-derivatives.json`。归档原稿不进入发布包。

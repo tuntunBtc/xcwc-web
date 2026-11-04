@@ -1,8 +1,8 @@
 <section class="adopt-v1" aria-label="碰一碰领养小鸟">
   <div class="scene" role="group" aria-label="城市小鸟领养插画">
     <img class="scene-art" src="assets/adopt-v1/felt/scene-900.webp" alt="毛绒小黄莺从印着西湖塔景的蛋壳中探出身子，身后是垂柳、湖水与暖色灯笼。" fetchpriority="high" width="900" height="675">
+    <img class="scene-status-cleanup" src="assets/adopt-v1/felt/status-cleanup-324.webp" alt="" aria-hidden="true" width="324" height="68">
     <button class="hit back" type="button" data-action="back" aria-label="返回小窝"></button>
-    <div class="nfc-status" role="status" aria-live="polite"><span class="nfc-dot" aria-hidden="true"></span><span data-role="recognition">正在读取小鸟资料</span></div>
     <h1 class="scene-title">领养你的<br>城市小鸟</h1>
     <p class="scene-subtitle" data-role="subtitle">一场相遇，正在等待确认</p>
 
@@ -24,24 +24,12 @@
     <button class="read-retry" type="button" data-action="retry" hidden>重新读取小鸟资料</button>
   </div>
   <div class="adoption-details">
-    <section class="identity" aria-label="实体小鸟资料卡">
-      <div class="identity-heading"><h2><span class="chick" aria-hidden="true">🐤</span>这次相遇的小鸟</h2><span data-role="identity-state">等待识别</span></div>
-      <dl class="identity-grid">
-        <div><dt>所属城市</dt><dd data-role="city">—</dd></div>
-        <div><dt>小鸟款式</dt><dd data-role="type-card">—</dd></div>
-        <div><dt>出厂皮肤</dt><dd data-role="skin-card">—</dd></div>
-      </dl>
-      <div class="bird-identity"><span>实体身份</span><code data-role="code">等待 NFC 链接</code></div>
-    </section>
-
     <form class="name-form" novalidate>
       <label class="name-heading" for="adopt-v1-name"><span class="chick" aria-hidden="true">🐤</span>给小鸟取个名字吧～</label>
       <div class="name-field">
-        <input id="adopt-v1-name" name="nickname" autocomplete="off" placeholder="请输入 1–6 个字" aria-describedby="name-hint" disabled>
+        <input id="adopt-v1-name" name="nickname" autocomplete="off" placeholder="请输入 1–6 个字" disabled>
         <button class="random-name" type="button" data-action="random" aria-label="随机取名" disabled><span aria-hidden="true">⚄</span><span>随机取名</span></button>
       </div>
-      <p class="name-hint" id="name-hint">名称由你决定，小鸟属性以实体资料为准。</p>
-      <details class="local-save-note"><summary>本机保存 · 无需登录</summary><p>领取、养成和叽分保存在当前浏览器，不与云端账号同步。清除数据或更换设备后不会自动恢复。</p></details>
       <p class="validation" role="alert" hidden></p>
       <button class="adopt-button" type="button" data-action="confirm" disabled>孵化并领养</button>
       <p class="action-note" data-role="action-note">读取实体资料后继续</p>

@@ -45,6 +45,7 @@
     "/assets/nest/felt/emotions/puzzled.webp": "/assets/optimized/nest/felt/emotions/puzzled.56e9d8b8ca56.webp",
     "/assets/nest/felt/emotions/shy.webp": "/assets/optimized/nest/felt/emotions/shy.d2db7a68f945.webp",
     "/assets/nest/felt/emotions/unwell.webp": "/assets/optimized/nest/felt/emotions/unwell.89c63932ddcb.webp",
+    "/assets/nest/felt/home-background.png": "/assets/optimized/nest/felt/home-background.46fb6a8182d1.webp",
     "/assets/nest/interaction-cards-v2.png": "/assets/optimized/nest/interaction-cards-v2.febf9b2914e5.webp",
     "/assets/painted-props.png": "/assets/optimized/painted-props.95015fcf0b73.webp",
     "/assets/room-background.png": "/assets/optimized/room-background.99207f29beed.webp"
@@ -451,6 +452,22 @@
       "psnrDb": 40.2014
     },
     {
+      "sourceFile": "assets/nest/felt/home-background.png",
+      "sourceUrl": "/assets/nest/felt/home-background.png",
+      "sourceSha256": "d9ec26f55007db9666cc30a0fff0f312dea7739ea5fca7cb2212e36a1c01f684",
+      "sourceBytes": 2407360,
+      "width": 975,
+      "height": 1614,
+      "frames": 1,
+      "outputFile": "assets/optimized/nest/felt/home-background.46fb6a8182d1.webp",
+      "outputUrl": "/assets/optimized/nest/felt/home-background.46fb6a8182d1.webp",
+      "outputSha256": "46fb6a8182d154434ef7c11a1862cc5cb2eeb81462ac49412b29c5fc28b80ab2",
+      "outputBytes": 260710,
+      "quality": 90,
+      "alphaUnchanged": true,
+      "psnrDb": 40.0849
+    },
+    {
       "sourceFile": "assets/nest/interaction-cards-v2.png",
       "sourceUrl": "/assets/nest/interaction-cards-v2.png",
       "sourceSha256": "d989c9ddb3ea9bdbee9fdb25603e5086e89ebb200f6a85fe2b95e84513fb7268",
@@ -543,6 +560,17 @@
       "frames": 1,
       "status": "retained",
       "reason": "already-lossy-webp-no-repeated-compression"
+    },
+    {
+      "sourceFile": "assets/adopt-v1/felt/status-cleanup-324.webp",
+      "sourceUrl": "/assets/adopt-v1/felt/status-cleanup-324.webp",
+      "sourceSha256": "3c7aa507b9f39e3869073a3125c31d7e23417c59ef119d5565fedd42300bc6a2",
+      "sourceBytes": 29072,
+      "width": 324,
+      "height": 68,
+      "frames": 1,
+      "status": "retained",
+      "reason": "already-small"
     },
     {
       "sourceFile": "assets/audio/camera.mp3",
@@ -683,17 +711,6 @@
       "frames": 1,
       "status": "retained",
       "reason": "visual-threshold-not-met"
-    },
-    {
-      "sourceFile": "assets/nest/felt/home-background.png",
-      "sourceUrl": "/assets/nest/felt/home-background.png",
-      "sourceSha256": "d9ec26f55007db9666cc30a0fff0f312dea7739ea5fca7cb2212e36a1c01f684",
-      "sourceBytes": 2407360,
-      "width": 975,
-      "height": 1614,
-      "frames": 1,
-      "status": "retained",
-      "reason": "User explicitly requested original PNG without compression on 2026-11-04."
     },
     {
       "sourceFile": "assets/nest/felt/hud-icons-v2-768.webp",
@@ -1110,12 +1127,12 @@
     }
   ],
   "stats": {
-    "auditedMediaFiles": 76,
-    "optimizedFiles": 28,
+    "auditedMediaFiles": 77,
+    "optimizedFiles": 29,
     "retainedFiles": 48,
-    "sourceBytes": 20366278,
-    "outputBytes": 5062502,
-    "savedBytes": 15303776,
-    "savedPercent": 75.14
+    "sourceBytes": 22773638,
+    "outputBytes": 5323212,
+    "savedBytes": 17450426,
+    "savedPercent": 76.63
   }
 }

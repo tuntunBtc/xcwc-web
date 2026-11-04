@@ -21,7 +21,7 @@ function mountAdoptionV1(){
  const chars=value=>[...String(value||'')];
  const showNotice=(message,kind='info')=>{const node=$('[data-role="service-notice"]');node.textContent=message;node.dataset.kind=kind;node.hidden=false};
  const setText=(role,value,fallback='—')=>{const node=$('[data-role="'+role+'"]');if(node)node.textContent=value==null||String(value).trim()===''?fallback:String(value)};
- const setReady=ready=>{const input=$('#adopt-v1-name');input.disabled=!ready;input.readOnly=alreadyMine;const random=$('[data-action="random"]');random.disabled=!ready||alreadyMine;random.hidden=alreadyMine;$('[data-action="confirm"]').disabled=!ready;$('.name-heading').lastChild.textContent=alreadyMine?'它已经住进你的小窝啦':'给小鸟取个名字吧～';$('#name-hint').textContent=alreadyMine?'昵称已保存在本机。回小窝后，点名字即可改名。':'名称由你决定，小鸟属性以实体资料为准。'};
+ const setReady=ready=>{const input=$('#adopt-v1-name');input.disabled=!ready;input.readOnly=alreadyMine;const random=$('[data-action="random"]');random.disabled=!ready||alreadyMine;random.hidden=alreadyMine;$('[data-action="confirm"]').disabled=!ready;$('.name-heading').lastChild.textContent=alreadyMine?'它已经住进你的小窝啦':'给小鸟取个名字吧～'};
  const setName=value=>{const input=$('#adopt-v1-name');input.value=chars(value).slice(0,6).join('');adoptionV1Draft.nickname=input.value};
  const openLogin=async()=>{if(!alive)return;$('.login-error').textContent='';await openPageDialog($('.login-dialog'))};
  const rememberName=()=>{adoptionV1Draft.nickname=$('#adopt-v1-name').value};
@@ -29,8 +29,8 @@ function mountAdoptionV1(){
  pageCleanup=()=>{adoptChrome.remove();alive=false;controller.abort();shadow.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close())};
  installDialogClose(shadow,signal);
  async function load(){
-  if(loading||!alive)return;loading=true;bird=null;alreadyMine=false;$('[data-action="retry"]').hidden=true;setReady(false);$('[data-action="confirm"]').textContent='正在读取资料…';showNotice('正在读取实体资料，请稍候…');setText('recognition','正在读取小鸟资料');setText('identity-state','等待识别');
-  for(const role of ['bird-name','city-line','city','type','type-card','skin','skin-card','code'])setText(role,'—');
+  if(loading||!alive)return;loading=true;bird=null;alreadyMine=false;$('[data-action="retry"]').hidden=true;setReady(false);$('[data-action="confirm"]').textContent='正在读取资料…';showNotice('正在读取实体资料，请稍候…');
+  for(const role of ['bird-name','city-line','type','skin'])setText(role,'—');
   try{
    entry=await accountRpc('adoptionContext',{},signal);if(!alive)return;
    if(adoptionV1Draft.code!==entry.code)Object.assign(adoptionV1Draft,{code:entry.code,nickname:'',prompted:false,account:null});
@@ -38,25 +38,23 @@ function mountAdoptionV1(){
    if(entry.previewTest){
     account=null;bird={id:entry.code,typeId:'preview_yellow_oriole',name:'小黄莺',cityCode:'hangzhou',cityName:'杭州',typeName:'小黄莺',skinId:'osmanthus_yellow',skinName:'桂花黄'};
     if(!adoptionV1Draft.nickname)adoptionV1Draft.nickname=adoptionV1Defaults.nickname;adoptionV1Draft.account=null;setName(adoptionV1Draft.nickname);
-    setText('code','编号尾号 '+entry.code.slice(-4));setText('bird-name',adoptionV1Defaults.type);setText('city-line',adoptionV1Defaults.city);setText('city',adoptionV1Defaults.city);setText('type',adoptionV1Defaults.type);setText('type-card',adoptionV1Defaults.type);setText('skin',adoptionV1Defaults.skin);setText('skin-card',adoptionV1Defaults.skin);
-    setText('recognition','本地预览测试资料');setText('identity-state','测试数据 · 不会提交');setText('action-note','仅作页面预览，不会提交领养');setReady(true);$('[data-action="confirm"]').textContent='预览测试，不提交领取';showNotice('测试数据：杭州 · 西湖小黄莺 · 绿色 · 编号尾号 '+entry.code.slice(-4)+'。此本地预览不会提交绑定或发放权益。');return;
+    setText('bird-name',adoptionV1Defaults.type);setText('city-line',adoptionV1Defaults.city);setText('type',adoptionV1Defaults.type);setText('skin',adoptionV1Defaults.skin);
+    setText('action-note','仅作页面预览，不会提交领养');setReady(true);$('[data-action="confirm"]').textContent='预览测试，不提交领取';showNotice('测试数据：杭州 · 西湖小黄莺 · 绿色 · 编号尾号 '+entry.code.slice(-4)+'。此本地预览不会提交绑定或发放权益。');return;
    }
    if(adoptionV1Draft.account&&adoptionV1Draft.account!==account){adoptionV1Draft.nickname='';adoptionV1Draft.prompted=false}
    adoptionV1Draft.account=account;setName(adoptionV1Draft.nickname);
-   setText('code',entry.code?'编号尾号 '+entry.code.slice(-8):'等待 NFC 链接');
-   if(entry.error){setText('recognition',entry.error==='MISSING_BIRD_CODE'?'等待碰一碰链接':'小鸟链接无法识别');setText('identity-state','未识别');showNotice(entry.error==='MISSING_BIRD_CODE'?'请碰一碰实体小鸟并打开系统弹出的链接。':'链接参数无效，请重新碰一碰实体小鸟。','error')}
-   else if(!entry.lookupSupported){setText('recognition','收到实体编码，资料接口暂未支持');setText('identity-state','等待新版识别服务');showNotice('已收到完整小鸟编码，但此编码格式暂不受当前资料服务支持，请核对完整链接。','error')}
+   if(entry.error){showNotice(entry.error==='MISSING_BIRD_CODE'?'请碰一碰实体小鸟并打开系统弹出的链接。':'链接参数无效，请重新碰一碰实体小鸟。','error')}
+   else if(!entry.lookupSupported){showNotice('已收到完整小鸟编码，但此编码格式暂不受当前资料服务支持，请核对完整链接。','error')}
    else{
     const result=await accountRpc('adoptionPublic',{code:entry.code},signal);if(!alive)return;
     if(!matchesAdoptionBird(entry.code,result))throw Object.assign(new Error('服务返回的实体编号与链接不一致'),{code:'BIRD_ID_MISMATCH'});
     bird=result;
     // First-release display names do not change the public entity or its identifiers.
     setText('bird-name',adoptionV1Defaults.type);setText('city-line',adoptionV1Defaults.city);
-    setText('city',adoptionV1Defaults.city);setText('type',adoptionV1Defaults.type);setText('type-card',adoptionV1Defaults.type);setText('skin',adoptionV1Defaults.skin);setText('skin-card',adoptionV1Defaults.skin);
-    setText('recognition','已读取实体小鸟资料');setText('identity-state','公开资料已读取');
+    setText('type',adoptionV1Defaults.type);setText('skin',adoptionV1Defaults.skin);
     let ownedBird=null;if(account){const mine=await accountRpc('adoptionMine',{},signal);if(!alive)return;ownedBird=Array.isArray(mine)?mine.find(item=>item?.id===result.id):null;alreadyMine=!!ownedBird}
     setName((alreadyMine&&(ownedBird.nickname||ownedBird.name))||adoptionV1Draft.nickname||adoptionV1Defaults.nickname);
-    if(alreadyMine){setText('action-note','这只小鸟已在你的领养名单中');showNotice('这只小鸟已领取到本机，点击下方按钮回到小窝，不重复领取或发放奖励。')}
+    if(alreadyMine){setText('action-note','这只小鸟已在你的领养名单中');$('[data-role="service-notice"]').hidden=true}
     else{setText('action-note','名字和实体属性确认后，再提交领养请求');$('[data-role="service-notice"]').hidden=true}
     setReady(true);$('[data-action="confirm"]').textContent=alreadyMine?'回小窝，看看它':'孵化并领养';
    }
@@ -64,7 +62,7 @@ function mountAdoptionV1(){
   }catch(error){
    if(!alive||signal.aborted)return;
    const message=error.code==='BIRD_NOT_FOUND'?'没有查到该实体小鸟，请重新碰一碰并确认链接。':error.code==='BIRD_ID_MISMATCH'?'服务返回了不同的小鸟编号，本次资料未采用。':'小鸟资料读取失败：'+(error.message||'请检查网络后重试。');
-   setText('recognition',error.code==='BIRD_NOT_FOUND'?'暂未找到这只小鸟':'小鸟资料暂不可用');setText('identity-state','读取失败');showNotice(message,'error');$('[data-action="retry"]').hidden=false;
+   showNotice(message,'error');$('[data-action="retry"]').hidden=false;
    if(false&&!account&&!adoptionV1Draft.prompted){adoptionV1Draft.prompted=true;try{await openLogin()}catch{}}
   }finally{loading=false;if(alive&&!bird)$('[data-action="confirm"]').textContent='读取资料后可领取'}
  }

@@ -55,11 +55,6 @@
       "reason": "Unchanged 1024x1536 background derivative retains at least 40 dB fidelity; do not reduce quality merely to meet the 300 KB target.",
       "maxBytes": 356836,
       "sha256": "55318f2a3e7c000fa37ac0599169b63a05188f118d1e44394d7daa261b128263"
-    },
-    "assets/nest/felt/home-background.png": {
-      "reason": "User explicitly requested the original nest background PNG without compression on 2026-11-04; retain its full 975x1614 pixels and original bytes.",
-      "maxBytes": 2407360,
-      "sha256": "d9ec26f55007db9666cc30a0fff0f312dea7739ea5fca7cb2212e36a1c01f684"
     }
   }
 }

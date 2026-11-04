@@ -9,12 +9,11 @@
 .adopt-v1 [hidden]{display:none!important}
 .scene{position:relative;width:100%;aspect-ratio:4/3;isolation:isolate;overflow:hidden}
 .scene-art{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:fill;z-index:-1}
+.scene-status-cleanup{position:absolute;left:31.111111%;top:.592593%;width:36%;height:10.074074%;pointer-events:none;z-index:-1}
 .hit{position:absolute;z-index:2}
 .back{left:2.5%;top:2%;width:10%;height:13%;border-radius:50%}
 .back::before{content:"";position:absolute;left:32%;top:34%;width:30%;height:30%;border-left:3px solid #93623d;border-bottom:3px solid #93623d;transform:rotate(45deg);filter:drop-shadow(0 1px 1px #fff1da)}
 .back::after{content:"";position:absolute;left:29%;top:48%;width:50%;height:3px;border-radius:2px;background:#93623d}
-.nfc-status{position:absolute;left:37.6%;top:2.4%;width:25.5%;height:5.7%;display:flex;align-items:center;justify-content:center;color:#fff4e6;font-size:2.65cqw;letter-spacing:.04em;white-space:nowrap}
-.nfc-dot{display:none}
 .scene-title{position:absolute;left:29.2%;top:12.5%;width:39%;margin:0;text-align:center;color:#8c5a36;font:800 7.6cqw/1.18 "Kaiti SC","STKaiti","Songti SC",serif;letter-spacing:.07em;text-shadow:0 1px 0 #f1c5a8,0 2px 1px #b88c6880}
 .scene-subtitle{position:absolute;left:30%;top:37.2%;width:38%;margin:0;text-align:center;color:#80512e;font:600 2.5cqw/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;white-space:nowrap}
 .scroll-card{position:absolute;left:66.5%;top:39%;width:29%;height:45%;padding:4.7cqw 2.1cqw 1cqw;text-align:center;overflow:hidden}
@@ -28,19 +27,8 @@
 .trait-pill{width:25%;padding-left:6.4cqw;transform:translateY(.55cqw)}
 .trait-one{left:17.2%}.trait-two{left:45%}.trait-three{left:72.5%}
 .adoption-details{position:relative;padding:0 2.6cqw}
-.identity,.name-form{position:relative;background:url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/panel-900.webp') center/100% 120% no-repeat}
-.identity{padding:6.3cqw 5.4cqw 5cqw}
-.identity-heading{display:flex;align-items:center;justify-content:space-between;gap:1.5cqw;border-bottom:1px solid #bd8c624a;padding-bottom:2.7cqw}
-.identity-heading h2{display:flex;align-items:center;gap:1.4cqw;margin:0;font-size:4.1cqw;font-weight:700;line-height:1.4;white-space:nowrap;letter-spacing:.02em}
+.name-form{position:relative;background:url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/panel-900.webp') center/100% 120% no-repeat}
 .chick{display:inline-block;flex:none;font-size:4.8cqw;line-height:1;filter:drop-shadow(0 1px 2px #e7b24e66)}
-.identity-heading>span{flex:none;max-width:42%;padding:.8cqw 2cqw;border-radius:99px;background:linear-gradient(#fff5ce,#f2e5a6);box-shadow:0 1px 3px #bba15d44;color:#6a8935;font-size:2.5cqw;font-weight:600;line-height:1.5;text-align:center}
-.identity-grid{display:grid;grid-template-columns:.9fr 1.05fr .95fr;margin:2.8cqw 0;padding:0}
-.identity-grid>div{min-width:0;padding:0 3cqw;border-right:1px dashed #c2956a88}
-.identity-grid>div:first-child{padding-left:0}.identity-grid>div:last-child{border:0;padding-right:0}
-.identity-grid dt{margin:0 0 1cqw;color:#9b7755;font-size:2.9cqw;line-height:1.35;white-space:nowrap}
-.identity-grid dd{margin:0;font-size:4cqw;font-weight:700;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bird-identity{display:flex;justify-content:space-between;align-items:center;gap:1cqw;border-top:1px dashed #c2956a88;padding-top:2cqw;color:#936b46;font-size:2.8cqw;line-height:1.6}
-.bird-identity code{max-width:70%;font:400 2.8cqw/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .name-form{display:flex;flex-direction:column;align-items:stretch;margin:1cqw 0 0;padding:6cqw 5.4cqw 5cqw}
 .name-heading{display:flex;justify-content:center;align-items:center;gap:1.7cqw;margin:0 0 3.7cqw;text-align:center;font-size:4.7cqw;font-weight:700;line-height:1.4;letter-spacing:.025em;white-space:nowrap}
 .name-field{position:relative;width:100%;height:12cqw;min-height:43px;display:flex;align-items:center;border:1px solid #fff4e9;border-radius:999px;background:linear-gradient(125deg,#fff7f0f5,#f9e8dfd9);box-shadow:inset 0 2px 4px #a87f5738,0 2px 3px #ac825524}
@@ -49,7 +37,6 @@
 .name-field input::placeholder{color:#b49b85;opacity:1}.name-field input:disabled{opacity:.7}
 .random-name{width:36%;height:75%;display:flex;align-items:center;justify-content:center;gap:1cqw;padding:0 1cqw;border-left:1px dashed #c3946f!important;font-size:3.4cqw!important;font-weight:600!important;white-space:nowrap}
 .random-name span:first-child{font-size:5cqw;color:#b5793d}
-.name-hint{margin:2.4cqw 0 0;text-align:center;font-size:2.55cqw;color:#a3805a;line-height:1.6;white-space:nowrap}
 .validation{margin:2cqw 0 0;padding:2cqw;border-radius:8px;background:#fff4eb;color:#a0452c;font-size:12px;line-height:1.5}
 .adopt-button{position:relative;width:100%;min-height:66px;height:22cqw;margin:3cqw auto 0;padding:0 8cqw;background:url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/button-720.webp') center/100% 100% no-repeat!important;color:#fff5cf!important;font-size:5.6cqw!important;font-weight:700!important;line-height:1.4!important;letter-spacing:.08em;text-shadow:0 1px 1px #6d812b}
 .adopt-button::after{content:'›';position:absolute;right:10%;top:50%;transform:translateY(-55%);font:8cqw/1 Georgia,serif}
@@ -64,17 +51,9 @@
 .login-dialog{position:fixed;inset:0;max-width:calc(100% - 28px);width:410px;max-height:min(90dvh,680px);margin:auto;padding:29px 23px 24px;border:1px solid #dfcfaa;border-radius:23px;background:#fff9eb;color:#563f21;box-shadow:0 20px 65px #42371d38;overflow:auto}.login-dialog::backdrop{background:#333b2859;backdrop-filter:blur(3px)}.login-dialog h2{margin:9px 0;font:600 23px/1.45 "Songti SC",serif}.login-dialog>p{margin:0;color:#84775f;font-size:13px;line-height:1.8}.dialog-eyebrow{font-size:11px;color:#839268}.dialog-close{position:absolute;right:8px;top:7px;width:44px;height:44px;color:#9c8b68;font-size:25px!important}.login-form label{display:block;margin:15px 0 7px;color:#6b5b40;font-size:12px}.login-form input{display:block;width:100%;height:46px;padding:0 12px;border:1px solid #ded1b3;border-radius:10px;background:#fffdf7;font-size:16px}.login-error{min-height:1.5em;margin:8px 0 0;color:#a13e2c;font-size:12px}.dialog-primary,.dialog-secondary{display:block;width:100%;min-height:48px;margin-top:12px;padding:11px 15px;border-radius:13px!important;font-size:14px!important}.dialog-primary{margin-top:18px;background:#657b3e!important;color:#fff9e9!important}.dialog-secondary{border:1px solid #ded2b4!important;background:#fffaf0!important;color:#71804e!important}
 
 .back{min-width:44px;min-height:44px}
-.nfc-status{left:50%;top:2%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 110px);height:auto;min-height:24px;padding:3px 9px;border-radius:20px;background:#fff7e6e8;color:#57723f;font-size:12px;line-height:1.5;white-space:normal;text-align:center;letter-spacing:0}
 .scene-subtitle{left:20%;width:60%;font-size:clamp(12px,2.5cqw,14px);white-space:normal}
 .bird-city,.scroll-detail{font-size:clamp(12px,3cqw,15px)}
-.identity-heading h2{font-size:clamp(14px,4.1cqw,20px)}
-.identity-heading>span,.identity-grid dt,.bird-identity,.bird-identity code{font-size:clamp(12px,2.8cqw,14px)}
-.identity-heading>span{padding:4px 7px}
-.name-hint{font-size:12px;line-height:1.8;white-space:normal;color:#786044}
 .name-field input[readonly]{width:100%}
 .adoption-feedback{padding:0 14px}
 .service-notice{margin:10px 0 0;padding:14px 18px;border-radius:18px;background:#fff6e7e8;font-size:14px;line-height:1.8;color:#695337}
 .read-retry{display:block;min-height:44px;margin:8px 0 12px;padding:10px 17px;border:1px solid #d4dfb8!important;border-radius:16px;background:#edf2d8!important;color:#4e6e35!important;font-size:14px!important}
-.local-save-note{margin:12px 0 0;padding:0 12px;border-radius:15px;background:#fff9e6d9;color:#586b3f;font-size:12px}
-.local-save-note summary{min-height:44px;padding:10px 0;cursor:pointer;line-height:24px;font-size:13px}
-.local-save-note p{font-size:13px;line-height:1.8;margin:0 0 12px}
