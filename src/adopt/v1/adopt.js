@@ -1,6 +1,6 @@
 // NFC adoption V1.0. Draft names stay in memory and never create demo assets.
 const adoptionV1Draft={code:null,nickname:'',prompted:false,account:null};
-const adoptionV1Defaults=Object.freeze({city:'杭州',type:'高头白洁',skin:'绿色',nickname:'西湖小黄莺'});
+const adoptionV1Defaults=Object.freeze({city:'杭州',type:'西湖小黄莺',skin:'绿色',nickname:'西湖小黄莺'});
 function mountAdoptionV1(){
  const shadow=mountIsolated('xcwc-adopt',adoptionV1Css,adoptionV1Template),$=selector=>shadow.querySelector(selector),controller=new AbortController(),{signal}=controller;
  const adoptChrome=document.createElement('style');adoptChrome.dataset.adoptChrome='';adoptChrome.textContent=`
@@ -16,7 +16,7 @@ function mountAdoptionV1(){
  #bjd-review.is-integrated:has(#xcwc-adopt) .bottom [data-go=home]::before{content:'';position:absolute;inset:3px 6px;z-index:-1;background:radial-gradient(ellipse,#c6e3b881,transparent 80%);box-shadow:none}
  #bjd-review.is-integrated:has(#xcwc-adopt) .bottom [data-go=home] svg{stroke:#70a467;fill:#cae2b44d;filter:drop-shadow(0 0 3px #a8d39a)}
  `;document.head.append(adoptChrome);
- let alive=true,loading=false,busy=false,entry=null,bird=null,account=null,alreadyMine=false,randomIndex=0;
+ let alive=true,loading=false,busy=false,entry=null,bird=null,account=null,alreadyMine=false,randomIndex=0,composing=false;
  const suggestions=['湖小叽','西湖团团','小桂','啾啾','慢慢'];
  const chars=value=>[...String(value||'')];
  const showNotice=(message,kind='info')=>{const node=$('[data-role="service-notice"]');node.textContent=message;node.dataset.kind=kind;node.hidden=false};
@@ -39,7 +39,7 @@ function mountAdoptionV1(){
     account=null;bird={id:entry.code,typeId:'preview_yellow_oriole',name:'小黄莺',cityCode:'hangzhou',cityName:'杭州',typeName:'小黄莺',skinId:'osmanthus_yellow',skinName:'桂花黄'};
     if(!adoptionV1Draft.nickname)adoptionV1Draft.nickname=adoptionV1Defaults.nickname;adoptionV1Draft.account=null;setName(adoptionV1Draft.nickname);
     setText('code','编号尾号 '+entry.code.slice(-4));setText('bird-name',adoptionV1Defaults.type);setText('city-line',adoptionV1Defaults.city);setText('city',adoptionV1Defaults.city);setText('type',adoptionV1Defaults.type);setText('type-card',adoptionV1Defaults.type);setText('skin',adoptionV1Defaults.skin);setText('skin-card',adoptionV1Defaults.skin);
-    setText('recognition','本地预览测试资料');setText('identity-state','测试数据 · 不会提交');setText('action-note','仅作页面预览，不会提交领养');setReady(true);$('[data-action="confirm"]').textContent='预览测试，不提交领取';showNotice('测试数据：杭州 · 高头白洁 · 绿色 · 编号尾号 '+entry.code.slice(-4)+'。此本地预览不会提交绑定或发放权益。');return;
+    setText('recognition','本地预览测试资料');setText('identity-state','测试数据 · 不会提交');setText('action-note','仅作页面预览，不会提交领养');setReady(true);$('[data-action="confirm"]').textContent='预览测试，不提交领取';showNotice('测试数据：杭州 · 西湖小黄莺 · 绿色 · 编号尾号 '+entry.code.slice(-4)+'。此本地预览不会提交绑定或发放权益。');return;
    }
    if(adoptionV1Draft.account&&adoptionV1Draft.account!==account){adoptionV1Draft.nickname='';adoptionV1Draft.prompted=false}
    adoptionV1Draft.account=account;setName(adoptionV1Draft.nickname);
@@ -78,7 +78,11 @@ function mountAdoptionV1(){
   catch(error){if(!alive||signal.aborted)return;if(error.code==='LOGIN_REQUIRED'){account=null;adoptionV1Draft.prompted=false;await openLogin()}else showNotice(error.message||'领养结果暂未确认，请保留当前页面重试，不会重复发放权益。','error')}
   finally{busy=false;if(alive&&bird&&!alreadyMine){$('[data-action="confirm"]').disabled=false;$('[data-action="confirm"]').textContent='孵化并领养'}}
  }
- shadow.addEventListener('input',event=>{if(event.target.id!=='adopt-v1-name'||event.isComposing)return;const input=event.target,limited=chars(input.value).slice(0,6).join('');if(input.value!==limited)input.value=limited;rememberName();clearNameError()},{signal});
+ function syncNameInput(event){if(event.target.id!=='adopt-v1-name'||event.isComposing||composing)return;const input=event.target,limited=chars(input.value).slice(0,6).join('');if(input.value!==limited)input.value=limited;rememberName();clearNameError()}
+ shadow.addEventListener('compositionstart',()=>{composing=true},{signal});
+ shadow.addEventListener('compositionend',event=>{composing=false;syncNameInput(event)},{signal});
+ shadow.addEventListener('focusout',()=>{composing=false},{signal});
+ shadow.addEventListener('input',syncNameInput,{signal});
  async function authenticate(mode){
   const form=$('.login-form');if(!form.reportValidity())return;const password=form.elements.password.value;
   if(new TextEncoder().encode(password).length>72){$('.login-error').textContent='密码不能超过 72 个 UTF-8 字节。';return}
@@ -87,7 +91,7 @@ function mountAdoptionV1(){
   catch(error){if(alive&&!signal.aborted)$('.login-error').textContent=error.message}
   finally{if(alive)buttons.forEach(button=>button.disabled=false)}
  }
- shadow.addEventListener('keydown',event=>{if(event.key!=='Enter')return;if(event.target.id==='adopt-v1-name'){event.preventDefault();submitAdoption();return}if(event.target.closest('.login-form')){event.preventDefault();authenticate('login')}},{signal});
+ shadow.addEventListener('keydown',event=>{if(event.key!=='Enter'||composing||event.isComposing||event.keyCode===229)return;if(event.target.id==='adopt-v1-name'){event.preventDefault();submitAdoption();return}if(event.target.closest('.login-form')){event.preventDefault();authenticate('login')}},{signal});
  shadow.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;if(button.closest('.login-form')){try{await authenticate(button.value==='register'?'register':'login')}catch(error){if(alive) $('.login-error').textContent=error.message||'登录失败'}return}if(!button.matches('[data-action]'))return;try{
   if(button.dataset.action==='back'){nav('back');return}
   if(button.dataset.action==='retry'){rememberName();await load();return}

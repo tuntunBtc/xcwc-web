@@ -25,7 +25,15 @@ function mountCity(){
  let alive=true,filter='all',catalog=[],stateKnown=false,loading=true,catalogLoading=true,catalogFailed=false,loadVersion=0,catalogVersion=0,activeCity=null;
  pageCleanup=()=>{alive=false;controller.abort();shadow.querySelectorAll('dialog[open]').forEach(d=>d.close())};installDialogClose(shadow,signal);
  $('#sheet').addEventListener('close',()=>{activeCity=null},{signal});
- const showSheet=html=>{activeCity=null;$('#sheet-content').innerHTML=html;openPageDialog($('#sheet')).catch(error=>{if(alive)pageNotice(error.message)})};
+ const showSheet=(html,label='城市小鸟详情')=>{if(!alive)return;activeCity=null;const sheet=$('#sheet');sheet.setAttribute('aria-label',label);$('#sheet-content').innerHTML=html;sheet.scrollTop=0;openPageDialog(sheet).catch(error=>{if(alive)pageNotice(error.message)})};
+ function showPointsSheet(html,rulesFirst=false){
+  if(!alive)return;
+  const body=document.createElement('div');body.innerHTML=html;
+  const title=body.querySelector('#account-wallet-title'),rules=body.querySelector('.wallet-rules'),heading=rulesFirst?'叽分获取规则':title?.textContent||'叽分钱包';
+  if(rulesFirst&&rules){rules.open=true;body.prepend(rules)}
+  title?.remove();
+  showSheet('<div class="sheet-head"><button class="close" data-action="close-sheet" aria-label="关闭">×</button><span class="eyebrow">'+(rulesFirst?'JI POINTS GUIDE':'MY JI POINTS')+'</span><h2 id="account-wallet-title">'+esc(heading)+'</h2></div><div class="sheet-body city-wallet-body">'+body.innerHTML+'<button class="primary" data-action="close-sheet">返回城市手账</button></div>',heading);
+ }
  function renderCity(){
   if(!alive)return;
   const bird=stateKnown?ownedCurrent():null,unlocked=collectedCityCodes(stateKnown?liveAccount.birds:[]);
@@ -42,7 +50,7 @@ function mountCity(){
    return `<button class="city-card ${status}" ${loading?'disabled':''} data-city="${city.id}" aria-label="${city.name}，${label}，查看城市小鸟"><div class="city-art" style="background-position:${city.pos}"><div class="city-name"><h3>${city.name}</h3><span>${city.en}</span></div><span class="state-icon" aria-hidden="true">⌑</span><img class="bird-mini bird-shadow" src="${esc(birdAssets.avatar)}" width="192" height="174" loading="lazy" decoding="async" alt=""><span class="question" aria-hidden="true">?</span></div><div class="city-card-body"><strong><span class="tiny-dot"></span>${label}</strong><p>${city.line}</p><span class="card-action">查看小鸟 ›</span></div></button>`;
   }).join('');
   $('#empty').hidden=visible.length>0;
-  if(!visible.length)$('#empty').innerHTML='<h3>'+(stateKnown?'旅程才刚刚开始':'本机记录暂不可用')+'</h3><p>'+(stateKnown?'碰一碰实体小鸟并领取后，回来收集这座城。':'请先重新读取本机记录，暂不推定城市状态。')+'</p><button data-filter="all">看看全部城市</button>';
+  if(!visible.length){const complete=stateKnown&&filter==='locked'&&unlocked.size===cityCollectionCities.length;$('#empty').innerHTML='<h3>'+(complete?'城市已全部解锁':stateKnown?'旅程才刚刚开始':'本机记录暂不可用')+'</h3><p>'+(complete?'六座城市都已收进手账，去看看陪你走过这些城市的小鸟吧。':stateKnown?'碰一碰实体小鸟并领取后，回来收集这座城。':'请先重新读取本机记录，暂不推定城市状态。')+'</p><button data-filter="all">看看全部城市</button>'}
   $('.footnote').innerHTML=!stateKnown?(loading?'正在读取本机城市手账…':'本机记录暂时无法读取，不会覆盖原有记录。<br><button class="retry" data-action="retry">重新加载</button>'):'城市状态来自本机领取缓存 · 不代表云端购买权益'+(catalogFailed?'<br><span>城市小鸟目录暂不可用，仍可查看本机伙伴。</span> <button class="retry" data-action="retry-catalog">重试</button>':'');
   if(activeCity&&$('#sheet').open)showBirds(cityCollectionCities.find(city=>city.id===activeCity),true);
  }
@@ -79,9 +87,9 @@ function mountCity(){
    if(button.dataset.filter){filter=button.dataset.filter;renderCity();return}
    if(button.dataset.city){showBirds(cityCollectionCities.find(city=>city.id===button.dataset.city));return}
    if(button.dataset.action==='close-sheet')return $('#sheet').close();
-   if(button.dataset.action==='back')return nav('home');
-   if(button.dataset.action==='profile')return nav('profile');
-   if(button.dataset.action==='points')return await openWallet(showSheet,signal);
+   if(button.dataset.action==='profile')return nav('flock');
+   if(button.dataset.action==='points')return await openWallet(html=>showPointsSheet(html),signal);
+   if(button.dataset.action==='points-rules')return await openWallet(html=>showPointsSheet(html,true),signal);
    if(button.dataset.action==='retry')return await load();
    if(button.dataset.action==='retry-catalog')return await loadCatalog();
    if(button.dataset.action==='visit-bird'){

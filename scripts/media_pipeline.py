@@ -35,7 +35,7 @@ class MediaPlan:
         self.derivatives = json.loads((self.root / 'config/media-derivatives.json').read_text(encoding='utf-8'))
         if self.config.get('schemaVersion') != 1 or self.derivatives.get('schemaVersion') != 1:
             raise ValueError('Unsupported media configuration version')
-        self.mapping = self.derivatives['mapping']
+        self.mapping = dict(self.derivatives['mapping'])
         records = self.derivatives['records']
         all_sources = [*records, *self.derivatives.get('audit', [])]
         for key in ['sourceUrl', 'sourceFile']:
@@ -79,11 +79,13 @@ class MediaPlan:
                     continue
                 if path.is_file() and path.suffix.lower() in MEDIA_EXTENSIONS | {'.mov'} and relative not in audited:
                     raise ValueError('New media needs an optimization review; run npm run media:optimize: ' + relative)
+        self.validate_usage_derivatives(all_sources)
         self.validate_shop()
         self.fingerprint_sources = {}
         if self.config.get('contentFingerprints'):
             aliases = dict(self.mapping)
             candidates = {item.get('outputFile', item['sourceUrl'].lstrip('/')) for item in all_sources}
+            candidates.update(item['outputFile'] for item in self.derivatives.get('usageDerivatives', []))
             shop = json.loads((self.root/'assets/shop/media-optimization.json').read_text(encoding='utf-8'))
             for item in [*shop['products'], *shop.get('banners', [])]:
                 for key in ['cover','detail','image','optimized']:
@@ -102,6 +104,53 @@ class MediaPlan:
                 self.fingerprint_sources[target] = source
                 aliases[public] = '/' + target
             self.mapping = {source: aliases.get(target,target) for source,target in aliases.items()}
+
+    def validate_usage_derivatives(self, sources):
+        """Validate explicit UI aliases without resizing any shared source URL.
+
+        Pillow is intentionally absent from the build gate: the optimizer checks
+        transformed RGBA pixels and records source/job/output hashes here.
+        """
+        relative = self.config.get('usageDerivativeJobs')
+        jobs = []
+        if relative:
+            config = json.loads(safe_file(self.root, relative).read_text(encoding='utf-8'))
+            if config.get('schemaVersion') != 1:
+                raise ValueError('Unsupported purpose-specific media jobs')
+            jobs = config['jobs']
+        records = self.derivatives.get('usageDerivatives', [])
+        for key in ['id', 'usageUrl', 'outputFile']:
+            if len({item[key] for item in records}) != len(records):
+                raise ValueError('Duplicate purpose-specific media: ' + key)
+        if len({item['id'] for item in jobs}) != len(jobs) or {item['id'] for item in jobs} != {item['id'] for item in records}:
+            raise ValueError('Purpose-specific media inventory changed; run media:optimize')
+        by_id = {item['id']: item for item in jobs}
+        source_urls = {item['sourceUrl'] for item in sources}
+        audited_files = {item['sourceFile'] for item in sources}
+        for item in records:
+            job = by_id[item['id']]
+            job_hash = hashlib.sha256(json.dumps(job, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
+            if item.get('jobSha256') != job_hash:
+                raise ValueError('Purpose-specific media crop/size changed; run media:optimize: ' + item['id'])
+            if item['sourceFile'] != job['sourceFile'] or item['sourceFile'] not in audited_files:
+                raise ValueError('Purpose-specific media needs an audited full-resolution source')
+            source = safe_file(self.root, item['sourceFile'])
+            if digest(source) != item['sourceSha256'] or source.stat().st_size != item['sourceBytes']:
+                raise ValueError('Purpose-specific media source changed; run media:optimize: ' + item['id'])
+            alias = item['usageUrl']
+            if alias != job['usageUrl'] or not alias.startswith('/assets/') or alias in source_urls or alias in self.mapping:
+                raise ValueError('Purpose-specific alias must not replace a shared media source URL')
+            safe_file(self.root, alias.lstrip('/'))
+            expected_file = job['outputBaseFile'] + '.' + item['outputSha256'][:12] + '.webp'
+            if (item['outputFile'] != expected_file or not expected_file.startswith('assets/optimized/')
+                    or item['outputUrl'] != '/' + item['outputFile']
+                    or [item['width'], item['height']] != job['outputSize']
+                    or item['cropBox'] != job['cropBox'] or item.get('transformedPixelsExact') is not True):
+                raise ValueError('Purpose-specific media geometry/output mismatch: ' + item['id'])
+            target = safe_file(self.root, item['outputFile'])
+            if not target.is_file() or digest(target) != item['outputSha256'] or target.stat().st_size != item['outputBytes']:
+                raise ValueError('Missing or changed purpose-specific derivative: ' + item['id'])
+            self.mapping[alias] = item['outputUrl']
 
     def validate_shop(self):
         """Reuse the shop's crop-aware source/output records instead of re-encoding."""
@@ -136,9 +185,9 @@ class MediaPlan:
     def helper(self):
         # Dynamic emotion names use this resolver; static paths are rewritten at build time.
         sizes = {}
-        for item in [*self.derivatives['records'], *self.derivatives.get('audit', [])]:
+        for item in [*self.derivatives['records'], *self.derivatives.get('audit', []), *self.derivatives.get('usageDerivatives', [])]:
             if item.get('width') and item.get('height'):
-                sizes[item.get('outputUrl', item['sourceUrl'])] = [item['width'], item['height']]
+                sizes[item['outputUrl'] if 'outputUrl' in item else item['sourceUrl']] = [item['width'], item['height']]
         shop = json.loads((self.root/'assets/shop/media-optimization.json').read_text(encoding='utf-8'))
         for item in [*shop['products'], *shop.get('banners', [])]:
             for key in ['cover', 'detail', 'image']:

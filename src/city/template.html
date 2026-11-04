@@ -1,16 +1,15 @@
 <main class="phone city-page">
   <section class="hero" aria-label="城市之旅">
-    <button class="back" data-action="back" aria-label="返回小窝"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h12"/></svg></button>
     <header class="topbar">
       <button class="profile" data-action="profile" aria-label="查看我的小鸟"><img src="assets/nest/felt/emotions/happy-192.webp" width="192" height="174" decoding="async" alt=""><span><strong>我的小鸟</strong><small>和小鸟一起出发</small></span><i aria-hidden="true">›</i></button>
-      <button class="points" data-action="points" aria-label="查看本机叽分"><span aria-hidden="true">✦</span><b>—</b><small>叽分</small><i aria-hidden="true">＋</i></button>
+      <div class="points-group" role="group" aria-label="本机叽分"><button class="points" data-action="points" aria-label="查看本机叽分余额与流水"><span aria-hidden="true">✦</span><b>—</b><small>叽分</small></button><button class="points-earn" data-action="points-rules" aria-label="查看叽分获取规则">＋</button></div>
     </header>
     <div class="hero-copy"><span class="eyebrow">A LITTLE BIRD, A BIG WORLD</span><h1>城市之旅<span aria-hidden="true">✿</span></h1><p class="hero-description">把喜欢的城市，<br>一点点收进回忆里。</p><p class="hero-rule">认领一只小鸟，开启一座城。</p></div>
     <div class="journey-tag"><span aria-hidden="true">✿</span> 下一站，和你一起</div>
   </section>
   <section class="collection" aria-label="我的城市手账">
     <div class="handbook">
-      <div class="section-heading"><div><span class="eyebrow">MY CITY COLLECTION</span><h2>我的城市手账 <span id="progress">— / 6</span></h2></div><span class="stamp" aria-hidden="true">沿途皆美好<span>✿</span></span></div>
+      <div class="section-heading"><div><span class="eyebrow">MY CITY COLLECTION</span><h2>我的城市手账</h2></div><span id="progress">— / 6</span></div>
       <div class="progress-track" role="presentation"><div id="progress-bar"></div></div>
     </div>
     <div class="tabs" role="tablist" aria-label="城市状态"><button role="tab" aria-selected="true" data-filter="all">全部城市 <small>6</small></button><button role="tab" aria-selected="false" data-filter="unlocked">已解锁 <small id="unlocked-count">—</small></button><button role="tab" aria-selected="false" data-filter="locked">未解锁 <small id="locked-count">—</small></button></div>

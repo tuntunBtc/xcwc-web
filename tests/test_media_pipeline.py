@@ -44,6 +44,47 @@ class MediaGateTest(unittest.TestCase):
         self.write_json('config/media-derivatives.json', {'schemaVersion': 1,
             'mapping': {self.record['sourceUrl']: self.record['outputUrl']}, 'records': [self.record], 'audit': []})
 
+    def add_usage_derivative(self, alias='/assets/navigation/flower-96.webp'):
+        job = {'id': 'flower', 'sourceFile': 'assets/bird.png', 'sourceSize': [200, 200],
+               'cropBox': [0, 0, 100, 100], 'outputSize': [96, 96], 'usageUrl': alias,
+               'outputBaseFile': 'assets/optimized/flower-96', 'encoding': 'lossless-webp'}
+        data = b'small-ui-derivative'
+        sha = hashlib.sha256(data).hexdigest()
+        output = 'assets/optimized/flower-96.' + sha[:12] + '.webp'
+        self.write(output, data)
+        self.config['usageDerivativeJobs'] = 'config/media-usage.json'
+        self.save()
+        self.write_json('config/media-usage.json', {'schemaVersion': 1, 'jobs': [job]})
+        manifest = json.loads((self.root / 'config/media-derivatives.json').read_text(encoding='utf-8'))
+        manifest['usageDerivatives'] = [{'id': job['id'], 'sourceFile': job['sourceFile'],
+            'sourceSha256': self.record['sourceSha256'], 'sourceBytes': len(b'original-image'),
+            'jobSha256': hashlib.sha256(json.dumps(job, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest(),
+            'usageUrl': alias, 'outputFile': output, 'outputUrl': '/' + output,
+            'outputSha256': sha, 'outputBytes': len(data), 'width': 96, 'height': 96,
+            'cropBox': job['cropBox'], 'transformedPixelsExact': True}]
+        self.write_json('config/media-derivatives.json', manifest)
+        return job
+
+    def test_small_ui_alias_does_not_replace_full_shared_image(self):
+        job = self.add_usage_derivative()
+        plan = pipeline.MediaPlan(self.root)
+        self.assertEqual(plan.mapping['/assets/bird.png'], self.record['outputUrl'])
+        self.assertNotEqual(plan.mapping[job['usageUrl']], self.record['outputUrl'])
+        shell = plan.rewrite('<img src="' + job['usageUrl'] + '">')
+        self.assertIn(plan.mapping[job['usageUrl']].lstrip('/'), plan.required(shell))
+
+    def test_usage_crop_change_requires_new_pixel_audit(self):
+        job = self.add_usage_derivative()
+        job['cropBox'] = [100, 100, 200, 200]
+        self.write_json('config/media-usage.json', {'schemaVersion': 1, 'jobs': [job]})
+        with self.assertRaisesRegex(ValueError, 'crop/size changed'):
+            pipeline.MediaPlan(self.root)
+
+    def test_small_ui_alias_cannot_shadow_full_source_url(self):
+        self.add_usage_derivative('/assets/bird.png')
+        with self.assertRaisesRegex(ValueError, 'must not replace'):
+            pipeline.MediaPlan(self.root)
+
     def test_only_local_media_rewritten_and_resolver_survives_escaped_pass(self):
         plan = pipeline.MediaPlan(self.root)
         self.assertEqual(plan.rewrite('"/assets/bird.png"'), '"/assets/optimized/bird.123.webp"')

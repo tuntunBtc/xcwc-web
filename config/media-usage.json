@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "description": "Purpose-specific derivatives. usageUrl aliases never replace the full source URL or its existing geometry-preserving derivative.",
+  "jobs": [
+    {
+      "id": "nav-flower-96",
+      "sourceFile": "assets/nest/felt/hud-icons-v2-768.webp",
+      "sourceSize": [
+        768,
+        512
+      ],
+      "cropBox": [
+        0,
+        256,
+        256,
+        512
+      ],
+      "outputSize": [
+        96,
+        96
+      ],
+      "usageUrl": "/assets/navigation/nav-flower-96.webp",
+      "outputBaseFile": "assets/optimized/navigation/nav-flower-96",
+      "encoding": "lossless-webp",
+      "purpose": "Public bottom navigation flower, unchanged 27x27 CSS box and original bottom-left atlas cell; 96px serves more than 3 device pixels per CSS pixel."
+    },
+    {
+      "id": "nav-leaves-96",
+      "sourceFile": "assets/nest/felt/tools-512.webp",
+      "sourceSize": [
+        512,
+        512
+      ],
+      "cropBox": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "outputSize": [
+        96,
+        96
+      ],
+      "usageUrl": "/assets/navigation/nav-leaves-96.webp",
+      "outputBaseFile": "assets/optimized/navigation/nav-leaves-96",
+      "encoding": "lossless-webp",
+      "purpose": "Public bottom navigation leaf decoration, unchanged 25x23 CSS box and original top-left atlas cell; retain original non-square CSS rendering."
+    },
+    {
+      "id": "checkin-style-thumb-192",
+      "sourceFile": "src/checkin-assets/felt-style-v1.jpg",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "cropBox": [
+        0,
+        0,
+        1254,
+        1254
+      ],
+      "outputSize": [
+        192,
+        192
+      ],
+      "usageUrl": "/assets/checkin/felt-style-thumb-192.webp",
+      "outputBaseFile": "assets/optimized/checkin/felt-style-thumb-192",
+      "encoding": "lossless-webp",
+      "purpose": "Only the small four style-picker previews; existing full image, Canvas assets and viewport deferred loading remain independent."
+    }
+  ]
+}

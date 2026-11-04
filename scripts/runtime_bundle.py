@@ -136,6 +136,7 @@ let routeRenderVersion=0;
  const version=++routeRenderVersion;clearPage();if(checkinCleanup){checkinCleanup();checkinCleanup=null}
  document.body.style.overflow='';if(!appRoutes.has(s.page))s.page='home';
  root.classList.toggle('is-checkin',s.page==='photo');root.classList.toggle('is-shop',s.page==='shop');
+ root.dataset.xcwcPage=s.page;
  root.querySelector('#balance').textContent=s.points;referenceChrome();
  const page=s.page,key=['profile','wardrobe','flock'].includes(page)?'account':page;
  content.innerHTML='<p class="route-loading" role="status">正在打开页面…</p>';content.setAttribute('aria-busy','true');

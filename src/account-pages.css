@@ -83,9 +83,15 @@
 /* One felt navigation component for every route, including check-in. */
 #bjd-review .phone>.bottom{position:relative;z-index:8;isolation:isolate;display:flex;flex:0 0 auto;align-items:stretch;gap:0;margin:0;min-height:72px;padding:9px 12px max(10px,env(safe-area-inset-bottom));overflow:visible;background:transparent;border:1px solid transparent;border-width:1px 0 0;border-radius:0;box-shadow:none}
 #bjd-review .phone>.bottom::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/pill-v2-800.webp') center/100% 110% no-repeat}
-#bjd-review .phone>.bottom::after{content:"";position:absolute;left:7px;top:-5px;width:27px;height:27px;background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/hud-icons-v2-768.webp') 0 100%/300% 200% no-repeat;pointer-events:none}
+#bjd-review .phone>.bottom::after{content:"";position:absolute;left:7px;top:-5px;width:27px;height:27px;pointer-events:none}
 #bjd-review .phone>.bottom button{position:relative;display:flex;flex:1 1 0;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:auto;min-width:0;min-height:48px;padding:0;color:#875d3b;font:600 12px/1.5 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;background:transparent;border:0;border-radius:8px;isolation:isolate;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-#bjd-review .phone>.bottom button:last-child::after{content:"";position:absolute;right:0;top:-8px;width:25px;height:23px;background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/tools-512.webp') 0 0/200% 200% no-repeat;pointer-events:none}
+#bjd-review .phone>.bottom button:last-child::after{content:"";position:absolute;right:0;top:-8px;width:25px;height:23px;pointer-events:none}
+/* The renderer sets this route before creating navigation. No image is fetched
+   while the route is unknown; home/profile reuse atlases needed by their body. */
+#bjd-review:is([data-xcwc-page="home"],[data-xcwc-page="profile"]) .phone>.bottom::after{background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/hud-icons-v2-768.webp') 0 100%/300% 200% no-repeat}
+#bjd-review:is([data-xcwc-page="home"],[data-xcwc-page="profile"]) .phone>.bottom button:last-child::after{background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/tools-512.webp') 0 0/200% 200% no-repeat}
+#bjd-review[data-xcwc-page]:not([data-xcwc-page="home"]):not([data-xcwc-page="profile"]) .phone>.bottom::after{background:url('__XCWC_ASSET_ORIGIN__/assets/navigation/nav-flower-96.webp') center/100% 100% no-repeat}
+#bjd-review[data-xcwc-page]:not([data-xcwc-page="home"]):not([data-xcwc-page="profile"]) .phone>.bottom button:last-child::after{background:url('__XCWC_ASSET_ORIGIN__/assets/navigation/nav-leaves-96.webp') center/100% 100% no-repeat}
 #bjd-review .phone>.bottom button.active{color:#65995d;font-weight:600;background:transparent;border-radius:8px}
 #bjd-review .phone>.bottom button.active::before{content:"";position:absolute;inset:3px 6px;z-index:-1;pointer-events:none;border-radius:9px;background:radial-gradient(ellipse,#c6e3b881,transparent 80%);box-shadow:none}
 #bjd-review .phone>.bottom svg{--icon-size:26px;width:26px;height:26px;fill:none;stroke:#a98562;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 0 #ffefda) drop-shadow(0 -1px 0 #d6af8f)}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "method": "Chromium Canvas deterministic crop/resize and WebP encoding; source artwork unchanged",
+  "method": "Chromium Canvas original batch; Pillow deterministic crop/resize and WebP encoding for 2026-11-04 additions; source artwork unchanged",
   "settings": {
     "coverWidth": 480,
     "coverQuality": 0.85,
@@ -8,12 +8,12 @@
     "detailGeometry": "original pixel dimensions"
   },
   "stats": {
-    "products": 15,
-    "originalDetailBytes": 42128819,
-    "allCoverBytes": 427100,
-    "allOptimizedDetailBytes": 2886238,
-    "coverReductionPercent": 98.99,
-    "detailReductionPercent": 93.15,
+    "products": 17,
+    "originalDetailBytes": 44167723,
+    "allCoverBytes": 482626,
+    "allOptimizedDetailBytes": 3192578,
+    "coverReductionPercent": 98.91,
+    "detailReductionPercent": 92.77,
     "firstTwoOriginalBytes": 4742018,
     "firstTwoCoverBytes": 56762,
     "firstTwoReductionPercent": 98.8,
@@ -725,6 +725,170 @@
           "width": 1,
           "height": 1
         }
+      }
+    },
+    {
+      "id": "hangzhou-baitou-gaojie",
+      "title": "白头高洁",
+      "source": {
+        "url": "/assets/shop/products/hangzhou-baitou-gaojie/detail.png",
+        "archivePath": "小鸟资料库/小鸟商城详情页/新增20261104/白头高洁.png",
+        "bytes": 1904217,
+        "sha256": "79beb431cdabf1b32fa4a5ad432b56c2636fbf9727787335fd049f45ca42a786",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.22426868905742145,
+          "width": 0.8497652582159625,
+          "height": 0.3196099674972914
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/hangzhou-baitou-gaojie/cover-480.webp",
+        "bytes": 28906,
+        "sha256": "0e47e6faeb70e3356a0d07f27246cd8a1114ab9e648963f95871288ef0daa7f9",
+        "width": 480,
+        "height": 391,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/hangzhou-baitou-gaojie/detail-optimized.webp",
+        "bytes": 161200,
+        "sha256": "cddfbd20034703c74388b1b6901ab848fa4fe87210377ddc0fcef4d6b47363dd",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/hangzhou-baitou-gaojie/cover-480.0e47e6faeb70.webp",
+        "detailImageUrl": "/assets/shop/products/hangzhou-baitou-gaojie/detail-optimized.cddfbd200347.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        },
+        "detailCrop": {
+          "left": 0.0199530516,
+          "top": 0.1159263272,
+          "width": 0.9530516432,
+          "height": 0.8385698808
+        },
+        "cartHotspot": {
+          "left": 0.0825123153,
+          "top": 0.8927648579,
+          "width": 0.8448275862,
+          "height": 0.0678294574
+        },
+        "closeHotspot": {
+          "left": 0.8509852217,
+          "top": 0.0562015504,
+          "width": 0.0837438424,
+          "height": 0.0478036176
+        }
+      },
+      "encoder": "Pillow WebP; detail quality 91 method 6; cover Lanczos 480px quality 85 method 6; no text/pixel paint or original edits",
+      "displayMasks": {
+        "priceMask": {
+          "left": 0.0775862069,
+          "top": 0.6098191214,
+          "width": 0.2044334975,
+          "height": 0.0529715762
+        },
+        "salesMask": {
+          "left": 0.7068965517,
+          "top": 0.6240310078,
+          "width": 0.2376847291,
+          "height": 0.0394056848
+        },
+        "maskBackground": "#fde9cd"
+      }
+    },
+    {
+      "id": "hangzhou-jigong",
+      "title": "济公小鸟",
+      "source": {
+        "url": "/assets/shop/products/hangzhou-jigong/detail.jpg",
+        "archivePath": "小鸟资料库/小鸟商城详情页/新增20261104/济公小鸟.jpg",
+        "bytes": 134687,
+        "sha256": "2bba864b4979ac66680ef0533252749a835012e72ad861582bb867142e24723d",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.22426868905742145,
+          "width": 0.8497652582159625,
+          "height": 0.3261105092091008
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/hangzhou-jigong/cover-480.webp",
+        "bytes": 26620,
+        "sha256": "048e5b7c74bd9511bd399ad8a4db5562f02734857bffc8e4fcd9ff4e7f1cd426",
+        "width": 480,
+        "height": 399,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/hangzhou-jigong/detail-optimized.webp",
+        "bytes": 145140,
+        "sha256": "6a6e782c8bdf8a22cee09b8f2769154e76d04c0b39a9c827db760b56a4f19081",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/hangzhou-jigong/cover-480.048e5b7c74bd.webp",
+        "detailImageUrl": "/assets/shop/products/hangzhou-jigong/detail-optimized.6a6e782c8bdf.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        },
+        "detailCrop": {
+          "left": 0.0199530516,
+          "top": 0.1159263272,
+          "width": 0.9530516432,
+          "height": 0.8385698808
+        },
+        "cartHotspot": {
+          "left": 0.0825123153,
+          "top": 0.8927648579,
+          "width": 0.8448275862,
+          "height": 0.0678294574
+        },
+        "closeHotspot": {
+          "left": 0.8509852217,
+          "top": 0.0562015504,
+          "width": 0.0837438424,
+          "height": 0.0478036176
+        }
+      },
+      "encoder": "Pillow WebP; detail quality 91 method 6; cover Lanczos 480px quality 85 method 6; no text/pixel paint or original edits",
+      "displayMasks": {
+        "priceMask": {
+          "left": 0.0775862069,
+          "top": 0.6098191214,
+          "width": 0.2044334975,
+          "height": 0.0529715762
+        },
+        "salesMask": {
+          "left": 0.7068965517,
+          "top": 0.6240310078,
+          "width": 0.2376847291,
+          "height": 0.0394056848
+        },
+        "maskBackground": "#fde5c8"
       }
     }
   ],

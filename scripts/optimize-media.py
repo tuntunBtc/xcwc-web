@@ -108,6 +108,115 @@ def validate_record(record):
                 and visual_psnr(original, decoded) >= POLICY["minimumPsnrDb"])
 
 
+def usage_jobs():
+    config = json.loads((ROOT / "config/media-runtime.json").read_text(encoding="utf-8"))
+    relative = config.get("usageDerivativeJobs")
+    if not relative:
+        return []
+    manifest = json.loads((ROOT / relative).read_text(encoding="utf-8"))
+    if manifest.get("schemaVersion") != 1:
+        raise ValueError("Unsupported purpose-specific media jobs")
+    return manifest["jobs"]
+
+
+def usage_job_hash(job):
+    return sha256(json.dumps(job, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+
+
+def usage_image(job):
+    # These explicit aliases are only for small UI uses. Full source URLs keep
+    # their existing mapping and must never inherit this crop or resize.
+    source = ROOT / job["sourceFile"]
+    if job["encoding"] != "lossless-webp":
+        raise ValueError("Purpose-specific media must retain transformed pixels losslessly")
+    with Image.open(source) as opened:
+        if list(opened.size) != job["sourceSize"] or getattr(opened, "n_frames", 1) != 1:
+            raise ValueError("Purpose-specific media source geometry changed: " + str(source))
+        image = opened.convert("RGBA")
+        box = job["cropBox"]
+        if not (0 <= box[0] < box[2] <= image.width and 0 <= box[1] < box[3] <= image.height):
+            raise ValueError("Purpose-specific media crop is out of bounds")
+        image = image.crop(box)
+        if image.size != tuple(job["outputSize"]):
+            image = image.resize(tuple(job["outputSize"]), Image.Resampling.LANCZOS)
+    return image
+
+
+def validate_usage_record(job, record):
+    source, output = ROOT / job["sourceFile"], ROOT / record["outputFile"]
+    if (record.get("id") != job["id"] or record.get("sourceFile") != job["sourceFile"]
+            or record.get("usageUrl") != job["usageUrl"]
+            or record.get("cropBox") != job["cropBox"]
+            or [record.get("width"), record.get("height")] != job["outputSize"]
+            or record.get("jobSha256") != usage_job_hash(job)
+            or not source.is_file() or not output.is_file()
+            or sha256(source.read_bytes()) != record.get("sourceSha256")
+            or sha256(output.read_bytes()) != record.get("outputSha256")):
+        return False
+    expected = usage_image(job)
+    with Image.open(output) as opened:
+        actual = opened.convert("RGBA")
+        return (list(actual.size) == job["outputSize"]
+                and expected.tobytes() == actual.tobytes())
+
+
+def generate_usage_derivatives(previous=(), force=False):
+    reusable = {record["id"]: record for record in previous}
+    records = []
+    for job in usage_jobs():
+        cached = reusable.get(job["id"])
+        if not force and cached and validate_usage_record(job, cached):
+            records.append(cached)
+            continue
+        source = ROOT / job["sourceFile"]
+        source_hash = sha256(source.read_bytes())
+        image = usage_image(job)
+        output = BytesIO()
+        image.save(output, format="WEBP", lossless=True, method=6, exact=True,
+                   **({"icc_profile": image.info["icc_profile"]} if image.info.get("icc_profile") else {}))
+        data = output.getvalue()
+        output_hash = sha256(data)
+        output_file = job["outputBaseFile"] + "." + output_hash[:12] + ".webp"
+        target = ROOT / output_file
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        if sha256(source.read_bytes()) != source_hash:
+            raise RuntimeError("Source changed during purpose-specific generation: " + str(source))
+        record = {"id": job["id"], "jobSha256": usage_job_hash(job),
+                  "sourceFile": job["sourceFile"], "sourceSha256": source_hash,
+                  "sourceBytes": source.stat().st_size, "sourceWidth": job["sourceSize"][0],
+                  "sourceHeight": job["sourceSize"][1], "cropBox": job["cropBox"],
+                  "width": image.width, "height": image.height, "resample": "lanczos",
+                  "usageUrl": job["usageUrl"], "outputFile": output_file,
+                  "outputUrl": "/" + output_file, "outputSha256": output_hash,
+                  "outputBytes": len(data), "encoding": "lossless-webp", "method": 6,
+                  "transformedPixelsExact": True, "purpose": job["purpose"]}
+        if not validate_usage_record(job, record):
+            raise RuntimeError("Purpose-specific media changed transformed pixels: " + job["id"])
+        records.append(record)
+        print(f"{job['usageUrl']}: {source.stat().st_size:,} -> {len(data):,} B, {image.width}x{image.height}, lossless", flush=True)
+    return records
+
+
+def check_usage_derivatives(manifest):
+    jobs = usage_jobs()
+    records = {record["id"]: record for record in manifest.get("usageDerivatives", [])}
+    if set(records) != {job["id"] for job in jobs}:
+        raise RuntimeError("Purpose-specific media inventory changed; rerun media:optimize")
+    for job in jobs:
+        if not validate_usage_record(job, records[job["id"]]):
+            raise RuntimeError("Purpose-specific media validation failed: " + job["id"])
+    print(f"PASS: {len(jobs)} purpose-specific derivatives retain exact RGBA pixels after their declared crop/resize")
+
+
+def usage_only(check_only=False, force=False):
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    if check_only:
+        return check_usage_derivatives(manifest)
+    manifest["usageDerivatives"] = generate_usage_derivatives(manifest.get("usageDerivatives", []), force)
+    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def optimize(force=False):
     previous = {}
     if MANIFEST.is_file():
@@ -190,6 +299,7 @@ def optimize(force=False):
     manifest = {"schemaVersion": 1, "generator": "scripts/optimize-media.py", "policy": POLICY,
                 "mapping": {record["sourceUrl"]: record["outputUrl"] for record in records},
                 "records": records, "audit": audit,
+                "usageDerivatives": generate_usage_derivatives(previous.get("usageDerivatives", []), force),
                 "stats": {"auditedMediaFiles": len(records) + len(audit),
                           "optimizedFiles": len(records), "retainedFiles": len(audit),
                           "sourceBytes": source_bytes, "outputBytes": output_bytes,
@@ -216,6 +326,7 @@ def check():
     for record in manifest["audit"]:
         if sha256(current[record["sourceUrl"]].read_bytes()) != record["sourceSha256"]:
             raise RuntimeError("Retained media changed; rerun: " + record["sourceUrl"])
+    check_usage_derivatives(manifest)
     print(f"PASS: {len(recorded)} source files audited; {len(manifest['records'])} derivatives retain geometry, exact alpha and >=40 dB visible PSNR")
 
 
@@ -223,5 +334,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="Validate inventory, hashes, geometry and visible differences without writing")
     parser.add_argument("--force", action="store_true", help="Regenerate from source originals instead of reusing verified derivatives")
+    parser.add_argument("--usage-only", action="store_true", help="Generate/check explicit UI crops and thumbnails without reprocessing full-resolution media")
     args = parser.parse_args()
-    check() if args.check else optimize(args.force)
+    if args.usage_only:
+        usage_only(args.check, args.force)
+    elif args.check:
+        check()
+    else:
+        optimize(args.force)

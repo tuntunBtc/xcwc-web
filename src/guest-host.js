@@ -15,8 +15,8 @@
    case 'pet':return store.pet(a.birdId,a.requestId);
    case 'care':return store.care(a.birdId,a.action,a.name);
    case 'selectBird':return store.select(a.birdId);
-   case 'redeem':return store.redeem(a.skinId,a.requestId);
-   case 'equip':return store.equip(a.birdId,a.skinId);
+   case 'redeem':
+   case 'equip':throw Object.assign(new Error('换装功能本期暂未开放'),{code:'WARDROBE_NOT_AVAILABLE'});
   }
  };
 })();

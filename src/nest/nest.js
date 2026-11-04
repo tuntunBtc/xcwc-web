@@ -127,9 +127,17 @@ function mountNest(){
  for(const emotion of Object.keys(emotionNames))feltBird[emotion]=xcwcMediaUrl('__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/'+(emotion==='thirsty'?'happy':emotion==='hungry'?'hungry-v2':emotion==='belly'?'belly-v1':emotion==='angry'?'angry-v2':emotion)+'.webp');
  // The scene remains scoped to the nest; shared navigation and other pages are untouched.
  const homeChrome=document.createElement('style');homeChrome.dataset.nestChrome='';homeChrome.textContent=`
- #bjd-review.is-integrated:has(#xcwc-nest) .phone{background:#bad493 url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/scene-720.webp') center top/100% 100% no-repeat}
+ #bjd-review.is-integrated:has(#xcwc-nest) .phone{background:#bad493 url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/home-background.png') center top/100% 100% no-repeat}
  #bjd-review.is-integrated:has(#xcwc-nest) .phone>main{background:#bad493}
- #bjd-review.is-integrated:has(#xcwc-nest) #bjd-toast{pointer-events:none}
+ #bjd-review.is-integrated:has(#xcwc-nest) #bjd-toast{
+  position:fixed!important;top:auto!important;
+  bottom:calc(72px + env(safe-area-inset-bottom) + clamp(72px,21.6vw,104px) + 18px)!important;
+  left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100% - 36px);
+  padding:8px 14px;border:1px solid rgba(255,255,255,.62);border-radius:18px;
+  background:rgba(255,249,234,.72);color:#65482f;box-shadow:0 2px 10px #5e562a12;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  font-size:12px;font-weight:500;line-height:1.6;overflow-wrap:anywhere;pointer-events:none;
+ }
  `;document.head.append(homeChrome);
  const say=text=>{$('#speech').textContent=text};
  const sheet=html=>{$('#sheet-content').innerHTML=html;openPageDialog($('#sheet')).catch(e=>{if(alive)pageNotice(e.message)})};

@@ -685,6 +685,17 @@
       "reason": "visual-threshold-not-met"
     },
     {
+      "sourceFile": "assets/nest/felt/home-background.png",
+      "sourceUrl": "/assets/nest/felt/home-background.png",
+      "sourceSha256": "d9ec26f55007db9666cc30a0fff0f312dea7739ea5fca7cb2212e36a1c01f684",
+      "sourceBytes": 2407360,
+      "width": 975,
+      "height": 1614,
+      "frames": 1,
+      "status": "retained",
+      "reason": "User explicitly requested original PNG without compression on 2026-11-04."
+    },
+    {
       "sourceFile": "assets/nest/felt/hud-icons-v2-768.webp",
       "sourceUrl": "/assets/nest/felt/hud-icons-v2-768.webp",
       "sourceSha256": "87d0ba37a1a91496e56a6b2b22685ea3e91238e3b3ae6853659fc51ea2b372bd",
@@ -1015,10 +1026,93 @@
       "reason": "already-lossy-webp-no-repeated-compression"
     }
   ],
+  "usageDerivatives": [
+    {
+      "id": "nav-flower-96",
+      "jobSha256": "a25d41fe461bd8bcd5e8748301264f7954c466e5fae8c252413a11cfa470f401",
+      "sourceFile": "assets/nest/felt/hud-icons-v2-768.webp",
+      "sourceSha256": "87d0ba37a1a91496e56a6b2b22685ea3e91238e3b3ae6853659fc51ea2b372bd",
+      "sourceBytes": 66776,
+      "sourceWidth": 768,
+      "sourceHeight": 512,
+      "cropBox": [
+        0,
+        256,
+        256,
+        512
+      ],
+      "width": 96,
+      "height": 96,
+      "resample": "lanczos",
+      "usageUrl": "/assets/navigation/nav-flower-96.webp",
+      "outputFile": "assets/optimized/navigation/nav-flower-96.743a27953a20.webp",
+      "outputUrl": "/assets/optimized/navigation/nav-flower-96.743a27953a20.webp",
+      "outputSha256": "743a27953a2065590100ea7605e9871636d627d67934ae559e2304dae1841eaa",
+      "outputBytes": 7184,
+      "encoding": "lossless-webp",
+      "method": 6,
+      "transformedPixelsExact": true,
+      "purpose": "Public bottom navigation flower, unchanged 27x27 CSS box and original bottom-left atlas cell; 96px serves more than 3 device pixels per CSS pixel."
+    },
+    {
+      "id": "nav-leaves-96",
+      "jobSha256": "be4c8b950d6f8cc7fdda2eae50052a2118ebc49bc12b1b7060ba9d080862a4c2",
+      "sourceFile": "assets/nest/felt/tools-512.webp",
+      "sourceSha256": "2d6045ebaded3c6325b2395b4223a14586c7d4e7638ded3077aea79a74d6e968",
+      "sourceBytes": 84252,
+      "sourceWidth": 512,
+      "sourceHeight": 512,
+      "cropBox": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "width": 96,
+      "height": 96,
+      "resample": "lanczos",
+      "usageUrl": "/assets/navigation/nav-leaves-96.webp",
+      "outputFile": "assets/optimized/navigation/nav-leaves-96.b485df5c1770.webp",
+      "outputUrl": "/assets/optimized/navigation/nav-leaves-96.b485df5c1770.webp",
+      "outputSha256": "b485df5c177010b988b27bfdf84e257f4b035f1a06ddf95821ff590be5b8f3a9",
+      "outputBytes": 9840,
+      "encoding": "lossless-webp",
+      "method": 6,
+      "transformedPixelsExact": true,
+      "purpose": "Public bottom navigation leaf decoration, unchanged 25x23 CSS box and original top-left atlas cell; retain original non-square CSS rendering."
+    },
+    {
+      "id": "checkin-style-thumb-192",
+      "jobSha256": "f9c41311abf2d9d1a0d3f96e2ae4a3928e80562b8ffae56942c882333a3d17e7",
+      "sourceFile": "src/checkin-assets/felt-style-v1.jpg",
+      "sourceSha256": "2793e7dcc29743ff1c8d5be9985252abb8fc58bf7e97f4e3968c8726ea3d94ad",
+      "sourceBytes": 468846,
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "cropBox": [
+        0,
+        0,
+        1254,
+        1254
+      ],
+      "width": 192,
+      "height": 192,
+      "resample": "lanczos",
+      "usageUrl": "/assets/checkin/felt-style-thumb-192.webp",
+      "outputFile": "assets/optimized/checkin/felt-style-thumb-192.6862cd4b0919.webp",
+      "outputUrl": "/assets/optimized/checkin/felt-style-thumb-192.6862cd4b0919.webp",
+      "outputSha256": "6862cd4b0919d130938cb6dd338731c31922871fd755ca885c98c7867990d061",
+      "outputBytes": 64536,
+      "encoding": "lossless-webp",
+      "method": 6,
+      "transformedPixelsExact": true,
+      "purpose": "Only the small four style-picker previews; existing full image, Canvas assets and viewport deferred loading remain independent."
+    }
+  ],
   "stats": {
-    "auditedMediaFiles": 75,
+    "auditedMediaFiles": 76,
     "optimizedFiles": 28,
-    "retainedFiles": 47,
+    "retainedFiles": 48,
     "sourceBytes": 20366278,
     "outputBytes": 5062502,
     "savedBytes": 15303776,

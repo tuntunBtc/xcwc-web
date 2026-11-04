@@ -33,6 +33,12 @@ async function mountShop(){
   Object.assign(im.style,{left:-area.left/area.width*100+'%',top:-area.top/area.height*100+'%',width:100/area.width+'%',height:100/area.height+'%'});
   frame.append(im);if(im.complete&&im.naturalWidth)ratio();return frame;
  }
+ function detailRetailPrice(frame,bird){
+  const regions=shopDetailPriceRegions[bird.id];if(!regions?.price)return;
+  const position=(element,area)=>Object.assign(element.style,{left:area.left*100+'%',top:area.top*100+'%',width:area.width*100+'%',height:area.height*100+'%',background:area.background});
+  for(const area of regions.masks||[]){const mask=node('span','detail-art-mask');mask.setAttribute('aria-hidden','true');position(mask,area);frame.append(mask)}
+  const price=node('div','detail-retail-price'),area=regions.price;position(price,area);price.style.color=area.color||'#cf652b';price.style.fontSize=(area.fontSizeCqw||10.5)+'cqw';price.style.paddingLeft=(area.paddingLeftCqw||0)+'cqw';price.style.paddingTop=(area.paddingTopCqw||0)+'cqw';price.setAttribute('aria-label','零售价：'+money(bird.price));price.append(node('span','detail-price-currency','¥'),node('strong','detail-price-value',money(bird.price).slice(1)));frame.append(price);
+ }
 
  function api(operation,args={}){return new Promise((resolve,reject)=>{
   if(signal.aborted)return reject(Error('商城已离开'));
@@ -47,7 +53,8 @@ async function mountShop(){
  function syncCart(){const count=$('#cartCount');count.textContent=String(cart.length);count.hidden=!cart.length;shopRoot.querySelectorAll('.add').forEach(b=>{const added=cart.includes(b.dataset.id);b.classList.toggle('added',added);b.setAttribute('aria-label',added?'已加入购物车':'加入购物车');b.disabled=!cartReady||cartBusy||cartReading;b.replaceChildren(added?document.createTextNode('✓'):icon('cart'))});shopRoot.querySelectorAll('.detail-add-btn').forEach(b=>{b.disabled=!cartReady||cartBusy||cartReading||b.dataset.imageReady!=='true';const label=cart.includes(b.dataset.id)?'已在购物车中':'加入购物车';b.setAttribute('aria-label',label);if(!b.classList.contains('detail-hotspot'))b.textContent=label});shopRoot.querySelectorAll('[data-shop-action=remove]').forEach(b=>b.disabled=!cartReady||cartBusy||cartReading);shopRoot.querySelectorAll('[data-shop-action=buy]').forEach(b=>b.disabled=!cartReady||cartBusy||cartReading||buying||!known.get(b.dataset.id)?.purchaseUrl);$('#cartStatus').hidden=!cartError;$('#cartMessage').textContent=cartError;$('#cartRetry').disabled=cartReading;const notice=$('#cartPanelStatus');if(notice)notice.textContent=cartReading?'正在同步购物车…':cartError;}
  function renderProducts(){
   const cards=items.map((b,index)=>{
-   const card=node('article','card'),open=button('', 'detail','photo-button',b.id),im=croppedPicture(b.coverImageUrl,b.title,'photo',b.coverCrop,index<2);open.setAttribute('aria-label','查看'+b.title+'详情');open.append(im);
+   const card=node('article','card'),open=button('', 'detail','photo-button',b.id),im=croppedPicture(b.coverImageUrl,b.title,'photo',b.coverCrop,index<2);
+   im.querySelector('img').style.top='4%';open.setAttribute('aria-label','查看'+b.title+'详情');open.append(im);
    const body=node('div','card-body');body.append(node('h2','',b.title));
    if(b.remark)body.append(node('p','remark',b.remark));
    const bottom=node('div','card-bottom');bottom.append(node('span','price',money(b.price)),button('', 'add','add',b.id));body.append(bottom);card.append(open,body);return card;
@@ -102,6 +109,7 @@ async function mountShop(){
   const token=panel('商品详情',[node('p','note','正在读取商品详情…')],true,'detail');
   try{const b=await detail(id);if(!active||token!==panelVersion)return;if(!b.detailImageUrl)throw Error('商品详情图正在准备中');
    const im=croppedPicture(b.detailImageUrl,b.title+'完整商品详情','detail-image',b.detailCrop,true),add=button('', 'add','detail-add-btn detail-hotspot',id),art=node('div','detail-art'),image=im.querySelector('img'),imageStatus=node('div','detail-image-status','正在读取商品图片…');imageStatus.setAttribute('role','status');
+   detailRetailPrice(im,b);
    const area=b.cartHotspot||{left:.08,top:.87,width:.84,height:.08};
    if(!['left','top','width','height'].every(k=>Number.isFinite(area[k]))||area.left<0||area.top<0||area.width<=0||area.height<=0||area.left+area.width>1||area.top+area.height>1)throw Error('商品加购区域配置无效');
    Object.assign(add.style,{left:area.left*100+'%',top:area.top*100+'%',width:area.width*100+'%',height:area.height*100+'%'});

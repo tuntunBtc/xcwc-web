@@ -59,15 +59,17 @@ function syncGenerate(){
  $('#ck-points').textContent=balance;
 }
 function renderBirdList(){const nodes=birds.map(b=>{const button=document.createElement('button');button.type='button';button.dataset.birdId=b.id;button.className='bird-card'+(selected.includes(b.id)?' selected':'')+(!b.adopted?' locked':'');button.disabled=!b.adopted;button.setAttribute('aria-label',b.name+(b.adopted?'，已领取':'，未领取，已锁定'));if(b.adopted)button.setAttribute('aria-pressed',String(selected.includes(b.id)));const portrait=document.createElement('span');portrait.className='bird-portrait';const im=document.createElement('img');im.alt='';im.decoding='async';im.loading='lazy';portrait.append(im);media.defer(im,()=>loadCheckinAsset(im,'bird').catch(()=>{if(!destroyed)im.alt='小鸟图片暂时无法显示'}));const badge=document.createElement('span');badge.className='bird-badge';badge.innerHTML=`<svg><use href="#ck-${b.adopted?'check':'lock'}"/></svg>`;portrait.append(badge);const title=document.createElement('strong');title.textContent=b.name;const sub=document.createElement('small');sub.textContent=b.adopted?'已领取':'未领取';button.append(portrait,title,sub);button.onclick=()=>{if(busy)return;const result=chooseBird(selected,b.id,birds);if(result.error)return toast(result.error);selected=result.selected;poses=reconcilePoses(selected,poses);active=selected.includes(active)?active:selected.at(-1)||null;if(selected.includes(b.id))active=b.id;renderBirdList();update()};return button});$('#ck-birdList').replaceChildren(...nodes);if(!nodes.length)media.defer($('#ck-birdList'),()=>canvasAssetUrl('bird').then(url=>{if(!destroyed)$('#ck-birdList').style.setProperty('--ck-empty-bird','url(\"'+url+'\")')}).catch(()=>{}));const activeSelect=$('#ck-activeBird');activeSelect.replaceChildren(...selected.map(id=>{const option=document.createElement('option');option.value=id;option.textContent=birdFor(id).name;return option}));activeSelect.disabled=!selected.length;activeSelect.value=active||'';$('#ck-noBirds').hidden=birds.some(b=>b.adopted);$('#ck-selectedCount').textContent=selected.length;$('#ck-selectedSummary').textContent=selected.length?'已选 '+selected.map(id=>birdFor(id).name).join('、'):'选一位小伙伴，一起出发吧'}
-$('#ck-styles').innerHTML=presets.map((p,i)=>`<button class="style ${i===0?'selected':''}" data-style="${i}" aria-label="${p.name}" aria-pressed="${i===0}"><span class="style-thumb" data-xcwc-bg="${checkinAssets['felt-style-v1.jpg']}" style="filter:${p.filter}"></span><span>${p.name}</span><i>✓</i></button>`).join('');
+$('#ck-styles').innerHTML=presets.map((p,i)=>`<button class="style ${i===0?'selected':''}" data-style="${i}" aria-label="${p.name}" aria-pressed="${i===0}"><span class="style-thumb" data-xcwc-bg="assets/checkin/felt-style-thumb-192.webp" style="filter:${p.filter}"></span><span>${p.name}</span><i>✓</i></button>`).join('');
 media.scan($('#ck-styles'));
 $('#ck-styles').onclick=e=>{if(busy)return;const b=e.target.closest('button');if(!b)return;style=Number(b.dataset.style);host.querySelectorAll('.style').forEach((el,i)=>{el.classList.toggle('selected',i===style);el.setAttribute('aria-pressed',String(i===style))});update()};
 function render(canvas,options={}){const im=options.photo||photo;if(!im)return;const ids=options.ids||selected,layout=options.poses||poses,filter=options.style??style,label=options.label??$('#ck-location').value;if(canvas.width!==1000)canvas.width=1000;if(canvas.height!==1010)canvas.height=1010;const c=canvas.getContext('2d');c.fillStyle='#fffdf4';c.fillRect(0,0,1000,1010);c.save();c.beginPath();c.rect(38,38,924,812);c.clip();c.filter=presets[filter].filter;const framing=photoPlacement(im.naturalWidth,im.naturalHeight,options.photoFit||photoFit,options.photoX??photoX,options.photoY??photoY);c.drawImage(im,framing.x,framing.y,framing.width,framing.height);c.filter='none';for(const id of ids){const bird=images.get(id);if(!bird?.naturalWidth||!layout[id])continue;const r=rectFor(layout[id],ratio(id));c.shadowColor='#26311e38';c.shadowBlur=14;c.shadowOffsetY=7;c.drawImage(bird,r.x,r.y,r.w,r.h)}c.restore();c.fillStyle='#556744';c.font='30px "Noto Serif SC",serif';c.fillText('⌖ '+(label.trim()||'在路上'),55,915);c.fillStyle='#b19d78';c.font='16px Georgia';c.textAlign='right';c.fillText('A LITTLE MOMENT WITH YOU',944,915);c.textAlign='left';c.fillStyle='#9b9e88';c.font='15px Georgia';c.fillText('BIRD & BEYOND',55,962);c.textAlign='right';c.fillText('OUR TRAVEL DIARY',944,962);c.textAlign='left'}
 let paintFrame=null;
 function scheduleUpdate(){
  if(destroyed||!ready)return;
- // Invalidate an uncertain export immediately, even before the next paint.
- pendingSubmission=null;dirty=true;
+ // Record edits immediately, even when the next paint is deferred or cancelled.
+ const wasDirty=dirty;pendingSubmission=null;dirty=true;
+ // A freshly edited saved work must be clickable before its first scheduled paint.
+ if(!wasDirty)syncGenerate();
  if(paintFrame===null)paintFrame=requestAnimationFrame(()=>{paintFrame=null;update()});
 }
 function flushUpdate(){if(paintFrame!==null){cancelAnimationFrame(paintFrame);paintFrame=null;update()}}
@@ -76,8 +78,8 @@ rpcController.signal.addEventListener('abort',()=>{if(paintFrame!==null)cancelAn
 for(const selector of ['#ck-generate','#ck-download'])$(selector).addEventListener('click',flushUpdate,{capture:true,signal:rpcController.signal});
 function update(markDirty=true){if(paintFrame!==null){cancelAnimationFrame(paintFrame);paintFrame=null;}if(destroyed||!ready)return;if(markDirty)pendingSubmission=null;for(const id of selected)constrain(poses[id],ratio(id));render($('#ck-preview'));syncSelection();syncPhotoControls();if(markDirty)dirty=true;$('#ck-previewBadge').textContent=uploaded?(dirty?'编辑中':'已收藏'):'示例';$('#ck-previewTitle').textContent=uploaded?'调整我们的合照':'看看合照效果';syncGenerate();scheduleDraft();}
 function syncSelection(){$('#ck-activeBird').value=active||'';const box=$('#ck-birdSelection');box.hidden=!active||!poses[active]||!photo;const disabled=!active||!photo;for(const selector of ['#ck-smaller','#ck-larger','#ck-size','#ck-resetBird'])$(selector).disabled=disabled;if(disabled)return;const p=poses[active],r=rectFor(p,ratio(active));Object.assign(box.style,{left:r.x/10+'%',top:r.y/10.1+'%',width:r.w/10+'%',height:r.h/10.1+'%'});$('#ck-activeName').textContent=birdFor(active).name;$('#ck-size').value=p.size;$('#ck-sizeValue').textContent=Math.round(p.size)+'%';$('#ck-adjustLabel').textContent=birdFor(active).name}
-function setSize(value){if(!active||busy||!photo)return;poses[active].size=Math.max(12,Math.min(55,Number(value)));update()}
-$('#ck-size').oninput=e=>setSize(e.target.value);$('#ck-smaller').onclick=()=>setSize(poses[active]?.size-3);$('#ck-larger').onclick=()=>setSize(poses[active]?.size+3);$('#ck-resetBird').onclick=()=>{if(busy||!active)return;poses=resetPose(selected,poses,active);update()};$('#ck-location').oninput=()=>{if(!busy)update()};
+function setSize(value){if(!active||busy||!photo)return;poses[active].size=Math.max(12,Math.min(55,Number(value)));scheduleUpdate()}
+$('#ck-size').oninput=e=>setSize(e.target.value);$('#ck-smaller').onclick=()=>setSize(poses[active]?.size-3);$('#ck-larger').onclick=()=>setSize(poses[active]?.size+3);$('#ck-resetBird').onclick=()=>{if(busy||!active)return;poses=resetPose(selected,poses,active);update()};$('#ck-location').oninput=()=>{if(!busy)scheduleUpdate()};
 $('#ck-activeBird').onchange=event=>{if(busy)return;active=event.target.value;syncSelection();scheduleDraft();};
 function syncPhotoControls(){
  $('#ck-activeBird').disabled=!selected.length||busy;$('#ck-photoFit').disabled=!uploaded||busy||readingPhoto;$('#ck-photoFit').value=photoFit;
@@ -86,8 +88,8 @@ function syncPhotoControls(){
  $('#ck-photoX').value=photoX;$('#ck-photoY').value=photoY;$('#ck-photoX').disabled=$('#ck-photoY').disabled=busy||readingPhoto;
 }
 $('#ck-photoFit').onchange=event=>{if(busy)return;photoFit=event.target.value;update();};
-$('#ck-photoX').oninput=event=>{if(busy)return;photoX=Number(event.target.value);update();};
-$('#ck-photoY').oninput=event=>{if(busy)return;photoY=Number(event.target.value);update();};
+$('#ck-photoX').oninput=event=>{if(busy)return;photoX=Number(event.target.value);scheduleUpdate();};
+$('#ck-photoY').oninput=event=>{if(busy)return;photoY=Number(event.target.value);scheduleUpdate();};
 async function upload(file){
  if(busy||readingPhoto||!file)return;
  const token=++uploadVersion;let url='',processed=file;
@@ -214,7 +216,7 @@ stage.onpointermove=e=>{
 function endPointer(e){flushUpdate();pointers.delete(e.pointerId);if(stage.hasPointerCapture(e.pointerId))stage.releasePointerCapture(e.pointerId);startGesture();if(!pointers.size)stage.classList.remove('manipulating')}
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])stage.addEventListener(ev,endPointer);
 stage.addEventListener('wheel',e=>{if(!photo)return;const id=hit(point(e));if(!id||busy)return;e.preventDefault();active=id;setSize(poses[id].size+(e.deltaY<0?2:-2))},{passive:false});
-preview.onkeydown=e=>{if(!active||busy||!photo)return;const step=e.shiftKey?20:5,p=poses[active];if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();p.cx+=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;p.cy+=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;update()}else if(['+','=','-','_'].includes(e.key)){e.preventDefault();setSize(p.size+(['-','_'].includes(e.key)?-2:2))}};
+preview.onkeydown=e=>{if(!active||busy||!photo)return;const step=e.shiftKey?20:5,p=poses[active];if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();p.cx+=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0;p.cy+=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;scheduleUpdate()}else if(['+','=','-','_'].includes(e.key)){e.preventDefault();setSize(p.size+(['-','_'].includes(e.key)?-2:2))}};
 
 
 
