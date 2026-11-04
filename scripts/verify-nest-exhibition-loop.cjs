@@ -290,7 +290,7 @@ async function verifyExpressionRecovery(browser,base){
  try{
   c=await regressionHarness(browser,base,result);
   let fail=true,failed=0,succeeded=0;
-  const pattern=/\/emotions\/hungry-v2(?:\.[0-9a-f]{12})?\.webp(?:\?|$)/;
+  const pattern=/\/emotions\/hungry-v3(?:\.[0-9a-f]{12})?\.webp(?:\?|$)/;
   await c.context.route(pattern,route=>{if(fail){failed++;return route.fulfill({status:404,contentType:'text/plain',body:'isolated missing expression fixture'})}succeeded++;return route.continue()});
   await c.advance(120000);
   for(let i=0;i<2;i++){await c.nest().locator('.dock [data-action=water]').click({force:true,noWaitAfter:true});await c.tick(50)}
@@ -495,7 +495,7 @@ async function runCase(browser,engine,width,base){
   if(capture&&!seen.has(value)){
    seen.add(value);
    if(value==='thirsty'){
-    assert.match(await image().getAttribute('src'),/happy(?:\.[0-9a-f]+)?\.webp/,'thirst must reuse happy art instead of lonely art');
+    assert.match(await image().getAttribute('src'),/hungry-v3(?:\.[0-9a-f]+)?\.webp/,'thirst must reuse the approved hungry art instead of lonely art');
     assert(await nest().locator('.actor').evaluate(el=>el.classList.contains('is-thirsty')));
     assert(await nest().locator('.thirst-drops').evaluate(el=>getComputedStyle(el).opacity!=='0'&&getComputedStyle(el).visibility!=='hidden'&&getComputedStyle(el).display!=='none'));
    }

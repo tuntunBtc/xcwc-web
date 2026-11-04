@@ -13,7 +13,7 @@ if(!/^http:\/\/127\.0\.0\.1:\d+$/.test(base||''))throw Error('An explicit isolat
     const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
     try{const page=await context.newPage();page.setDefaultTimeout(25000);let fail=true;
      await context.route(pattern,r=>fail?r.abort():r.continue());await page.goto(base+'/?page='+route,{waitUntil:'domcontentloaded'});
-     const frame=page.frameLocator('iframe');await frame.locator('main').waitFor();const retry=frame.getByRole('button',{name:'重新加载',exact:true});await retry.waitFor();fail=false;await retry.click();await frame.locator(ready).first().waitFor();checks.push(route+' resource failure recovers on retry');console.log('PASS',engine.name(),route,'failure/retry');
+     const frame=page.frameLocator('iframe');await frame.locator('#bjd-content').waitFor();const retry=frame.getByRole('button',{name:'重新加载',exact:true});await retry.waitFor();fail=false;await retry.click();await frame.locator(ready).first().waitFor();checks.push(route+' resource failure recovers on retry');console.log('PASS',engine.name(),route,'failure/retry');
     }finally{await context.close()}
    }
    const context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});

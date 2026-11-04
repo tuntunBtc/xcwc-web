@@ -112,6 +112,15 @@ test('nickname validation, unknown bird and corrupt caches never silently overwr
  const x=setup();assert.throws(()=>x.store.adopt(bird(1),'1234567'),/1–6/);assert.throws(()=>x.store.care(bird(1).id,'feed'),/先碰一碰/);x.data.set(GUEST_KEY,'bad-json');assert.throws(()=>x.store.snapshot(),/不会自动覆盖/);assert.equal(x.data.get(GUEST_KEY),'bad-json');
  const y=setup();y.store.adopt(bird(1),'团团');patch(y,s=>s.birds[0].mood='bad');const original=y.data.get(GUEST_KEY);assert.throws(()=>y.store.snapshot(),/不会自动覆盖/);assert.equal(y.data.get(GUEST_KEY),original);
 });
+test('damaged needs, inventory and settlement clock never overwrite the original cache',()=>{
+ for(const [key,values] of Object.entries({hunger:['broken',null,-1,101,1.5],water:['broken',null,-1,101,1.5],food:['2',null,-1,1.5],waterStock:['2',null,-1,1.5],settledAt:['broken',null,-1,1.5]})){
+  for(const invalid of values){const x=setup();x.store.adopt(bird(1),'团团');patch(x,s=>s.birds[0][key]=invalid);const original=x.data.get(GUEST_KEY);x.advance(HOUR);
+   assert.throws(()=>x.store.snapshot(),error=>error.code==='CACHE_INVALID',key+'='+String(invalid));
+   assert.throws(()=>x.store.care(bird(1).id,'clean'),error=>error.code==='CACHE_INVALID',key+'='+String(invalid));
+   assert.equal(x.data.get(GUEST_KEY),original,key+'='+String(invalid));
+  }
+ }
+});
 test('photo rewards still deduplicate original and request and stop at three daily points',()=>{
  const x=setup();x.store.adopt(bird(1),'团团');assert.equal(x.store.photoReward('photo1','hash1'),1);assert.equal(x.store.photoReward('photo1','hash1'),1);assert.equal(x.store.photoReward('photo2','hash1'),0);assert.equal(x.store.photoReward('photo3','hash3'),1);assert.equal(x.store.photoReward('photo4','hash4'),1);assert.equal(x.store.photoReward('photo5','hash5'),0);assert.equal(x.store.snapshot().wallet.balance,8);assert.equal(current(x).mood,80);
 });

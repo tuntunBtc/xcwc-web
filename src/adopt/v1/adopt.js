@@ -4,17 +4,8 @@ const adoptionV1Defaults=Object.freeze({city:'杭州',type:'西湖小黄莺',ski
 function mountAdoptionV1(){
  const shadow=mountIsolated('xcwc-adopt',adoptionV1Css,adoptionV1Template),$=selector=>shadow.querySelector(selector),controller=new AbortController(),{signal}=controller;
  const adoptChrome=document.createElement('style');adoptChrome.dataset.adoptChrome='';adoptChrome.textContent=`
- #bjd-review.is-integrated:has(#xcwc-adopt) .phone{background:#aabd6c url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/meadow-540.webp') center bottom/100% auto repeat-y}
- #bjd-review.is-integrated:has(#xcwc-adopt) .phone>main{background:transparent}
- #bjd-review.is-integrated:has(#xcwc-adopt) .bottom{background:transparent;border-color:transparent}
- #bjd-review.is-integrated:has(#xcwc-adopt) .bottom::before{inset:0;background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/pill-v2-800.webp') center/100% 110% no-repeat}
- #bjd-review.is-integrated:has(#xcwc-adopt) .bottom::after{content:none}
- #bjd-review.is-integrated:has(#xcwc-adopt) .bottom button{color:#946b45;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;font-weight:600}
- #bjd-review.is-integrated:has(#xcwc-adopt) .bottom button::before{background:none;box-shadow:none}
- #bjd-review.is-integrated:has(#xcwc-adopt) .bottom svg{stroke:#b28a63;stroke-width:2.5;filter:drop-shadow(0 1px 0 #ffefda) drop-shadow(0 -1px 0 #d6af8f)}
- #bjd-review.is-integrated:has(#xcwc-adopt) .bottom [data-go=home]{color:#65995d}
- #bjd-review.is-integrated:has(#xcwc-adopt) .bottom [data-go=home]::before{content:'';position:absolute;inset:3px 6px;z-index:-1;background:radial-gradient(ellipse,#c6e3b881,transparent 80%);box-shadow:none}
- #bjd-review.is-integrated:has(#xcwc-adopt) .bottom [data-go=home] svg{stroke:#70a467;fill:#cae2b44d;filter:drop-shadow(0 0 3px #a8d39a)}
+ #bjd-review.is-integrated:has(#xcwc-adopt) .phone{background:#dfe5c5}
+ #bjd-review.is-integrated:has(#xcwc-adopt) .phone>main{background:#c8ddb7}
  `;document.head.append(adoptChrome);
  let alive=true,loading=false,busy=false,entry=null,bird=null,account=null,alreadyMine=false,randomIndex=0,composing=false;
  const suggestions=['湖小叽','西湖团团','小桂','啾啾','慢慢'];
@@ -91,7 +82,6 @@ function mountAdoptionV1(){
  }
  shadow.addEventListener('keydown',event=>{if(event.key!=='Enter'||composing||event.isComposing||event.keyCode===229)return;if(event.target.id==='adopt-v1-name'){event.preventDefault();submitAdoption();return}if(event.target.closest('.login-form')){event.preventDefault();authenticate('login')}},{signal});
  shadow.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;if(button.closest('.login-form')){try{await authenticate(button.value==='register'?'register':'login')}catch(error){if(alive) $('.login-error').textContent=error.message||'登录失败'}return}if(!button.matches('[data-action]'))return;try{
-  if(button.dataset.action==='back'){nav('back');return}
   if(button.dataset.action==='retry'){rememberName();await load();return}
   if(button.dataset.action==='close-login'){$('.login-dialog').close();return}
   if(button.dataset.action==='random'){setName(suggestions[randomIndex++%suggestions.length]);clearNameError();$('#adopt-v1-name').focus();return}

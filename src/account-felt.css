@@ -1,9 +1,9 @@
 /* Profile-only felt surfaces. Reuse the same small assets as the nest and city. */
 #bjd-review.is-integrated:has(.account-profile-felt) .phone>main{background:#dce6be}
-#bjd-review #xcwc-account-page.account-profile-felt{--profile-ink:#755334;--profile-muted:#8c7858;min-height:100%;padding:0 15px 22px;color:var(--profile-ink);background:radial-gradient(ellipse at 0 60%,#f4edc675,transparent 55%),linear-gradient(#c8dfc3,#e3e9c5 53%,#dce6bd);font:14px/1.7 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}
+#bjd-review #xcwc-account-page.account-profile-felt{--profile-ink:#755334;--profile-muted:#8c7858;min-height:100%;padding:0 15px 22px;color:var(--profile-ink);background:url('__XCWC_ASSET_ORIGIN__/assets/profile/felt/background-v1.png') center top/cover no-repeat;font:14px/1.7 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}
 #bjd-review .account-profile-felt [hidden]{display:none!important}
-#bjd-review .account-profile-felt .profile-hero{position:relative;isolation:isolate;margin:0 -15px 0;padding:23px 18px 10px;background:url('__XCWC_ASSET_ORIGIN__/assets/city/felt/hero-960.webp') right 33%/100% auto no-repeat}
-#bjd-review .account-profile-felt .profile-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#e0eac74d,transparent 65%),linear-gradient(transparent 50%,#dce6be 98%);pointer-events:none}
+#bjd-review .account-profile-felt .profile-hero{position:relative;isolation:isolate;margin:0 -15px 0;padding:23px 18px 10px;background:transparent}
+#bjd-review .account-profile-felt .profile-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:transparent;pointer-events:none}
 #bjd-review .account-profile-felt .account-page-head{margin:0 0 27px;padding:0 5px;position:relative}
 #bjd-review .account-profile-felt .account-page-head .eyebrow{font-size:8px;letter-spacing:2.5px;font-weight:600;color:#6a8564}
 #bjd-review .account-profile-felt .account-page-head h1{display:flex;align-items:center;gap:8px;margin:6px 0 6px;font:700 32px/1.4 'Songti SC','STSong',serif;letter-spacing:2px;color:#765133;text-shadow:0 2px 0 #fff1d5,0 0 7px #fff8d6}

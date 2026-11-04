@@ -12,11 +12,13 @@ const {isFoot}=vm.runInNewContext(source+'\n({isFoot:isNestFootPoint});',{
 const point=(art,x,y)=>isFoot(art,x/640,y/580);
 
 test('visible feet react while the head, belly, transparent gaps and canvas background do not',()=>{
- assert.equal(point('happy',207,525),true);assert.equal(point('happy',411,525),true);
- for(const [x,y]of [[320,150],[320,390],[155,522],[461,531],[320,568],[0,0]])assert.equal(point('happy',x,y),false,`${x},${y}`);
+ for(const [x,y]of [[167,509],[192,519],[232,526],[376,531],[416,526],[444,514],[165,508],[192,520],[232,530],[376,535],[416,532],[446,518],[207,525],[411,525]])assert.equal(point('happy',x,y),true,`happy-v2 toe ${x},${y}`);
+ for(const [x,y]of [[320,150],[320,390],[205,490],[232,495],[380,495],[416,490],[320,520],[147,505],[172,524],[258,524],[350,527],[436,531],[457,501],[150,525],[465,525],[175,535],[320,568],[0,0]])assert.equal(point('happy',x,y),false,`happy-v2 body or background ${x},${y}`);
  assert.equal(point('crying',249,529),true);assert.equal(point('shy',264,532),false);
- for(const [x,y]of [[198,528],[443,527],[164,519],[196,534],[232,534],[409,534],[448,532],[480,519]])assert.equal(point('angry',x,y),true,`new angry foot ${x},${y}`);
- for(const [x,y]of [[144,523],[495,522],[250,543],[391,543],[218,500],[320,520]])assert.equal(point('angry',x,y),false,`new angry background or belly ${x},${y}`);
+ for(const [x,y]of [[216,527],[371,531],[188,518],[220,532],[250,530],[353,534],[390,530]])assert.equal(point('puzzled',x,y),true,`puzzled-v2 foot ${x},${y}`);
+ for(const [x,y]of [[216,500],[320,520],[160,525],[420,532],[275,547],[320,548]])assert.equal(point('puzzled',x,y),false,`puzzled-v2 background or belly ${x},${y}`);
+ for(const [x,y]of [[194,528],[442,528],[150,525],[190,532],[230,534],[404,535],[445,532],[482,521]])assert.equal(point('angry',x,y),true,`new angry foot ${x},${y}`);
+ for(const [x,y]of [[130,523],[505,522],[255,545],[375,545],[218,498],[320,520]])assert.equal(point('angry',x,y),false,`new angry background or belly ${x},${y}`);
 });
 
 test('upturned orange feet react while opaque white belly inside the foot bounds does not',()=>{

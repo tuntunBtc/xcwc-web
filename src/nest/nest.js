@@ -79,24 +79,30 @@ function nestTouchPoint(event,image){
  return x>=0&&x<1&&y>=0&&y<1?{x,y}:null;
 }
 
+function nestEmotionArtwork(emotion){
+ const footArea=emotion==='veryhappy'?'happy':['thirsty','unwell'].includes(emotion)?'hungry':emotion;
+ const filename=({happy:'happy-v2',hungry:'hungry-v3',angry:'angry-v3',puzzled:'puzzled-v2'})[footArea]||footArea;
+ return {footArea,filename:filename+'.webp'};
+}
+
 function selectNestEmotion(bird,interaction=null,phase=0){
- if(bird&&interaction?.birdId===bird.id&&['happy','belly','puzzled','angry','crying'].includes(interaction.emotion))return interaction.emotion;
+ if(bird&&interaction?.birdId===bird.id&&['happy','veryhappy','puzzled','angry','crying'].includes(interaction.emotion))return interaction.emotion;
  return describeNestState(bird,phase).emotion;
 }
 
-function chooseNestPetReaction(sequence,bird,now,{accepted=true,replayed=false,bellyActive=false,duringBelly=false}={}){
+function chooseNestPetReaction(sequence,bird,now,{accepted=true,replayed=false,veryHappyActive=false,duringVeryHappy=false}={}){
  const previous=sequence||{birdId:null,times:[]},empty={birdId:bird?.id||null,times:[]};
  if(!accepted)return {sequence:previous,emotion:null,duration:0};
  const current=previous.birdId===bird?.id?previous:empty;
- // A response from a touch made during the pose must neither restart it nor
- // become the first touch in the following round after that pose has ended.
- if(bellyActive||duringBelly)return {sequence:empty,emotion:null,duration:0};
+ // A touch made during this reaction must neither restart its four seconds
+ // nor seed the following round after the reaction has ended.
+ if(veryHappyActive||duringVeryHappy)return {sequence:empty,emotion:null,duration:0};
  if(replayed)return {sequence:current,emotion:'happy',duration:2000};
  const comfortable=bird&&Number.isFinite(bird.mood)&&bird.mood>=60&&Number.isFinite(bird.hunger)&&bird.hunger>=30&&Number.isFinite(bird.water)&&bird.water>=30;
  if(!comfortable||!Number.isFinite(now))return {sequence:empty,emotion:'happy',duration:2000};
  const times=(Array.isArray(current.times)?current.times:[]).filter(time=>Number.isFinite(time)&&time<=now&&now-time<=12000);
  times.push(now);
- return times.length>=3?{sequence:empty,emotion:'belly',duration:4000}:{sequence:{birdId:bird.id,times},emotion:'happy',duration:2000};
+ return times.length>=3?{sequence:empty,emotion:'veryhappy',duration:4000}:{sequence:{birdId:bird.id,times},emotion:'happy',duration:2000};
 }
 
 function describeNestState(bird,phase=0){
@@ -122,9 +128,9 @@ function mountNest(){
  let comfortSequence={birdId:null,times:[]},comfortGeneration=0;
  let needSignature='',needPhase=0,needShownAt=null,needArtKey='',needArtRequestedAt=performance.now();
  const birdAudio=createNestBirdAudio(signal);
- const emotionNames={happy:'开心',belly:'舒服翻肚皮',hungry:'肚子饿了',thirsty:'想喝水',unwell:'想你陪陪',puzzled:'好奇',angry:'被摸痒了',crying:'想念你'};
+ const emotionNames={happy:'开心',veryhappy:'很开心',hungry:'肚子饿了',thirsty:'想喝水',unwell:'想你陪陪',puzzled:'好奇',angry:'被摸痒了',crying:'想念你'};
  const feltBird={};
- for(const emotion of Object.keys(emotionNames))feltBird[emotion]=xcwcMediaUrl('__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/'+(emotion==='thirsty'?'happy':emotion==='hungry'?'hungry-v2':emotion==='belly'?'belly-v1':emotion==='angry'?'angry-v2':emotion)+'.webp');
+ for(const emotion of Object.keys(emotionNames))feltBird[emotion]=xcwcMediaUrl('__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/'+nestEmotionArtwork(emotion).filename);
  // The scene remains scoped to the nest; shared navigation and other pages are untouched.
  const homeChrome=document.createElement('style');homeChrome.dataset.nestChrome='';homeChrome.textContent=`
  #bjd-review.is-integrated:has(#xcwc-nest) .phone{background:#bad493 url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/home-background.png') center top/100% 100% no-repeat}
@@ -219,7 +225,7 @@ function mountNest(){
   const start=()=>{
    if(!stillCurrent()||document.hidden||pageSuspended)return;
    clearTimeout(feedbackTimer);
-   if(emotion==='happy'){void $('.actor').offsetWidth;$('.actor').classList.add('happy')}
+   if(emotion==='happy'||emotion==='veryhappy'){void $('.actor').offsetWidth;$('.actor').classList.add('happy')}
    feedbackTimer=setTimeout(finish,duration);
   };
   // A cold mobile connection must not spend the entire brief
@@ -385,7 +391,7 @@ function mountNest(){
     const bird=ownedCurrent();if(!bird)return pageNotice('请先领取小鸟');
     const exhibition=liveAccount.careDaily?.exhibition,full=bird.food>=3&&bird.waterStock>=3;
     const supply=exhibition?'<p>食物剩余 '+bird.food+' 份，水剩余 '+bird.waterStock+' 份。不够时可以随时来补充，不消耗叽分。</p><button class="primary" data-action="supply" '+(full?'disabled':'')+'>'+(full?'食物和水都很充足':'食物和水各补至 3 份')+'</button>':'<p>每只小鸟每天可免费领取食物和水各 1 份，手动领取后放进它的库存。</p><button class="primary" data-action="supply" '+(liveAccount.careDaily?.supplyClaimed?'disabled':'')+'>'+(liveAccount.careDaily?.supplyClaimed?'这只小鸟今日已领取':'领取这只小鸟的今日补给')+'</button>';
-    return sheet('<h2>问候与补给</h2>'+supply+'<button class="primary" data-action="greet" '+(liveAccount.careDaily?.greeted?'disabled':'')+'>'+(liveAccount.careDaily?.greeted?'今日已经问候过啦':'打个招呼 · +2 叽分')+'</button><details class="play-tips"><summary>和小鸟玩一会儿</summary><p>摸摸头和身体，它会开心；吃饱喝足、心情好时，12 秒内温柔摸摸 3 次，它会舒服地翻肚皮。摸到脚脚，它会痒得假装生气。点“逗逗”看看它的好奇脸。放一会儿，它会想吃东西、喝水或想你陪陪；想念时摸摸头，就能慢慢开心起来。</p></details>');
+    return sheet('<h2>问候与补给</h2>'+supply+'<button class="primary" data-action="greet" '+(liveAccount.careDaily?.greeted?'disabled':'')+'>'+(liveAccount.careDaily?.greeted?'今日已经问候过啦':'打个招呼 · +2 叽分')+'</button><details class="play-tips"><summary>和小鸟玩一会儿</summary><p>摸摸头和身体，它会开心；吃饱喝足、心情好时，12 秒内温柔摸摸 3 次，它会很开心。摸到脚脚，它会痒得假装生气。点“逗逗”看看它的好奇脸。放一会儿，它会想吃东西、喝水或想你陪陪；想念时摸摸头，就能慢慢开心起来。</p></details>');
    }
    if(action==='feed'){
     const bird=ownedCurrent();if(!bird)return pageNotice('请先领取小鸟');
@@ -416,18 +422,18 @@ function mountNest(){
     const bird=ownedCurrent();if(!bird)return pageNotice('碰一碰实体小鸟，把第一位伙伴领回小窝吧');
     if(busy)return;
     const image=$('#bird img'),point=button.id==='bird'?nestTouchPoint(event,image):null;
-    const art=image.dataset.skinId||(image.dataset.emotion==='thirsty'?'happy':image.dataset.emotion);
+    const art=image.dataset.skinId||nestEmotionArtwork(image.dataset.emotion).footArea;
     if(point&&isNestFootPoint(art,point.x,point.y)){
      clearComfort();actionRevision++;feedback('angry',2000,'哎呀，脚脚痒痒的，摸摸头嘛～');birdAudio.play(action,soundTicket);return;
     }
-    const revision=birdRevision,soothing=interactionEmotion?.emotion==='crying',bellyAtRequest=interactionEmotion?.emotion==='belly'?interactionEmotion:null,comfortAtRequest=comfortGeneration;busy=true;actionRevision++;
+    const revision=birdRevision,soothing=interactionEmotion?.emotion==='crying',veryHappyAtRequest=interactionEmotion?.emotion==='veryhappy'?interactionEmotion:null,comfortAtRequest=comfortGeneration;busy=true;actionRevision++;
     pendingPet??={birdId:bird.id,requestId:crypto.randomUUID()};
     try{
      const result=await accountRpc('pet',pendingPet,signal);pendingPet=null;if(!isCurrent(bird.id,revision))return;
      applyBird(result.bird);update();
-     const reaction=chooseNestPetReaction(comfortSequence,result.bird,performance.now(),{accepted:comfortAtRequest===comfortGeneration&&!document.hidden&&!pageSuspended,replayed:!!result.replayed,bellyActive:interactionEmotion?.birdId===bird.id&&interactionEmotion.emotion==='belly',duringBelly:!!bellyAtRequest});
+     const reaction=chooseNestPetReaction(comfortSequence,result.bird,performance.now(),{accepted:comfortAtRequest===comfortGeneration&&!document.hidden&&!pageSuspended,replayed:!!result.replayed,veryHappyActive:interactionEmotion?.birdId===bird.id&&interactionEmotion.emotion==='veryhappy',duringVeryHappy:!!veryHappyAtRequest});
      comfortSequence=reaction.sequence;
-     if(reaction.emotion)feedback(reaction.emotion,reaction.duration,reaction.emotion==='belly'?'好舒服呀，肚皮也给你看看～':'嘿嘿，你摸摸我，我就开心啦～',{force:soothing});
+     if(reaction.emotion)feedback(reaction.emotion,reaction.duration,reaction.emotion==='veryhappy'?'好开心呀，再陪我一会儿～':'嘿嘿，你摸摸我，我就开心啦～',{force:soothing});
      birdAudio.play(action,soundTicket);
      pageNotice(result.replayed?'已确认上次陪伴，未重复发放奖励':result.message||(result.reward===1?'小鸟收到你的陪伴，叽分 +1':'小鸟收到你的陪伴啦～'));
      await refreshSaved(bird.id,revision);

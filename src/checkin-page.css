@@ -166,12 +166,6 @@
 #bjd-review .checkin-page .upload:focus-within{outline:2px solid #78975b;outline-offset:3px}
 #bjd-review .checkin-page button:focus-visible,#bjd-review .checkin-page a:focus-visible,#bjd-review .checkin-page label:focus-visible,#bjd-review .checkin-page canvas:focus-visible,#bjd-review .checkin-page summary:focus-visible{outline:2px solid #7f9c41}
 #bjd-review .checkin-page [hidden]{display:none!important}
-/* Keep the shared navigation's structure and routing; only its photo-route skin changes. */
-#bjd-review.is-checkin .phone>.bottom{display:flex;position:relative;flex-shrink:0;align-items:center;margin:0 12px 15px;padding:9px 7px 10px;border:3px solid #fff5e1;border-radius:32px;background:#ffeedd url('assets/felt-cream-v1.jpg') center/280px;box-shadow:inset 0 2px 8px #fff8eb,0 4px 9px #7f955040,0 0 6px 2px #fff8e3;gap:0;overflow:visible;min-height:76px}
-#bjd-review.is-checkin .phone>.bottom button{color:#936a3e;font-size:13px;font-weight:600;gap:3px;width:25%;min-width:0;border:0;background:none;min-height:53px;border-radius:28px;padding:2px 0}
-#bjd-review.is-checkin .phone>.bottom svg{width:27px;height:27px;stroke-width:1.8;filter:drop-shadow(0 2px 1px #ae845b50)}
-#bjd-review.is-checkin .phone>.bottom button.active{color:#5b9b37;background:radial-gradient(ellipse at center,#dcecadd9,#dcecadd9 28%,#e6efbe80 58%,transparent 75%);text-shadow:0 1px #ffffd2}
-#bjd-review.is-checkin .phone>.bottom button.active svg{fill:#bfdc7e66;stroke-width:2;filter:drop-shadow(0 2px 1px #84ab4c60)}
 @media(min-width:440px){
  #bjd-review .checkin-page .topbar{height:91px;padding:21px 22px}
  #bjd-review .checkin-page .brand{font-size:17px;padding:5px 18px}
@@ -253,9 +247,6 @@
  #bjd-review .checkin-page .album-heading p{font-size:9px}
  #bjd-review .checkin-page .adjust{gap:4px;font-size:9px}
  #bjd-review .checkin-page .adjust label{font-size:8px}
- #bjd-review.is-checkin .phone>.bottom{margin-left:9px;margin-right:9px;padding:7px 5px;min-height:68px}
- #bjd-review.is-checkin .phone>.bottom button{font-size:12px}
- #bjd-review.is-checkin .phone>.bottom svg{width:25px;height:25px}
 }
 @media(prefers-reduced-motion:reduce){#bjd-review .checkin-page{scroll-behavior:auto}#bjd-review .checkin-page *{transition:none!important}}
 /* Readable mobile controls and a separate, reversible album-management flow. */

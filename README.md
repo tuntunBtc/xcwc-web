@@ -54,6 +54,8 @@ npm run media:check
 
 当前第一期采用展会 B 档快速演示，默认约 1～2 分钟出现饥渴，心情按分钟变化；普通节奏保留为独立配置。具体参数与旧缓存迁移规则见需求基线最新章节。
 
+2026-11-05 小窝当前表情验收使用 `scripts/verify-nest-current.cjs`，显式设置本机 `XCWC_PREVIEW_URL`，可用 `XCWC_NEST_REPORT_DIR` 隔离报告。它覆盖 Chromium/WebKit 的三次摸摸“很开心”4 秒、真实脚区生气、低心情新趴姿、退出表情不请求、离页清理及慢图实际解码后的完整展示和迟到回调隔离。旧 `verify-nest-exhibition-loop.cjs` 保留翻肚皮及开放换装阶段的历史验收，不直接用作当前版本门禁。
+
 完整浏览器验收使用 `scripts/verify-fullflow-audit.cjs`，设置 `XCWC_PREVIEW_URL` 为本次隔离预览根地址、`XCWC_TEST_BIRD_CODES` 为两只真实隔离建档实体码（逗号分隔）。`XCWC_FREEZE_CLOCK=1` 可固定时钟验证一般交互，真实演示时序另由 `verify-exhibition-profile.cjs` 控时验证。存储故障、跨标签reset、旧相册迁移和图片按需读取分别有专项脚本，范围与报告见 [全项目审查记录](../docs/tasks/全项目审查与主流程回归-V1.1030-2026-11-03.md)。并发验收须用独立报告标签或目录，不能覆盖其他聊天的报告再当作本轮证据。
 
 下面历史实施章节的旧 verify-guest-flow、verify-checkin、verify-integrated-pages 等脚本保留用于追溯，部分仍基于已替代的登录、测试淘宝链接和普通养成节奏，不作为当前版本验收入口。正式外部领取地址始终为 `/register.html?birdCode=完整编码`，根路径带码只作兼容。

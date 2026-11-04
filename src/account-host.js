@@ -5,11 +5,20 @@
  const trusted=location.protocol==='https:'||['127.0.0.1','localhost','[::1]'].includes(location.hostname);
  __ADOPTION_ENTRY__
  const adoptionEntry=()=>parseAdoptionEntry(location.search);
- let observed=session()?.token||null,revision=0,resettingLocalData=false;
+ let observed=session()?.token||null,revision=0,resettingLocalData=false,sessionTimer=null,pageSuspended=false;
  const identity=()=>({account:session()?.username||null,revision});
- function changed(){const token=session()?.token||null;if(token===observed)return;observed=token;revision++;for(const c of pending.values())c.abort();frame?.contentWindow?.postMessage({channel:'xcwc-account-change',...identity()},'*');}
+ function watchSession(){
+  if(sessionTimer!==null){clearInterval(sessionTimer);sessionTimer=null;}
+  // Anonymous visits use session/storage events. Only a visible signed-in page
+  // needs the expiry fallback; recheck immediately when the page returns.
+  if(observed&&!document.hidden&&!pageSuspended)sessionTimer=setInterval(changed,700);
+ }
+ function changed(){const token=session()?.token||null;if(token===observed)return;observed=token;revision++;watchSession();for(const c of pending.values())c.abort();frame?.contentWindow?.postMessage({channel:'xcwc-account-change',...identity()},'*');}
  window.addEventListener('resize',()=>frame?.contentWindow?.postMessage({channel:'xcwc-account-viewport',height:innerHeight},'*'));
- window.addEventListener('storage',event=>{if(event.key===key||event.key===null)changed()});window.addEventListener('xcwc-session-change',changed);window.addEventListener('storage',changed);window.addEventListener('focus',changed);window.addEventListener('pageshow',changed);document.addEventListener('visibilitychange',changed);setInterval(changed,700);
+ window.addEventListener('storage',event=>{if(event.key===key||event.key===null)changed()});window.addEventListener('xcwc-session-change',changed);window.addEventListener('focus',changed);
+ window.addEventListener('pagehide',()=>{pageSuspended=true;watchSession()});
+ window.addEventListener('pageshow',()=>{pageSuspended=false;changed();watchSession()});
+ document.addEventListener('visibilitychange',()=>{changed();watchSession()});watchSession();
  async function api(path,{method='GET',body,signal}={}){
   const publicRead=method==='GET'&&(/^\/birds\/(?:[a-f0-9]{32}|by-code\/[A-Za-z0-9_-]+)$/.test(path)||path==='/checkin-catalog'||path==='/health');if(!trusted&&!publicRead)throw Error('账号服务需要 HTTPS；当前 IP 站点仅提供免登录本机体验');const auth=session(),token=auth?.token;const publicAuth=/^\/auth\/(login|register)$/.test(path);
   const response=await fetch('/api'+path,{method,signal,cache:'no-store',headers:{...(token&&!publicAuth&&!publicRead?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});

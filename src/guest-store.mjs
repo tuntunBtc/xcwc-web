@@ -21,12 +21,15 @@ export function createGuestStore(storage,{clock=()=>Date.now(),profile=DEFAULT_G
  const blank=()=>({version:1,careRulesVersion:1,careProfile:profile,careProfileVersion:rules.version,birds:[],balance:0,ledger:[],skins:[],requests:{},daily:{},photoHashes:[],welcome:false});
  const record=value=>!!value&&typeof value==='object'&&!Array.isArray(value);
  const timestamp=value=>Number.isSafeInteger(value)&&value>=0;
+ const meter=value=>Number.isInteger(value)&&value>=0&&value<=100;
  function load(){
   let raw;try{raw=storage.getItem(GUEST_KEY)}catch{fail('CACHE_UNAVAILABLE','浏览器缓存不可用，请允许存储后重试')}
   if(!raw)return blank();
   try{
    const value=JSON.parse(raw);
    if(!record(value)||value.version!==1||!Array.isArray(value.birds)||!Array.isArray(value.ledger)||!Number.isSafeInteger(value.balance)||value.balance<0||!record(value.requests)||!record(value.daily)||!Array.isArray(value.skins)||!Array.isArray(value.photoHashes))throw Error();
+   // Reject damaged arithmetic inputs before settlement can overwrite the cache.
+   if(value.birds.some(b=>!record(b)||!meter(b.hunger)||!meter(b.water)||!timestamp(b.food)||!timestamp(b.waterStock)||!timestamp(b.settledAt)))throw Error();
    if(value.careRulesVersion!=null&&value.careRulesVersion!==1)throw Error();
    if(value.careProfile!=null&&!Object.hasOwn(GUEST_PROFILES,value.careProfile))throw Error();
    if(value.careProfileVersion!=null&&!knownProfile(value.careProfile,value.careProfileVersion))throw Error();

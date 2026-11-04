@@ -1,19 +1,16 @@
 /* Felt adoption reference: all labels and controls remain live DOM. */
-:host{display:block;color-scheme:light}
-.adopt-v1{--ink:#754a29;--muted:#a47d57;position:relative;width:100%;max-width:480px;min-height:100%;margin:0 auto;padding-bottom:20px;color:var(--ink);font:400 14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;container-type:inline-size;isolation:isolate;background:#aabd6c url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/meadow-540.webp') center bottom/100% auto repeat-y}
+:host{display:flex;color-scheme:light}
+.adopt-v1{--ink:#754a29;--muted:#a47d57;position:relative;display:flex;flex:1;flex-direction:column;width:100%;max-width:480px;min-height:100%;margin:0 auto;color:var(--ink);font:400 14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;container-type:inline-size;isolation:isolate;background:linear-gradient(180deg,#c3dbb8,#c8ddb7 65%,#d6e1bf)}
+/* A quiet material layer belongs to the page content, never the shared navigation. */
+.adopt-v1::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.055;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='144' height='144'%3E%3Cfilter id='felt'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23felt)' d='M0 0h144v144H0z'/%3E%3C/svg%3E") repeat}
 .adopt-v1 *{box-sizing:border-box}
 .adopt-v1 button,.adopt-v1 input{font:inherit;color:inherit}
 .adopt-v1 button{border:0;background:none;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .adopt-v1 button:disabled{cursor:default}
 .adopt-v1 button:focus-visible,.adopt-v1 input:focus-visible{outline:3px solid #6b943e;outline-offset:2px}
 .adopt-v1 [hidden]{display:none!important}
-.scene{position:relative;width:100%;aspect-ratio:4/3;isolation:isolate;overflow:hidden}
+.scene{position:relative;flex:none;width:100%;aspect-ratio:4/3;isolation:isolate;overflow:hidden}
 .scene-art{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:fill;z-index:-1}
-.scene-status-cleanup{position:absolute;left:31.111111%;top:.592593%;width:36%;height:10.074074%;pointer-events:none;z-index:-1}
-.hit{position:absolute;z-index:2}
-.back{left:2.5%;top:2%;width:10%;height:13%;border-radius:50%}
-.back::before{content:"";position:absolute;left:32%;top:34%;width:30%;height:30%;border-left:3px solid #93623d;border-bottom:3px solid #93623d;transform:rotate(45deg);filter:drop-shadow(0 1px 1px #fff1da)}
-.back::after{content:"";position:absolute;left:29%;top:48%;width:50%;height:3px;border-radius:2px;background:#93623d}
 .scene-title{position:absolute;left:29.2%;top:12.5%;width:39%;margin:0;text-align:center;color:#8c5a36;font:800 7.6cqw/1.18 "Kaiti SC","STKaiti","Songti SC",serif;letter-spacing:.07em;text-shadow:0 1px 0 #f1c5a8,0 2px 1px #b88c6880}
 .scene-subtitle{position:absolute;left:30%;top:37.2%;width:38%;margin:0;text-align:center;color:#80512e;font:600 2.5cqw/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;white-space:nowrap}
 .scroll-card{position:absolute;left:66.5%;top:39%;width:29%;height:45%;padding:4.7cqw 2.1cqw 1cqw;text-align:center;overflow:hidden}
@@ -26,20 +23,20 @@
 .trait-label{left:0;width:16%;font-size:3cqw;transform:translate(-.33cqw,-.33cqw)}
 .trait-pill{width:25%;padding-left:6.4cqw;transform:translateY(.55cqw)}
 .trait-one{left:17.2%}.trait-two{left:45%}.trait-three{left:72.5%}
-.adoption-details{position:relative;padding:0 2.6cqw}
-.name-form{position:relative;background:url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/panel-900.webp') center/100% 120% no-repeat}
-.chick{display:inline-block;flex:none;font-size:4.8cqw;line-height:1;filter:drop-shadow(0 1px 2px #e7b24e66)}
-.name-form{display:flex;flex-direction:column;align-items:stretch;margin:1cqw 0 0;padding:6cqw 5.4cqw 5cqw}
-.name-heading{display:flex;justify-content:center;align-items:center;gap:1.7cqw;margin:0 0 3.7cqw;text-align:center;font-size:4.7cqw;font-weight:700;line-height:1.4;letter-spacing:.025em;white-space:nowrap}
-.name-field{position:relative;width:100%;height:12cqw;min-height:43px;display:flex;align-items:center;border:1px solid #fff4e9;border-radius:999px;background:linear-gradient(125deg,#fff7f0f5,#f9e8dfd9);box-shadow:inset 0 2px 4px #a87f5738,0 2px 3px #ac825524}
+/* Remove the marked upper 7/8-width scene; the remaining artwork keeps its scale. */
+.adoption-details{position:relative;display:flex;flex:none;min-height:calc(100cqw * 31 / 24);overflow:hidden;isolation:isolate;background:#c8df83}
+.details-art{position:absolute;left:0;top:-87.5cqw;z-index:-1;display:block;width:100%;height:auto;pointer-events:none}
+.name-form{position:relative;display:flex;flex:1;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:8cqw;margin:0;padding:4.5cqw 4.8cqw 30cqw}
+.name-heading{margin:0;text-align:center;font-size:clamp(18px,5.5cqw,26px);font-weight:700;line-height:1.4;letter-spacing:.025em;white-space:nowrap}
+.name-field{position:relative;flex:none;width:100%;height:14cqw;min-height:48px;display:flex;align-items:center;border:1px solid #fff9f1;border-radius:999px;background:linear-gradient(125deg,#fffaf4,#faeadd);box-shadow:inset 0 2px 4px #a87f5729,0 2px 4px #718d4224}
 .name-field:focus-within{outline:2px solid #9bae68;outline-offset:2px}
-.name-field input{width:64%;height:100%;min-width:0;padding:0 4cqw;border:0;background:transparent;border-radius:999px;font-size:16px;outline:none;color:#785234}
+.name-field input{width:64%;height:100%;min-width:0;padding:0 5cqw;border:0;background:transparent;border-radius:999px;font-size:clamp(16px,4.5cqw,21px);outline:none;color:#785234}
 .name-field input::placeholder{color:#b49b85;opacity:1}.name-field input:disabled{opacity:.7}
-.random-name{width:36%;height:75%;display:flex;align-items:center;justify-content:center;gap:1cqw;padding:0 1cqw;border-left:1px dashed #c3946f!important;font-size:3.4cqw!important;font-weight:600!important;white-space:nowrap}
+.random-name{width:36%;height:80%;min-height:44px;display:flex;align-items:center;justify-content:center;gap:1cqw;padding:0 1cqw;border-left:1px dashed #c3946f!important;font-size:clamp(14px,4cqw,19px)!important;font-weight:600!important;white-space:nowrap}
 .random-name span:first-child{font-size:5cqw;color:#b5793d}
-.validation{margin:2cqw 0 0;padding:2cqw;border-radius:8px;background:#fff4eb;color:#a0452c;font-size:12px;line-height:1.5}
-.adopt-button{position:relative;width:100%;min-height:66px;height:22cqw;margin:3cqw auto 0;padding:0 8cqw;background:url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/button-720.webp') center/100% 100% no-repeat!important;color:#fff5cf!important;font-size:5.6cqw!important;font-weight:700!important;line-height:1.4!important;letter-spacing:.08em;text-shadow:0 1px 1px #6d812b}
-.adopt-button::after{content:'›';position:absolute;right:10%;top:50%;transform:translateY(-55%);font:8cqw/1 Georgia,serif}
+.validation{margin:-4cqw 0;padding:2cqw 3cqw;border-radius:10px;background:#fff4eb;color:#a0452c;font-size:13px;line-height:1.5}
+.adopt-button{position:relative;flex:none;width:100%;min-height:52px;height:15cqw;margin:0;padding:0 11cqw;border-radius:999px;background:#8eab30 url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/button-720.webp') center/200% 260% no-repeat!important;box-shadow:inset 0 1px 4px #edf2a58c8,0 5px 12px #748f3b30;color:#fff9df!important;font-size:clamp(21px,5.6cqw,27px)!important;font-weight:700!important;line-height:1.4!important;letter-spacing:.07em;text-shadow:0 1px 1px #6d812b}
+.adopt-button::after{content:'';position:absolute;right:8%;top:50%;width:2.3cqw;height:2.3cqw;border-top:3px solid currentColor;border-right:3px solid currentColor;transform:translateY(-50%) rotate(45deg)}
 .adopt-button:disabled{opacity:.75;filter:saturate(.55)}
 .adopt-button:not(:disabled):active{transform:translateY(1px);filter:brightness(.97)}
 .action-note{display:none}
@@ -50,7 +47,6 @@
 /* Existing account dialog retained for the shared account bridge. */
 .login-dialog{position:fixed;inset:0;max-width:calc(100% - 28px);width:410px;max-height:min(90dvh,680px);margin:auto;padding:29px 23px 24px;border:1px solid #dfcfaa;border-radius:23px;background:#fff9eb;color:#563f21;box-shadow:0 20px 65px #42371d38;overflow:auto}.login-dialog::backdrop{background:#333b2859;backdrop-filter:blur(3px)}.login-dialog h2{margin:9px 0;font:600 23px/1.45 "Songti SC",serif}.login-dialog>p{margin:0;color:#84775f;font-size:13px;line-height:1.8}.dialog-eyebrow{font-size:11px;color:#839268}.dialog-close{position:absolute;right:8px;top:7px;width:44px;height:44px;color:#9c8b68;font-size:25px!important}.login-form label{display:block;margin:15px 0 7px;color:#6b5b40;font-size:12px}.login-form input{display:block;width:100%;height:46px;padding:0 12px;border:1px solid #ded1b3;border-radius:10px;background:#fffdf7;font-size:16px}.login-error{min-height:1.5em;margin:8px 0 0;color:#a13e2c;font-size:12px}.dialog-primary,.dialog-secondary{display:block;width:100%;min-height:48px;margin-top:12px;padding:11px 15px;border-radius:13px!important;font-size:14px!important}.dialog-primary{margin-top:18px;background:#657b3e!important;color:#fff9e9!important}.dialog-secondary{border:1px solid #ded2b4!important;background:#fffaf0!important;color:#71804e!important}
 
-.back{min-width:44px;min-height:44px}
 .scene-subtitle{left:20%;width:60%;font-size:clamp(12px,2.5cqw,14px);white-space:normal}
 .bird-city,.scroll-detail{font-size:clamp(12px,3cqw,15px)}
 .name-field input[readonly]{width:100%}

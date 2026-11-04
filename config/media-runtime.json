@@ -55,6 +55,11 @@
       "reason": "Unchanged 1024x1536 background derivative retains at least 40 dB fidelity; do not reduce quality merely to meet the 300 KB target.",
       "maxBytes": 356836,
       "sha256": "55318f2a3e7c000fa37ac0599169b63a05188f118d1e44394d7daa261b128263"
+    },
+    "assets/profile/felt/background-v1.png": {
+      "reason": "User-provided profile-only full-height background, retained at 852x1846 without cropping; q92 is the first existing pipeline setting meeting 40 dB PSNR and preserves the felt texture. Only requested on the profile route.",
+      "maxBytes": 332502,
+      "sha256": "2d8cbe657c34113b3aa937c70117dbd0c95f5745a8ad6d6c8843a45455dfcccb"
     }
   }
 }

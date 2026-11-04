@@ -67,6 +67,204 @@
       "outputBaseFile": "assets/optimized/checkin/felt-style-thumb-192",
       "encoding": "lossless-webp",
       "purpose": "Only the small four style-picker previews; existing full image, Canvas assets and viewport deferred loading remain independent."
+    },
+    {
+      "id": "nav-plush-nav-background",
+      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-background.png",
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "cropBox": [
+        13,
+        127,
+        2157,
+        563
+      ],
+      "outputSize": [
+        960,
+        195
+      ],
+      "usageUrl": "/assets/navigation/plush/nav-background.webp",
+      "outputBaseFile": "assets/optimized/navigation/plush/nav-background",
+      "encoding": "lossless-webp",
+      "purpose": "公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率"
+    },
+    {
+      "id": "nav-plush-nav-home-default",
+      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-home-default.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "cropBox": [
+        159,
+        159,
+        1089,
+        1089
+      ],
+      "outputSize": [
+        128,
+        128
+      ],
+      "usageUrl": "/assets/navigation/plush/nav-home-default.webp",
+      "outputBaseFile": "assets/optimized/navigation/plush/nav-home-default",
+      "encoding": "lossless-webp",
+      "purpose": "公共底栏 home default 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
+    },
+    {
+      "id": "nav-plush-nav-home-active",
+      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-home-active.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "cropBox": [
+        159,
+        159,
+        1089,
+        1089
+      ],
+      "outputSize": [
+        128,
+        128
+      ],
+      "usageUrl": "/assets/navigation/plush/nav-home-active.webp",
+      "outputBaseFile": "assets/optimized/navigation/plush/nav-home-active",
+      "encoding": "lossless-webp",
+      "purpose": "公共底栏 home active 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
+    },
+    {
+      "id": "nav-plush-nav-city-default",
+      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-city-default.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "cropBox": [
+        128,
+        138,
+        1110,
+        1120
+      ],
+      "outputSize": [
+        128,
+        128
+      ],
+      "usageUrl": "/assets/navigation/plush/nav-city-default.webp",
+      "outputBaseFile": "assets/optimized/navigation/plush/nav-city-default",
+      "encoding": "lossless-webp",
+      "purpose": "公共底栏 city default 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
+    },
+    {
+      "id": "nav-plush-nav-city-active",
+      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-city-active.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "cropBox": [
+        128,
+        138,
+        1110,
+        1120
+      ],
+      "outputSize": [
+        128,
+        128
+      ],
+      "usageUrl": "/assets/navigation/plush/nav-city-active.webp",
+      "outputBaseFile": "assets/optimized/navigation/plush/nav-city-active",
+      "encoding": "lossless-webp",
+      "purpose": "公共底栏 city active 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
+    },
+    {
+      "id": "nav-plush-nav-shop-default",
+      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-shop-default.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "cropBox": [
+        115,
+        124,
+        1121,
+        1130
+      ],
+      "outputSize": [
+        128,
+        128
+      ],
+      "usageUrl": "/assets/navigation/plush/nav-shop-default.webp",
+      "outputBaseFile": "assets/optimized/navigation/plush/nav-shop-default",
+      "encoding": "lossless-webp",
+      "purpose": "公共底栏 shop default 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
+    },
+    {
+      "id": "nav-plush-nav-shop-active",
+      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-shop-active.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "cropBox": [
+        115,
+        124,
+        1121,
+        1130
+      ],
+      "outputSize": [
+        128,
+        128
+      ],
+      "usageUrl": "/assets/navigation/plush/nav-shop-active.webp",
+      "outputBaseFile": "assets/optimized/navigation/plush/nav-shop-active",
+      "encoding": "lossless-webp",
+      "purpose": "公共底栏 shop active 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
+    },
+    {
+      "id": "nav-plush-nav-profile-default",
+      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-profile-default.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "cropBox": [
+        155,
+        153,
+        1079,
+        1077
+      ],
+      "outputSize": [
+        128,
+        128
+      ],
+      "usageUrl": "/assets/navigation/plush/nav-profile-default.webp",
+      "outputBaseFile": "assets/optimized/navigation/plush/nav-profile-default",
+      "encoding": "lossless-webp",
+      "purpose": "公共底栏 profile default 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
+    },
+    {
+      "id": "nav-plush-nav-profile-active",
+      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-profile-active.png",
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "cropBox": [
+        155,
+        153,
+        1079,
+        1077
+      ],
+      "outputSize": [
+        128,
+        128
+      ],
+      "usageUrl": "/assets/navigation/plush/nav-profile-active.webp",
+      "outputBaseFile": "assets/optimized/navigation/plush/nav-profile-active",
+      "encoding": "lossless-webp",
+      "purpose": "公共底栏 profile active 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
     }
   ]
 }

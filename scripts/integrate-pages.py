@@ -46,7 +46,13 @@ function mountIntegrated(){if(s.page==='home')mountNest();if(s.page==='city')mou
 window.parent.postMessage({channel:'xcwc-shop',operation:'layout',active:['home','city','shop','adopt','photo','profile','wardrobe','flock'].includes(s.page)},'*');
 root.classList.remove('is-illustrated','is-travel','is-room');root.classList.toggle('is-integrated',['home','city','shop','adopt','photo','profile','wardrobe','flock'].includes(s.page));
 const active=navigationSection();syncNavigation();
-root.querySelector('.bottom').innerHTML=[['home','house','小窝'],['city','map','城市'],['shop','shopping-bag','商城'],['profile','user-round','我的']].map(([p,i,t])=>`<button data-go="${p}" class="${active===p?'active':''}" ${active===p?'aria-current="page"':''}>${ico(i)}<span>${t}</span></button>`).join('');
+const navigationIcons={
+ home:['__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-home-default.webp','__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-home-active.webp'],
+ city:['__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-city-default.webp','__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-city-active.webp'],
+ shop:['__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-shop-default.webp','__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-shop-active.webp'],
+ profile:['__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-profile-default.webp','__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-profile-active.webp']
+};
+root.querySelector('.bottom').innerHTML=[['home','小窝'],['city','城市'],['shop','商城'],['profile','我的']].map(([p,t])=>`<button type="button" data-go="${p}" class="${active===p?'active':''}" ${active===p?'aria-current="page"':''}><img class="navigation-icon" src="${navigationIcons[p][active===p?1:0]}" width="128" height="128" alt="" aria-hidden="true" draggable="false"><span>${t}</span></button>`).join('');
 if(globalThis.lucide)lucide.createIcons({attrs:{width:18,height:18}});
 }
 '''+frame[end:]

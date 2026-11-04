@@ -80,24 +80,16 @@
 
 #bjd-review .account-page-head p{font-size:13px;line-height:1.7}#bjd-review .account-menu-meta{font-size:12px}#bjd-review .account-page .account-menu button{min-height:64px}#bjd-review .profile-card-copy span{font-size:12px}#bjd-review .account-section{margin-top:24px}
 
-/* One felt navigation component for every route, including check-in. */
-#bjd-review .phone>.bottom{position:relative;z-index:8;isolation:isolate;display:flex;flex:0 0 auto;align-items:stretch;gap:0;margin:0;min-height:72px;padding:9px 12px max(10px,env(safe-area-inset-bottom));overflow:visible;background:transparent;border:1px solid transparent;border-width:1px 0 0;border-radius:0;box-shadow:none}
-#bjd-review .phone>.bottom::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/pill-v2-800.webp') center/100% 110% no-repeat}
-#bjd-review .phone>.bottom::after{content:"";position:absolute;left:7px;top:-5px;width:27px;height:27px;pointer-events:none}
-#bjd-review .phone>.bottom button{position:relative;display:flex;flex:1 1 0;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:auto;min-width:0;min-height:48px;padding:0;color:#875d3b;font:600 12px/1.5 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;background:transparent;border:0;border-radius:8px;isolation:isolate;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-#bjd-review .phone>.bottom button:last-child::after{content:"";position:absolute;right:0;top:-8px;width:25px;height:23px;pointer-events:none}
-/* The renderer sets this route before creating navigation. No image is fetched
-   while the route is unknown; home/profile reuse atlases needed by their body. */
-#bjd-review:is([data-xcwc-page="home"],[data-xcwc-page="profile"]) .phone>.bottom::after{background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/hud-icons-v2-768.webp') 0 100%/300% 200% no-repeat}
-#bjd-review:is([data-xcwc-page="home"],[data-xcwc-page="profile"]) .phone>.bottom button:last-child::after{background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/tools-512.webp') 0 0/200% 200% no-repeat}
-#bjd-review[data-xcwc-page]:not([data-xcwc-page="home"]):not([data-xcwc-page="profile"]) .phone>.bottom::after{background:url('__XCWC_ASSET_ORIGIN__/assets/navigation/nav-flower-96.webp') center/100% 100% no-repeat}
-#bjd-review[data-xcwc-page]:not([data-xcwc-page="home"]):not([data-xcwc-page="profile"]) .phone>.bottom button:last-child::after{background:url('__XCWC_ASSET_ORIGIN__/assets/navigation/nav-leaves-96.webp') center/100% 100% no-repeat}
-#bjd-review .phone>.bottom button.active{color:#65995d;font-weight:600;background:transparent;border-radius:8px}
-#bjd-review .phone>.bottom button.active::before{content:"";position:absolute;inset:3px 6px;z-index:-1;pointer-events:none;border-radius:9px;background:radial-gradient(ellipse,#c6e3b881,transparent 80%);box-shadow:none}
-#bjd-review .phone>.bottom svg{--icon-size:26px;width:26px;height:26px;fill:none;stroke:#a98562;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 0 #ffefda) drop-shadow(0 -1px 0 #d6af8f)}
-#bjd-review .phone>.bottom button.active svg{stroke:#70a467;fill:#cae2b44d;filter:drop-shadow(0 0 3px #a8d39a)}
-#bjd-review .phone>.bottom button>span{letter-spacing:1px;line-height:17.6px}
-#bjd-review .phone>.bottom button:focus-visible{outline:2px solid #65995d;outline-offset:2px}
+/* One image-based felt navigation for every route. The shell reserves its
+   full height; the decorative layer retains its 960:195 artwork ratio. */
+#bjd-review .phone>.bottom{--nav-art-height:calc((min(100vw,480px) - 8px)*195/960);position:relative;z-index:8;isolation:isolate;display:flex;flex:0 0 auto;align-items:stretch;gap:0;box-sizing:border-box;margin:0;height:calc(var(--nav-art-height) + env(safe-area-inset-bottom,0px));min-height:0;padding:12px 14px calc(7px + env(safe-area-inset-bottom,0px));overflow:visible;background:var(--xcwc-paper,#fcf5e3);border:0;border-radius:0;box-shadow:none}
+#bjd-review .phone>.bottom::before{content:"";position:absolute;inset:0 4px auto;z-index:-1;aspect-ratio:960/195;pointer-events:none;background:url('__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-background.webp') center/contain no-repeat}
+#bjd-review .phone>.bottom::after,#bjd-review .phone>.bottom button::before,#bjd-review .phone>.bottom button::after{content:none}
+#bjd-review .phone>.bottom button{position:relative;display:flex;flex:1 1 0;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-sizing:border-box;width:auto;min-width:0;min-height:44px;margin:0;padding:0;color:#80502c;font:600 clamp(12px,3.45vw,15px)/1.25 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;white-space:nowrap;background:transparent;border:0;border-radius:0;box-shadow:none;text-shadow:0 1px 1px #fff3d9;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#bjd-review .phone>.bottom button.active{color:#4e8c4c;font-weight:600;background:transparent;border-radius:0}
+#bjd-review .phone>.bottom .navigation-icon{display:block;flex:none;width:clamp(27px,7.7vw,35px);height:clamp(27px,7.7vw,35px);max-width:none;margin:0;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none}
+#bjd-review .phone>.bottom button>span{display:block;letter-spacing:1px;line-height:1.25;white-space:nowrap;pointer-events:none}
+#bjd-review .phone>.bottom button:focus-visible{outline:2px solid #4e8c4c;outline-offset:-2px}
 
 /* Shared account feedback remains readable and usable on narrow touch screens. */
 #bjd-review .account-page .account-back{width:auto;min-width:84px;min-height:44px;margin:0 0 10px;padding:8px 15px;font-size:14px}

@@ -24,7 +24,7 @@ test('the lower physical need wins, with water winning ties',()=>{
  assert.equal(select({...bird,hunger:15,water:20,mood:20}),'hungry');
 });
 
-test('low mood has its own expression and remains available alongside physical needs',()=>{
+test('low mood keeps its own companionship need and remains available alongside physical needs',()=>{
  assert.equal(select({...bird,mood:50}),'happy');
  assert.equal(select({...bird,mood:49}),'unwell');
  const low=describe({...bird,mood:49});
@@ -51,8 +51,8 @@ test('resolved needs stop appearing and feedback stays attached to the correct b
  const onlyCompany={...recovered,mood:20};
  for(let phase=0;phase<5;phase++)assert.equal(describe(onlyCompany,phase).need,'company');
  const mixed={...bird,hunger:0,water:0,mood:20};
- assert.equal(select(mixed,{birdId:'bird-a',emotion:'belly'},2),'belly');
- assert.equal(select(mixed,{birdId:'bird-b',emotion:'belly'},2),'unwell');
+ assert.equal(select(mixed,{birdId:'bird-a',emotion:'veryhappy'},2),'veryhappy');
+ assert.equal(select(mixed,{birdId:'bird-b',emotion:'veryhappy'},2),'unwell');
 });
 
 test('missing mood is not turned into a fabricated value',()=>{
@@ -78,12 +78,25 @@ test('severe physical needs strengthen the matching warm prompt at 10',()=>{
 
 test('all supported brief feedback overrides apply only to the same bird',()=>{
  const hungry={...bird,hunger:10};
- for(const emotion of ['happy','belly','puzzled','angry','crying']){
+ for(const emotion of ['happy','veryhappy','puzzled','angry','crying']){
   assert.equal(select(hungry,{birdId:'bird-a',emotion}),emotion);
   assert.equal(select(hungry,{birdId:'bird-b',emotion}),'hungry');
  }
- for(const emotion of ['hungry','unwell','shy','sleeping','',null]){
+ for(const emotion of ['hungry','unwell','belly','shy','sleeping','',null]){
   assert.equal(select(hungry,{birdId:'bird-a',emotion}),'hungry');
  }
  assert.equal(select(null,{birdId:'bird-a',emotion:'crying'}),'happy');
+});
+
+// Image and foot aliases must agree when several states share one sprite.
+const artwork=vm.runInNewContext(source+'\nnestEmotionArtwork;');
+test('very happy uses current happy art and its visible feet; low mood retires the old picture',()=>{
+ for(const emotion of ['happy','veryhappy']){
+  assert.equal(artwork(emotion).filename,'happy-v2.webp');
+  assert.equal(artwork(emotion).footArea,'happy');
+ }
+ for(const emotion of ['hungry','thirsty','unwell']){
+  assert.equal(artwork(emotion).filename,'hungry-v3.webp');
+  assert.equal(artwork(emotion).footArea,'hungry');
+ }
 });

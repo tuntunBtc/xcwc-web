@@ -27,13 +27,15 @@ CANVAS = (640, 580)
 
 # Pixel ellipses (center_x, center_y, radius_x, radius_y), reviewed on the
 # complete 640 x 580 source canvas. Conservative foot regions exclude belly,
-# wings and surrounding symbols. The renderer maps thirsty to happy artwork.
+# wings and surrounding symbols. The renderer maps thirsty to hungry artwork.
 DEFAULT_FEET = {
-    "happy": [(207, 525, 52, 21), (411, 525, 53, 22)],
-    "hungry": [],  # Approved v2 prone pose has no visible feet.
+    # Three visible toes per foot; the outer toes sit higher than the inner ones.
+    "happy": [(167, 509, 20, 17), (192, 519, 21, 22), (232, 526, 27, 20),
+              (376, 531, 26, 19), (416, 526, 23, 21), (444, 514, 20, 18)],
+    "hungry": [],  # Approved v3 hungry/thirsty prone pose has no visible feet.
     "unwell": [],  # Prone pose: no visible feet.
-    "puzzled": [(211, 527, 46, 19), (367, 534, 43, 15)],
-    "angry": [(198, 528, 55, 22), (443, 527, 54, 23)],
+    "puzzled": [(216, 527, 48, 19), (371, 531, 42, 19)],
+    "angry": [(194, 528, 60, 22), (442, 528, 56, 22)],
     "crying": [(249, 529, 47, 20), (430, 528, 45, 19)],
     "belly": [(146, 389, 51, 48), (338, 433, 51, 47)],
 }
@@ -44,11 +46,11 @@ BELLY_RGB_PREDICATE = {"minRed": 120, "minRedMinusGreen": 45, "minGreenMinusBlue
 BELLY_POSITIVE_POINTS = [(116, 375), (154, 361), (176, 389), (141, 415),
                          (307, 416), (347, 407), (369, 436), (331, 459)]
 BELLY_OPAQUE_NEGATIVE_POINTS = [(180, 360), (320, 400)]
-# angry-v2 has three low toes per foot, with the cream belly just above them.
+# angry-v3 has three low toes per foot, with the cream belly just above them.
 # These ellipses contain orange foot pixels only; body pixels remain outside.
-ANGRY_TOE_POINTS = [(164, 519), (196, 534), (232, 534),
-                    (409, 534), (448, 532), (480, 519)]
-ANGRY_BODY_NEGATIVE_POINTS = [(218, 500), (320, 520)]
+ANGRY_TOE_POINTS = [(150, 525), (190, 532), (230, 534),
+                    (404, 535), (445, 532), (482, 521)]
+ANGRY_BODY_NEGATIVE_POINTS = [(218, 498), (320, 520)]
 COMMON_OUTFIT_FEET = [(218, 500, 50, 18), (410, 500, 50, 18)]
 OUTFIT_FEET = {
     name: COMMON_OUTFIT_FEET
@@ -60,7 +62,7 @@ OUTFIT_FEET["pilgrim"] = [(239, 503, 31, 16), (410, 503, 49, 16)]
 
 def source_jobs():
     for name, ellipses in DEFAULT_FEET.items():
-        filename = {"hungry": "hungry-v2", "angry": "angry-v2", "belly": "belly-v1"}.get(name, name)
+        filename = {"happy": "happy-v2", "hungry": "hungry-v3", "angry": "angry-v3", "belly": "belly-v1", "puzzled": "puzzled-v2"}.get(name, name)
         yield name, f"assets/nest/felt/emotions/{filename}.webp", ellipses
     for name, ellipses in OUTFIT_FEET.items():
         yield f"huangying_{name}", f"assets/wardrobe/huangying/{name}-640.webp", ellipses
