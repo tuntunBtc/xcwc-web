@@ -1,0 +1,33 @@
+{
+  "method": "Built-in imagegen typography edit; only the text-panel patch is composited onto the previous PNG. Preserve the flower corner. All pixels outside the mask remain identical before WebP encoding.",
+  "source": "/assets/shop/banners/huangying-shop-clean-v2.png",
+  "sourceSha256": "0fe872f26fc550db28e55a971ef042739cd1e8364e1e04a52b06ca68289bd983",
+  "generatedSource": "/assets/shop/banners/huangying-shop-layout-v3-imagegen.png",
+  "generatedSha256": "e9513772ea8751d44d298f1333a016fb1a19266abb79abc2a8a185c80ad4b8dc",
+  "output": "/assets/shop/banners/huangying-shop-layout-v3.png",
+  "outputSha256": "2e572d359d18a5eb84e6c02f8a1005b7a369ed0e6b2b78a1de34d2d30c40bf37",
+  "width": 916,
+  "height": 416,
+  "generatedWidth": 1860,
+  "generatedHeight": 846,
+  "mask": {
+    "x": 64,
+    "y": 130,
+    "width": 354,
+    "height": 150,
+    "feather": 8,
+    "preserveTopLeft": {
+      "right": 117,
+      "bottom": 150
+    }
+  },
+  "outsideRegionRgbaChannelDifferences": 0,
+  "prompt": "Use case: text-localization / precise-object-edit\nEdit target: the attached 916 x 416 XCWC shop carousel banner.\nPrimary request: improve ONLY the Chinese typography inside the left peach felt panel. Replace the widely separated text with one cohesive vertically centered group. Keep exact existing words, except remove the decorative trailing hyphen after the title.\nTypography layout (in original 916 x 416 coordinates): panel roughly x=30..443, y=106..308. Center the text group horizontally around x=240. Main heading on ONE line: “小鸟城市旅行日记”, visually about 30px, bold soft rounded dark brown Chinese typography. Under it, leave about 15px gap and set the supporting copy on TWO centered lines, around 22px, medium weight dark brown with comfortable line spacing: line 1 “把喜欢的小鸟，” and line 2 “带去更多城市”. The complete three-line group should occupy roughly y=143..267, comfortably within the panel, with balanced top and bottom breathing room. Remove the old text at the previous top and bottom positions. No large empty void between heading and supporting copy. No line of text may collide with panel edges or the flower.\nSTRICT invariants: change only the lettering area inside that peach panel. Preserve the panel shape, peach felt texture, its top-left pink flower and leaves, and all outside scenery. Preserve the exact yellow plush bird, face, eyes, leaf hat, wings, feet, lake, pagoda, meadow and existing framing and colors. Keep original wide 916:416 aspect and crop. Do NOT restore “小黄莺的小店”. Do NOT restore the “鸟蛋规则” pill. Do not add any new label, button, border, red rectangle, watermark or decorative object. All three lines must be correctly spelled, legible and centered.",
+  "runtime": {
+    "url": "/assets/shop/banners/huangying-shop-layout-v3-optimized.7e9e8553d7bc.webp",
+    "width": 916,
+    "height": 416,
+    "bytes": 62742,
+    "encoding": "Existing optimize-shop-images.cjs, Chromium WebP quality 0.91"
+  }
+}

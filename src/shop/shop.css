@@ -1,32 +1,128 @@
-
-:host{--paper:#faf5e9;--ink:#443c2c;--green:#52694a;--muted:#98907c;--line:#e7deca;--orange:#ac6b30}*{box-sizing:border-box}:host{margin:0;color:var(--ink);background:#e9e8dd;font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px}button,select{font:inherit;color:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #d18c51;outline-offset:3px}button{border:0;background:none}:host:before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 15% 20%,#c5ceb78a,transparent 50%),radial-gradient(ellipse at 90% 80%,#dbc9a8,transparent 55%);z-index:-1}.app{max-width:660px;margin:auto;min-height:100vh;background:var(--paper);box-shadow:0 0 80px #62694c18;padding-bottom:100px}.masthead{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:#faf5e9}.brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:1px}.brand svg{color:var(--green)}.brand small{font-size:10px;letter-spacing:2px;color:var(--muted);display:block;margin-top:2px;font-weight:400}.top-right{display:flex;gap:12px;align-items:center}.preview-label{font-size:10px;border:1px solid var(--line);border-radius:4px;padding:3px 6px;color:#8b826b}.cart-icon{position:relative;padding:5px}.count{position:absolute;right:-3px;top:0;background:var(--orange);color:white;font-size:10px;border-radius:20px;min-width:16px;height:16px;display:grid;place-items:center}.hero{position:relative;background:#d8c39e;overflow:hidden;aspect-ratio:1092/351}.hero img{width:100%;height:100%;object-fit:cover;display:block}.hero-rule{position:absolute;right:2%;bottom:7%;font-size:11px;border-radius:30px;padding:8px 12px;background:#fff9e9;box-shadow:0 2px 8px #40250c22}.intro{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:19px 22px 15px}.eyebrow{font-family:Georgia,serif;font-size:10px;letter-spacing:2px;color:#9c8c68}.intro h1{font-size:23px;letter-spacing:2px;margin:6px 0 7px;font-family:"Songti SC","STSong",serif}.intro p{font-size:11px;color:#91856c;margin:0}.intro-stamp{border:1px solid #c6b88c;color:#90835d;border-radius:50%;width:55px;height:55px;display:flex;align-items:center;justify-content:center;font-size:10px;line-height:1.6;text-align:center;transform:rotate(12deg);flex-shrink:0}.benefit{margin:0 20px 18px;background:#f0eddf;border:1px solid #e4e1cb;border-radius:10px;padding:11px 12px;display:flex;align-items:center;gap:9px;font-size:11px;color:#6d7355}.benefit b{font-weight:500}.benefit button{margin-left:auto;color:#7b7f66;font-size:11px;white-space:nowrap}.toolbar{position:sticky;top:0;z-index:3;background:#faf5e9f5;backdrop-filter:blur(12px);padding:0 20px 12px}.category{padding:0 0 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.category strong{font-size:14px;display:flex;align-items:center;gap:6px}.category span{font-size:10px;color:var(--muted)}.filters{display:flex;align-items:center;gap:7px;padding-top:12px}.filter{border:1px solid transparent;border-radius:7px;padding:8px 10px;background:#f0eadc;font-size:11px;white-space:nowrap;flex:1}.filter.active{color:var(--green);background:#e6eadc;border-color:#cdd6bd;font-weight:600}.filter select{background:none;border:0;outline:none;font-size:11px;max-width:100%;cursor:pointer}.filter:has(select){padding:8px 5px}.clear-filter{font-size:11px;color:var(--green);padding:8px 0 0;display:none}.products{padding:2px 20px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 12px}.card{background:#fffdf5;border-radius:13px;overflow:hidden;border:1px solid #e9e1d0;box-shadow:0 3px 9px #71613b08;transition:transform .2s}.card:hover{transform:translateY(-3px)}.photo{width:100%;aspect-ratio:1.55;object-fit:cover;display:block}.photo-button{display:block;padding:0;width:100%;text-align:left}.card-:host{padding:11px 11px 12px}.card h2{margin:0;font-size:15px;letter-spacing:.4px;font-weight:600}.description{font-size:10px;color:#9d927d;margin:5px 0 9px}.egg{font-size:9px;color:#82896c;background:#f1f2e7;padding:4px 6px;display:inline-flex;align-items:center;gap:4px;border-radius:4px}.card-bottom{display:flex;align-items:end;justify-content:space-between;gap:4px;margin-top:11px}.price{color:#ac623e;font-size:22px;font-weight:600;font-family:Georgia,serif;line-height:1}.price small{font-family:inherit;font-size:12px;margin-right:2px}.sales{font-size:9px;color:#a29986;margin-top:5px}.add{border-radius:50%;width:34px;height:34px;background:#a56c38;color:#fffaf0;display:grid;place-items:center;flex-shrink:0;transition:background .2s}.add.added{background:var(--green)}.end{text-align:center;color:#a49b87;font-size:10px;letter-spacing:2px;padding:26px 0 20px}.bottom-nav{position:fixed;z-index:5;bottom:0;left:50%;transform:translateX(-50%);width:min(660px,100%);height:76px;padding:9px 10px max(9px,env(safe-area-inset-bottom));display:flex;justify-content:space-around;background:#fff9edf5;backdrop-filter:blur(15px);border-top:1px solid #e2d8bf;box-shadow:0 -5px 25px #55492b09}.bottom-nav button{display:flex;align-items:center;flex-direction:column;gap:5px;font-size:10px;color:#9c8a6f;min-width:42px;padding:3px 6px}.bottom-nav .selected{color:var(--green);font-weight:600}.nav-icon{width:23px;height:23px}.overlay{position:fixed;inset:0;background:#302b2280;backdrop-filter:blur(4px);z-index:10;display:none;align-items:center;justify-content:center;padding:20px}.overlay.show{display:flex}.panel{background:var(--paper);border-radius:20px;width:100%;max-width:480px;max-height:85vh;overflow:auto;box-shadow:0 20px 80px #0003}.panel-head{display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid var(--line)}.panel-head h2{font-size:18px;margin:0;font-family:"Songti SC",serif;letter-spacing:1px}.close{font-size:25px;color:#96876c}.panel-content{padding:20px}.cart-row{display:grid;grid-template-columns:90px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}.cart-row:first-child{padding-top:0}.cart-row img{width:90px;height:90px;object-fit:cover;border-radius:9px}.cart-row h3{font-size:14px;margin:3px 0 7px}.cart-row p{font-size:11px;color:var(--muted);margin:0 0 8px}.row-actions{display:flex;justify-content:space-between;align-items:center}.taobao{text-decoration:none;display:inline-block;background:#a56c38;color:#fff8ec;border-radius:6px;padding:7px 10px;font-size:11px}.remove{font-size:11px;color:#a59b89}.empty{text-align:center;padding:40px 0;color:#8c836d;line-height:2}.empty svg{width:45px;height:45px;color:#c6bea8;margin-bottom:10px}.note{font-size:11px;color:#9a8b70;line-height:1.8}.rules{font-size:13px;line-height:2;color:#736a57}.rules strong{color:var(--green)}.steps{padding:14px;background:#efeede;border-radius:10px;margin:12px 0}.detail-img{width:100%;border-radius:10px}.detail-title{font-size:23px;font-family:"Songti SC",serif;margin:16px 0 6px}.primary{background:var(--green);color:#fffbed;padding:12px;border-radius:8px;width:100%;margin-top:15px}.toast{position:fixed;left:50%;bottom:100px;transform:translate(-50%,15px);background:#3f503cec;color:#fffcec;padding:12px 20px;border-radius:30px;font-size:12px;z-index:20;opacity:0;pointer-events:none;transition:all .2s;white-space:nowrap}.toast.show{opacity:1;transform:translate(-50%,0)}@media(min-width:800px){.app{margin:28px auto;border-radius:20px;overflow:hidden}.bottom-nav{bottom:0;border-radius:16px 16px 0 0}.intro{padding-top:24px}.intro h1{font-size:28px}.card h2{font-size:17px}.description{font-size:12px}.egg{font-size:11px}.sales{font-size:11px}.photo{aspect-ratio:1.55}.filter,.filter select{font-size:13px}.toolbar{padding-bottom:16px}.card-:host{padding:14px}.products{gap:16px}.hero-rule{font-size:12px}}@media(max-width:360px){.products{padding:0 12px;gap:9px}.toolbar{padding-left:12px;padding-right:12px}.filter{padding:8px 5px}.card h2{font-size:13px}.egg{font-size:8px}}
-
-:host{display:block}.app{max-width:none;margin:0;border-radius:0;box-shadow:none;padding-bottom:20px}.bottom-nav{display:none}.overlay{z-index:100}.panel{--paper:#faf5e9} .preview-label{font-size:10px}
-
-.app{min-height:0}:host:before{display:none}
-
-.overlay{position:fixed;inset:0}.app{padding-bottom:12px}
-:host{--paper:var(--xcwc-paper,#faf5e9);--ink:var(--xcwc-ink,#443c2c);--green:var(--xcwc-green,#52694a);--muted:var(--xcwc-muted,#98907c);background:var(--xcwc-paper,#faf5e9)}.card{border-radius:var(--xcwc-card-radius,14px)}
-
-/* Shared warm-paper finish, preserving each scene and layout. */
-:host{--ink:#534027;--muted:#8b785b;--green:#667b43;--paper:#fff7e6}
-button{-webkit-tap-highlight-color:transparent}button:focus-visible,a:focus-visible{outline:3px solid #84934d;outline-offset:3px}
-.hud .identity,.hud .wallet{box-shadow:0 3px 12px #573f2226;border-color:#ecd7ad}
-@media(hover:hover){button:not(:disabled):hover{filter:brightness(1.025)}}
+:host {
+ --paper:#fff6e6;--ink:#79502d;--green:#81ad42;--muted:#a18a68;--line:#eadac2;--orange:#c96d3f;
+ display:block;min-width:0;color:var(--ink);font-family:"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;
+ background:#edf0d7;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button,select,a{-webkit-tap-highlight-color:transparent}
+button,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+button:disabled{cursor:default;opacity:.55}
+button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #6e943e;outline-offset:3px}
+.shop-symbols{position:absolute;width:0;height:0;overflow:hidden}
+.app{width:100%;min-width:0;min-height:100%;padding:10px 0 8px;background:radial-gradient(ellipse at 7% 48%,#d5e9c77d,transparent 50%),radial-gradient(ellipse at 96% 72%,#dbe3b48a,transparent 55%),linear-gradient(180deg,#dfedce 0,#f5f0dc 41%,#f3f0d9 100%);overflow:clip}
+.masthead{height:66px;margin:0 6px;position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:0 19px 1px;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/pink-pill-800.webp') center/100% 100% no-repeat;filter:drop-shadow(0 3px 5px #a58c6030)}
+.brand{display:flex;align-items:center;gap:10px;font-family:"Songti SC","STSong",serif;font-size:21px;font-weight:700;letter-spacing:2px;line-height:1.2}
+.brand-mark{width:34px;height:34px;display:grid;place-items:center;color:#8fae62;border:2px solid #8eac63;border-radius:50%;background:#fffbeb;transform:rotate(-10deg);flex-shrink:0}
+.brand small{display:block;margin-top:4px;font-family:Arial,sans-serif;font-weight:500;font-size:9px;letter-spacing:3px}
+.cart-icon{width:44px;height:44px;position:relative;display:grid;place-items:center;color:#b07842;padding:7px}
+.count{position:absolute;right:0;top:0;display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:20px;background:#7f9f45;color:#fffdf0;font:600 10px/1 Arial,sans-serif}
+.hero{position:relative;isolation:isolate;aspect-ratio:916/438;margin-top:1px;overflow:hidden;background:#e6edcf}
+.slides{position:absolute;inset:0;width:100%;height:100%}
+.slides img,.slides .slide,.slides picture{display:block;width:100%;height:100%;object-fit:cover}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity .35s ease;pointer-events:none}
+.slide.active,.slide[aria-hidden="false"]{opacity:1}
+.slides>img:only-child{opacity:1}
+.carousel-empty{height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(140deg,#e4edce,#faf4dc);color:#8e9d71;font-size:13px;letter-spacing:2px}
+.carousel-dots{position:absolute;z-index:2;left:0;right:0;bottom:9px;display:flex;align-items:center;justify-content:center;gap:7px;pointer-events:none}
+.carousel-dots button{width:8px;height:8px;min-width:8px;padding:0;border-radius:50%;background:#ffffe1a6;box-shadow:0 0 0 1px #a9b88a40;pointer-events:auto}
+.carousel-dots button.active,.carousel-dots button[aria-current="true"],.carousel-dots button[aria-selected="true"]{background:#fffdf0;transform:scale(1.15)}
+.intro{position:relative;display:flex;align-items:center;justify-content:space-between;gap:7px;min-height:112px;padding:17px 17px 12px;background:radial-gradient(ellipse at 32% 38%,#fff7e9,transparent 75%),linear-gradient(160deg,#fff4e3,#f5eed6)}
+.intro::before{content:"";position:absolute;inset:0;opacity:.21;pointer-events:none;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/cream-panel-900.webp') center/140% 170% no-repeat;mix-blend-mode:multiply}
+.intro-copy{position:relative;min-width:0;z-index:1}
+.eyebrow{margin:0 0 9px;font:500 8px/1.4 Arial,sans-serif;letter-spacing:2.2px;color:#b17e54;white-space:nowrap}
+.intro h1{font-family:"Songti SC","STSong",serif;font-size:24px;line-height:1.25;font-weight:700;letter-spacing:2px;margin:0 0 8px;white-space:nowrap}
+.intro-description{font-size:11px;line-height:1.5;letter-spacing:.4px;color:var(--muted);margin:0;white-space:nowrap}
+.intro-stamp{position:relative;display:grid;place-items:center;flex-shrink:0;width:75px;height:74px;margin-right:0;margin-top:8px;transform:rotate(-12deg);color:#8a5b31;font-family:"Songti SC","STSong",serif;font-size:12px;font-weight:700;line-height:1.8;text-align:center;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/cream-panel-900.webp') center/100% 100% no-repeat;filter:drop-shadow(0 3px 3px #aa8f5c25)}
+.stamp-leaf{position:absolute;width:22px;height:11px;background:linear-gradient(155deg,#c5df72,#7ea539);border-radius:100% 0 100% 0;right:-3px;bottom:7px;transform:rotate(-28deg);box-shadow:inset 0 1px 2px #f4ffbf}
+.benefit{min-height:54px;margin:0 7px 9px;padding:8px 17px;display:flex;align-items:center;gap:9px;position:relative;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/pink-pill-800.webp') center/100% 100% no-repeat;color:#87592f;font-size:12px;filter:drop-shadow(0 3px 4px #9c855b1d)}
+.egg-art{display:block;font-size:25px;line-height:1;filter:drop-shadow(0 2px 2px #b6a4653d);transform:rotate(-10deg)}
+.benefit b{font-weight:600;letter-spacing:.3px;line-height:1.5}
+.benefit button{margin-left:auto;white-space:nowrap;padding:8px 0 8px 4px;min-height:40px;font-weight:600;font-size:12px;flex-shrink:0}
+.benefit button span{font-size:23px;line-height:0;vertical-align:-1px;margin-left:2px}
+.toolbar{padding:0 13px 10px;position:relative;z-index:2}
+.category{display:flex;justify-content:space-between;align-items:center;gap:6px;min-height:43px;padding:5px 1px 7px;border-bottom:2px solid #fff8e8;box-shadow:0 2px 0 #dccda749}
+.category strong{display:flex;align-items:center;gap:4px;font-family:"Songti SC","STSong",serif;font-size:17px;letter-spacing:1px;white-space:nowrap}
+.category img{object-fit:contain;filter:drop-shadow(0 2px 2px #9c996b40)}
+.category>span{font-size:10px;letter-spacing:1px;color:#aa8c66;line-height:1.4;text-align:right}
+.filters{display:grid;grid-template-columns:1.12fr .9fr 1fr;gap:8px;padding-top:10px}
+.filter{position:relative;display:flex;align-items:center;justify-content:center;min-width:0;min-height:42px;padding:7px 9px;font-weight:600;font-size:13px;letter-spacing:.7px;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/pink-pill-800.webp') center/100% 100% no-repeat;filter:drop-shadow(0 2px 3px #b1a1781a)}
+.filter.active{color:#4d7c28;background-image:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/green-button-720.webp')}
+.filter select{cursor:pointer;appearance:none;-webkit-appearance:none;width:100%;min-width:0;background:transparent;border:0;padding:4px 16px 4px 0;font-weight:600;font-size:13px;line-height:1.5;text-align:center;outline-offset:1px}
+.city-filter>span{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;font-size:13px}
+.products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 8px;padding:0 8px}
+.card{position:relative;isolation:isolate;min-width:0;padding:11px 10px 13px;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/card-560.webp') center/100% 100% no-repeat;filter:drop-shadow(0 3px 5px #b5a77720)}
+.photo-button{width:100%;display:block;padding:0;overflow:hidden;border-radius:18px;background:#f4f3df;text-align:left;line-height:0}
+.photo{display:block;width:100%;height:auto;aspect-ratio:1.18;object-fit:cover;border-radius:18px;background:#f2f0da;transition:transform .2s}
+.card-body{padding:5px 3px 0;min-width:0}
+.card h2{margin:0;font-family:"Songti SC","STSong",serif;font-size:15px;line-height:1.5;font-weight:700;letter-spacing:.5px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.remark{margin:3px 0 0;min-height:0;color:#92805f;font-size:10px;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.remark:empty{display:none}
+.card-bottom{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:3px;min-height:32px}
+.price{font:700 25px/1 Georgia,"Times New Roman",serif;color:#cc7044;white-space:nowrap}
+.price small{font-size:13px;font-weight:500;margin-right:2px}
+.add{flex-shrink:0;display:grid;place-items:center;width:36px;height:36px;padding:6px;border-radius:50%;background:radial-gradient(circle at 35% 25%,#b7d76b,#83b447 75%);box-shadow:inset 0 0 0 2px #d9ec9e,0 3px 5px #9aa35335;color:#fffde5}
+.add.added{background:radial-gradient(circle at 30% 25%,#9dbd60,#6f9c3e 75%)}
+.add svg{width:22px;height:22px;stroke-width:1.8}
+.shop-status{padding:8px 20px;color:#8e795d;text-align:center;font-size:12px;line-height:1.8}
+.shop-status:empty{display:none}
+.shop-retry,.load-more{text-align:center;padding:0 12px}
+.shop-retry:has([hidden]),.load-more:has([hidden]){display:none}
+.secondary{min-height:42px;padding:11px 25px;color:#855d39;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/pink-pill-800.webp') center/100% 100% no-repeat;font-size:12px}
+.load-more{padding-top:15px}
+.end{padding:20px 0 14px;text-align:center;color:#aa9674;font-size:10px;letter-spacing:2px}
+.overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:#37382c75;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);padding:14px}
+.overlay.show{display:flex}
+.panel{display:flex;flex-direction:column;width:100%;max-width:480px;max-height:min(90dvh,920px);min-height:0;overflow:hidden;border-radius:25px;background:#fff4e1;box-shadow:0 20px 80px #30302050,0 0 0 3px #fff9e9b3;outline:none}
+.panel-head{position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 15px 10px;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/pink-pill-800.webp') center/103% 150% no-repeat}
+.panel-head h2{margin:0;min-width:0;font-family:"Songti SC","STSong",serif;font-size:19px;line-height:1.5;font-weight:700;overflow-wrap:anywhere}
+.close{flex-shrink:0;display:grid;place-items:center;width:42px;height:42px;padding:0;font:300 32px/1 Arial,sans-serif;color:#a6733e;border-radius:50%}
+.panel-content{min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px;scrollbar-width:thin}
+.detail-image{display:block;width:100%;max-width:100%;height:auto;margin:0;border:0;border-radius:12px;object-fit:contain;background:#fff4e4}
+.detail-add-btn{position:sticky;bottom:0;z-index:2;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:55px;margin:9px 0 0;padding:15px 20px;color:#fffce8;font-size:17px;font-weight:600;letter-spacing:1px;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/green-button-720.webp') center/100% 100% no-repeat;filter:drop-shadow(0 -2px 6px #fff5da)}
+.detail-add-btn svg{width:23px;height:23px}
+.cart-row{display:grid;grid-template-columns:78px minmax(0,1fr);gap:12px;padding:14px 0;border-bottom:1px solid #e8d8b9}
+.cart-row:first-child{padding-top:0}
+.cart-row img{width:78px;height:78px;border-radius:13px;object-fit:cover;background:#f3efd8}
+.cart-row h3{font-size:14px;line-height:1.5;letter-spacing:.4px;margin:1px 0 5px;overflow-wrap:anywhere}
+.cart-row p{font-size:11px;color:var(--muted);line-height:1.6;margin:0 0 5px}
+.row-actions{display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap}
+.taobao{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:9px 13px;border-radius:18px;background:#87ac4e;color:#fffce9;text-decoration:none;font-size:12px;font-weight:600}
+.remove{min-height:38px;padding:8px 4px;font-size:12px;color:#a58766}
+.unavailable{color:#9a8a75;font-size:12px;line-height:1.6;background:#eee6d5;border-radius:7px;padding:6px 8px}
+button.unavailable,a.unavailable{pointer-events:none;opacity:.8}
+.empty{text-align:center;padding:24px 6px;color:#9a8666;font-size:13px;line-height:2}
+.empty svg{color:#bcb59a;margin-bottom:8px}
+.note{color:#a18c6d;font-size:11px;line-height:1.8;margin:12px 0 0}
+.rules{font-size:13px;line-height:2;color:#887354}
+.rules p{margin:8px 0}
+.rules strong{color:#668e3c}
+.steps{padding:12px;border-radius:16px;background:#f2efda;margin:12px 0}
+.primary{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:48px;margin-top:12px;padding:13px 16px;color:#fffce7;font-size:15px;font-weight:600;background:url('__XCWC_ASSET_ORIGIN__/assets/shop/felt/green-button-720.webp') center/100% 100% no-repeat}
+.toast{position:fixed;z-index:200;left:50%;bottom:24px;max-width:calc(100% - 32px);width:max-content;transform:translate(-50%,12px);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;border-radius:20px;padding:11px 18px;color:#fffbe9;background:#637e40f2;box-shadow:0 5px 18px #4e5e2d26;font-size:12px;line-height:1.6;text-align:center;overflow-wrap:anywhere}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(min-width:600px){.masthead{height:82px;padding-inline:28px}.brand{font-size:27px}.brand small{font-size:11px}.brand-mark{width:42px;height:42px}.hero{aspect-ratio:916/420}.intro{min-height:155px;padding:25px}.eyebrow{font-size:11px;letter-spacing:3px}.intro h1{font-size:34px}.intro-description{font-size:15px}.intro-stamp{width:108px;height:104px;font-size:16px}.benefit{min-height:72px;padding-inline:27px;font-size:16px}.benefit button{font-size:16px}.egg-art{font-size:35px}.category strong{font-size:22px}.category>span{font-size:13px}.toolbar{padding-inline:18px}.filter,.filter select{font-size:16px}.filter{min-height:52px}.filters{gap:12px}.products{padding-inline:12px;gap:15px 12px}.card{padding:15px 14px 18px}.card h2{font-size:21px}.remark{font-size:13px}.price{font-size:32px}.price small{font-size:16px}.add{width:43px;height:43px}.add svg{width:26px;height:26px}}
+@media(max-width:360px){.masthead{height:59px;padding-inline:15px}.brand{font-size:19px;gap:8px}.brand small{font-size:8px;letter-spacing:2.7px}.brand-mark{width:30px;height:30px}.intro{padding:14px 13px 11px;min-height:104px}.intro h1{font-size:21px;letter-spacing:1px}.eyebrow{font-size:7px;letter-spacing:1.8px}.intro-description{font-size:9px;letter-spacing:0}.intro-stamp{width:66px;height:66px;font-size:11px}.benefit{padding-inline:12px;gap:7px;font-size:10px}.benefit button{font-size:10px}.egg-art{font-size:22px}.category strong{font-size:15px}.category>span{font-size:9px;letter-spacing:.5px}.filter,.filter select{font-size:12px}.filters{gap:5px}.filter{padding-inline:7px}.card{padding:9px 8px 12px}.card h2{font-size:13px}.remark{font-size:9px}.price{font-size:23px}.add{width:33px;height:33px}.add svg{width:20px;height:20px}.products{gap:9px 6px;padding-inline:6px}.panel-content{padding:11px}.overlay{padding:12px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+@media(hover:hover){button:not(:disabled):hover,a.taobao:hover{filter:brightness(1.04)}}
 
-/* Mobile readability and comfortable tap targets. */
-.masthead{height:64px;padding-inline:18px}.toolbar{padding-inline:16px}.products{padding-inline:16px;gap:16px 12px}.filter{min-height:42px}.card{border-radius:18px;box-shadow:0 4px 14px #71512b12}.card h2{font-size:16px}.description{font-size:12px;line-height:1.6}.egg{font-size:10px;line-height:1.5}.add{width:40px;height:40px}.close{min-width:44px;min-height:44px}.intro p{font-size:12px;line-height:1.7}
+/* Product-specific complete artwork owns its CTA; this button only supplies interaction. */
+.detail-art{position:relative;width:100%;line-height:0}.detail-art .detail-image{display:block;width:100%;height:auto}
+.detail-art .detail-hotspot{position:absolute;min-height:0;margin:0;padding:0;border:0;border-radius:18px;background:none!important;box-shadow:none;color:transparent;z-index:1}
+.detail-art .detail-hotspot:focus-visible{outline:3px solid #527c2c;outline-offset:3px}.hero{touch-action:pan-y}
+.added-image{display:block;max-width:160px;width:60%;height:140px;object-fit:contain;margin:0 auto}.added-result{text-align:center}.unavailable-art{display:grid;place-items:center;width:72px;min-height:72px;border-radius:12px;background:#f0e8d7;color:#9a8666}.image-failed{min-height:70px;background:#f5eddb;color:#8c795a}
 
-/* One first-release character, using shared external WebP images rather than baked artwork. */
-.hero{isolation:isolate;background:#b8c29b}
-.hero .hero-scene{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 42%;z-index:-2}
-.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#65462235,transparent 65%);z-index:-1;pointer-events:none}
-.hero-sign{position:absolute;left:4%;top:10%;width:49%;padding:9px 10px 8px;text-align:center;color:#674223;background:linear-gradient(120deg,#fff7dfef,#f5dfb5f2);border:2px solid #a47b46;border-radius:17px 14px 15px 13px;box-shadow:0 3px 7px #46301838,inset 0 0 0 2px #fff2c7}
-.hero-sign>span{font:500 clamp(9px,2.5vw,13px)/1.4 "Songti SC","STSong",serif;letter-spacing:1px}.hero-sign h2{margin:3px 0;font:700 clamp(17px,4.4vw,25px)/1.25 "Songti SC","STSong",serif;letter-spacing:1px}.hero-sign p{margin:4px 0 0;font-size:9px;line-height:1.4}
-.hero .hero-character{position:absolute;right:12%;bottom:1%;width:36%;height:95%;object-fit:contain;filter:drop-shadow(0 3px 3px #4a391e28)}
-.hero .hero-rule{z-index:2}
-.photo{height:auto;aspect-ratio:1.55;object-fit:contain;background:#fff}
-.detail-img{height:auto;max-height:320px;object-fit:contain;background:#fff}
-.cart-row img{object-fit:contain;background:#fff}
-@media(min-width:600px){.hero-sign{padding:13px 12px 12px}.hero-sign>span{font-size:13px}.hero-sign h2{font-size:26px}.hero-sign p{font-size:11px}}
+.cropped-media{position:relative;overflow:hidden;aspect-ratio:1.28}.cropped-media>img{position:absolute;max-width:none;object-fit:fill;display:block}.detail-art>.cropped-media{aspect-ratio:.53}.cart-cover{width:76px;align-self:start;flex-shrink:0}.taobao:disabled{opacity:.55;cursor:not-allowed}
+
+.panel.art-loaded .panel-head{display:none}.panel.art-loaded .panel-content{padding:0}.detail-close-hotspot{position:absolute;z-index:2;padding:0;border:0;background:none;border-radius:50%}.detail-close-hotspot:focus-visible{outline:3px solid #527c2c}
+
+/* Readable state text and touch targets retain the confirmed artwork. */
+.intro-description,.benefit,.benefit button,.category>span,.remark,.end,.note,.cart-row p{font-size:12px;line-height:1.7}.intro-description{white-space:normal}.benefit b{font-weight:600}.category>span{letter-spacing:0}.remark{color:#735f40}.note,.cart-row p,.end{color:#796448}
+.add{position:relative;width:44px;height:44px;padding:10px;background:none;box-shadow:none;isolation:isolate}.add::before{content:"";position:absolute;width:36px;height:36px;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle at 35% 25%,#b7d76b,#83b447 75%);box-shadow:inset 0 0 0 2px #d9ec9e,0 3px 5px #9aa35335;z-index:-1}.add.added{background:none}.add.added::before{background:radial-gradient(circle at 30% 25%,#9dbd60,#6f9c3e 75%)}.add svg{position:relative}.card-bottom{min-height:44px}
+.filter,.filter select,.secondary,.close,.taobao,.remove{min-height:44px}.close{min-width:44px}.remove{padding-inline:10px}.detail-close-hotspot{min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
+.carousel-dots{bottom:0;gap:0}.carousel-dots button{display:grid;place-items:center;width:44px;height:44px;min-width:44px;border-radius:50%;background:none;box-shadow:none;transform:none}.carousel-dots button::before{content:"";display:block;width:8px;height:8px;border-radius:50%;background:#ffffe1a6;box-shadow:0 0 0 1px #a9b88a40}.carousel-dots button.active,.carousel-dots button[aria-current="true"],.carousel-dots button[aria-selected="true"]{background:none;transform:none}.carousel-dots button.active::before{background:#fffdf0;transform:scale(1.15)}
+.carousel-pause{position:absolute;right:8px;top:8px;z-index:3;min-height:44px;padding:8px 12px;border-radius:22px;background:#fff8e9ed;color:#755331;font-size:12px;box-shadow:0 1px 5px #79502d24}.carousel-empty{position:absolute;inset:0;z-index:1;flex-direction:column;gap:8px;padding:12px;text-align:center;letter-spacing:0}.carousel-empty p{margin:0;font-size:14px}.carousel-empty .secondary{background:#fff4df;border-radius:22px;color:#79502d}
+.cart-status{margin:8px 14px;padding:12px;border:1px solid #d6ba8c;border-radius:16px;background:#fff6e8;font-size:13px;line-height:1.8;color:#77502d}.cart-status .secondary{display:block;margin-top:6px}.cart-panel-status{margin:0 0 10px;font-size:13px;line-height:1.7;color:#79502d}.cart-panel-status:empty{display:none}.cart-last-known{padding:9px 12px;border:1px solid #e8d8b9;border-radius:12px;font-size:13px;line-height:1.8;color:#79502d}
+.detail-image-status{min-height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;color:#79502d;font-size:14px;line-height:1.8;text-align:center}.detail-image-status p{margin:0}.detail-text{padding:12px 18px 18px;font-size:14px;line-height:1.8;color:#79502d;background:#fff4e1}.detail-text summary{min-height:44px;padding:10px 0;cursor:pointer;font-weight:600}.detail-text h3{margin:8px 0;font-size:17px}.detail-text p{margin:6px 0}
+@media(max-width:360px){.add::before{width:33px;height:33px}.intro-description,.benefit,.benefit button,.category>span,.remark,.end,.note,.cart-row p{font-size:12px}.intro-stamp{width:60px;height:64px;font-size:11px}.intro h1{font-size:20px}.benefit{padding-inline:10px;gap:5px}.benefit button{padding-left:2px}.filter,.filter select{font-size:12px}.cart-row{grid-template-columns:64px minmax(0,1fr);gap:9px}.cart-cover{width:64px}.row-actions{gap:4px}.taobao{padding-inline:10px}}

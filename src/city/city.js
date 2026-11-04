@@ -22,9 +22,10 @@ function cityCollectionRows(cityCode,birds,catalog){
 }
 function mountCity(){
  const shadow=mountIsolated('xcwc-city',cityCss,cityTemplate),$=q=>shadow.querySelector(q),controller=new AbortController(),{signal}=controller;
- let alive=true,filter='all',catalog=[],stateKnown=false,loading=true,catalogLoading=true,catalogFailed=false,loadVersion=0;
+ let alive=true,filter='all',catalog=[],stateKnown=false,loading=true,catalogLoading=true,catalogFailed=false,loadVersion=0,catalogVersion=0,activeCity=null;
  pageCleanup=()=>{alive=false;controller.abort();shadow.querySelectorAll('dialog[open]').forEach(d=>d.close())};installDialogClose(shadow,signal);
- const showSheet=html=>{$('#sheet-content').innerHTML=html;openPageDialog($('#sheet')).catch(error=>{if(alive)pageNotice(error.message)})};
+ $('#sheet').addEventListener('close',()=>{activeCity=null},{signal});
+ const showSheet=html=>{activeCity=null;$('#sheet-content').innerHTML=html;openPageDialog($('#sheet')).catch(error=>{if(alive)pageNotice(error.message)})};
  function renderCity(){
   if(!alive)return;
   const bird=stateKnown?ownedCurrent():null,unlocked=collectedCityCodes(stateKnown?liveAccount.birds:[]);
@@ -38,23 +39,33 @@ function mountCity(){
   const visible=cityCollectionCities.filter(city=>filter==='all'||(stateKnown&&(filter==='unlocked'?unlocked.has(city.code):!unlocked.has(city.code))));
   $('#city-grid').innerHTML=visible.map(city=>{
    const status=stateKnown?(unlocked.has(city.code)?'unlocked':'locked'):'unknown',label=stateKnown?(unlocked.has(city.code)?'本机已解锁':'尚未领取'):(loading?'正在读取':'状态待读取');
-   return `<button class="city-card ${status}" ${loading?'disabled':''} data-city="${city.id}" aria-label="${city.name}，${label}，查看城市小鸟"><div class="city-art" style="background-position:${city.pos}"><div class="city-name"><h3>${city.name}</h3><span>${city.en}</span></div><span class="state-icon" aria-hidden="true">⌑</span><img class="bird-mini bird-shadow" src="${esc(birdAssets.avatar)}" width="192" height="174" loading="lazy" decoding="async" alt=""><span class="question" aria-hidden="true">?</span></div><div class="city-card-body"><strong><span class="tiny-dot"></span>${label}</strong><p>${city.line}</p><span class="card-action">查看城市小鸟 ›</span></div></button>`;
+   return `<button class="city-card ${status}" ${loading?'disabled':''} data-city="${city.id}" aria-label="${city.name}，${label}，查看城市小鸟"><div class="city-art" style="background-position:${city.pos}"><div class="city-name"><h3>${city.name}</h3><span>${city.en}</span></div><span class="state-icon" aria-hidden="true">⌑</span><img class="bird-mini bird-shadow" src="${esc(birdAssets.avatar)}" width="192" height="174" loading="lazy" decoding="async" alt=""><span class="question" aria-hidden="true">?</span></div><div class="city-card-body"><strong><span class="tiny-dot"></span>${label}</strong><p>${city.line}</p><span class="card-action">查看小鸟 ›</span></div></button>`;
   }).join('');
   $('#empty').hidden=visible.length>0;
   if(!visible.length)$('#empty').innerHTML='<h3>'+(stateKnown?'旅程才刚刚开始':'本机记录暂不可用')+'</h3><p>'+(stateKnown?'碰一碰实体小鸟并领取后，回来收集这座城。':'请先重新读取本机记录，暂不推定城市状态。')+'</p><button data-filter="all">看看全部城市</button>';
-  $('.footnote').innerHTML=!stateKnown?(loading?'正在读取本机城市手账…':'本机记录暂时无法读取，不会覆盖原有记录。<br><button class="retry" data-action="retry">重新加载</button>'):'城市状态来自本机领取缓存 · 不代表云端购买权益'+(catalogFailed?'<br><span>城市小鸟目录暂不可用，仍可查看本机伙伴。</span> <button class="retry" data-action="retry">重试</button>':'');
+  $('.footnote').innerHTML=!stateKnown?(loading?'正在读取本机城市手账…':'本机记录暂时无法读取，不会覆盖原有记录。<br><button class="retry" data-action="retry">重新加载</button>'):'城市状态来自本机领取缓存 · 不代表云端购买权益'+(catalogFailed?'<br><span>城市小鸟目录暂不可用，仍可查看本机伙伴。</span> <button class="retry" data-action="retry-catalog">重试</button>':'');
+  if(activeCity&&$('#sheet').open)showBirds(cityCollectionCities.find(city=>city.id===activeCity),true);
  }
- function showBirds(city){
+ function showBirds(city,update=false){
   if(!city)return;
   const rows=cityCollectionRows(city.code,stateKnown?liveAccount.birds:[],catalog);
   const emptyMessage=catalogLoading?'正在读取这座城的小鸟目录，请稍候再来看看。':catalogFailed?'这座城的公开小鸟目录暂时无法读取，请稍后重试。':city.code==='hangzhou'?'尚未领取杭州小鸟。碰一碰已建档的实体小黄莺并打开链接，即可领取。':'这座城的小鸟暂未开放，敬请期待。';
-  showSheet('<div class="sheet-head"><button class="close" data-action="close-sheet" aria-label="关闭">×</button><span class="eyebrow">CITY BIRD COLLECTION</span><h2>'+city.name+'的小鸟伙伴</h2><p>'+(stateKnown?'查看本机已领取的伙伴与公开小鸟目录。':'本机记录待读取，以下公开目录不代表领取结果。')+'</p></div><div class="sheet-body">'+rows.map(bird=>'<div class="bird-row"><img src="'+esc(birdArt(bird,'sticker'))+'" class="'+(bird.owned?'':'bird-shadow')+'" alt="'+esc(bird.owned?bird.name+'的小黄莺形象':'尚未领取的小鸟剪影')+'"><div><h3>'+esc(bird.name||'城市小鸟')+'</h3><p>'+(bird.owned?'已领取 · 本机已孵化':stateKnown?'尚未领取':'领取状态待读取')+'</p></div>'+(bird.owned?'<button class="pill" data-action="visit-bird" data-bird="'+esc(bird.id)+'">去小窝</button>':'<span class="pill lock">'+(stateKnown?'尚未领取':'状态待查')+'</span>')+'</div>').join('')+(!rows.length?'<p class="city-not-open">'+emptyMessage+'</p>':'')+'<div class="instructions">碰一碰实体小鸟的 NFC 或扫描二维码，打开对应领取页面。领取无需登录，记录仅保存在当前浏览器。</div><button class="primary" data-action="close-sheet">返回城市手账</button></div>');
+  const html='<div class="sheet-head"><button class="close" data-action="close-sheet" aria-label="关闭">×</button><span class="eyebrow">CITY BIRD COLLECTION</span><h2>'+city.name+'的小鸟伙伴</h2><p>'+(stateKnown?'查看本机已领取的伙伴与公开小鸟目录。':'本机记录待读取，以下公开目录不代表领取结果。')+'</p></div><div class="sheet-body">'+rows.map(bird=>'<div class="bird-row"><img src="'+esc(birdArt(bird,'sticker'))+'" class="'+(bird.owned?'':'bird-shadow')+'" alt="'+esc(bird.owned?bird.name+'的小黄莺形象':'尚未领取的小鸟剪影')+'"><div><h3>'+esc(bird.name||'城市小鸟')+'</h3><p>'+(bird.owned?'已领取 · 本机已孵化':stateKnown?'尚未领取':'领取状态待读取')+'</p></div>'+(bird.owned?'<button class="pill" data-action="visit-bird" data-bird="'+esc(bird.id)+'">去小窝</button>':'<span class="pill lock">'+(stateKnown?'尚未领取':'状态待查')+'</span>')+'</div>').join('')+(catalogLoading?'<p class="catalog-status" role="status">正在读取这座城的小鸟目录…</p>':catalogFailed?'<div class="catalog-status" role="status"><p>公开小鸟目录暂时无法读取，本机伙伴仍可查看。</p><button class="retry" data-action="retry-catalog">重新读取目录</button></div>':!rows.length?'<p class="city-not-open">'+emptyMessage+'</p>':'')+'<div class="instructions">碰一碰实体小鸟的 NFC 或扫描二维码，打开对应领取页面。领取无需登录，记录仅保存在当前浏览器。</div><button class="primary" data-action="close-sheet">返回城市手账</button></div>';
+  if(!update){showSheet(html);activeCity=city.id;return}
+  const sheet=$('#sheet'),scroll=sheet.scrollTop,focused=shadow.activeElement,action=focused?.dataset.action,birdId=focused?.dataset.bird;$('#sheet-content').innerHTML=html;sheet.scrollTop=scroll;
+  if(action){const next=[...$('#sheet-content').querySelectorAll('button')].find(button=>button.dataset.action===action&&button.dataset.bird===birdId)||$('#sheet-content .close');next?.focus({preventScroll:true})}
+ }
+ async function loadCatalog(){
+  const version=++catalogVersion;catalogLoading=true;catalogFailed=false;renderCity();
+  try{const value=await accountRpc('catalog',{},signal);if(!alive||version!==catalogVersion)return;if(!Array.isArray(value))throw Error('城市目录格式不正确');catalog=value;catalogFailed=false}
+  catch{if(!alive||version!==catalogVersion)return;catalogFailed=true}
+  finally{if(alive&&version===catalogVersion){catalogLoading=false;renderCity()}}
  }
  async function load(){
-  const version=++loadVersion;loading=true;catalogLoading=true;catalogFailed=false;renderCity();
+  const version=++loadVersion;loading=true;renderCity();
   await Promise.allSettled([
    refreshAccount(signal).then(()=>{if(!alive||version!==loadVersion)return;stateKnown=true;loading=false;renderCity()}).catch(error=>{if(!alive||version!==loadVersion)return;stateKnown=false;loading=false;renderCity();pageNotice(error.message)}),
-   accountRpc('catalog',{},signal).then(value=>{if(!alive||version!==loadVersion)return;catalog=Array.isArray(value)?value:[];catalogLoading=false;catalogFailed=false;renderCity()}).catch(()=>{if(!alive||version!==loadVersion)return;catalogLoading=false;catalogFailed=true;renderCity()})
+   loadCatalog()
   ]);
  }
  shadow.addEventListener('keydown',event=>{
@@ -72,6 +83,7 @@ function mountCity(){
    if(button.dataset.action==='profile')return nav('profile');
    if(button.dataset.action==='points')return await openWallet(showSheet,signal);
    if(button.dataset.action==='retry')return await load();
+   if(button.dataset.action==='retry-catalog')return await loadCatalog();
    if(button.dataset.action==='visit-bird'){
     button.disabled=true;await accountRpc('selectBird',{birdId:button.dataset.bird},signal);if(!alive)return;liveAccount.currentId=button.dataset.bird;nav('home');
    }

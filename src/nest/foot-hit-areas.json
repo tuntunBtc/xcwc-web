@@ -1,0 +1,311 @@
+{
+  "schemaVersion": 1,
+  "alphaThreshold": 64,
+  "areas": {
+    "happy": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/nest/felt/emotions/happy.webp",
+      "sourceSha256": "743ef53e90c6d7b57535dcf76d6f19c1fdbe6696e320cd711c3d9948cf64fdfa",
+      "masks": [
+        {
+          "x": 155,
+          "y": 504,
+          "width": 104,
+          "height": 42,
+          "bits": "AAAAAAD+/38AAAAAAAAAAAD+////fwAAAAAAAAD4//////8fAAAAAACA/////////wEAAAAA8P////////8PAAAAAP7/////////fwAAAMD///////////8DAADw////////////DwAA/P///////////z8AAP//////////////AID//////////////wHA//////////////8D8P//////////////D/j//////////////x/4//////////////8f/P//////////////P/7//////////////3/+//////////////9//P////////////////j////////////////Q////////////////APz7/////////////wAA8P////////////8AAPD/////////////AADw////////////fwAA8P///////////38AAPD///////////8/AADw////////////HwAA4P///////////x8AAMD///////////8PAADA////////////AwAAgP///////////wEAAID///////////8AAACA//////3///8/AAAAAP7////w////DwAAAAD4//8/4P///wMAAAAA8P//D8D//38AAAAAAID//wGA//8PAAAAAAAA/D8AAP//AQAAAAAAAAAAAAD+HwAAAAAAAAAAAAAAeAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+          "x": 358,
+          "y": 503,
+          "width": 106,
+          "height": 44,
+          "bits": "AAAAAAD8//8AAAAAAAAAAADw/////wMAAAAAAAAA////////AwAAAAAAwP////////8AAAAAAOD/////////HwAAAADw//////////8DAAAA+P//////////fwAAAPj///////////8HAAD4////////////fwAA+P////////////8HAPD/////////////PwDw//////////////8D4P//////////////H8D///////////////+A////////////////B////////////////z/8////////////////+P///////////////+f////////////////f//////////////////////////////////////////////////////////////////////////////////////////////////////////v////////////////n////////////////H////////////////z/8//////////////9/4P//////////////fwD//////////////38A+P////////////s/AMD///////////8HAAAA/P//////////HwAAAOD//////////38AAAAA/v//////////AQAAAOD////5/////wMAAAAA/v//g/////8HAAAAAMD//w/8////DwAAAAAA+P8fwP///z8AAAAAAAD/fwD+//8/AAAAAAAAwP8AwP//fwAAAAAAAADAAAD+/w8AAAAAAAAAAAAAgD8AAAAAAA=="
+        }
+      ]
+    },
+    "hungry": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/nest/felt/emotions/hungry-v2.webp",
+      "sourceSha256": "72b7136c54604511d2c0c8c3df0e18b5f54c893cd65dcf6f97332b0ddf0a618f",
+      "masks": []
+    },
+    "unwell": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/nest/felt/emotions/unwell.webp",
+      "sourceSha256": "5063ccc5078f13536df0d9ed8ada38b07f6783f19abe99044435fa4160a0b77f",
+      "masks": []
+    },
+    "puzzled": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/nest/felt/emotions/puzzled.webp",
+      "sourceSha256": "72e4a328910c4c3fe012140747606d24db369a510efb68c33daece78aced1183",
+      "masks": [
+        {
+          "x": 165,
+          "y": 508,
+          "width": 92,
+          "height": 38,
+          "bits": "AAAAAPD//wAAAAAAAAAA/////w8AAAAAAID//////x8AAAAAgP///////x8AAAAA/////////w8AAAD8/////////wMAAPj//////////wEA4P//////////fwAA////////////DwD8////////////A+D///////////9/AP////////////8P+P/////////////B/////////////z/+/////////////+f/////////////f/////////////////////////////////////////////////////////////////////////////////////////////7/////////////x/////////////9/+P////////////8D/v8//////////x8A/z/w/////////wAAAAD/////////BwAAAOD/////9/8/AAAAAP7///8//P8AAAAAwP////8D/wcAAAAA+P///w/AHwAAAACA////fwAAAAAAAADw////AwAAAAAAAAD+//8fAAAAAAAAAID//38AAAAAAAAAAOD//wEAAAAAAAAAAPj/AQAAAAA="
+        },
+        {
+          "x": 324,
+          "y": 519,
+          "width": 86,
+          "height": 30,
+          "bits": "AAAAAP//PwAAAAAAAMD/////DwAAAACA//////9/AAAAAP7///////8BAADw/////////wMAAP//////////AwDw//////////8DAP///////////wPw////////////A/7////////////B//////////////j///////////9//v///////////9//////////////9//////////////9////////////f/7///////////8P/////////////8H///////////9/4P///////////w/w////////////Afj/////f/7//z8A+P////8f/P//AwD8/////wP4/z8AAPz/////AOD/AQAA/P///x8AAAAAAAD4////AwAAAAAAAOD//38AAAAAAAAAAP//BwAAAAAAAAAAwP8AAAAAAAA="
+        }
+      ]
+    },
+    "angry": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/nest/felt/emotions/angry-v2.webp",
+      "sourceSha256": "761b776c5e58049dea8ae5b6f2419430dac9d571b19e532151ea636a7ff04883",
+      "masks": [
+        {
+          "x": 143,
+          "y": 506,
+          "width": 110,
+          "height": 44,
+          "bits": "AAAAAAD4//8HAAAAAAAAAAAA/v////8BAAAAAAAAAPz//////w8AAAAAAAD4////////fwAAAAAAwP//////////AAAAAAD+//////////8BAAAA8P///////////wMAAAD/////////////AwAA8P////////////8DAAD//////////////wMA8P//////////////AwD+//////////////8B4P///////////////wH8////////////////gP///////////////3/w////////////////P/z///////////////8P/////////////////8f/////////////////8f/////////////////8////////////////P/7///////////////+P/////////////////+P/////////////////8P///////////////z/8////////////////B/7///////////////+B////////////////P8D///////////////8P4P///////////////wHw//////////////8/APD//+f//////////wcA8P8/+P/////5//9/AAD4/wP8////P/7//w8AAMAHAP7///8H////AAAAAAAA/////4D//w8AAAAAAID///8fwP//AAAAAAAAwP///wHg/w8AAAAAAADA//8PAOB/AAAAAAAAAID//wAA8AMAAAAAAAAAAP8DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        },
+        {
+          "x": 389,
+          "y": 504,
+          "width": 108,
+          "height": 46,
+          "bits": "AAAAAAD4//8BAAAAAAAAAACA/////x8AAAAAAAAAwP//////PwAAAAAAAOD///////9/AAAAAADA/////////z8AAAAAgP//////////HwAAAAD///////////8PAAAA/P///////////wMAAPD/////////////AADA/////////////z8AAP7/////////////BwD4//////////////8BwP//////////////PwD+//////////////8H8P///////////////4D///////////////8f/P///////////////8P///////////////8//v///////////////+P///////////////8///////////////////P///////////////8f//////////////////H///////////////8f//////////////////D///////////////8P/v//////////////f+D///////////////8H/P//////////////P8D///////////////8B+P//////////////DwD//////////////z8A4P//////////////AAD8////4/////8//wAAgP///z/8/////wEAAADg////gf////8PAAAAAPz//x/g////fwAAAAAA////APz///8DAAAAAMD//wcA////HwAAAAAA8P8/AMD///8AAAAAAAD4/wAA4P//AwAAAAAAAPwHAADg/wcAAAAAAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    },
+    "crying": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/nest/felt/emotions/crying.webp",
+      "sourceSha256": "e6c9a92060702d1c247bc64e55c8d5c5df186596f319fb928b5ffcf2025f9ae1",
+      "masks": [
+        {
+          "x": 202,
+          "y": 509,
+          "width": 94,
+          "height": 40,
+          "bits": "AAAAAOD//wEAAAAAAAAA+P///38AAAAAAADw//////8DAAAAAMD///////8PAAAAAP7///////8fAAAA4P////////8fAAAA//////////8/AADw//////////8/AAD+//////////8fAOD///////////8fAPz///////////8PwP////////////8P+P////////////8H/v/////////////B///////////////4/////////////3/+/////////////9//////////////////////////////////////////////////////////////////////////////////////////////+/////////////9//v////////////8f//////////////+D/////////////3/g/////////////x/w/////////////wPw////////////PwD4////////////BwD4//////////9/AAD8//////////8PAAD8////8/////8AAAD4//8f8P///wcAAAD4//8B4P//fwAAAADw/wcAgP//AwAAAAAAAAAAgP8PAAAAAAAAAAAAwB8AAAAAAAAAAAAAAAAAAAA="
+        },
+        {
+          "x": 385,
+          "y": 509,
+          "width": 90,
+          "height": 38,
+          "bits": "AAAAAPj/fwAAAAAAAADg/////wEAAAAAAPj/////fwAAAAAA/v//////HwAAAAD/////////AwAAgP////////9/AACA//////////8HAID//////////38AgP///////////wcA////////////PwD+////////////Afz///////////8P+P///////////3/w/////////////+P/////////////n/////////////9//////////////////////////////////////////////////////////////////////////////////////////+//////////////n/////////////9//P/////////////g/////////////wH/////////////A/j///////////8HwP///////////w8A/v//////////HwDg//////////8fAAD+/////////x8AAOD/////////HwAAAPz//wf+//8PAAAAgP//AcD//wcAAAAA4P8DAPD/AQAAAAAA+AMAAAAAAAAAAAAAAAAAAAAAAAA="
+        }
+      ]
+    },
+    "belly": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/nest/felt/emotions/belly-v1.webp",
+      "sourceSha256": "f2903dc0847d509bfc2b3822b36753baf01f69dd6f953ea14ff18d32f169bc1e",
+      "masks": [
+        {
+          "x": 95,
+          "y": 341,
+          "width": 102,
+          "height": 96,
+          "bits": "AAAAAAAAAAAAAAAAAAAAAAAAAMAHAAAAAAAAAAAAAAD+DwAAAAAAAAAAAADw/z8AAAAAAAAAAAAA/P8fAAAAAAAAAAAA4P//DwAAAAAAAAAAAPz//wcAAAAAAAAAAID///8DAAAAAAAAAADw////AQAAAAAAAAAA/P///wAAAAAAAAAAgP///38AAAAAAAAAAOD///8fAAAAAAAAAAD8////BwAAAAAAAAAA/////wMAAAAAAAAA8P////8AAAAAAGACAPz///8/AAAAAAD/HwD+////PwAAAAD4/x+A/////w8AAAAA//8P8P////8DAAAA4P//D/7/////AAAAAPz//wf/////PwAAAID////L/////y8AAADg////8/////8PAAAA/P////7/////AwAAgP//////////fwAAAOD//////////z8AAAD8//////////8HAAAA////////////AQAAwP//////////fwAAAPD//////////w8AAAD8//////////8DAAAA//////////9/AAAA4P//////////HwAAAPD//////////ycAAAD8//////////+lDwAA/////////////z8AwP////////////8fAOD/////////////HwD8/////////z///x8A/v/////////n//8PgP//////////////B+D//////////////wPw//////////////8A+P////////////8/AP7/////////////D4D//////////////w/g//////////////8D4P//////////////APj/////////////PwD8/////////////w8A/v////////////8DgP//////////////AOD/////////////HwD4/////////////wcA/v////////////8BAP////////////9/AID/////////////HwDA/////////////wMA8P////////////8AAPj///////////8PAAD4////////////BwAA/v///////////wAAgP///////////xcAAOD///////////8BAADg//////////8/AAAA+P//////////HwAAAPz//////////wAAAAD//////////z8AAADA//////////8PAAAA8P//////////AwAAAPj/////////PwAAAAD+/////////wQAAAAA/////////z8AAAAAwP////////8HAAAAAOD///////8/AAAAAAD4////////DwAAAAAA/v//////vwEAAAAAgP///////ycAAAAAAID///////8AAAAAAADg//////8HAAAAAAAA/P//////AAAAAAAAAPz/////DwAAAAAAAAD+/////wEAAAAAAACA/////z8AAAAAAAAAwP////8DAAAAAAAAAPD///9/AAAAAAAAAAD8////DwAAAAAAAAAA/////wAAAAAAAAAAwP///w8AAAAAAAAAAMD///8DAAAAAAAAAADw//8fAAAAAAAAAAAA4P//BwAAAAAAAAAAAPj/vwAAAAAAAAAAAAD4/wMAAAAAAAAAAAAA+H8AAAAAAAAAAAAAAMADAAAAAAAA"
+        },
+        {
+          "x": 287,
+          "y": 386,
+          "width": 102,
+          "height": 94,
+          "bits": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABDgAAAAAAAAAAAAAAvz8AAAAAAAAAAAAAyPs/AAAAAAAAAAAAAP7/PwAAAAAAAIAAAID//x8AAAAAAAAAAAD4//8fAAAAAAAAAAAA/v//PwAAAAAAAAAA8v///w8AAAAAAAAQAPz///8DAAAAAAAAAAD///9/AAAAAAB8AADo////PwAAAADg/wEB/v///x8AAAAA/P9Hkf////9HAAAAgP//Eez/////AQAAAPD//6T/////fwAAAAD+/3/t/////x8AAADA//9/+/////8PAAAA8P//////////AwAAAP7//////////wAAAMD//////////x8AAAD4//////////8HAAAA/v//////////AwAAwP///////////wEAAPD//////////38AAAD+//////////9PAACA////////////OwAA8P///////////w4AAPz///////////8JAAD/////////////BwDA/////////////x8A8P////////////8PAPz/////////////HwD//////////////2/A//////////////8f+P//////////////B/z//////////////wP////////////////B//////////////9/8P//////////////P/j//////////////w/+//////////////8D////////////////wP//////////////P/D//////////////w/4//////////////8D/v//////////////gP//////////////P4D//////////////w/g//////////////8D+P//////////////AP7/////////////H4D//////////////wfg//////////////8B0P////////////9/APb/////////////DwD8/////////////wEA/v///////////38AgP////////////8PAID///////////9/AADg////////////FwAA+P///////////wEAAP7//////////z8AAAD///////////8HAADA////////////AQAAwP//////////LwAAAPD//////////wMAAAD8/////////38AAABA//////////8PAAAA0P//////////AQAAAMD/////////NwAAAADw/////////wAAAAAA/P///////z8AAAAAAP7///////8EAAAAAID///////8BAAAAAADA//////8fAAAAAAAA8P//////BwAAAAAAAPz/////nwAAAAAAAAD8/////wcAAAAAAAAA//////8BAAAAAAAAwP////8fAAAAAAAAANj/////AAAAAAAAAAD0////PwAAAAAAAAAA/P///w8AAAAAAAAAAP7///8CAAAAAAAAAAD///8PAAAAAAAAAADA////AQAAAAAAAAAAwP//fwAAAAAAAAAAAPD//w8AAAAAAAAAAADw/38AAAAAAAAAAAAAwH8CAAAAAAAAAAAAAEAPAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        }
+      ],
+      "rgbPredicate": {
+        "minRed": 120,
+        "minRedMinusGreen": 45,
+        "minGreenMinusBlue": 45
+      }
+    },
+    "huangying_osmanthus": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/wardrobe/huangying/osmanthus-640.webp",
+      "sourceSha256": "99e9c2c1f389062dc34fc675c968f28560be245420b9685fd2a21f512691dd3e",
+      "masks": [
+        {
+          "x": 168,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f//////////////////////////////////////////////////v//////////////j////////////////+D//////////////w/8//v//////////38A/gP///////////8DAADg//////////8/AAAA/v//////////AQAA4P/////n////BwAAAPz///8f/P//PwAAAID///9/wP///wAAAAD4////AfD//wcAAAAA////DwD+/w8AAAAA4P//fwDA/z8AAAAAAPz//wMA8H8AAAAAAAD//wMAAPwAAAAAAACA/w8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+          "x": 360,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f/////////////////////////////////////////////////////////////////////////////////f////////////////+H//////////////wf8//////////8//z/A////////////AwAA+P///7//////HwAAAP7////x/////wEAAMD///8f/P///w8AAADw//9/gP////8AAAAA/v//A/D///8HAAAAAP//HwD8//8/AAAAAMD//wCA////AQAAAADg/wcA4P//DwAAAAAA8B8AAPj/fwAAAAAAAGAAAAD4/wEAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    },
+    "huangying_peach": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/wardrobe/huangying/peach-640.webp",
+      "sourceSha256": "23fba7ee1ae7396653362840b465a6f2ad1ae5b122909762f77c421ad2803c85",
+      "masks": [
+        {
+          "x": 168,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f//////////////////////////////////////////////////v//////////////z/////////////////D//////////////w/8/////////////38A/h////////////8DAADA//////f///8/AAAA/P///z/+////AQAAwP/////D////BwAAAPz///8f+P//PwAAAID/////gP///wAAAAD4////A/D//wcAAAAA////HwD+/w8AAAAA4P///wDA/z8AAAAAAPj//wMA+H8AAAAAAAD//x8AAP4AAAAAAACA/x8AAAAAAAAAAAAAAB8AAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+          "x": 360,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f/////////////////////////////////////////////////////////////////////////////////P////////////////+H//////////////wf8//////////8//g/A//////v/////AwQA+P///x//////PwAAAP7////g/////wAAAMD///8P/v///w8AAADw//9/gP////8AAAAA/v//A/j///8HAAAAAP//PwD///9/AAAAAMD//wHA////AQAAAADg/wcA+P//HwAAAAAA8D8AAP7/fwAAAAAAAOABAAD//wEAAAAAAAAAAAAAfgAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    },
+    "huangying_bamboo": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/wardrobe/huangying/bamboo-640.webp",
+      "sourceSha256": "3b6a3cfab3fcc43b90051657be58f63ac2d48a9829ac69f2541379b036ebf14e",
+      "masks": [
+        {
+          "x": 168,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f/////////////////////////////////////////////////////////////////j/////////////////D//////////////w/8/////////////38A/1////////////8DQAHw//////////8/AAAA/v//////////AQAA4P/////j////BwAAAPz///8P/P//PwAAAMD///8/wP///wAAAAD4////APD//wcAAACA////DwD+/w8AAAAA4P//fwDg/z8AAAAAAP7//wMA9H8AAAAAAMD//wMAAPwAAAAAAACA/AMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+          "x": 360,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f/////////////////////////////////////////////////////////////////////////////////P////////////////+P//////////////wf8//////////9//CfA//////v/////BwAA+P///x//////fwAAAP7////w/////wMAAMD///8H/P///x8AAADw//9/gP////8BAAAA/v//A+D///8HAAAAAP//PwD8//9/AAAAAMD//wCA////BwAAAADg/wcA4P//HwAAAAAA8H8AAPz/fwAAAAAAAOAAAAD8/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    },
+    "huangying_sakura": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/wardrobe/huangying/sakura-640.webp",
+      "sourceSha256": "ed3bbff420319af678e476c151f15f746036d835690181f3da3be2051ef07433",
+      "masks": [
+        {
+          "x": 168,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/z//////////////8f////////////////4//////////////+P////////////////8P//////////////D/7//////////////8D//////////////w/8/////////////38A//////////////8D4P////////////8/APz/v///////////AQD+f/j/////////BwAAPoD/////w///PwAAAADg////H/j//wAAAAAA/v///wD//wcAAAAA4P///wfg/w8AAAAAAPz//x8A/D8AAAAAAAD///8AgH8AAAAAAADg//8DAPAAAAAAAAAA+P8PAAAAAAAAAAAAAP4PAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+          "x": 360,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f/////////////////////////////////////////////////////////////////////////////////f////////////////+P//////////////x/8///////////////A//////////////8D+P////////////8fAP7/////////f/gfAMD///8f/////wMAAADw////wP///z8AAAAA/v//B/j///8DAAAAAP//PwD///8fAAAAAMD//wHg////AAAAAADg/w8A/P//BwAAAAAA8D8AAP//PwAAAAAAAOABAMD//wAAAAAAAAAAAADA/wEAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    },
+    "huangying_scholar": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/wardrobe/huangying/scholar-640.webp",
+      "sourceSha256": "18e7c5435b1aa74ebb5d6a048d825734e8374fa4ba41ce99222865c61dc27812",
+      "masks": [
+        {
+          "x": 168,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f/////////////////////////////////////////////////////////////////z/////////////////z//////////////w/+/////////////3/A/x////////////8DIAPw//////////8/AAAA/v//////////AQAA4P/////h////BwAAAPz///8P/v//PwAAAMD///8/gP///wAAAAD4////APj//wcAAAAA////DwD//w8AAAAA4P//PwDg/z8AAAAAAPz/fwAA+H8AAAAAAAD//wMAAP8AAAAAAADA/wcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+          "x": 360,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f/////////////////////////////////////////////////////////////////////////////////H////////////////+D//////////////wP8//////////8//BfA////////////AwAA+P//////////PwAAAP7////5/////wMAAMD///8P/v///w8AAADw//8/gP///38AAAAA/v//A/j///8HAAAAAP//HwD///8/AAAAAMD//wCA////AQAAAADg/wMA8P//DwAAAAAA8D8AAP7/fwAAAAAAAGAAAAD+/wAAAAAAAAAAAAAA/AEAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    },
+    "huangying_moon": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/wardrobe/huangying/moon-640.webp",
+      "sourceSha256": "dfb67422a4058b6e03e076d0483e58c8b3bd52324d5769acc47aa0f11cd17f43",
+      "masks": [
+        {
+          "x": 168,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f//////////////////////////////////////////////////v//////////////z////////////////+D//////////////w/4//3//////////38AAAD///////////8DAADw//////////8/AAAA////////////AQAA4P//////////BwAAAP7/////////PwAAAMD///9/4P///wAAAAD8////Afj//wcAAACA////DwD//w8AAAAA8P//PwDg/z8AAAAAAPz//wAA/H8AAAAAAID//wMAAP8AAAAAAADA/wMAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+          "x": 360,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f////////////////////////////////3//////////////8/////////////////8f//////////////B///////////////B+D/////////////DwD8//////////8fAADA////////////AQAA+P//////////HwAAAP7//////////wAAAMD//////////wcAAADw//9/8P///z8AAAAA/v//Afj///8DAAAAAP//DwD///8fAAAAAMD/fwDA////AAAAAADg/wMA8P//BwAAAAAA8A8AAPz/HwAAAAAAAAAAAAD8PwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    },
+    "huangying_jade": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/wardrobe/huangying/jade-640.webp",
+      "sourceSha256": "f072ad71ae0ac043adf10307469828c528bf741482ce6b5f1661148b6883cf9d",
+      "masks": [
+        {
+          "x": 168,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f////////////////////////////////v////////////////+P//////////////D////////////////4D/v////////////w8AP/j//////////38AAAD///////////8DAADw//////////8/AAAA////////////AQAA4P//////////BwAAAPz///+/////PwAAAID///8/wP///wAAAAD4////APj//wcAAAAA////DwD//w8AAAAA4P//PwDg/z8AAAAAAPj//wEA+H8AAAAAAAD8/wEAAP4AAAAAAAAA/AMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        },
+        {
+          "x": 360,
+          "y": 482,
+          "width": 100,
+          "height": 36,
+          "bits": "AAAAAMD//z8AAAAAAAAAAPz/////AwAAAAAAAP7//////wcAAAAAAP////////8PAAAAAP7/////////BwAAAPz//////////wMAAPD///////////8AAOD///////////9/AAD/////////////DwD8/////////////wPg/////////////3+A//////////////8f/P//////////////w///////////////P/7///////////////f/////////////////////////////////////////////////////////////////9///////////////H///////////////P+D////////////hHwD8//////////8/AADA////////////AQAA+P//////////HwAAAP7//////////wAAAMD////v/////w8AAADw//8/gP///38AAAAA/v//AfD///8DAAAAAP//DwD+//8fAAAAAMD/fwDA////AAAAAADg/wMA8P//DwAAAAAA8B8AAPz/HwAAAAAAAAAAAAD4HwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    },
+    "huangying_pilgrim": {
+      "width": 640,
+      "height": 580,
+      "sourceFile": "assets/wardrobe/huangying/pilgrim-640.webp",
+      "sourceSha256": "3d028f42edef4a626f4c6ae14b292e5df77a38e1be5f79f55ca0868c79662ff0",
+      "masks": [
+        {
+          "x": 208,
+          "y": 487,
+          "width": 62,
+          "height": 32,
+          "bits": "AACA/38AAAAAAP///wMAAAD8////DwAAwP////8PAAD+/////x8AwP//////DwD8//////8PgP///////wfw////////A/7////////B//////////j///////9//v///////9//////////////////////////////////////////////////////////////+////////3/+////////H/////////+D///7////f8D/H/z///8P4P8D/v///wHwPwD///8/APADgP///wMAeADA//9/AAAAAMD//wMAAAAA4P8/AAAAAACA/wAAAAAAAAAAAAA="
+        },
+        {
+          "x": 361,
+          "y": 487,
+          "width": 98,
+          "height": 32,
+          "bits": "AAAAAOD//x8AAAAAAAAAwP//////AAAAAAAA+P//////fwAAAAAA/////////z8AAACA//////////8HAADA////////////AADA////////////DwDg/////////////wHA/////////////w/A//////////////+A//////////////8H//////////////8//v//////////////+f//////////////9///////////////////////////////P///////////////f/z/////////////f+D/////////////P4D///////////8HAQD8//////////8fAADg//////////8/AAAA////////////AAAA8P//////////AQAAgP///4//////AwAAAPD//w/4////DwAAAAD//x/A////HwAAAADg/x8A+P//PwAAAAAA/D8AgP//fwAAAAAAAD4AAPD/PwAAAAAAAAAAAAD8DwAAAAAAAAAAAAAAAAAAAAA="
+        }
+      ]
+    }
+  }
+}

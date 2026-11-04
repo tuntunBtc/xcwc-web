@@ -21,7 +21,7 @@ function mountAdoptionV1(){
  const chars=value=>[...String(value||'')];
  const showNotice=(message,kind='info')=>{const node=$('[data-role="service-notice"]');node.textContent=message;node.dataset.kind=kind;node.hidden=false};
  const setText=(role,value,fallback='—')=>{const node=$('[data-role="'+role+'"]');if(node)node.textContent=value==null||String(value).trim()===''?fallback:String(value)};
- const setReady=ready=>{const input=$('#adopt-v1-name');input.disabled=!ready;$('[data-action="random"]').disabled=!ready;$('[data-action="confirm"]').disabled=!ready};
+ const setReady=ready=>{const input=$('#adopt-v1-name');input.disabled=!ready;input.readOnly=alreadyMine;const random=$('[data-action="random"]');random.disabled=!ready||alreadyMine;random.hidden=alreadyMine;$('[data-action="confirm"]').disabled=!ready;$('.name-heading').lastChild.textContent=alreadyMine?'它已经住进你的小窝啦':'给小鸟取个名字吧～';$('#name-hint').textContent=alreadyMine?'昵称已保存在本机。回小窝后，点名字即可改名。':'名称由你决定，小鸟属性以实体资料为准。'};
  const setName=value=>{const input=$('#adopt-v1-name');input.value=chars(value).slice(0,6).join('');adoptionV1Draft.nickname=input.value};
  const openLogin=async()=>{if(!alive)return;$('.login-error').textContent='';await openPageDialog($('.login-dialog'))};
  const rememberName=()=>{adoptionV1Draft.nickname=$('#adopt-v1-name').value};
@@ -29,8 +29,8 @@ function mountAdoptionV1(){
  pageCleanup=()=>{adoptChrome.remove();alive=false;controller.abort();shadow.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close())};
  installDialogClose(shadow,signal);
  async function load(){
-  if(loading||!alive)return;loading=true;bird=null;alreadyMine=false;setReady(false);$('[data-action="confirm"]').textContent='孵化并领养';showNotice('正在读取 NFC 实体资料…');setText('recognition','正在读取小鸟资料');setText('identity-state','等待识别');
-  for(const role of ['bird-name','city-line','city','type','type-card','skin','skin-card','code','trait-one','trait-two','trait-three'])setText(role,role.startsWith('trait-')?'资料待接入':'—');
+  if(loading||!alive)return;loading=true;bird=null;alreadyMine=false;$('[data-action="retry"]').hidden=true;setReady(false);$('[data-action="confirm"]').textContent='正在读取资料…';showNotice('正在读取实体资料，请稍候…');setText('recognition','正在读取小鸟资料');setText('identity-state','等待识别');
+  for(const role of ['bird-name','city-line','city','type','type-card','skin','skin-card','code'])setText(role,'—');
   try{
    entry=await accountRpc('adoptionContext',{},signal);if(!alive)return;
    if(adoptionV1Draft.code!==entry.code)Object.assign(adoptionV1Draft,{code:entry.code,nickname:'',prompted:false,account:null});
@@ -39,7 +39,7 @@ function mountAdoptionV1(){
     account=null;bird={id:entry.code,typeId:'preview_yellow_oriole',name:'小黄莺',cityCode:'hangzhou',cityName:'杭州',typeName:'小黄莺',skinId:'osmanthus_yellow',skinName:'桂花黄'};
     if(!adoptionV1Draft.nickname)adoptionV1Draft.nickname=adoptionV1Defaults.nickname;adoptionV1Draft.account=null;setName(adoptionV1Draft.nickname);
     setText('code','编号尾号 '+entry.code.slice(-4));setText('bird-name',adoptionV1Defaults.type);setText('city-line',adoptionV1Defaults.city);setText('city',adoptionV1Defaults.city);setText('type',adoptionV1Defaults.type);setText('type-card',adoptionV1Defaults.type);setText('skin',adoptionV1Defaults.skin);setText('skin-card',adoptionV1Defaults.skin);
-    setText('recognition','本地预览测试资料');setText('identity-state','测试数据 · 不会提交');setText('action-note','仅作页面预览，不会提交领养');setReady(true);showNotice('测试数据：杭州 · 高头白洁 · 绿色 · 编号尾号 '+entry.code.slice(-4)+'。此本地预览不会提交绑定或发放权益。');return;
+    setText('recognition','本地预览测试资料');setText('identity-state','测试数据 · 不会提交');setText('action-note','仅作页面预览，不会提交领养');setReady(true);$('[data-action="confirm"]').textContent='预览测试，不提交领取';showNotice('测试数据：杭州 · 高头白洁 · 绿色 · 编号尾号 '+entry.code.slice(-4)+'。此本地预览不会提交绑定或发放权益。');return;
    }
    if(adoptionV1Draft.account&&adoptionV1Draft.account!==account){adoptionV1Draft.nickname='';adoptionV1Draft.prompted=false}
    adoptionV1Draft.account=account;setName(adoptionV1Draft.nickname);
@@ -58,27 +58,27 @@ function mountAdoptionV1(){
     setName((alreadyMine&&(ownedBird.nickname||ownedBird.name))||adoptionV1Draft.nickname||adoptionV1Defaults.nickname);
     if(alreadyMine){setText('action-note','这只小鸟已在你的领养名单中');showNotice('这只小鸟已领取到本机，点击下方按钮回到小窝，不重复领取或发放奖励。')}
     else{setText('action-note','名字和实体属性确认后，再提交领养请求');$('[data-role="service-notice"]').hidden=true}
-    setReady(true);if(alreadyMine){$('[data-action="confirm"]').disabled=false;$('[data-action="confirm"]').textContent='回小窝，看看它';}
+    setReady(true);$('[data-action="confirm"]').textContent=alreadyMine?'回小窝，看看它':'孵化并领养';
    }
    if(false&&!account&&!adoptionV1Draft.prompted){adoptionV1Draft.prompted=true;await openLogin()}
   }catch(error){
    if(!alive||signal.aborted)return;
    const message=error.code==='BIRD_NOT_FOUND'?'没有查到该实体小鸟，请重新碰一碰并确认链接。':error.code==='BIRD_ID_MISMATCH'?'服务返回了不同的小鸟编号，本次资料未采用。':'小鸟资料读取失败：'+(error.message||'请检查网络后重试。');
-   setText('recognition','小鸟资料暂不可用');setText('identity-state','读取失败');showNotice(message,'error');
+   setText('recognition',error.code==='BIRD_NOT_FOUND'?'暂未找到这只小鸟':'小鸟资料暂不可用');setText('identity-state','读取失败');showNotice(message,'error');$('[data-action="retry"]').hidden=false;
    if(false&&!account&&!adoptionV1Draft.prompted){adoptionV1Draft.prompted=true;try{await openLogin()}catch{}}
-  }finally{loading=false}
+  }finally{loading=false;if(alive&&!bird)$('[data-action="confirm"]').textContent='读取资料后可领取'}
  }
  async function submitAdoption(){
   if(busy||!bird)return;if(alreadyMine){await accountRpc('selectBird',{birdId:bird.id},signal);liveAccount.currentId=bird.id;nav('home');return;}rememberName();const name=adoptionV1Draft.nickname.trim(),parts=chars(name);
   if(entry?.previewTest){if(parts.length<1||parts.length>6){const error=$('.validation');error.textContent='请输入 1–6 个字，也可以使用随机取名。';error.hidden=false;$('#adopt-v1-name').setAttribute('aria-invalid','true');$('#adopt-v1-name').focus();return}showNotice('本地测试数据不会提交绑定请求，也不会发放鸟蛋或其他权益。');return}
   
   if(parts.length<1||parts.length>6){const error=$('.validation');error.textContent='请输入 1–6 个字，也可以使用随机取名。';error.hidden=false;$('#adopt-v1-name').setAttribute('aria-invalid','true');$('#adopt-v1-name').focus();return}
-  busy=true;$('[data-action="confirm"]').disabled=true;
+  busy=true;$('[data-action="confirm"]').disabled=true;$('[data-action="confirm"]').textContent='正在领取…';
   try{const result=await accountRpc('adoptionConfirm',{code:entry.code,name},signal);if(!result?.bound||result.birdId!==bird.id||result.eggStatus!=='HATCHED')throw Error('领养结果尚未确认，请重试核对');alreadyMine=true;liveAccount.currentId=bird.id;if(alive){showNotice('领取成功，小鸟已免费孵化并保存到本机！');nav('home')}}
   catch(error){if(!alive||signal.aborted)return;if(error.code==='LOGIN_REQUIRED'){account=null;adoptionV1Draft.prompted=false;await openLogin()}else showNotice(error.message||'领养结果暂未确认，请保留当前页面重试，不会重复发放权益。','error')}
-  finally{busy=false;if(alive&&bird&&!alreadyMine)$('[data-action="confirm"]').disabled=false}
+  finally{busy=false;if(alive&&bird&&!alreadyMine){$('[data-action="confirm"]').disabled=false;$('[data-action="confirm"]').textContent='孵化并领养'}}
  }
- shadow.addEventListener('input',event=>{if(event.target.id!=='adopt-v1-name')return;const input=event.target,limited=chars(input.value).slice(0,6).join('');if(input.value!==limited)input.value=limited;rememberName();clearNameError()},{signal});
+ shadow.addEventListener('input',event=>{if(event.target.id!=='adopt-v1-name'||event.isComposing)return;const input=event.target,limited=chars(input.value).slice(0,6).join('');if(input.value!==limited)input.value=limited;rememberName();clearNameError()},{signal});
  async function authenticate(mode){
   const form=$('.login-form');if(!form.reportValidity())return;const password=form.elements.password.value;
   if(new TextEncoder().encode(password).length>72){$('.login-error').textContent='密码不能超过 72 个 UTF-8 字节。';return}
@@ -89,7 +89,8 @@ function mountAdoptionV1(){
  }
  shadow.addEventListener('keydown',event=>{if(event.key!=='Enter')return;if(event.target.id==='adopt-v1-name'){event.preventDefault();submitAdoption();return}if(event.target.closest('.login-form')){event.preventDefault();authenticate('login')}},{signal});
  shadow.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;if(button.closest('.login-form')){try{await authenticate(button.value==='register'?'register':'login')}catch(error){if(alive) $('.login-error').textContent=error.message||'登录失败'}return}if(!button.matches('[data-action]'))return;try{
-  if(button.dataset.action==='back'){nav('home');return}
+  if(button.dataset.action==='back'){nav('back');return}
+  if(button.dataset.action==='retry'){rememberName();await load();return}
   if(button.dataset.action==='close-login'){$('.login-dialog').close();return}
   if(button.dataset.action==='random'){setName(suggestions[randomIndex++%suggestions.length]);clearNameError();$('#adopt-v1-name').focus();return}
   if(button.dataset.action==='confirm'){event.preventDefault();await submitAdoption()}

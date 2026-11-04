@@ -1,1 +1,2 @@
-const birds=[{id:'hangzhou',name:'西湖小鸟毛绒',city:'杭州',price:89,sales:1286,desc:'西湖寻羽，与你相遇'},{id:'suzhou',name:'姑苏小鸟毛绒',city:'苏州',price:89,sales:968,desc:'一鸟一园，漫游江南'},{id:'nanjing',name:'梧桐小鸟毛绒',city:'南京',price:79,sales:826,desc:'梧桐落叶，伴你同行'},{id:'xian',name:'长安小鸟毛绒',city:'西安',price:99,sales:1102,desc:'穿越千年，与羽同行'},{id:'wuhan',name:'樱花小鸟毛绒',city:'武汉',price:89,sales:1568,desc:'江城樱花，与你相约'},{id:'shanghai',name:'外滩小鸟毛绒',city:'上海',price:109,sales:756,desc:'海风相伴，飞向远方'}].map(b=>({...b,taobaoUrl:'https://e.tb.cn/h.jTRBezgACJi6VEn?tk=fD1ETztXxx7'}));
+// UI options only. Public merchandise and prices come from xcwc-api JSON configuration.
+const shopConfig=Object.freeze({pageSize:20,carouselIntervalMs:5000});

@@ -1,0 +1,309 @@
+{
+  "method": "built-in image_gen background-extraction; Sharp resize/padding/WebP encoding",
+  "generatedAt": "2026-11-03",
+  "prompt": "Use case: background-extraction. Asset type: exact transparent web character cutout. Edit target: the provided source image. Remove ONLY the pink background and floor/contact shadow, replacing them with real fully transparent alpha. Preserve this exact existing felt baby oriole character pixel-faithfully: same large black eyes/highlights, beak, yellow body, green wings, facial expression, pose, all clothing, floral embroidery, ribbons, hair, leaf crown, shoes/feet and held props. Do not redesign, redraw, restyle or simplify the bird or garment; no added or missing accessories. Retain delicate fuzzy wool silhouette and translucent fabric edges. Keep the complete full-body front view intact with 3% transparent margin on all sides, including every tall staff/hat and wide veil/skirt. Preserve original proportions, colors, lighting and material. No scenery, no floor, no shadow, no replacement solid color, no checkerboard baked into pixels, no text or watermark. Output the same single source character isolated on genuine transparent background.",
+  "encoding": {
+    "quality": 88,
+    "alphaQuality": 100,
+    "effort": 6,
+    "hero": [
+      640,
+      580
+    ],
+    "thumbnail": [
+      320,
+      290
+    ],
+    "paddingPxAt640": 20
+  },
+  "assets": [
+    {
+      "id": "osmanthus",
+      "name": "桂花披风",
+      "source": "微信图片_20261103205504_30977_18.png",
+      "sourceWidth": 1383,
+      "sourceHeight": 1137,
+      "sourceSha256": "9fdaf7fd6871ec9fefd806deb8a55401ee9edb80e2eccab2e59b18a248b43c84",
+      "cutout": "/Users/beluga/.codex/generated_images/01a1a187-0b53-7bf2-9785-73b2e906dfcb/exec-08726128-9c1f-42e2-84ea-299af9058570.png",
+      "cutoutWidth": 1383,
+      "cutoutHeight": 1137,
+      "cutoutSha256": "ad011b8f18142a830837082d180d0beb524926f295133a587d0b987e384d323c",
+      "transparentPixelFraction": 0.33620270262535845,
+      "nearOpaqueMeanAbsoluteRgbDifference": 9.039222461177854,
+      "files": [
+        {
+          "file": "osmanthus-640.webp",
+          "width": 640,
+          "height": 580,
+          "bytes": 73140,
+          "sha256": "99e9c2c1f389062dc34fc675c968f28560be245420b9685fd2a21f512691dd3e",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        },
+        {
+          "file": "osmanthus-320.webp",
+          "width": 320,
+          "height": 290,
+          "bytes": 24398,
+          "sha256": "5411253ac4c31fae721c32680c40b1a4398357fa6d7849ec94e9224c54714e06",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        }
+      ]
+    },
+    {
+      "id": "peach",
+      "name": "桃花披风",
+      "source": "微信图片_20261103205507_30978_18.png",
+      "sourceWidth": 1383,
+      "sourceHeight": 1137,
+      "sourceSha256": "7c679764f0e2c20d1b0f51e3e76f41eb101cffece7ede0d778ef9a266595dd0c",
+      "cutout": "/Users/beluga/.codex/generated_images/01a1a187-0b53-7bf2-9785-73b2e906dfcb/exec-be7fddaf-0d10-4fa1-92b1-b56151c4ea23.png",
+      "cutoutWidth": 1383,
+      "cutoutHeight": 1137,
+      "cutoutSha256": "9353bc71d68f1c58f918e1ec8726e620bd2df5e818c5d9654b4573c7f1507787",
+      "transparentPixelFraction": 0.3581687675003227,
+      "nearOpaqueMeanAbsoluteRgbDifference": 8.453619166365014,
+      "files": [
+        {
+          "file": "peach-640.webp",
+          "width": 640,
+          "height": 580,
+          "bytes": 66706,
+          "sha256": "23fba7ee1ae7396653362840b465a6f2ad1ae5b122909762f77c421ad2803c85",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        },
+        {
+          "file": "peach-320.webp",
+          "width": 320,
+          "height": 290,
+          "bytes": 21978,
+          "sha256": "1ef110aa7176c16127effc7ab2f939b35787a2d3ee0f2acf8549e3e8b18e5f82",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        }
+      ]
+    },
+    {
+      "id": "bamboo",
+      "name": "竹影披风",
+      "source": "微信图片_20261103205508_30979_18.png",
+      "sourceWidth": 1383,
+      "sourceHeight": 1137,
+      "sourceSha256": "4d78221701cd5e7768288b44953c246d13b4de54267f58ef26bf12379809d5d2",
+      "cutout": "/Users/beluga/.codex/generated_images/01a1a187-0b53-7bf2-9785-73b2e906dfcb/exec-e71eee00-a130-42a8-9723-d30d56fede0f.png",
+      "cutoutWidth": 1383,
+      "cutoutHeight": 1137,
+      "cutoutSha256": "2f4a560e0010fdd2b600ae063d36ccbd89c3ec0b249e77d6acc4f55b89e89b24",
+      "transparentPixelFraction": 0.35149837421485036,
+      "nearOpaqueMeanAbsoluteRgbDifference": 9.315950893975435,
+      "files": [
+        {
+          "file": "bamboo-640.webp",
+          "width": 640,
+          "height": 580,
+          "bytes": 69506,
+          "sha256": "3b6a3cfab3fcc43b90051657be58f63ac2d48a9829ac69f2541379b036ebf14e",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        },
+        {
+          "file": "bamboo-320.webp",
+          "width": 320,
+          "height": 290,
+          "bytes": 22564,
+          "sha256": "d104138e9003667496882eb9a05e97827f45dca20240a272de850b7de1bc6588",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        }
+      ]
+    },
+    {
+      "id": "sakura",
+      "name": "樱花披风",
+      "source": "微信图片_20261103205509_30980_18.png",
+      "sourceWidth": 1383,
+      "sourceHeight": 1137,
+      "sourceSha256": "02b4f6922ae2aeb05f39ce948151fe6f68265f21f8c15f7f58c67b463711e621",
+      "cutout": "/Users/beluga/.codex/generated_images/01a1a187-0b53-7bf2-9785-73b2e906dfcb/exec-41b57d8a-0902-4f85-a559-1bea0148dfda.png",
+      "cutoutWidth": 1383,
+      "cutoutHeight": 1137,
+      "cutoutSha256": "dac9b80933c83f01c557a89beb5f382ee42ac1adaf926b9b47859cedab91c6ee",
+      "transparentPixelFraction": 0.3302890800529867,
+      "nearOpaqueMeanAbsoluteRgbDifference": 10.606324858091051,
+      "files": [
+        {
+          "file": "sakura-640.webp",
+          "width": 640,
+          "height": 580,
+          "bytes": 82826,
+          "sha256": "ed3bbff420319af678e476c151f15f746036d835690181f3da3be2051ef07433",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        },
+        {
+          "file": "sakura-320.webp",
+          "width": 320,
+          "height": 290,
+          "bytes": 26494,
+          "sha256": "dd8828225f7ffc861ea8168b5fb9c0a78027946cb20ec520feb3e6c69ef3618a",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        }
+      ]
+    },
+    {
+      "id": "scholar",
+      "name": "江南书生",
+      "source": "微信图片_20261103205530_30982_18.png",
+      "sourceWidth": 1383,
+      "sourceHeight": 1137,
+      "sourceSha256": "a78f1427863d54c510f96ef553b00d30d4dc3fda977a2fb062ce340ece9e284e",
+      "cutout": "/Users/beluga/.codex/generated_images/01a1a187-0b53-7bf2-9785-73b2e906dfcb/exec-46868887-c958-4dc1-a797-7c1ded1ab2bd.png",
+      "cutoutWidth": 1383,
+      "cutoutHeight": 1137,
+      "cutoutSha256": "6cba23704234ad2bf32082b7a064db0fd6034803e9e00b17bc63c7fb9c8b9a07",
+      "transparentPixelFraction": 0.3867384517743094,
+      "nearOpaqueMeanAbsoluteRgbDifference": 9.146721648692626,
+      "files": [
+        {
+          "file": "scholar-640.webp",
+          "width": 640,
+          "height": 580,
+          "bytes": 69148,
+          "sha256": "18e7c5435b1aa74ebb5d6a048d825734e8374fa4ba41ce99222865c61dc27812",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        },
+        {
+          "file": "scholar-320.webp",
+          "width": 320,
+          "height": 290,
+          "bytes": 22688,
+          "sha256": "fc09c29e73897b6f89ac9cea314421309a12b8023dcf05d60da4b870f6096058",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        }
+      ]
+    },
+    {
+      "id": "moon",
+      "name": "月白花嫁",
+      "source": "微信图片_20261103205953_30983_18.png",
+      "sourceWidth": 1382,
+      "sourceHeight": 1138,
+      "sourceSha256": "5c43cd1f8940886e4efe980d2d5fe1c6c87e3cd610535dfabb539bf3a989b3cb",
+      "cutout": "/Users/beluga/.codex/generated_images/01a1a187-0b53-7bf2-9785-73b2e906dfcb/exec-f2bd215a-bb8a-4ae0-9fea-fc4a6f0ee83f.png",
+      "cutoutWidth": 1383,
+      "cutoutHeight": 1137,
+      "cutoutSha256": "50bb37bc78b2aa292f94fc623e0657690e6ad271c2f6092c55beacdf71d34f58",
+      "transparentPixelFraction": 0.3143860840676871,
+      "nearOpaqueMeanAbsoluteRgbDifference": 45.07960355762724,
+      "files": [
+        {
+          "file": "moon-640.webp",
+          "width": 640,
+          "height": 580,
+          "bytes": 60854,
+          "sha256": "dfb67422a4058b6e03e076d0483e58c8b3bd52324d5769acc47aa0f11cd17f43",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        },
+        {
+          "file": "moon-320.webp",
+          "width": 320,
+          "height": 290,
+          "bytes": 21094,
+          "sha256": "90a3a55b3cdb2d4459017cd4a257179ecf4609abcba642b5f1a7ab341da88ee0",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        }
+      ]
+    },
+    {
+      "id": "jade",
+      "name": "青蛇仙子",
+      "source": "微信图片_20261103205959_30984_18.png",
+      "sourceWidth": 1383,
+      "sourceHeight": 1137,
+      "sourceSha256": "de3ab2b0279eb3c874a336473c2fd4f5769ef267d5039d2242d11a99c19f5c35",
+      "cutout": "/Users/beluga/.codex/generated_images/01a1a187-0b53-7bf2-9785-73b2e906dfcb/exec-d3e0fc1e-6da5-418c-92ff-d66a397f1fab.png",
+      "cutoutWidth": 1383,
+      "cutoutHeight": 1137,
+      "cutoutSha256": "9fd5f3df4522575d8af7f83b269d13a94f81b1d36d2e32ced5653bfe056ad46f",
+      "transparentPixelFraction": 0.3494423744539645,
+      "nearOpaqueMeanAbsoluteRgbDifference": 9.40134853913497,
+      "files": [
+        {
+          "file": "jade-640.webp",
+          "width": 640,
+          "height": 580,
+          "bytes": 68530,
+          "sha256": "f072ad71ae0ac043adf10307469828c528bf741482ce6b5f1661148b6883cf9d",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        },
+        {
+          "file": "jade-320.webp",
+          "width": 320,
+          "height": 290,
+          "bytes": 24030,
+          "sha256": "af27c8700bf8222d6c28f3b6cfd1b680aeec7d4e0c6908191569d2550904ba4e",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        }
+      ]
+    },
+    {
+      "id": "pilgrim",
+      "name": "小小行者",
+      "source": "微信图片_20261103210105_30985_18.png",
+      "sourceWidth": 1383,
+      "sourceHeight": 1137,
+      "sourceSha256": "44635826ce21797dabdad8248fddf5eb946ec7339c886f83c361de67e9d06224",
+      "cutout": "/Users/beluga/.codex/generated_images/01a1a187-0b53-7bf2-9785-73b2e906dfcb/exec-d9eae429-bd38-415f-bebd-3d7a5f125167.png",
+      "cutoutWidth": 1383,
+      "cutoutHeight": 1137,
+      "cutoutSha256": "0fdc2b905514d0a92f2b45d7832327e534e1bee71194a8cf9495d64b2be9b650",
+      "transparentPixelFraction": 0.3804865081772573,
+      "nearOpaqueMeanAbsoluteRgbDifference": 11.149939619616234,
+      "files": [
+        {
+          "file": "pilgrim-640.webp",
+          "width": 640,
+          "height": 580,
+          "bytes": 72264,
+          "sha256": "3d028f42edef4a626f4c6ae14b292e5df77a38e1be5f79f55ca0868c79662ff0",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        },
+        {
+          "file": "pilgrim-320.webp",
+          "width": 320,
+          "height": 290,
+          "bytes": 23754,
+          "sha256": "b49301da6ee95afb0e2d0ef3547217e512616f0f30c8817e02f4775a5785aab8",
+          "hasAlpha": true,
+          "alphaMin": 0,
+          "alphaMax": 255
+        }
+      ]
+    }
+  ]
+}

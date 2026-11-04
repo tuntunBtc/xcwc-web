@@ -18,6 +18,8 @@
 ## 技术与接入
 
 - 当前为原生 HTML/CSS/JavaScript，Python 构建；以 scripts/build-room.py 和它实际调用的集成脚本为准，不直接修改 dist 作为实现。
+- 性能拆包由 scripts/runtime_bundle.py 管理：页面工厂经显式 context 访问共享能力，按路由加载带内容指纹的 classic JS／CSS；不依赖原先所有页面共处一个闭包。新增共享函数时同步工厂能力，并用浏览器实际操作验证。保留 application/json 初始状态、可修改的主题 style、Shadow DOM 内动态 style 字符串和既有 sandbox。
+- dist/runtime/、runtime-manifest.json、媒体指纹及后端商城资源 URL 必须配套发布，不能再仅上传 index.html／register.html。新媒体生成后运行 npm run media:sync-shop；旧资源 URL 保留兼容。发布时保留上一版本指纹文件供已打开的页面使用。
 - 沿用既有页面导航、状态保存、账号与宿主桥接，不重复创建底栏、登录态或不受控的全局事件。
 - src/nest、src/city、src/shop、src/account*、src/checkin* 按当前实际职责维护。页面定稿交接路径见 ../docs/handoffs 与 ../docs/design-baselines。
 - 商城商品及测试淘宝链接集中在 src/shop/products.js；使用稳定商品 ID 保存购物车，去重并处理旧存储数据，不能将加购或外链点击描述为购买成功。
@@ -27,7 +29,7 @@
 ## 验证
 
 - 构建：npm run build。预览：npm run preview（默认 8766），可用 PORT 选择空闲端口，API_TARGET 按本次联调需要明确配置。
-- 语法与回归按实际修改选择：node --check、仓库 tests、scripts/verify-shop.cjs、verify-checkin.cjs、verify-integrated-pages.cjs；先读脚本所需依赖、地址和数据前提，不盲目全跑。
+- 语法与回归按实际修改选择：node --check、仓库 tests、scripts/verify-fullflow-audit.cjs、verify-fullflow-storage-faults.cjs、verify-lazy-images.cjs、verify-exhibition-profile.cjs；先读脚本所需依赖、地址和双实体 fixture 前提，不盲目全跑。旧 verify-guest-flow／verify-checkin／verify-integrated-pages 等保留历史依据，可能使用已被替代的登录、购买或养成规则，不能直接用来判断当前版本。
 - 浏览器检查当前页面及相关导航、移动端窄屏、空/错状态和持久化。记录本地预览 URL、通过证据、未验证能力。
 - 不因本任务覆盖其他页面正在进行的未提交改动，不擅自改框架或迁移整个目录。
 
@@ -36,3 +38,17 @@
 当前用户优先跑通免登录领取与小窝体验。公开实体由后端查询，本地领取、养成、叽分和本机相册使用独立缓存，不上传为云端绑定或真实钱包。不要因旧版“领取需登录”再次阻断当前领取。已有后端鉴权与云端账号逻辑保留，不放宽权限；跨设备与正式云端权益另行实施。具体规则以需求基线最新修订为准。
 
 对外 NFC 领取地址固定为 `/register.html?birdCode=完整编码`，不要改写为根路径，也不要更改已发行实体编码。根路径带码仅作兼容。
+
+## 媒体资源与性能（2026-11-03 强制）
+
+- 列表、衣橱与相册复用 `src/media-lazy.js` 的按视口加载；关键首屏主图优先，其他图片进入可见区域附近才赋 URL。保留宽高或比例，避免滚动时跳动；详情和轮播非当前图按操作加载，离页取消观察。不能只加 `loading="lazy"` 就声称已减少请求，需核对真实网络或本地读取记录。
+- 永久隐藏的装饰图片不应赋 `src`；CSS 背景也要核对可见性。相册列表先读 metadata，进入视口再取作品 Blob，不为列表读取全部原图／作品。既有相册升级须保留原字节，迁移与权限失败可重试，不删库重建。
+
+- 遵循 [统一媒体规范](../docs/MEDIA-PERFORMANCE.md)。原始素材保留，优先复用已有生成工具，从原件生成独立 WebP 派生；AVIF 只有在兼容性和真机解码表现合适时采用。已有达标资源不反复有损压缩，简单图标优先复用 SVG。
+- 头像/缩略图 10–80 KB、主视觉/背景/立绘 100–250 KB、详情图尽量 ≤300 KB，短音效尽量 ≤50 KB；短视频优先 720p、24–30 fps，10 秒尽量 ≤3 MB。这些是初始预算，特殊素材在清单说明用途和原因，不能为了体积压糊中文、毛绒质感或透明边缘。
+- 按显示用途提供尺寸，保留现有比例、裁切配置、Canvas 合成坐标和透明点击区。首屏 LCP 主图用 eager，必要时 high 优先级仅给 1–2 张；其余图片 lazy/异步解码，详情图打开后加载，图片预留宽高。
+- 音频由用户操作触发；视频提供 poster，默认 preload=none，必要时点击后才设置来源。离页、后台和组件销毁时暂停/清理媒体、动画和计时器，尊重 prefers-reduced-motion，不新增自动播放背景音乐。
+- 构建使用明确的运行资源清单，不能整目录携带原图、编辑 JSON、报告和系统杂文件。检查缺失引用、非法路径、失效派生和预算；超额记录原因，不能静默忽略。沿用 npm run media:optimize、npm run media:check 与 npm run build 的统一流程，不再另起一套处理链。
+- 带内容指纹的资源才适合长缓存；既有稳定 URL 不直接设置 immutable。HTML/CSS/JS 通过部署配置启用传输压缩，生产配置以实际服务器验证为准。
+- 媒体变更后检查相关页面手机窄屏、图片/文字/透明边缘、主交互和实际网络请求，保留前后对比证据。LCP ≤2.5 秒、CLS ≤0.1 是体验目标，未测量时不宣称达标。
+- 交接带原素材、优化文件、用途与预算清单和验收结果；后续工作前重读本节，不能依赖聊天实时同步。优化不得更改已确认的导航、功能和 NFC URL。

@@ -5,6 +5,9 @@
   "description": "卜叽岛小鸟伙伴前端交互原型",
   "scripts": {
     "build": "python3 scripts/build-room.py",
-    "preview": "node scripts/preview-server.cjs"
+    "preview": "node scripts/preview-server.cjs",
+    "media:optimize": "python3 scripts/optimize-media.py",
+    "media:sync-shop": "python3 scripts/sync-shop-media.py",
+    "media:check": "python3 scripts/media_pipeline.py"
   }
 }

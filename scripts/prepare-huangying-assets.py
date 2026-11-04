@@ -65,8 +65,6 @@ def main():
     if args.transparent_source:
         records += [
             export_variant(args.transparent_source, 'happy-hero-640.webp', 640, 84, require_alpha=True),
-            export_variant(args.transparent_source, 'happy-sticker-400.webp', 400, 84, require_alpha=True),
-            export_variant(args.transparent_source, 'happy-avatar-transparent-192.webp', 192, 80, require_alpha=True),
         ]
     report = {
         'source_policy': 'Do not modify originals. White variants use the current library happy WebP. Transparent variants use only reviewed cutout source.',
@@ -80,9 +78,9 @@ def main():
 
 来源：`/Users/beluga/Code/xcwc/小鸟资料库/小黄莺/小黄莺_开心.webp`。
 
-选用“开心”作为默认角色，因为它是完整站姿、绿叶冠与黄绿配色清晰，适合小窝主角、头像、商品展示和打卡贴片。饥饿为趴地并带饭碗气泡，害羞带心形，大哭/生气/难受等具有明确情绪用途；第一版静态换图不批量预加载这些表情，也不把它们当同一站姿混用。
+选用“开心”作为默认角色，因为它是完整站姿、绿叶冠与黄绿配色清晰，适合头像、静态展示和兼容页面主角。饥饿为趴地并带饭碗气泡，害羞带心形，大哭/生气/难受等具有明确情绪用途；第一版静态换图不批量预加载这些表情，也不把它们当同一站姿混用。
 
-原资料库现行 WebP/PNG 均为 RGB 白底，不含透明通道。白底衍生直接等比缩小原图；头像补齐白色正方形以适配圆形头像，保留完整叶冠和脚。透明主角色/打卡贴片仅从单独复核的去背景衍生源导出，不用简单白色阈值误伤奶白色肚皮。
+原资料库现行 WebP/PNG 均为 RGB 白底，不含透明通道。白底衍生直接等比缩小原图；头像补齐白色正方形以适配圆形头像，保留完整叶冠和脚。透明主角色仅从单独复核的去背景衍生源导出，不用简单白色阈值误伤奶白色肚皮。
 
 ## 当前导出
 
@@ -96,7 +94,7 @@ def main():
 
 - `happy-avatar-192.webp` 用于头像、切鸟列表等小尺寸场景；不把高清原图用于几十像素头像。
 - `happy-card-400.webp` 用于白底商品图、静态展示。
-- 若导出，`happy-hero-640.webp` 用于树屋/城市等透明主角色；`happy-sticker-400.webp` 用于打卡 Canvas 贴片；`happy-avatar-transparent-192.webp` 用于小型透明装饰/城市贴片，不替代保留白底的头像版本。
+- 若导出，`happy-hero-640.webp` 用于兼容页面的透明主角色，不替代保留白底的头像版本。
 - 同一资源使用同一外链 URL，借用浏览器缓存；不要在多个页面重复 base64 内联。
 - 首屏只加载当前所需的“开心”图，其他表情按实际交互需要再加载；不用一次预加载全目录。
 - 原始库、历史版本及高清输入不复制到普通发布资源目录。本目录只存实际网页变体与说明。

@@ -1,0 +1,795 @@
+{
+  "schemaVersion": 1,
+  "method": "Chromium Canvas deterministic crop/resize and WebP encoding; source artwork unchanged",
+  "settings": {
+    "coverWidth": 480,
+    "coverQuality": 0.85,
+    "detailQuality": 0.91,
+    "detailGeometry": "original pixel dimensions"
+  },
+  "stats": {
+    "products": 15,
+    "originalDetailBytes": 42128819,
+    "allCoverBytes": 427100,
+    "allOptimizedDetailBytes": 2886238,
+    "coverReductionPercent": 98.99,
+    "detailReductionPercent": 93.15,
+    "firstTwoOriginalBytes": 4742018,
+    "firstTwoCoverBytes": 56762,
+    "firstTwoReductionPercent": 98.8,
+    "originalBannerBytes": 2328835,
+    "optimizedBannerBytes": 188048,
+    "originalSha256Unchanged": true
+  },
+  "products": [
+    {
+      "id": "hangzhou-xihu",
+      "title": "西湖小鸟毛绒",
+      "source": {
+        "url": "/assets/shop/products/hangzhou-xihu/detail.png",
+        "bytes": 1703768,
+        "sha256": "b72900462ef8c4f0eb2f9980f9158916b287b5fff560272bc9185535c2388608",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.2275189599133261,
+          "width": 0.8497652582159625,
+          "height": 0.3087757313109426
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/hangzhou-xihu/cover-480.webp",
+        "bytes": 21476,
+        "sha256": "c0a88c859a0351f10145ea21e596c712aa9ed73943a2e89b43164ca02bafc6ac",
+        "width": 480,
+        "height": 378,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/hangzhou-xihu/detail-optimized.webp",
+        "bytes": 146986,
+        "sha256": "6f9fcd2fc2015e429f07bc210ea6f875c5dc80f0fbfb7ea4f641b6e68c18cadc",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/hangzhou-xihu/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/hangzhou-xihu/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "hangzhou-guihua",
+      "title": "桂花小鸟",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30901/detail.png",
+        "bytes": 3038250,
+        "sha256": "fd3bdeec00a5ae0f2c90fbba581aa80bd57d73fca49d64760457c385405b02e6",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.2275189599133261,
+          "width": 0.8497652582159625,
+          "height": 0.3087757313109426
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30901/cover-480.webp",
+        "bytes": 35286,
+        "sha256": "ec56e2ccffd8dbdb21b8113c0fed6ea1f1a9f22efade8180db5e1a7b36187418",
+        "width": 480,
+        "height": 378,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30901/detail-optimized.webp",
+        "bytes": 231178,
+        "sha256": "594a444d9c50cebeb7886fca4b277793aac02884c409f6fd1f6c8a330d0d0626",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30901/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30901/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "suzhou-fengyin",
+      "title": "枫音雀",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30904/detail.png",
+        "bytes": 2953184,
+        "sha256": "1cb0334d6e27860c51ce25e4ed4d17cc6e37008d35e9aeab461414b4c88503a5",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.2275189599133261,
+          "width": 0.8497652582159625,
+          "height": 0.3196099674972914
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30904/cover-480.webp",
+        "bytes": 28632,
+        "sha256": "a88b0d1e2cf3b41774ccf8f98e00d54f1169e0438d8e123b84205e94f59a1452",
+        "width": 480,
+        "height": 391,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30904/detail-optimized.webp",
+        "bytes": 213738,
+        "sha256": "e739ce12fa6134d42a1471e557c3228f77ae526b7cc9bf77e222676d98516156",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30904/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30904/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "luoyang-qingyu",
+      "title": "青羽鸾鸟",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30899/detail.png",
+        "bytes": 2760016,
+        "sha256": "da194f4c3614bc8444764581fe848403b5f6065de102477b63717018236150ee",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.2275189599133261,
+          "width": 0.8497652582159625,
+          "height": 0.3087757313109426
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30899/cover-480.webp",
+        "bytes": 25458,
+        "sha256": "404136e1b58e70a3a34818407a09b9527a8cde7b2e092d71e8ab85bb4e7c4d97",
+        "width": 480,
+        "height": 378,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30899/detail-optimized.webp",
+        "bytes": 169598,
+        "sha256": "78686458d25150b7398951d32e4e479c386843a12db061aef02c955794661ba8",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30899/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30899/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "hangzhou-hehua",
+      "title": "荷花鸟",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30890/detail.png",
+        "bytes": 2604784,
+        "sha256": "a5f1547a58e7698b8ef63c91a37dd8bd9e47b20231ee14d2a3578a5fc58efae2",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07863849765258216,
+          "top": 0.2221018418201517,
+          "width": 0.8450704225352113,
+          "height": 0.3206933911159263
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30890/cover-480.webp",
+        "bytes": 19458,
+        "sha256": "df225746b34b53473d9563ee08986aedc87bd0a6c9ca71453a1cc42781e9b5f8",
+        "width": 480,
+        "height": 395,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30890/detail-optimized.webp",
+        "bytes": 144612,
+        "sha256": "681a6e3c672b4ccaaed9a454636cfde5f6d4715ad250bb26fd1a6cfbba5e0e76",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30890/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30890/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "hangzhou-jiangnan-lingyu",
+      "title": "江南灵羽",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30891/detail.png",
+        "bytes": 2755360,
+        "sha256": "007348fac4e292e2ca369dbfc7a64985a710373b3763d424041cf1736e154084",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07746478873239436,
+          "top": 0.2248104008667389,
+          "width": 0.8474178403755869,
+          "height": 0.31852654387865653
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30891/cover-480.webp",
+        "bytes": 25688,
+        "sha256": "75686fcd28845ed4de87750b09a6dfeeca866c985a1f1d2adccc2cf7237d13a9",
+        "width": 480,
+        "height": 391,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30891/detail-optimized.webp",
+        "bytes": 161314,
+        "sha256": "e27bab71770ab2b749a46507f8a21a4403c7744dd28e0c7ff48d45a3082ea8eb",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30891/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30891/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "hangzhou-dingsheng-pengpeng",
+      "title": "定胜鹏鹏鸟",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30892/detail.png",
+        "bytes": 3100517,
+        "sha256": "173157e2c3009edade2c5e219ee334524f1c344dddc6c61184ed26657409cee9",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07394366197183098,
+          "top": 0.2221018418201517,
+          "width": 0.8556338028169014,
+          "height": 0.3315276273022752
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30892/cover-480.webp",
+        "bytes": 36298,
+        "sha256": "61d0a6cc25546176b188f71e7a7313a8b1186a8993cbff98e6bd71a565d85a11",
+        "width": 480,
+        "height": 403,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30892/detail-optimized.webp",
+        "bytes": 250724,
+        "sha256": "48f9c4327ffdbd0090d408b3190337e5d4c022c2677c3dbfa6b5552203e1f257",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30892/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30892/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "taizhou-jianke",
+      "title": "剑客小鸟",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30893/detail.png",
+        "bytes": 3118453,
+        "sha256": "394e49f48d49efc3ca7dd82c6bb7e7bd39f5a2f6926bb8fad343f5a691a91a70",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07629107981220658,
+          "top": 0.223726977248104,
+          "width": 0.852112676056338,
+          "height": 0.32340195016251355
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30893/cover-480.webp",
+        "bytes": 37388,
+        "sha256": "bff2921bfb7f2f3d3534cd850054f6f40435ea32e08d5cc8c879b9438e1bd6ff",
+        "width": 480,
+        "height": 395,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30893/detail-optimized.webp",
+        "bytes": 242584,
+        "sha256": "a1ca16287a1e13bab8471951caba217cd9c925fa9fd4413e7c0aed050f1040ca",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30893/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30893/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "shaoxing-jiaoji",
+      "title": "角鸡",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30894/detail.png",
+        "bytes": 2904739,
+        "sha256": "cc3254fadb7147695065083e32c9db23ae38a914c3daaae4b572ff8302f949de",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07394366197183098,
+          "top": 0.2221018418201517,
+          "width": 0.8568075117370892,
+          "height": 0.3179848320693391
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30894/cover-480.webp",
+        "bytes": 30688,
+        "sha256": "f3c0e2499f90c5b522521b55f6c489668ed4513faf0bfba032b7d465556eec91",
+        "width": 480,
+        "height": 386,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30894/detail-optimized.webp",
+        "bytes": 213938,
+        "sha256": "5624b9504ded9a837ce09f99c9243ca4eb2d98ac04cb8008a496ab700cf2277a",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30894/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30894/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "hangzhou-taohua",
+      "title": "桃花鸟",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30895/detail.png",
+        "bytes": 2927737,
+        "sha256": "f48a08f5354c623c96e1a78017d5c621c553ce89fea6adb8382270660952bbf3",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07629107981220658,
+          "top": 0.228602383531961,
+          "width": 0.8497652582159625,
+          "height": 0.31473456121343446
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30895/cover-480.webp",
+        "bytes": 27300,
+        "sha256": "d6eef758e52fea46b50bd140d220f275ab3bfe0b8912adec5658af2777bec078",
+        "width": 480,
+        "height": 385,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30895/detail-optimized.webp",
+        "bytes": 213504,
+        "sha256": "c3ad8b1ab1379923c59c4d395fe837501324e10db86d51a79368bf756802233f",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30895/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30895/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "hangzhou-taozhi-cuiniao",
+      "title": "桃枝翠鸟",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30896/detail.png",
+        "bytes": 2764262,
+        "sha256": "2f40bd7248af3004df79919c8ae062ec8909346b669fd63de5a10ec52282fed6",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07746478873239436,
+          "top": 0.22535211267605634,
+          "width": 0.8438967136150235,
+          "height": 0.3163596966413868
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30896/cover-480.webp",
+        "bytes": 28678,
+        "sha256": "e51d6b8c2d4b71512704c94e8c791f7d1a4d2a70df9cc9052d126d3b0f466c32",
+        "width": 480,
+        "height": 390,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30896/detail-optimized.webp",
+        "bytes": 175492,
+        "sha256": "af8bf327c5da9e57d9e02b439cd01aa5947cc3225d9cff2ff5cfb2f0554800f9",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30896/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30896/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "hangzhou-dongpo",
+      "title": "东坡鸟",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30897/detail.png",
+        "bytes": 2901878,
+        "sha256": "1b1097d91814bc2bdadfba68affc9e3491d57342997601d10cd613a3a2b5b89d",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.2275189599133261,
+          "width": 0.8497652582159625,
+          "height": 0.3087757313109426
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30897/cover-480.webp",
+        "bytes": 30602,
+        "sha256": "7cb3b71f981e282c35b59c0b59a26376e931950e5389f2263448476cbd43b886",
+        "width": 480,
+        "height": 378,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30897/detail-optimized.webp",
+        "bytes": 182816,
+        "sha256": "69e47cb2cff22c353209d6190ac0a8d4fe61a63bab5b06d2821ba7e46064a65f",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30897/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30897/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "hangzhou-aiqing",
+      "title": "爱情鸟",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30898/detail.png",
+        "bytes": 2918196,
+        "sha256": "27efbf1c477cfc8f78e5f3c05aae1b6fc4e57b65f792fe7ae138d159a4f3a1f9",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.2275189599133261,
+          "width": 0.8497652582159625,
+          "height": 0.3087757313109426
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30898/cover-480.webp",
+        "bytes": 35046,
+        "sha256": "81d8c6343a44e522b661f2d707f30ae245e80edc20b9c1d35f9c014684af11c2",
+        "width": 480,
+        "height": 378,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30898/detail-optimized.webp",
+        "bytes": 209712,
+        "sha256": "afdc26d75e2c048a3593a54e5811fa2801bd491350cf400936003f6ff14bf2fd",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30898/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30898/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "suzhou-zhufeng",
+      "title": "竹风雀",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30900/detail.png",
+        "bytes": 2910654,
+        "sha256": "55ac2b63a3eaa38a323531a8c6afbc2e47ec85e1a2770f99bcd5721a0c8f14dc",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.2275189599133261,
+          "width": 0.8497652582159625,
+          "height": 0.3087757313109426
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30900/cover-480.webp",
+        "bytes": 25300,
+        "sha256": "0aa6d8324634c3af594046133009cc63a140620b3f3d3f5981e754dac9d7c0be",
+        "width": 480,
+        "height": 378,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30900/detail-optimized.webp",
+        "bytes": 174494,
+        "sha256": "051603cc155aaa2ff7d72a04e7745cc0a27e3f0b8a9bf086741dbc221f8b8fb3",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30900/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30900/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    },
+    {
+      "id": "suzhou-30903",
+      "title": "苏州小鸟毛绒",
+      "source": {
+        "url": "/assets/shop/products/import-20261103-30903/detail.png",
+        "bytes": 2767021,
+        "sha256": "fe3c9859a1248deb951576a1850761b118ac8e98a58a384d2cbed42e91b73bae",
+        "width": 852,
+        "height": 1846,
+        "coverCrop": {
+          "left": 0.07511737089201878,
+          "top": 0.21397616468039005,
+          "width": 0.8497652582159625,
+          "height": 0.3196099674972914
+        }
+      },
+      "cover": {
+        "url": "/assets/shop/products/import-20261103-30903/cover-480.webp",
+        "bytes": 19802,
+        "sha256": "b94a01008c3df002c7534a4ad49977d4287792bbbef4aafb84e654a3b43edc1b",
+        "width": 480,
+        "height": 391,
+        "crop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      },
+      "detail": {
+        "url": "/assets/shop/products/import-20261103-30903/detail-optimized.webp",
+        "bytes": 155548,
+        "sha256": "c985d7823b9aaf5826bf67ed0ca57bbfde55f093fac68cf26b4eb713bbda93d9",
+        "width": 852,
+        "height": 1846
+      },
+      "cataloguePatch": {
+        "coverImageUrl": "/assets/shop/products/import-20261103-30903/cover-480.webp",
+        "detailImageUrl": "/assets/shop/products/import-20261103-30903/detail-optimized.webp",
+        "coverCrop": {
+          "left": 0,
+          "top": 0,
+          "width": 1,
+          "height": 1
+        }
+      }
+    }
+  ],
+  "banners": [
+    {
+      "id": "huangying-shop",
+      "source": {
+        "url": "/assets/shop/banners/huangying-shop-layout-v3.png",
+        "bytes": 774163,
+        "sha256": "2e572d359d18a5eb84e6c02f8a1005b7a369ed0e6b2b78a1de34d2d30c40bf37",
+        "width": 916,
+        "height": 416
+      },
+      "image": {
+        "url": "/assets/shop/banners/huangying-shop-layout-v3-optimized.webp",
+        "bytes": 62742,
+        "sha256": "7e9e8553d7bc518f60976ccf19c5c8de66a07450e5248e97a518071f327704de",
+        "width": 916,
+        "height": 416
+      },
+      "cataloguePatch": {
+        "imageUrl": "/assets/shop/banners/huangying-shop-layout-v3-optimized.webp"
+      }
+    },
+    {
+      "id": "huangying-shop-clean-v2-legacy",
+      "source": {
+        "url": "/assets/shop/banners/huangying-shop-clean-v2.png",
+        "bytes": 771288,
+        "sha256": "0fe872f26fc550db28e55a971ef042739cd1e8364e1e04a52b06ca68289bd983",
+        "width": 916,
+        "height": 416
+      },
+      "image": {
+        "url": "/assets/shop/banners/huangying-shop-clean-v2-optimized.webp",
+        "bytes": 59640,
+        "sha256": "e73ed23e82c2feaa4d441ccf7f47d844fa99f26c3cb44faacf89ea1aea5237e6",
+        "width": 916,
+        "height": 416
+      },
+      "cataloguePatch": {
+        "imageUrl": "/assets/shop/banners/huangying-shop-clean-v2-optimized.webp"
+      },
+      "role": "compatibility: retain the previous cleaned banner URL"
+    },
+    {
+      "id": "huangying-shop-legacy",
+      "source": {
+        "url": "/assets/shop/banners/huangying-shop.png",
+        "bytes": 783384,
+        "sha256": "196104229905b4cfbe4b4467be8ed2d8f79162d3774b0266690889832919896a",
+        "width": 916,
+        "height": 416
+      },
+      "image": {
+        "url": "/assets/shop/banners/huangying-shop-optimized.webp",
+        "bytes": 65666,
+        "sha256": "2f191d7a00d7c0b655b136a8e736f4affe26678404243ac10961926257082355",
+        "width": 916,
+        "height": 416
+      },
+      "cataloguePatch": {
+        "imageUrl": "/assets/shop/banners/huangying-shop-optimized.webp"
+      },
+      "role": "compatibility: retain previous stable and fingerprinted image URLs"
+    }
+  ]
+}

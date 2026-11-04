@@ -24,9 +24,9 @@
 .scroll-detail{margin:2cqw 0 0;text-align:center;font-size:3cqw;line-height:1.7;overflow-wrap:anywhere}
 .trait-row{position:absolute;left:4.5%;bottom:.7%;width:91%;height:11%;font-size:2.65cqw;font-weight:600}
 .trait-label,.trait-pill{position:absolute;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;white-space:nowrap}
-.trait-label{left:0;width:16%;font-size:3cqw}
-.trait-pill{width:25%;padding-left:6.4cqw}
-.trait-one{left:18.5%}.trait-two{left:45.5%}.trait-three{left:72.5%}
+.trait-label{left:0;width:16%;font-size:3cqw;transform:translate(-.33cqw,-.33cqw)}
+.trait-pill{width:25%;padding-left:6.4cqw;transform:translateY(.55cqw)}
+.trait-one{left:17.2%}.trait-two{left:45%}.trait-three{left:72.5%}
 .adoption-details{position:relative;padding:0 2.6cqw}
 .identity,.name-form{position:relative;background:url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/panel-900.webp') center/100% 120% no-repeat}
 .identity{padding:6.3cqw 5.4cqw 5cqw}
@@ -62,3 +62,19 @@
 
 /* Existing account dialog retained for the shared account bridge. */
 .login-dialog{position:fixed;inset:0;max-width:calc(100% - 28px);width:410px;max-height:min(90dvh,680px);margin:auto;padding:29px 23px 24px;border:1px solid #dfcfaa;border-radius:23px;background:#fff9eb;color:#563f21;box-shadow:0 20px 65px #42371d38;overflow:auto}.login-dialog::backdrop{background:#333b2859;backdrop-filter:blur(3px)}.login-dialog h2{margin:9px 0;font:600 23px/1.45 "Songti SC",serif}.login-dialog>p{margin:0;color:#84775f;font-size:13px;line-height:1.8}.dialog-eyebrow{font-size:11px;color:#839268}.dialog-close{position:absolute;right:8px;top:7px;width:44px;height:44px;color:#9c8b68;font-size:25px!important}.login-form label{display:block;margin:15px 0 7px;color:#6b5b40;font-size:12px}.login-form input{display:block;width:100%;height:46px;padding:0 12px;border:1px solid #ded1b3;border-radius:10px;background:#fffdf7;font-size:16px}.login-error{min-height:1.5em;margin:8px 0 0;color:#a13e2c;font-size:12px}.dialog-primary,.dialog-secondary{display:block;width:100%;min-height:48px;margin-top:12px;padding:11px 15px;border-radius:13px!important;font-size:14px!important}.dialog-primary{margin-top:18px;background:#657b3e!important;color:#fff9e9!important}.dialog-secondary{border:1px solid #ded2b4!important;background:#fffaf0!important;color:#71804e!important}
+
+.back{min-width:44px;min-height:44px}
+.nfc-status{left:50%;top:2%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 110px);height:auto;min-height:24px;padding:3px 9px;border-radius:20px;background:#fff7e6e8;color:#57723f;font-size:12px;line-height:1.5;white-space:normal;text-align:center;letter-spacing:0}
+.scene-subtitle{left:20%;width:60%;font-size:clamp(12px,2.5cqw,14px);white-space:normal}
+.bird-city,.scroll-detail{font-size:clamp(12px,3cqw,15px)}
+.identity-heading h2{font-size:clamp(14px,4.1cqw,20px)}
+.identity-heading>span,.identity-grid dt,.bird-identity,.bird-identity code{font-size:clamp(12px,2.8cqw,14px)}
+.identity-heading>span{padding:4px 7px}
+.name-hint{font-size:12px;line-height:1.8;white-space:normal;color:#786044}
+.name-field input[readonly]{width:100%}
+.adoption-feedback{padding:0 14px}
+.service-notice{margin:10px 0 0;padding:14px 18px;border-radius:18px;background:#fff6e7e8;font-size:14px;line-height:1.8;color:#695337}
+.read-retry{display:block;min-height:44px;margin:8px 0 12px;padding:10px 17px;border:1px solid #d4dfb8!important;border-radius:16px;background:#edf2d8!important;color:#4e6e35!important;font-size:14px!important}
+.local-save-note{margin:12px 0 0;padding:0 12px;border-radius:15px;background:#fff9e6d9;color:#586b3f;font-size:12px}
+.local-save-note summary{min-height:44px;padding:10px 0;cursor:pointer;line-height:24px;font-size:13px}
+.local-save-note p{font-size:13px;line-height:1.8;margin:0 0 12px}

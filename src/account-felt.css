@@ -1,0 +1,54 @@
+/* Profile-only felt surfaces. Reuse the same small assets as the nest and city. */
+#bjd-review.is-integrated:has(.account-profile-felt) .phone>main{background:#dce6be}
+#bjd-review #xcwc-account-page.account-profile-felt{--profile-ink:#755334;--profile-muted:#8c7858;min-height:100%;padding:0 15px 22px;color:var(--profile-ink);background:radial-gradient(ellipse at 0 60%,#f4edc675,transparent 55%),linear-gradient(#c8dfc3,#e3e9c5 53%,#dce6bd);font:14px/1.7 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}
+#bjd-review .account-profile-felt [hidden]{display:none!important}
+#bjd-review .account-profile-felt .profile-hero{position:relative;isolation:isolate;margin:0 -15px 0;padding:23px 18px 10px;background:url('__XCWC_ASSET_ORIGIN__/assets/city/felt/hero-960.webp') right 33%/100% auto no-repeat}
+#bjd-review .account-profile-felt .profile-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,#e0eac74d,transparent 65%),linear-gradient(transparent 50%,#dce6be 98%);pointer-events:none}
+#bjd-review .account-profile-felt .account-page-head{margin:0 0 27px;padding:0 5px;position:relative}
+#bjd-review .account-profile-felt .account-page-head .eyebrow{font-size:8px;letter-spacing:2.5px;font-weight:600;color:#6a8564}
+#bjd-review .account-profile-felt .account-page-head h1{display:flex;align-items:center;gap:8px;margin:6px 0 6px;font:700 32px/1.4 'Songti SC','STSong',serif;letter-spacing:2px;color:#765133;text-shadow:0 2px 0 #fff1d5,0 0 7px #fff8d6}
+#bjd-review .account-profile-felt .account-page-head h1>span{font:25px/1 serif;color:#efa6af;text-shadow:0 1px 0 #fff9e4}
+#bjd-review .account-profile-felt .account-page-head p{font-size:12px;letter-spacing:.5px;color:#6d7d5d;text-shadow:0 1px 2px #f9f5d7}
+#bjd-review .account-profile-felt .profile-card{display:flex;align-items:center;gap:7px;min-height:121px;padding:17px 20px 19px 13px;border:0;border-radius:0;box-shadow:none;background:transparent url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/panel-720.webp') center/100% 100% no-repeat}
+#bjd-review .account-profile-felt .profile-avatar{width:76px;height:79px;object-fit:contain;flex:none;border:0;border-radius:0;background:transparent;filter:drop-shadow(0 4px 3px #9c7d4f18)}
+#bjd-review .account-profile-felt .profile-card-copy{min-width:0;flex:1}
+#bjd-review .account-profile-felt .profile-card-copy small{display:block;font-size:9px;color:#a38b66;letter-spacing:.4px}
+#bjd-review .account-profile-felt .profile-card-copy strong{display:block;margin-top:4px;font:650 19px/1.55 'Songti SC','STSong',serif;color:#77512e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.5px}
+#bjd-review .account-profile-felt .profile-card-copy>span{display:block;margin-top:2px;font-size:11px;color:#9c8058;overflow-wrap:anywhere}
+#bjd-review .account-profile-felt .profile-card .profile-points{position:relative;display:flex;flex:0 0 65px;flex-direction:column;align-items:center;justify-content:center;gap:0;width:65px;min-width:0;min-height:72px;margin:0;padding:0 2px 0 7px;border:0;border-left:1px dashed #d1b99880;border-radius:0;background:transparent;box-shadow:none;text-align:center;color:#98703a;touch-action:manipulation}
+#bjd-review .account-profile-felt .profile-points strong{font:650 23px/1.2 Georgia,serif;max-width:100%;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+#bjd-review .account-profile-felt .profile-points>span:last-child{font-size:10px;white-space:nowrap}
+#bjd-review .account-profile-felt .felt-feather{display:block;width:26px;height:26px;background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/hud-icons-v2-768.webp') 50% 100%/300% 200% no-repeat}
+#bjd-review .account-profile-felt .account-section{position:relative;margin-top:17px}
+#bjd-review .account-profile-felt .account-section h2{display:flex;align-items:center;gap:6px;margin:0 0 3px;padding-left:5px;font:650 18px/1.6 'Songti SC','STSong',serif;letter-spacing:1px;color:#7f633f;text-shadow:0 1px 0 #fff4d8}
+#bjd-review .account-profile-felt .felt-flower{display:inline-block;width:25px;height:25px;background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/hud-icons-v2-768.webp') 0 100%/300% 200% no-repeat}
+#bjd-review .account-profile-felt .account-menu{overflow:visible;display:grid;gap:1px;border:0;border-radius:0;background:transparent;box-shadow:none}
+#bjd-review .account-profile-felt .account-menu button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:76px;margin:0;padding:12px 24px 13px 17px;border:0;border-radius:0;background:transparent url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/pill-v2-800.webp') center/100% 100% no-repeat;color:#7b5635;box-shadow:none;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#bjd-review .account-profile-felt .account-menu-label{display:flex;align-items:center;gap:9px;min-width:0;font-size:15px;font-weight:550;white-space:nowrap}
+#bjd-review .account-profile-felt .account-menu-icon{display:block;flex:0 0 43px;width:43px;height:43px;border-radius:0;background-color:transparent;color:#9c865d;font-size:0}
+#bjd-review .account-profile-felt .felt-bird{background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/happy-192.webp') center/contain no-repeat}
+#bjd-review .account-profile-felt .felt-outfit{background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/tools-512.webp') 100% 100%/200% 200% no-repeat}
+#bjd-review .account-profile-felt .felt-wallet{background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/hud-icons-v2-768.webp') 50% 100%/300% 200% no-repeat}
+#bjd-review .account-profile-felt .felt-clean{background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/tools-512.webp') 0 0/200% 200% no-repeat}
+#bjd-review .account-profile-felt .account-menu-meta{display:flex;align-items:center;gap:7px;flex:0 1 auto;min-width:0;white-space:normal;font-size:11px;color:#aa8d67;text-align:right}
+#bjd-review .account-profile-felt .account-menu-meta i{font:24px/1 Georgia,serif;color:#b7986c}
+#bjd-review .account-profile-felt button:not(:disabled):active{transform:translateY(1px)}
+#bjd-review .account-profile-felt button:focus-visible{outline:3px solid #7e9c60;outline-offset:-5px}
+#bjd-review .account-profile-felt .account-wallet-message:not(:empty){margin:10px 5px;padding:17px;border:2px solid #f7efd7;border-radius:22px;background:#fbf4df;box-shadow:inset 0 0 12px #e6d6b03b;color:#7a6645;font-size:12px}
+#bjd-review .account-profile-felt .account-wallet-message>strong{font:650 23px/1.5 Georgia,serif;color:#7f914f}
+#bjd-review .account-profile-felt .account-message:empty{display:none}
+#bjd-review .account-profile-felt .profile-signoff{margin:19px 0 0;text-align:center;font-size:10px;letter-spacing:.7px;color:#8d9b70}
+#bjd-review .account-profile-felt .local-experience-note{margin:8px auto 0;max-width:290px;padding:0 8px;background:none;border:0;box-shadow:none;text-align:center;font-size:10px;line-height:1.8;color:#8a9770}
+#bjd-review .account-profile-felt .account-cache-dialog{max-height:85dvh;border:3px solid #f4e2c9;border-radius:27px;background:linear-gradient(135deg,#fff8e9,#f6e8ce);box-shadow:inset 0 0 16px #ead6b866,0 12px 35px #5a63383b;color:#795d3e}
+#bjd-review .account-profile-felt .account-cache-dialog::backdrop{background:#42533e80}
+#bjd-review .account-profile-felt .account-cache-actions button{border:0;background:#e4ebcf;border-radius:15px;box-shadow:inset 0 2px 4px #f6f9e9,0 2px 2px #a8b48a44;color:#6d8053}
+#bjd-review .account-profile-felt .account-cache-actions [data-account-action=confirm-cache]{background:#ad7658;color:#fff8eb;box-shadow:inset 0 2px 4px #c49473,0 2px 2px #8a604544}
+@media(max-width:359px){#bjd-review #xcwc-account-page.account-profile-felt{padding-left:10px;padding-right:10px}#bjd-review .account-profile-felt .profile-hero{margin-left:-10px;margin-right:-10px;padding-left:11px;padding-right:11px}#bjd-review .account-profile-felt .profile-card{padding-left:12px;padding-right:17px;gap:5px;min-height:111px}#bjd-review .account-profile-felt .profile-avatar{width:59px;height:66px}#bjd-review .account-profile-felt .profile-card-copy strong{font-size:17px}#bjd-review .account-profile-felt .profile-card-copy small{font-size:8px}#bjd-review .account-profile-felt .profile-card .profile-points{flex-basis:58px;width:58px;padding-left:5px}#bjd-review .account-profile-felt .account-menu button{min-height:70px;padding-left:15px;padding-right:19px}#bjd-review .account-profile-felt .account-menu-label{gap:6px;font-size:14px}#bjd-review .account-profile-felt .account-menu-meta{font-size:10px;gap:5px}#bjd-review .account-profile-felt .account-menu-icon{width:38px;height:38px;flex-basis:38px}#bjd-review .account-profile-felt .account-page-head h1{font-size:29px}}
+@media(prefers-reduced-motion:reduce){#bjd-review .account-profile-felt button:active{transform:none}}
+
+#bjd-review .account-profile-felt .profile-card-copy small{font-size:12px;letter-spacing:0;color:#796646}
+#bjd-review .account-profile-felt .profile-card-copy>span,#bjd-review .account-profile-felt .profile-points>span:last-child,#bjd-review .account-profile-felt .account-menu-meta,#bjd-review .account-profile-felt .local-experience-note{font-size:12px;color:#726442}
+#bjd-review .account-profile-felt .account-menu button[data-account-action=clear-cache]{flex-wrap:wrap;column-gap:4px;row-gap:0}
+#bjd-review .account-profile-felt .account-menu button[data-account-action=clear-cache] .account-menu-label{white-space:normal;font-size:14px}
+#bjd-review .account-profile-felt .account-menu button[data-account-action=clear-cache] .account-menu-meta{margin-left:auto}
+#bjd-review .account-profile-felt .profile-hero>.account-local-badge{margin:10px 5px 0}

@@ -1,0 +1,32 @@
+{
+  "id": "hangzhou-xihu",
+  "operation": "Remove only sales statistic 已售 1,286 件",
+  "sourceFile": "original.jpg",
+  "sourcePath": "/var/folders/00/ktjn6b2n3ms0tfs13pck0g8w0000gn/T/codex-clipboard-f4b590a8-0b3d-4bdd-a3de-dc8948d5df92.jpg",
+  "generatedRepairPath": "/Users/beluga/.codex/generated_images/01a1a063-518e-71b0-877d-6ebbccda7b13/exec-8318cc5d-c133-4e11-baf7-3e5db4e1a141.png",
+  "sourceSha256": "7a47855cdcbaeb6d35280e049ffab8cac27b29f0dd4be84a035dd322547fb629",
+  "detailSha256": "b72900462ef8c4f0eb2f9980f9158916b287b5fff560272bc9185535c2388608",
+  "rectangle": {
+    "x": 590,
+    "y": 1186,
+    "width": 192,
+    "height": 53
+  },
+  "method": "Built-in imagegen repair; only sale rectangle composited via browser Canvas, RGB matched to ROI border and feathered 8px inward. No crop.",
+  "validation": {
+    "width": 852,
+    "height": 1846,
+    "generatedWidth": 852,
+    "generatedHeight": 1846,
+    "changedInside": 8544,
+    "changedOutside": 0,
+    "rgbBorderShift": [
+      0.5408510638297872,
+      0.5191489361702127,
+      1.216595744680851
+    ],
+    "pixelComparison": "All decoded RGBA channels compared against original; PNG output re-decoded before comparison"
+  },
+  "generationMode": "Built-in imagegen",
+  "prompt": "Use case: precise-object-edit. The attached image is the edit target, not a loose style reference. Make one highly localized edit ONLY: remove the small light-brown sales statistic text reading 已售 1,286 件, located to the RIGHT of the orange ¥69 price, just ABOVE the row of three feature badges. Seamlessly fill just those removed letters with matching nearby warm cream plush background and fine fibers. Preserve the exact original image dimensions, framing and spatial layout. Every other element must remain unchanged: all other Chinese text, price 69, header title, bird identity and photo, features, egg illustration, bottom green add-to-cart button including its white lettering, close icon, and the blurred phone/browser surroundings. Do not crop, resize, retouch, redesign, regenerate the bird, smooth the texture, add new elements or change colors. The ONLY intended difference is the removal of that one sales statistic; preserve all other text exactly. Return the edited full image."
+}

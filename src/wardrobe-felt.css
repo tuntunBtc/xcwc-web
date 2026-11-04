@@ -1,0 +1,80 @@
+/* Wardrobe only: live DOM over the shared felt scenery and cream wool surfaces. */
+#bjd-review.is-integrated:has(.account-wardrobe-felt) .phone>main{background:#d6e8bd}
+#bjd-review #xcwc-account-page.account-wardrobe-felt{container-type:inline-size;position:relative;isolation:isolate;min-height:100%;padding:12px 14px 24px;color:#60462d;background:#dceac0;font:14px/1.8 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif}
+/* Keep the bird's grass stage at the same height on tall and short phones. Only the lower scenery stretches. */
+#bjd-review .account-wardrobe-felt::before{content:'';position:absolute;z-index:-1;inset:0 0 auto;height:63cqw;background:url('__XCWC_ASSET_ORIGIN__/assets/wardrobe/felt/scene-top-v2-900.webp') center/100% 100% no-repeat;pointer-events:none}
+#bjd-review .account-wardrobe-felt::after{content:'';position:absolute;z-index:-1;inset:63cqw 0 0;background:url('__XCWC_ASSET_ORIGIN__/assets/wardrobe/felt/scene-lower-v2-900.webp') center top/100% auto repeat-y;pointer-events:none}
+
+#bjd-review .account-wardrobe-felt .wardrobe-hero{position:relative;min-height:54cqw;margin:0 -7px 4px;display:flex;align-items:flex-start}
+#bjd-review .account-wardrobe-felt .account-page-head{position:relative;z-index:1;width:54%;min-height:118px;margin:0;padding:8px 0 13px 20px;background:none}
+#bjd-review .account-wardrobe-felt .eyebrow{display:block;white-space:nowrap;font-size:10px;letter-spacing:1.6px;color:#aa8964}
+#bjd-review .account-wardrobe-felt .account-page-head h1{margin:5px 0 7px;font:750 clamp(28px,8.6cqw,39px)/1.35 'PingFang SC','Microsoft YaHei',sans-serif;letter-spacing:2px;color:#674729;text-shadow:0 1px 1px #fff4d8}
+#bjd-review .account-wardrobe-felt .account-page-head p{font-size:12px;color:#76603e;letter-spacing:.5px;white-space:nowrap}
+#bjd-review .account-wardrobe-felt .wardrobe-actor{position:absolute;right:0;top:6px;width:58%;z-index:2;pointer-events:none;filter:drop-shadow(0 7px 4px #6d803535)}
+#bjd-review .account-wardrobe-felt .wardrobe-actor img{display:block;width:100%;height:auto;object-fit:contain}
+#bjd-review .account-wardrobe-felt .wardrobe-actor.aura-lake{filter:drop-shadow(0 0 12px #58cadf) drop-shadow(0 0 23px #89deec)}
+#bjd-review .account-wardrobe-felt .wardrobe-actor.aura-sunset{filter:drop-shadow(0 0 12px #f9b268) drop-shadow(0 0 23px #f5cb84)}
+#bjd-review .account-wardrobe-felt .wardrobe-note{margin:0 -5px 5px;padding:9px 18px;min-height:58px;background:none;font-size:12px;line-height:1.8;letter-spacing:.45px}
+#bjd-review .account-wardrobe-felt .wardrobe-picker{display:block;padding:0 12px;margin:4px 0 7px;font-size:12px;letter-spacing:.5px;color:#66563b}
+#bjd-review .account-wardrobe-felt .wardrobe-select{display:block;position:relative;width:fit-content;max-width:100%;margin-top:5px}
+#bjd-review .account-wardrobe-felt .wardrobe-select::after{content:'⌄';position:absolute;right:12px;top:8px;color:#709698;pointer-events:none;font-size:17px;line-height:24px}
+#bjd-review .account-wardrobe-felt #account-bird{appearance:none;-webkit-appearance:none;display:block;width:auto;max-width:100%;min-height:44px;margin:0;padding:7px 33px 7px 12px;border:1px solid #f5f5dfb3;border-radius:18px;background:#ffffedbb;box-shadow:inset 0 1px 5px #ffffff80,0 2px 8px #78975e14;font-family:inherit;font-size:14px;line-height:1.5;color:#487b9b;text-overflow:ellipsis}
+#bjd-review .account-wardrobe-felt .wardrobe-basic{display:flex;align-items:center;justify-content:center;gap:10px;min-height:51px;margin:0 0 5px;padding:10px;border:0;border-radius:0;background:transparent;color:#46774b;font-size:16px;letter-spacing:.5px}
+#bjd-review .account-wardrobe-felt .wardrobe-basic span{color:#94ba55;font:27px/1 Georgia,serif;text-shadow:0 0 4px #cee986}
+#bjd-review .account-wardrobe-felt .wardrobe-grid{gap:9px;margin:0 -5px}
+#bjd-review .account-wardrobe-felt .wardrobe-card{min-width:0;min-height:142px;padding:18px 15px 15px;border:0;border-radius:0;background:transparent;box-shadow:none}
+#bjd-review .account-wardrobe-felt .wardrobe-card h2{display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;margin:0 0 5px;font:650 17px/1.5 'PingFang SC','Microsoft YaHei',sans-serif;color:#584128}
+#bjd-review .account-wardrobe-felt .wardrobe-spark{color:#f9d263;font:27px/1 serif;text-shadow:0 0 5px #fff8ba,0 0 9px #f0d16a}
+#bjd-review .account-wardrobe-felt .spark-sunset{color:#efb265;text-shadow:0 0 5px #fff0bb,0 0 9px #edb978}
+#bjd-review .account-wardrobe-felt .wardrobe-card p{margin:5px 0 9px;white-space:nowrap;text-align:center;font-size:12px;letter-spacing:.4px}
+#bjd-review .account-wardrobe-felt .wardrobe-card button{width:100%;min-height:46px;margin:0;padding:8px 5px;border:1px solid #fff3c9;border-radius:25px;background:linear-gradient(#fdf3d4,#f4e7bc);box-shadow:inset 0 1px 7px #fffbe6,0 3px 6px #c6af6d35;color:#658349;font-size:15px;font-weight:550}
+#bjd-review .account-wardrobe-felt button:disabled{opacity:1;cursor:default}
+#bjd-review .account-wardrobe-felt .wardrobe-card button:disabled{color:#aaa984;background:linear-gradient(#f8eed0,#efe4bc);box-shadow:inset 0 0 8px #fff8de,0 2px 4px #c6af6d24}
+#bjd-review .account-wardrobe-felt .wardrobe-card button[aria-pressed=true]{color:#568354;background:#e8edc9}
+#bjd-review .account-wardrobe-felt .local-experience-note{margin:5px -5px 0;padding:9px 17px;background:none;font-size:11px;line-height:1.8;color:#76603e}
+#bjd-review .account-wardrobe-felt .account-message:empty{display:none}
+#bjd-review .account-wardrobe-felt .wardrobe-empty{padding:14px 20px;margin-bottom:10px;border-radius:22px;background:#fff4dce8;text-align:center;font-size:12px}
+#bjd-review .account-wardrobe-felt .wardrobe-empty h2{margin:0;font-size:18px}
+#bjd-review .account-wardrobe-felt .wardrobe-dialog{position:fixed;width:calc(100% - 40px);max-width:350px;margin:0 auto;padding:23px;border:3px solid #f4e4c8;border-radius:27px;background:linear-gradient(135deg,#fff8e9,#f6e8ce);box-shadow:inset 0 0 16px #ead6b866,0 12px 35px #5a63383b;color:#795d3e;font-size:13px}
+#bjd-review .account-wardrobe-felt .wardrobe-dialog h2{font:650 23px/1.5 'Songti SC',serif;margin:0}
+#bjd-review .account-wardrobe-felt .wardrobe-dialog::backdrop{background:#42533e80}
+#bjd-review .account-wardrobe-felt .wardrobe-dialog>div{display:flex;gap:10px}
+#bjd-review .account-wardrobe-felt .wardrobe-dialog button{flex:1;min-width:0;border:0;background:#e5e9cf}
+#bjd-review .account-wardrobe-felt .wardrobe-dialog [data-account-action=confirm-redeem]{background:#80965a;color:#fff8e9}
+#bjd-review .account-wardrobe-felt :is(button,select):focus-visible{outline:3px solid #628d59;outline-offset:-4px}
+#bjd-review .account-wardrobe-felt button:not(:disabled):active{transform:translateY(1px)}
+@media(max-width:359px){#bjd-review #xcwc-account-page.account-wardrobe-felt{padding-left:10px;padding-right:10px}#bjd-review .account-wardrobe-felt .wardrobe-card{padding:18px 10px 15px}#bjd-review .account-wardrobe-felt .wardrobe-card h2{font-size:15px;gap:3px}#bjd-review .account-wardrobe-felt .wardrobe-card p{font-size:11px}#bjd-review .account-wardrobe-felt .eyebrow{font-size:8px;letter-spacing:.8px}}
+@media(prefers-reduced-motion:reduce){#bjd-review .account-wardrobe-felt button:active{transform:none}}
+
+#bjd-review .account-wardrobe-felt :is(.account-page-head,.wardrobe-note,.wardrobe-basic,.wardrobe-card,.local-experience-note){position:relative;isolation:isolate}
+#bjd-review .account-wardrobe-felt :is(.account-page-head,.wardrobe-note,.wardrobe-basic,.wardrobe-card,.local-experience-note)::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/panel-720.webp') center/100% 100% no-repeat;filter:sepia(.32) saturate(.7) brightness(1.04)}
+#bjd-review .account-wardrobe-felt .wardrobe-card::before{background-image:url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/panel-900.webp')}
+#bjd-review .account-wardrobe-felt .wardrobe-dialog .wardrobe-error{padding:9px 11px;border-radius:12px;background:#fff1e6;color:#9e492b;font-size:13px}
+#bjd-review .account-wardrobe-felt [hidden]{display:none!important}
+
+/* Oriole outfits use their real transparent art; preview never changes saved wear. */
+#bjd-review .account-wardrobe-felt .wardrobe-look{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:3px 10px;min-height:30px;margin:7px 0 5px;color:#577848;font-size:12px}
+#bjd-review .account-wardrobe-felt .wardrobe-look button{display:inline-block;width:auto;min-height:44px;margin:0;padding:6px 12px;border:1px solid #fff9df;border-radius:20px;background:#fff5dce6;color:#71824d;font-size:12px}
+#bjd-review .account-wardrobe-felt .wardrobe-collection{margin:16px 0 0}
+#bjd-review .account-wardrobe-felt .wardrobe-collection>h2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 5px 8px;color:#665032;font:650 18px/1.6 'PingFang SC',sans-serif;text-shadow:0 1px 3px #fff8d4}
+#bjd-review .account-wardrobe-felt .wardrobe-collection>h2 small{font-size:11px;font-weight:400;color:#74805b}
+#bjd-review .account-wardrobe-felt .wardrobe-outfit-grid{row-gap:8px}
+#bjd-review .account-wardrobe-felt .wardrobe-outfit-card{padding:15px 13px 18px;min-height:280px}
+#bjd-review .account-wardrobe-felt .wardrobe-outfit-card::before{inset:0 -1px;background-size:100% 100%}
+#bjd-review .account-wardrobe-felt .wardrobe-outfit-card .wardrobe-preview{position:relative;display:block;width:100%;height:auto;min-height:0;aspect-ratio:1;margin:0 0 7px;padding:0;border:0;border-radius:20px;background:radial-gradient(ellipse,#e3ebc555,transparent 72%);box-shadow:none;color:#8a8765}
+#bjd-review .account-wardrobe-felt .wardrobe-preview img{display:block;width:100%;height:100%;object-fit:contain}
+#bjd-review .account-wardrobe-felt .wardrobe-preview>span{position:absolute;left:0;right:0;bottom:-3px;font-size:10px;line-height:1.6;text-shadow:0 1px 2px #fff8df}
+#bjd-review .account-wardrobe-felt .wardrobe-preview[aria-pressed=true]{outline:2px dashed #8fa567;outline-offset:-3px}
+#bjd-review .account-wardrobe-felt .wardrobe-outfit-card h2{font-size:17px;margin-bottom:3px}
+#bjd-review .account-wardrobe-felt .wardrobe-outfit-card p{margin:0 0 7px}
+#bjd-review .account-wardrobe-felt .wardrobe-outfit-card .wardrobe-wear{min-height:44px}
+@media(max-width:359px){#bjd-review .account-wardrobe-felt .wardrobe-outfit-card{padding:14px 11px 17px;min-height:250px}#bjd-review .account-wardrobe-felt .wardrobe-outfit-card h2{font-size:16px}}
+
+#bjd-review .account-wardrobe-felt .account-back{position:relative;z-index:3;margin:0 0 5px;background:#fff7e2dc}
+#bjd-review .account-wardrobe-felt .wardrobe-hero{margin-top:0}
+#bjd-review .account-wardrobe-felt .wardrobe-hero .account-page-head p{white-space:normal;overflow-wrap:anywhere}
+#bjd-review .account-wardrobe-felt .wardrobe-note,#bjd-review .account-wardrobe-felt .wardrobe-card p,#bjd-review .account-wardrobe-felt .local-experience-note,#bjd-review .account-wardrobe-felt .wardrobe-collection>h2 small{font-size:12px;color:#665538}
+#bjd-review .account-wardrobe-felt .wardrobe-preview>span{font-size:12px;line-height:1.8;background:#fff9e4d9;border-radius:12px}
+#bjd-review .account-wardrobe-felt .wardrobe-card .wardrobe-earn{min-height:44px;margin-top:5px;border:0;background:transparent;box-shadow:none;font-size:13px;text-decoration:underline;color:#4d743d}
+#bjd-review .account-wardrobe-felt .wardrobe-empty-status{padding:12px 18px;background:#fff5dfe0;border-radius:18px;font-size:14px;text-align:center;color:#665538}
+#bjd-review .account-wardrobe-felt .account-local-badge{position:relative;z-index:3}

@@ -51,13 +51,14 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
  // Save a real camera-format photo through the UI, not only the decoder helper.
  await setFile({name:'saved-camera.heic',mimeType:'image/heic',buffer:heic});await frame.locator('#ck-toast').filter({hasText:'照片就位'}).waitFor({state:'attached'});
  await frame.locator('#ck-generate').click();try{await frame.locator('#ck-albumCount').filter({hasText:'1'}).waitFor();}catch(error){console.error('SAVE DIAGNOSTICS',await frame.locator('#ck-toast').textContent(),await frame.locator('.section-desc').textContent(),errors);throw error;}
+ await page.locator('#xcwc-checkin-save').waitFor({state:'visible'});await page.locator('#xcwc-checkin-save [data-save-close]').click();
  await page.reload({waitUntil:'domcontentloaded'});await frame.locator('#ck-albumCount').filter({hasText:'1'}).waitFor();
- await frame.locator('.memory').first().click();await frame.locator('#ck-viewer[open]').waitFor();const viewerBox=await frame.locator('#ck-viewer').boundingBox();assert(viewerBox&&viewerBox.y>=0&&viewerBox.y+viewerBox.height<=844,'album dialog stays within mobile viewport');assert(await frame.locator('#ck-viewerImage').evaluate(im=>im.complete&&im.naturalWidth>0));await frame.locator('#ck-viewer .close').click();
+ const viewer=page.locator('#xcwc-checkin-save');await frame.locator('.memory').first().click();await viewer.waitFor({state:'visible'});const viewerBox=await viewer.boundingBox();assert(viewerBox&&viewerBox.y>=0&&viewerBox.y+viewerBox.height<=844,'album dialog stays within mobile viewport');assert.equal(await page.locator('dialog[open]').count(),1);assert.equal(await frame.locator('#ck-viewer,.viewer-original').count(),0);await viewer.locator('img').evaluate(im=>new Promise((resolve,reject)=>{if(im.complete)return im.naturalWidth?resolve():reject(Error('image empty'));im.onload=resolve;im.onerror=reject}));assert(await viewer.locator('img').evaluate(im=>im.naturalWidth>0));await viewer.locator('[data-save-close]').click();
  // Export the stored image through the host Blob URL without a server request.
- await frame.locator('.memory').first().click();await frame.locator('#ck-viewer[open]').waitFor();
- const downloaded=page.waitForEvent('download');await frame.locator('.viewer-download').click();
+ await frame.locator('.memory').first().click();await viewer.waitFor({state:'visible'});
+ await viewer.locator('summary').click();const downloaded=page.waitForEvent('download');await viewer.locator('a').click();
  const download=await downloaded;assert.equal(await download.failure(),null);assert.match(download.url(),/^blob:/);
- await frame.locator('#ck-viewer .close').click();
+ await viewer.locator('[data-save-close]').click();
  // Missing local storage must report failure, never fall back to cloud photo APIs.
  await page.evaluate(()=>{window.xcwcLocalAlbum=undefined;});
  for(const operation of ['create','history','image','original']){

@@ -1,0 +1,230 @@
+{
+  "passed": true,
+  "sourceFilesUnchanged": 16,
+  "derivativesChecked": 31,
+  "checks": [
+    "SHA-256",
+    "actual WebP decode",
+    "480px cover widths",
+    "original detail and banner geometry"
+  ],
+  "records": [
+    {
+      "id": "hangzhou-xihu",
+      "kind": "cover",
+      "width": 480,
+      "height": 378,
+      "bytes": 21476
+    },
+    {
+      "id": "hangzhou-xihu",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 146986
+    },
+    {
+      "id": "hangzhou-guihua",
+      "kind": "cover",
+      "width": 480,
+      "height": 378,
+      "bytes": 35286
+    },
+    {
+      "id": "hangzhou-guihua",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 231178
+    },
+    {
+      "id": "suzhou-fengyin",
+      "kind": "cover",
+      "width": 480,
+      "height": 391,
+      "bytes": 28632
+    },
+    {
+      "id": "suzhou-fengyin",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 213738
+    },
+    {
+      "id": "luoyang-qingyu",
+      "kind": "cover",
+      "width": 480,
+      "height": 378,
+      "bytes": 25458
+    },
+    {
+      "id": "luoyang-qingyu",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 169598
+    },
+    {
+      "id": "hangzhou-hehua",
+      "kind": "cover",
+      "width": 480,
+      "height": 395,
+      "bytes": 19458
+    },
+    {
+      "id": "hangzhou-hehua",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 144612
+    },
+    {
+      "id": "hangzhou-jiangnan-lingyu",
+      "kind": "cover",
+      "width": 480,
+      "height": 391,
+      "bytes": 25688
+    },
+    {
+      "id": "hangzhou-jiangnan-lingyu",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 161314
+    },
+    {
+      "id": "hangzhou-dingsheng-pengpeng",
+      "kind": "cover",
+      "width": 480,
+      "height": 403,
+      "bytes": 36298
+    },
+    {
+      "id": "hangzhou-dingsheng-pengpeng",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 250724
+    },
+    {
+      "id": "taizhou-jianke",
+      "kind": "cover",
+      "width": 480,
+      "height": 395,
+      "bytes": 37388
+    },
+    {
+      "id": "taizhou-jianke",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 242584
+    },
+    {
+      "id": "shaoxing-jiaoji",
+      "kind": "cover",
+      "width": 480,
+      "height": 386,
+      "bytes": 30688
+    },
+    {
+      "id": "shaoxing-jiaoji",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 213938
+    },
+    {
+      "id": "hangzhou-taohua",
+      "kind": "cover",
+      "width": 480,
+      "height": 385,
+      "bytes": 27300
+    },
+    {
+      "id": "hangzhou-taohua",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 213504
+    },
+    {
+      "id": "hangzhou-taozhi-cuiniao",
+      "kind": "cover",
+      "width": 480,
+      "height": 390,
+      "bytes": 28678
+    },
+    {
+      "id": "hangzhou-taozhi-cuiniao",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 175492
+    },
+    {
+      "id": "hangzhou-dongpo",
+      "kind": "cover",
+      "width": 480,
+      "height": 378,
+      "bytes": 30602
+    },
+    {
+      "id": "hangzhou-dongpo",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 182816
+    },
+    {
+      "id": "hangzhou-aiqing",
+      "kind": "cover",
+      "width": 480,
+      "height": 378,
+      "bytes": 35046
+    },
+    {
+      "id": "hangzhou-aiqing",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 209712
+    },
+    {
+      "id": "suzhou-zhufeng",
+      "kind": "cover",
+      "width": 480,
+      "height": 378,
+      "bytes": 25300
+    },
+    {
+      "id": "suzhou-zhufeng",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 174494
+    },
+    {
+      "id": "suzhou-30903",
+      "kind": "cover",
+      "width": 480,
+      "height": 391,
+      "bytes": 19802
+    },
+    {
+      "id": "suzhou-30903",
+      "kind": "detail",
+      "width": 852,
+      "height": 1846,
+      "bytes": 155548
+    },
+    {
+      "id": "huangying-shop",
+      "kind": "image",
+      "width": 916,
+      "height": 416,
+      "bytes": 65666
+    }
+  ]
+}

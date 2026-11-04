@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "contentFingerprints": true,
+  "dynamicGlobs": [
+    "assets/nest/felt/emotions/*.webp",
+    "assets/wardrobe/huangying/*-320.webp",
+    "assets/wardrobe/huangying/*-640.webp",
+    "assets/shop/products/**/cover-480.webp",
+    "assets/shop/products/**/detail-optimized.webp",
+    "assets/shop/banners/*-optimized.webp"
+  ],
+  "compatibilityFiles": {
+    "assets/bird-transparent.png": "Existing public bird imagePath; retained for old API consumers. Current H5 uses its optimized character artwork.",
+    "assets/birds/huangying/happy-avatar-192.webp": "The existing account registration page uses this public asset.",
+    "assets/audio/camera.mp3": "4 KB shutter effect is also inlined for immediate click feedback; preserve its licensed source URL.",
+    "assets/audio/APACHE-2.0-LICENSE.txt": "Required audio redistribution license.",
+    "assets/audio/NOTICE.txt": "Required audio provenance and attribution.",
+    "assets/audio/README.md": "Audio source, license and transformation details referred to by NOTICE.txt."
+  },
+  "optionalCompatibilityFiles": [],
+  "budgetBytes": {
+    "image": 300000,
+    "thumbnail": 80000,
+    "audio": 50000,
+    "video": 3000000
+  },
+  "budgetExceptions": {
+    "assets/bird-transparent.png": {
+      "reason": "Keep the existing public API image URL compatible; the current H5 must not request this original for its visible character.",
+      "maxBytes": 1815605,
+      "sha256": "42c55e70b0170303aebbfe7b4b2ee68bc2eda150c523ec55cdbdd109b85094fd"
+    },
+    "assets/nest/felt/emotions/crying.webp": {
+      "reason": "Keep this lossless expression: tested lossy candidates did not meet the 40 dB visual guard. It loads only when this expression is needed.",
+      "maxBytes": 305946,
+      "sha256": "e6c9a92060702d1c247bc64e55c8d5c5df186596f319fb928b5ffcf2025f9ae1"
+    },
+    "assets/scenes/city-landscapes-1200.webp": {
+      "reason": "Existing lossy artwork retained for legacy route compatibility; avoid repeated lossy compression.",
+      "maxBytes": 304474,
+      "sha256": "aa81abeae2445a45a5029b94b5f9286d02ccf1d86265aba0025292e2bc212aa5"
+    },
+    "assets/checkin/lake.jpg": {
+      "reason": "Existing JPEG is the default photo composition background; candidates did not meet the visual guard at the unchanged 1600x1067 geometry. Loaded only on the photo route.",
+      "maxBytes": 392753,
+      "sha256": "ef9b54fddd2fb175ea8b70f3ddd418d018d489bcefcac6c2080e94650adb41cd"
+    },
+    "assets/checkin/felt-bird-v1.png": {
+      "reason": "Full-resolution alpha-exact Canvas sticker derivative is 399 KB, down from 1.78 MB; preserve source geometry and at least 40 dB visual fidelity.",
+      "maxBytes": 399254,
+      "sha256": "a251068b9658d87070e0ed706f2e4446acff4f2bad8b6e3a5c1853c38cda7f61"
+    },
+    "assets/checkin/forest-bg.jpg": {
+      "reason": "Unchanged 1024x1536 background derivative retains at least 40 dB fidelity; do not reduce quality merely to meet the 300 KB target.",
+      "maxBytes": 356836,
+      "sha256": "55318f2a3e7c000fa37ac0599169b63a05188f118d1e44394d7daa261b128263"
+    }
+  }
+}

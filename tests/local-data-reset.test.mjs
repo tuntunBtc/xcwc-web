@@ -8,8 +8,8 @@ function storage(entries=[]){
  const data=new Map(entries);
  return {get length(){return data.size},key:index=>[...data.keys()][index]??null,getItem:key=>data.get(key)??null,removeItem:key=>data.delete(key),setItem:(key,value)=>data.set(key,value),data};
 }
-function host({local=storage(),session=storage(),clear=async()=>{}}={}){
- const window={localStorage:local,sessionStorage:session,xcwcLocalAlbum:{clear}};
+function host({local=storage(),session=storage(),clear=async()=>{},clearCart=async()=>{}}={}){
+ const window={localStorage:local,sessionStorage:session,xcwcLocalAlbum:{clear},xcwcShopCart:{reset:clearCart}};
  vm.runInNewContext(source,{window,Set,JSON,Error});
  return {window,local,session,reset:window.xcwcResetLocalData};
 }
@@ -20,9 +20,9 @@ test('resets local experience and only this application widget paths, preserving
  const kept=['yanji.cloud.session.v1','unrelated.app','xcwc.guest.v10','xcwc.shop.cart.v10:other',widget('/other-app'),widget('/')+':unknown',widget('/')+':probe'];
  const local=storage([...deleted,...kept].map(key=>[key,'original']));
  const session=storage([['xcwc.return-context','return'],['yanji.cloud.session.v1','session'],['xcwc.adoption.pending:user:fixture','pending'],['xcwc.points.request:user:pet:fixture','pending'],['other','value']]);
- let albumCleared=false;
- const {reset}=host({local,session,clear:async()=>{assert.equal(local.getItem('xcwc.guest.v1'),'original');albumCleared=true}});
- assert.equal((await reset()).cleared,true);assert.equal(albumCleared,true);
+ let albumCleared=false,cartCleared=false;
+ const {reset}=host({local,session,clear:async()=>{assert.equal(local.getItem('xcwc.guest.v1'),'original');albumCleared=true},clearCart:async()=>{assert.equal(albumCleared,true);assert.equal(local.getItem('xcwc.guest.v1'),'original');cartCleared=true}});
+ assert.equal((await reset()).cleared,true);assert.equal(albumCleared,true);assert.equal(cartCleared,true);
  for(const key of deleted)assert.equal(local.getItem(key),null,key);
  for(const key of kept)assert.equal(local.getItem(key),'original',key);
  assert.equal(session.getItem('xcwc.return-context'),null);
@@ -47,6 +47,13 @@ test('overlapping resets share one operation and completion receipt',async()=>{
  await reset();assert.equal(calls,2);
 });
 
+test('cart storage failure preserves remaining experience and permits retry',async()=>{
+ const local=storage([['xcwc.guest.v1','birds']]);let attempts=0;
+ const {reset}=host({local,clearCart:async()=>{if(++attempts===1)throw Error('Cart IndexedDB unavailable')}});
+ await assert.rejects(reset(),/Cart IndexedDB unavailable/);assert.equal(local.getItem('xcwc.guest.v1'),'birds');
+ assert.equal((await reset()).cleared,true);assert.equal(local.getItem('xcwc.guest.v1'),null);
+});
+
 test('storage exceptions and silent removal failures never report success',async()=>{
  const failing=storage([['xcwc.guest.v1','birds']]);failing.removeItem=()=>{throw Error('storage denied')};
  await assert.rejects(host({local:failing}).reset(),/storage denied/);
@@ -64,4 +71,22 @@ test('session cleanup failure reports incomplete cleanup after local records wer
 test('missing album implementation cannot erase local data or claim success',async()=>{
  const h=host({local:storage([['xcwc.guest.v1','birds']])});h.window.xcwcLocalAlbum=null;
  await assert.rejects(h.reset(),/相册尚未准备好/);assert.equal(h.local.getItem('xcwc.guest.v1'),'birds');
+});
+
+test('reset generation stays visible to other tabs throughout clearing and changes after completion',async()=>{
+ const local=storage();let release;const gate=new Promise(resolve=>release=resolve);
+ const {reset}=host({local,clear:()=>gate});
+ const pending=reset(),during=local.getItem('xcwc.local.reset.v1');
+ assert.match(during,/^pending:/);
+ release();assert.equal((await pending).cleared,true);
+ assert.equal(local.getItem('xcwc.local.reset.v1'),'done:'+during.slice('pending:'.length));
+ await reset();assert.notEqual(local.getItem('xcwc.local.reset.v1'),'done:'+during.slice('pending:'.length));
+});
+
+test('unable to persist the reset generation stops before deleting photos or experience',async()=>{
+ const local=storage([['xcwc.guest.v1','birds']]);let cleared=false;
+ local.setItem=()=>{};
+ const {reset}=host({local,clear:async()=>{cleared=true}});
+ await assert.rejects(reset(),/清除状态无法保存/);
+ assert.equal(cleared,false);assert.equal(local.getItem('xcwc.guest.v1'),'birds');
 });

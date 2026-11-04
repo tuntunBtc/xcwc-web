@@ -181,14 +181,16 @@
       }),
     );
   };
+  let heightFrame = null, lastHeight = null;
   const sendHeight = () => {
-    postToHost("height", {
-      height: Math.ceil(
-        Math.max(
-          document.body.scrollHeight,
-          document.body.getBoundingClientRect().height,
-        ),
-      ),
+    if (heightFrame !== null) return;
+    heightFrame = globalThis.requestAnimationFrame(() => {
+      heightFrame = null;
+      if (hostPort == null) return;
+      const height = Math.ceil(Math.max(document.body.scrollHeight, document.body.getBoundingClientRect().height));
+      if (height === lastHeight) return;
+      lastHeight = height;
+      postToHost("height", { height });
     });
   };
 

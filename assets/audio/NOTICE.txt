@@ -1,0 +1,12 @@
+Camera Shutter
+Copyright (c) 2012 Android Open Source Project
+
+Android Code
+Copyright 2005-2008 The Android Open Source Project
+
+This product includes software developed as part of
+The Android Open Source Project (http://source.android.com).
+
+This project shortened, filtered and transcoded the original camera shutter
+sample on 2026-11-03. Source and changes are documented in README.md.
+Licensed under the Apache License, Version 2.0; see APACHE-2.0-LICENSE.txt.

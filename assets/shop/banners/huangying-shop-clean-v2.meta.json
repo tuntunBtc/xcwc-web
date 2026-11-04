@@ -1,0 +1,38 @@
+{
+  "method": "Built-in imagegen localized erasure; only the two requested regions composited onto the original with feathered edges using browser Canvas. Pixels outside those regions remain identical before WebP encoding.",
+  "original": "/assets/shop/banners/huangying-shop.png",
+  "originalSha256": "196104229905b4cfbe4b4467be8ed2d8f79162d3774b0266690889832919896a",
+  "generatedSource": "/assets/shop/banners/huangying-shop-clean-v2-imagegen.png",
+  "generatedSha256": "acf82dab641520744c6d4c71abbd8ef1cab4eba63d64b306b7a6565a7ccf7772",
+  "output": "/assets/shop/banners/huangying-shop-clean-v2.png",
+  "outputSha256": "0fe872f26fc550db28e55a971ef042739cd1e8364e1e04a52b06ca68289bd983",
+  "width": 916,
+  "height": 416,
+  "generatedWidth": 1860,
+  "generatedHeight": 845,
+  "rectangles": [
+    {
+      "x": 80,
+      "y": 177,
+      "width": 337,
+      "height": 65,
+      "feather": 7
+    },
+    {
+      "x": 712,
+      "y": 266,
+      "width": 204,
+      "height": 98,
+      "feather": 8
+    }
+  ],
+  "outsideRegionRgbaChannelDifferences": 0,
+  "prompt": "Use case: precise-object-edit\nEdit target: supplied original 916 x 416 XCWC carousel banner.\nMake exactly TWO localized erasures:\n1) Erase the entire small pink pill labeled “鸟蛋规则 ›” in bottom-right (original coordinates approximately x=720..915, y=267..356). Reconstruct underlying meadow, pink flowers and felt grass, preserving the yellow bird and its wing edge.\n2) Erase ONLY the large middle title “小黄莺的小店” on the left peach felt text panel (approximately x=90..400, y=180..238). Fill that lettering area with the same blank soft peach felt as the surrounding panel. Leave blank space where the title was; DO NOT recenter, enlarge or move other text.\nSTRICT preservation: Keep the small top line “小鸟城市旅行日记 -” and the bottom line “把喜欢的小鸟，带去更多城市” EXACTLY, at original positions and sizes. Keep the entire peach panel's shape and flower decoration. Keep the exact yellow plush bird, leaf hat, eyes, wings, feet and face, exact framing, lake, pagoda, background, colors, grass and lighting. Keep original wide 916:416 aspect and composition. No other new text, labels, badges or buttons. Local inpainting only, not a redesign.",
+  "runtime": {
+    "url": "/assets/shop/banners/huangying-shop-clean-v2-optimized.e73ed23e82c2.webp",
+    "width": 916,
+    "height": 416,
+    "bytes": 59640,
+    "encoding": "Existing optimize-shop-images.cjs, Chromium WebP quality 0.91"
+  }
+}

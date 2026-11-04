@@ -1,0 +1,32 @@
+{
+  "id": "import-20261103-30903",
+  "operation": "Remove only sales statistic 已售 1,286 件",
+  "sourcePath": "/Users/beluga/Code/xcwc/小鸟资料库/小鸟商城详情页/微信图片_20261103191002_30903_18.png",
+  "sourceSha256": "df181afeb20930fca1e173b3cb77e3529d3cbc58d9e613072f76977277d3c936",
+  "detailSha256": "fe3c9859a1248deb951576a1850761b118ac8e98a58a384d2cbed42e91b73bae",
+  "rectangle": {
+    "x": 590,
+    "y": 1186,
+    "width": 192,
+    "height": 70
+  },
+  "method": "Reuse an approved built-in imagegen sale-removal texture; match ROI border mean RGB and feather 8px inward in browser Canvas. Original source is untouched.",
+  "repairTextureSource": "/Users/beluga/Code/xcwc/xcwc-web/assets/shop/products/hangzhou-guihua/detail.png",
+  "repairTextureSha256": "a9c94066116f119d43c3a18e3d2b60110ab45620ef8bd2435d4aa7f058c3a7ed",
+  "originalImagegenRepairPath": "/Users/beluga/.codex/generated_images/01a1a063-518e-71b0-877d-6ebbccda7b13/exec-7cd887e0-96a0-45aa-8f92-760711ad5ca1.png",
+  "originalImagegenPrompt": "Use case: precise-object-edit. The attached image is the edit target, not a loose style reference. Make one highly localized edit ONLY: remove the small light-brown sales statistic text reading 已售 1,286 件, located to the RIGHT of the orange ¥69 price, just ABOVE the row of three feature badges. Seamlessly fill just those removed letters with matching nearby warm cream plush background and fine fibers. Preserve the exact original image dimensions, framing and spatial layout. Every other element must remain unchanged: all other Chinese text, price 69, header title, bird identity and photo, features, egg illustration, bottom green add-to-cart button including its white lettering, close icon, and the blurred phone/browser surroundings. Do not crop, resize, retouch, redesign, regenerate the bird, smooth the texture, add new elements or change colors. The ONLY intended difference is the removal of that one sales statistic; preserve all other text exactly. Return the edited full image.",
+  "validation": {
+    "width": 852,
+    "height": 1846,
+    "changedChannelsInside": 29033,
+    "changedChannelsOutside": 0,
+    "darkTextPixelsBefore": 792,
+    "darkTextPixelsAfter": 0,
+    "borderColorShift": [
+      0.8971354166666856,
+      3.061848958333343,
+      2.235026041666657
+    ],
+    "pixelComparison": "Decoded output PNG RGBA compared against decoded original outside exact ROI"
+  }
+}

@@ -46,53 +46,5 @@
     ],
     "bytes": 214156,
     "mode": "RGBA"
-  },
-  {
-    "source": "/Users/beluga/.codex/generated_images/01a19a2c-5a54-7951-a14e-34ea814ceecb/exec-02f7202a-fef0-4060-8af2-eeb07899c902.png",
-    "source_sha256": "d4c8f1215f87dda74822df546243982d46f782e2ae0b2ec655b38d1bdada1ab1",
-    "source_bytes": 2283847,
-    "source_size": [
-      1051,
-      1496
-    ],
-    "output": "assets/adopt-v1/huangying-adoption-900.webp",
-    "size": [
-      900,
-      1281
-    ],
-    "bytes": 134444,
-    "mode": "RGB"
-  },
-  {
-    "source": "/Users/beluga/.codex/generated_images/01a19a2c-5a54-7951-a14e-34ea814ceecb/exec-5452014e-73f0-4336-9d4a-0a205bf2ac28.png",
-    "source_sha256": "b15634f970bb86d6359883f77c85590febaecddb3a317a333e5453caac3f4bca",
-    "source_bytes": 1836997,
-    "source_size": [
-      2172,
-      724
-    ],
-    "output": "assets/nest/huangying-interactions-1440.webp",
-    "size": [
-      1440,
-      480
-    ],
-    "bytes": 102264,
-    "mode": "RGBA"
-  },
-  {
-    "source": "/Users/beluga/.codex/generated_images/01a19a2c-5a54-7951-a14e-34ea814ceecb/exec-179c30a0-2e4a-4f6d-b3e9-8d54378bca6e.png",
-    "source_sha256": "90d68d91e3f980d7ea3b5fc2826b617c1eba4a5a752fefe8c83f8d30e51c973d",
-    "source_bytes": 1427480,
-    "source_size": [
-      2172,
-      724
-    ],
-    "output": "assets/navigation/huangying-scroll-1440.webp",
-    "size": [
-      1440,
-      480
-    ],
-    "bytes": 65348,
-    "mode": "RGBA"
   }
 ]

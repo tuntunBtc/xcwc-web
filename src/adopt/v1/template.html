@@ -12,13 +12,16 @@
       <p class="scroll-detail"><span data-role="type">款式待确认</span><br><span data-role="skin">出厂肤色待确认</span></p>
     </section>
 
-    <div class="trait-row" aria-label="性格资料">
+    <div class="trait-row" role="group" aria-label="性格档案">
       <span class="trait-label">性格<br>档案</span>
-      <span class="trait-pill trait-one" data-role="trait-one">资料待接入</span>
-      <span class="trait-pill trait-two" data-role="trait-two">资料待接入</span>
-      <span class="trait-pill trait-three" data-role="trait-three">资料待接入</span>
+      <span class="trait-pill trait-one" data-role="trait-one">温柔治愈</span>
+      <span class="trait-pill trait-two" data-role="trait-two">热爱旅行</span>
+      <span class="trait-pill trait-three" data-role="trait-three">好奇探索</span>
     </div>
-
+  </div>
+  <div class="adoption-feedback">
+    <p class="service-notice" data-role="service-notice" role="status" aria-live="polite" hidden></p>
+    <button class="read-retry" type="button" data-action="retry" hidden>重新读取小鸟资料</button>
   </div>
   <div class="adoption-details">
     <section class="identity" aria-label="实体小鸟资料卡">
@@ -38,12 +41,12 @@
         <button class="random-name" type="button" data-action="random" aria-label="随机取名" disabled><span aria-hidden="true">⚄</span><span>随机取名</span></button>
       </div>
       <p class="name-hint" id="name-hint">名称由你决定，小鸟属性以实体资料为准。</p>
+      <details class="local-save-note"><summary>本机保存 · 无需登录</summary><p>领取、养成和叽分保存在当前浏览器，不与云端账号同步。清除数据或更换设备后不会自动恢复。</p></details>
       <p class="validation" role="alert" hidden></p>
       <button class="adopt-button" type="button" data-action="confirm" disabled>孵化并领养</button>
       <p class="action-note" data-role="action-note">读取实体资料后继续</p>
     </form>
   </div>
-  <p class="service-notice" data-role="service-notice" role="status" aria-live="polite" hidden></p>
 
   <dialog class="login-dialog" aria-labelledby="adopt-v1-login-title">
     <button class="dialog-close" type="button" data-action="close-login" aria-label="关闭登录框">×</button>

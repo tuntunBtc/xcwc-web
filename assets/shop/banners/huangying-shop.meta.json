@@ -1,0 +1,15 @@
+{
+  "source": "/Users/beluga/.codex/generated_images/01a19fe5-7331-7b12-9329-0b33606c78b7/exec-f1c48c7c-3bce-40ec-8908-54b52107b45e.png",
+  "sourceSha256": "b4a6e4633a565fd8c5e51080df499f3f411f07a3c0b6796a49566a0557487824",
+  "outputSha256": "196104229905b4cfbe4b4467be8ed2d8f79162d3774b0266690889832919896a",
+  "sourceWidth": 916,
+  "sourceHeight": 1716,
+  "rectangle": {
+    "x": 0,
+    "y": 164,
+    "width": 916,
+    "height": 416
+  },
+  "method": "Deterministic browser Canvas getImageData/putImageData crop; no imagegen, no resampling, no text changes",
+  "rgbaChannelDifferences": 0
+}

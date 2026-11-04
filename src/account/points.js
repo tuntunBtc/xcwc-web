@@ -5,6 +5,7 @@ export function createPoints(api, notice) {
   const panel = document.querySelector('#points-panel');
   const mine = document.querySelector('#mine-list');
   let owner = '';
+  let skinCatalog=[],confirming=false;
   function pendingKey(action, target) { return `xcwc.points.request:${owner}:${action}:${target}`; }
   async function mutate(action, target, path) {
     const storageKey = pendingKey(action, target);
@@ -28,6 +29,7 @@ export function createPoints(api, notice) {
     const [wallet, skins, outfits, history] = await Promise.all([
       api('/me/points'), api('/skins'), api('/me/outfits'), api('/me/points/ledger')
     ]);
+    skinCatalog=skins;
     document.querySelector('#points-balance').textContent = `${wallet.balance} 叽分`;
     document.querySelector('#points-rules').textContent = `今日抚摸奖励 ${wallet.earnedToday}/${wallet.dailyLimit}。每次 +1，间隔 30 秒，账号内多鸟共享每日额度，按北京时间刷新。`;
     document.querySelector('#skin-shop').innerHTML = skins.map(skin => `<div class="owned"><strong>${escape(skin.name)}</strong><p>全角色通用装饰光晕 · 永久解锁 · ${skin.price} 叽分</p><button type="button" data-points-action="redeem" data-id="${escape(skin.id)}" ${skin.owned || wallet.balance < skin.price ? 'disabled' : ''}>${skin.owned ? '已解锁' : wallet.balance < skin.price ? '叽分不足' : '兑换皮肤'}</button></div>`).join('');
@@ -35,7 +37,7 @@ export function createPoints(api, notice) {
     mine.innerHTML = birds.length ? birds.map(bird => {
       const outfit = outfits.find(item => item.birdId === bird.id);
       const visual = ['lake','sunset'].includes(outfit?.visualKey) ? outfit.visualKey : 'default';
-      return `<div class="owned"><div class="bird-aura aura-${visual}"><img class="bird-image" src="${escape('/assets/birds/huangying/happy-avatar-192.webp')}" width="192" height="192" decoding="async" alt="${escape(bird.name)}"></div><strong>${escape(bird.name)}</strong><p>${escape(bird.cityName)} · ${escape(bird.typeName)} · 出厂皮肤：${escape(bird.skinName)}</p><p class="bird-id">${escape(bird.id)}</p><button type="button" data-points-action="pet" data-id="${escape(bird.id)}">摸摸小鸟</button><label>当前装饰皮肤<select data-points-action="equip" data-id="${escape(bird.id)}"><option value="">原始外观</option>${skins.filter(s=>s.owned).map(s=>`<option value="${escape(s.id)}" ${outfit?.skinId === s.id ? 'selected' : ''}>${escape(s.name)}</option>`).join('')}</select></label><a href="/register.html?bird=${encodeURIComponent(bird.id)}">查看登记 →</a></div>`;
+      return `<div class="owned"><div class="bird-aura aura-${visual}"><img class="bird-image" src="${escape('/assets/birds/huangying/happy-avatar-192.webp')}" width="192" height="192" decoding="async" alt="${escape(bird.name)}"></div><strong>${escape(bird.name)}</strong><p>${escape(bird.cityName)} · ${escape(bird.typeName)} · 出厂皮肤：${escape(bird.skinName)}</p><p class="bird-id">${escape(bird.id)}</p><button type="button" data-points-action="pet" data-id="${escape(bird.id)}">摸摸小鸟</button><label>当前装饰皮肤<select data-points-action="equip" data-id="${escape(bird.id)}"><option value="">原始外观</option>${skins.filter(s=>s.owned).map(s=>`<option value="${escape(s.id)}" ${outfit?.skinId === s.id ? 'selected' : ''}>${escape(s.name)}</option>`).join('')}</select></label><a href="/account.html?bird=${encodeURIComponent(bird.id)}">查看云端登记 →</a></div>`;
     }).join('') : '<p>先认领一只小鸟，再开始互动。</p>';
   }
   let busy = false;
@@ -69,7 +71,13 @@ export function createPoints(api, notice) {
       busy = false;
     }
   }
-  panel.addEventListener('click', event => { const button = event.target.closest('button[data-points-action]'); if (button) handle(button); });
+  async function confirmRedemption(button){
+    if(busy||confirming)return;const skin=skinCatalog.find(item=>item.id===button.dataset.id);if(!skin||skin.owned)return;
+    const dialog=document.querySelector('#cloud-redeem-dialog');if(!dialog){notice.textContent='兑换确认暂不可用，请刷新后重试。';return}
+    confirming=true;document.querySelector('#cloud-redeem-copy').textContent=`花费 ${skin.price} 叽分，永久解锁「${skin.name}」？`;
+    try{const confirmed=await new Promise(resolve=>{dialog.returnValue='cancel';dialog.addEventListener('close',()=>resolve(dialog.returnValue==='confirm'),{once:true});dialog.showModal()});if(confirmed)await handle(button)}catch{notice.textContent='无法打开兑换确认，请刷新页面后重试。'}finally{confirming=false}
+  }
+  panel.addEventListener('click', event => { const button = event.target.closest('button[data-points-action]'); if(button?.dataset.pointsAction==='redeem')confirmRedemption(button);else if(button)handle(button); });
   mine.addEventListener('click', event => { const button = event.target.closest('button[data-points-action]'); if (button) handle(button); });
   mine.addEventListener('change', event => { if (event.target.matches('select[data-points-action]')) handle(event.target); });
   return {refresh};

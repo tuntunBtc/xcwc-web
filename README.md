@@ -1,15 +1,17 @@
 # xcwc-web
 
-卜叽岛小鸟伙伴前端项目。打卡合照已接入真实登录、领养与账号叽分 API；小窝与城市定稿已接入，缺少服务的能力明确显示待接。
+卜叽岛小鸟伙伴前端项目。当前第一期为免登录本机体验：实体资料与商城从后端读取，领取、养成、叽分、装扮和合照保存在当前浏览器。云端账号接口独立保留，不作为本期领取前置条件，不自动合并本机与云端数据。
 
 ## 构建与预览
 
-需要 Python 3；使用 npm 命令时还需本机安装 Node.js。前端构建无需安装 npm 依赖。
+需要 Python 3 和 Node.js；构建使用 Python 标准库及仓库内的图标资料，不需要安装 npm 依赖。部署后的静态站点不需要 Node.js。
 
 ```sh
 npm run build
 npm run preview
 ```
+
+2026-11-04 性能拆包后，页面脚本和样式位于 `dist/runtime/`，图片采用内容指纹并保留旧 URL。新素材更新时执行 `npm run media:sync-shop` 同步后端商城 URL，然后构建、检查并配套发布前后端。必须上传完整 `dist/`，不能仅替换两个 HTML；服务器保留旧指纹资源以兼容已打开的网页。实现与冷／热缓存边界见 [IP 性能验收记录](../docs/tasks/IP访问性能优化-V1.1030-2026-11-04.md)。
 
 访问 http://127.0.0.1:8766/。也可以直接运行 `python3 scripts/build-room.py` 构建。
 
@@ -28,7 +30,33 @@ npm run preview
 
 修改源码后重新构建，不直接编辑 `dist/index.html`。原有 Git 历史随目录一同保留。
 
+2026-11-03 已清理无构建、运行或测试引用的原始 HTML 快照、旧领养页草稿及旧商城示意图。正式领养继续使用 `src/adopt/v1/`，编码解析使用 `src/adopt/entry.mjs`；旧派生图的生成任务和资源记录同步退役。清理范围、验证及恢复入口见 [前端清理记录](../docs/tasks/前端无用文件清理-V1.1030-2026-11-03.md)。
+
+## 媒体优化与发布检查
+
+统一规则见 [媒体资源与性能规范](../docs/MEDIA-PERFORMANCE.md) 和本工程 `AGENTS.md`。现有原件保留，网页通过构建映射使用 `assets/optimized/` 中带内容指纹的派生资源；商城继续复用其裁切专用清单。
+
+```sh
+npm run media:optimize
+npm run build
+npm run media:check
+```
+
+仅生成／复核派生图需要 Pillow（`python3 -m pip install Pillow`）；正常构建和发布检查只用 Python 标准库，不新增前端运行依赖。优化后提交 `config/media-derivatives.json` 与对应派生文件。商城图变更使用 `node scripts/optimize-shop-images.cjs`，按其输出清单更新商品配置后再构建。
+
+`config/media-runtime.json` 声明动态表情、皮肤和接口商品图片，以及保留原因明确的兼容文件；新增动态路径需要同步清单。构建只发布实际静态引用和这些动态资源，排除制作原图、编辑记录及系统杂项。缺失资源、源文件漂移、错误映射和未经审核的超额文件会阻止构建；预算例外绑定当前文件大小和 SHA-256。`dist/media-manifest.json` 是发布文件校验清单，检查结果保存在 `output/media-optimization/asset-check.json`。
+
+图片复核：`python3 scripts/optimize-media.py --check`。门禁回归：`python3 -m unittest discover -s tests -p 'test_media_pipeline.py'`。浏览器对比脚本为 `scripts/verify-media-performance.cjs`，需先准备相同真实隔离接口支持的优化前／后快照，参数见脚本；不连接生产写接口。
+
 `scripts/verify-reference.cjs` 为现行界面浏览器验收脚本，需要额外可用的 Playwright 和 Chrome，并先启动预览。截图默认保存到 `output/screenshots/`，可用 `BJD_SCREENSHOT_DIR` 覆盖；`verify-room.cjs` 是上一版喂养界面的验收记录。
+
+## 当前主流程验收
+
+当前第一期采用展会 B 档快速演示，默认约 1～2 分钟出现饥渴，心情按分钟变化；普通节奏保留为独立配置。具体参数与旧缓存迁移规则见需求基线最新章节。
+
+完整浏览器验收使用 `scripts/verify-fullflow-audit.cjs`，设置 `XCWC_PREVIEW_URL` 为本次隔离预览根地址、`XCWC_TEST_BIRD_CODES` 为两只真实隔离建档实体码（逗号分隔）。`XCWC_FREEZE_CLOCK=1` 可固定时钟验证一般交互，真实演示时序另由 `verify-exhibition-profile.cjs` 控时验证。存储故障、跨标签reset、旧相册迁移和图片按需读取分别有专项脚本，范围与报告见 [全项目审查记录](../docs/tasks/全项目审查与主流程回归-V1.1030-2026-11-03.md)。并发验收须用独立报告标签或目录，不能覆盖其他聊天的报告再当作本轮证据。
+
+下面历史实施章节的旧 verify-guest-flow、verify-checkin、verify-integrated-pages 等脚本保留用于追溯，部分仍基于已替代的登录、测试淘宝链接和普通养成节奏，不作为当前版本验收入口。正式外部领取地址始终为 `/register.html?birdCode=完整编码`，根路径带码只作兼容。
 
 ## 页面共用尺寸与风格
 
@@ -36,15 +64,17 @@ npm run preview
 
 ## 商城 V1.0
 
-商城通过现有 shop 路由接入，共用“小窝、城市、商城、我的”底栏；打卡统一从小窝页面右侧的“合照打卡”入口进入，不提供认领页导航或入口。`/?page=shop` 可直达。源码位于 `src/shop/`：`products.js` 集中配置演示商品与淘宝地址，`template.html`、`shop.css`、`shop.js` 分别负责结构、隔离样式和交互，`assets/` 保存定稿 WebP。
+商城通过现有 shop 路由接入，共用“小窝、城市、商城、我的”底栏；打卡统一从小窝页面右侧的“合照打卡”入口进入，不提供认领页导航或入口。`/?page=shop` 可直达。源码位于 `src/shop/`：`products.js` 保存分页与轮播设置，`template.html`、`shop.css`、`shop.js` 分别负责结构、隔离样式和交互。商品列表、详情、轮播由 `/api/shop/` 只读接口提供；商品与媒体清单维护在 `../xcwc-api/src/main/resources/shop/catalog.json`，字段说明见 [商品清单维护](../xcwc-api/SHOP-CATALOG.md)。
 
-商城采用 Shadow DOM 隔离定稿样式，复用现有路由；购物车由宿主按匿名/用户名分别存入 localStorage，保存稳定商品 ID 并去重，不代表已下单，不跨设备同步。购买路径为加购、购物车、去淘宝购买；宿主校验 HTTPS 淘宝域名后以 noopener/noreferrer 在新窗口打开。微信内是否唤起淘宝仍由容器决定；跳转后保留购物车，不自动发蛋。旧混用演示购物车不迁入账号，不自动合并匿名与登录购物车。
+商城采用 Shadow DOM 隔离定稿样式，复用现有路由。购物车由宿主按匿名/用户名隔离，稳定商品 ID 的读取、去重、增删和 100 件上限均在同一个 IndexedDB 事务中处理，避免标签页互相覆盖；旧 `xcwc.shop.cart.v1:*` 记录首次读取时迁入，localStorage 继续保留兼容镜像。数据库为 `xcwc.shop.coordination.v1`，`mutex` store 同时保存购物车与重置代次；“清除缓存”通过已授权的共享 hook 一并清理，并拒绝重置前的排队加购。购物车只在本机保存，不代表已下单，不跨设备同步。购买路径为加购、购物车、去淘宝购买；宿主校验 HTTPS 淘宝域名后以 noopener/noreferrer 在新窗口打开。微信内是否唤起淘宝仍由容器决定；跳转后保留购物车，不自动发蛋。旧混用演示购物车不迁入账号，不自动合并匿名与登录购物车。购买链接为空时禁用购买入口。
 
 演示价格销量沿用定稿，不产生站内支付、订单或鸟蛋发放。商品图中的权益文案为定稿素材，具体领取方式待后续定义。未迁移源预览站点的 manifest 或托管身份。
 
-商城验收：`scripts/verify-shop.cjs` 使用 Playwright 与本机 Chrome，可用 `PLAYWRIGHT_MODULE` 指定额外安装路径，`XCWC_PREVIEW_URL` 指定预览地址。已验证城市筛选、排序、详情、加购、去重、刷新持久化、移除/空状态、320/390/660 宽度和跨页面导航，未出现页面脚本错误；淘宝导航在测试中拦截验证 URL，不实际购买。预览可通过 `PORT=8776 npm run preview` 启动，访问 `http://127.0.0.1:8776/?page=shop`。
+商城验收使用 `scripts/verify-shop-api.cjs`、`scripts/verify-shop-cart-tabs.cjs`、`scripts/verify-shop-cart-lifecycle.cjs` 和 `scripts/verify-shop-performance.cjs`，覆盖真实本机接口、全部配置商品与详情图、购物车并发和图片请求；使用 Playwright 的 Chromium/WebKit，可通过 `PLAYWRIGHT_MODULE` 和 `XCWC_PREVIEW_URL` 指定依赖与本地地址。清缓存回归另运行 `node --test tests/local-data-reset.test.mjs`。列表使用 480 px WebP 封面，首两张优先加载、其余懒加载；完整详情仅在打开时读取。媒体统计与复现见 [商城图片优化](assets/shop/media-optimization.md)。预览可通过 `PORT=8776 npm run preview` 启动，并按服务约定配置 API 代理；当前独立联调预览为 `http://127.0.0.1:8814/?page=shop`。
 
 ## 打卡合照
+
+2026-11-03 最新交互：当前本机主流程统一使用宿主合照查看器，生成并收藏后直接展示，预览和相册点击复用；已移除“保存原图”和旧 iframe 大图弹窗。保存按钮直接调用系统菜单（HTTP 使用 HTTPS 平面保存页兼容），长按图片及折叠文件下载作为备用。照片不上传云端，导出不再创建作品或发分；本地打卡相册与系统照片相册分开。说明与验收见 [任务记录](../docs/tasks/打卡查看与保存交互简化-V1.1030-2026-11-03.md)。以下旧服务端联调记录用于历史追溯。
 
 沿用 `photo` 路由，`/?page=photo` 可直达。设计基线保持在 `../docs/design-baselines/checkin-v1.0/`，集成源码为 `src/checkin-*`。最多选择 3 只真实已领养实体，支持独立移动、缩放和风格调整；服务端保存成功后奖励 1 叽分，相册按创建时间倒排。
 
@@ -102,3 +132,17 @@ API_TARGET=http://127.0.0.1:8080 npm run preview
 ## 固定领取地址
 
 对外使用 `/register.html?birdCode=完整编码`，直接加载领取页且不改地址栏。根路径带码只保留兼容；旧账号登录入口为 account.html。此前已生成的部署包未自动更新，需重建前端包并覆盖站点文件。
+
+
+## 换装衣橱（2026-11-03）
+
+「我的 → 我的衣橱」和「小窝 → 换装」共用正式 `wardrobe` 路由。衣橱沿用本机叽分和受控桥接：湖蓝／落日光晕分别 30／70 叽分永久解锁，本机小鸟共享解锁、穿戴逐鸟保存。提供兑换确认、余额不足、原貌恢复和光晕预览；兑换后选择穿戴，不自动扣分重买。背景与卡片为毛毡风，界面文字和状态均为动态控件。
+
+源码为 `src/account-pages.js`、`src/wardrobe-felt.css`；独立场景素材及生成提示词见 `assets/wardrobe/felt/README.md`。正式构建自动加载，无须另外复制演示页面。验证运行 `node scripts/verify-wardrobe-felt.cjs` 和 `node scripts/verify-wardrobe-review.cjs`（需要本机 Chrome 与 Playwright，可设置 `PLAYWRIGHT_MODULE`、`XCWC_PREVIEW_URL`）。审查记录见 [换装页毛毡风格](../docs/tasks/换装页毛毡风格-V1.1030-2026-11-03.md)。本机数据不跨设备同步，未发布服务器。
+
+
+### 小黄莺真实服装
+
+新增 `小鸟资料库/皮肤` 提供的 8 套小黄莺服装，卡片可直接试穿（不扣叽分、不改保存记录），兑换后穿戴。统一目录为 `src/wardrobe-catalog.mjs`；四款花叶披风暂定 30 叽分、四款主题服装暂定 70 叽分，名称和价格可在该目录调整。既有光晕和权益保留。小窝、头像和个人资料跟随已保存的穿戴；穿着服装时保留静态服装造型与动作／声音反馈，恢复原貌后仍有原有七种表情。
+
+皮肤原图不直接发布，运行衍生资源为 `assets/wardrobe/huangying/` 下的 640／320 WebP；素材处理记录与原文件映射保存在同目录。额外浏览器验收：`node scripts/verify-wardrobe-skins.cjs`，详见 [皮肤上架记录](../docs/tasks/小黄莺皮肤上架-V1.1030-2026-11-03.md)。

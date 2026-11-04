@@ -1,35 +1,29 @@
 (()=>{
  const frame=document.getElementById('codex-visualization'),controllers=new Map();
  // Photo operations are always local, even if the local album fails to initialize.
- const localOperations=new Set(['bootstrap','history','detail','image','original','create','points']);
- const canvasAssets=Object.freeze({background:'/assets/checkin/lake.jpg',bird:'/assets/nest/felt/emotions/happy-400.webp'});
+ const localOperations=new Set(['bootstrap','history','detail','image','original','create','points','delete']);
+ const canvasAssets=Object.freeze({background:'/assets/checkin/lake.jpg',bird:'/assets/checkin/felt-bird-v1.png'});
  const failure=(code,message)=>Object.assign(new Error(message),{code});
-
- // Keep the image in the top-level document so native long-press menus are available.
- let saveDialog=null,saveUrl=null;
- function showSaveImage(image){
-  if(!saveDialog){
-   saveDialog=document.createElement('dialog');saveDialog.id='xcwc-checkin-save';
-   saveDialog.setAttribute('aria-labelledby','xcwc-checkin-save-title');
-   saveDialog.style.cssText='box-sizing:border-box;width:min(480px,94vw);max-height:92dvh;overflow:auto;padding:20px;border:1px solid #dce3cd;border-radius:18px;background:#f7f9ef;color:#3f5837;font:14px/1.7 sans-serif;';
-   const title=document.createElement('h2');title.id='xcwc-checkin-save-title';title.textContent='保存到手机相册';title.style.cssText='margin:0 0 8px;font-size:20px';
-   const hint=document.createElement('p');hint.textContent='长按下方图片，在弹出的菜单中选择“保存图片”或“添加到照片”。';hint.style.cssText='margin:0 0 14px';
-   const picture=document.createElement('img');picture.alt='待保存的完整照片';picture.style.cssText='display:block;width:100%;height:auto;border-radius:8px;-webkit-touch-callout:default;user-select:auto;-webkit-user-select:auto';
-   const fallback=document.createElement('p');fallback.textContent='没有保存图片选项？可尝试用手机浏览器打开本页，或下载文件后从文件管理中查看。';fallback.style.cssText='font-size:12px;margin:14px 0;color:#68795c';
-   const link=document.createElement('a');link.textContent='下载图片文件';link.style.cssText='display:inline-block;padding:10px;color:#3f5837;text-decoration:underline';
-   const close=document.createElement('button');close.type='button';close.textContent='关闭';close.style.cssText='float:right;padding:10px 18px;border:0;border-radius:8px;background:#5b7549;color:white;font:inherit';close.onclick=()=>saveDialog.close();
-   saveDialog.append(title,hint,picture,fallback,link,close);document.body.append(saveDialog);
-   saveDialog.addEventListener('close',()=>{if(saveDialog.open)return;picture.removeAttribute('src');link.removeAttribute('href');if(saveUrl){URL.revokeObjectURL(saveUrl);saveUrl=null;}});
-   saveDialog.addEventListener('click',event=>{if(event.target===saveDialog){const rect=saveDialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)saveDialog.close();}});
+ let editDraft=null,draftLease=0;
+ const draftEpoch=()=>{const epoch=window.localStorage.getItem('xcwc.local.reset.v1')||'initial';if(epoch.startsWith('pending:'))throw failure('LOCAL_RESET','本机数据正在清除，请稍后重新进入');return epoch};
+ const clearDraft=()=>{editDraft=null;draftLease++;};
+ window.xcwcCheckinDraft=Object.freeze({clear:clearDraft});
+ window.addEventListener('storage',event=>{if(event.key==='xcwc.local.reset.v1')clearDraft()});
+ function checkedDraft(value){
+  if(!value||!Array.isArray(value.selected)||value.selected.length>3)throw failure('INVALID_DRAFT','编辑内容无法保留');
+  const owned=new Set(window.xcwcGuest.snapshot().birds.map(bird=>bird.id));
+  if(new Set(value.selected).size!==value.selected.length||value.selected.some(id=>!owned.has(id)))throw failure('INVALID_DRAFT','小鸟资料已变化，请重新选择');
+  if(value.photoBlob&&(!(value.photoBlob instanceof Blob)||value.photoBlob.size>32*1024*1024))throw failure('INVALID_DRAFT','照片无法暂存');
+  const number=(v,fallback,min,max)=>Number.isFinite(v)?Math.max(min,Math.min(max,v)):fallback;
+  const poses=Object.fromEntries(value.selected.map(id=>{const pose=value.poses?.[id]||{};return [id,{cx:number(pose.cx,735,0,1000),cy:number(pose.cy,600,0,1010),size:number(pose.size,34,12,55)}]}));
+  let pending=null;
+  if(value.pendingSubmission){
+   const item=value.pendingSubmission,meta=item.metadata;
+   if(meta&&/^[a-zA-Z0-9_-]{16,64}$/.test(meta.requestId||'')&&Array.isArray(meta.birdIds)&&JSON.stringify(meta.birdIds)===JSON.stringify(value.selected)&&item.original instanceof Blob&&item.original.size<=15*1024*1024&&item.image instanceof Blob&&item.image.size<=8*1024*1024)pending=item;
   }
-  // Replace the previous image without retaining private photo blobs.
-  if(saveUrl)URL.revokeObjectURL(saveUrl);
-  saveUrl=URL.createObjectURL(image);
-  saveDialog.querySelector('img').src=saveUrl;
-  const link=saveDialog.querySelector('a');link.href=saveUrl;link.download='小鸟伴游-'+Date.now()+(image.type==='image/png'?'.png':'.jpg');
-  if(!saveDialog.open)saveDialog.showModal();
-  return {shown:true};
+  return {photoBlob:value.photoBlob||null,selected:[...value.selected],active:value.selected.includes(value.active)?value.active:value.selected[0]||null,poses,style:Math.round(number(value.style,0,0,3)),label:typeof value.label==='string'?value.label.slice(0,20):'',photoFit:value.photoFit==='contain'?'contain':'cover',photoX:number(value.photoX,50,0,100),photoY:number(value.photoY,50,0,100),dirty:!!value.dirty,editorOpen:!!value.editorOpen,pendingSubmission:pending};
  }
+
 
  window.addEventListener('message',async event=>{
   const message=event.data;if(event.source!==frame?.contentWindow||message?.channel!=='xcwc-checkin'||typeof message.id!=='string'||message.id.length>80)return;
@@ -45,9 +39,22 @@
     return;
    }
    switch(message.operation){
+    case 'draftRead':{
+     const epoch=draftEpoch();if(editDraft?.epoch!==epoch)clearDraft();
+     // An account's local cast may also have changed while this route was away.
+     if(editDraft){try{editDraft.value=checkedDraft(editDraft.value)}catch{clearDraft()}}
+     value={epoch,lease:++draftLease,draft:editDraft?.value||null};break;
+    }
+    case 'draftWrite':{
+     const epoch=draftEpoch();if(args.epoch!==epoch)throw failure('LOCAL_RESET','本机数据已清除，旧编辑内容不会恢复');if(args.lease!==draftLease)throw failure('STALE_DRAFT','此编辑页面已离开，旧编辑内容不会覆盖当前草稿');
+     editDraft={epoch,value:checkedDraft(args.draft)};value={saved:true};break;
+    }
+    case 'draftClear':clearDraft();value={cleared:true};break;
+
     case 'canvasAsset':{
      if(!Object.hasOwn(canvasAssets,args.key))throw failure('INVALID_ASSET','合照素材不可用');
-     const response=await fetch(canvasAssets[args.key],{credentials:'omit',cache:'no-cache',signal:controller.signal});
+     const asset=canvasAssets[args.key],versioned=/\.[a-f0-9]{12,64}\.[a-z0-9]+$/i.test(asset);
+     const response=await fetch(asset,{credentials:'omit',cache:versioned?'default':'no-cache',signal:controller.signal});
      if(!response.ok)throw failure('CHECKIN_ASSET_FAILED','合照素材加载失败，请刷新页面后重试');
      value=await response.blob();
      if(!value.type.startsWith('image/')||value.size>4*1024*1024)throw failure('CHECKIN_ASSET_FAILED','合照素材加载失败，请刷新页面后重试');
@@ -56,7 +63,9 @@
     case 'account':location.assign('/account.html?returnTo=checkin');return;
     case 'viewport':value={top:Math.max(0,-frame.getBoundingClientRect().top),height:innerHeight};break;
     case 'notice':{let notice=document.getElementById('xcwc-checkin-notice');if(!notice){notice=document.createElement('div');notice.id='xcwc-checkin-notice';notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');Object.assign(notice.style,{position:'fixed',bottom:'max(24px, env(safe-area-inset-bottom))',left:'50%',transform:'translateX(-50%)',padding:'12px 20px',borderRadius:'12px',background:'#3f5837f5',color:'#fffbea',font:'12px/1.6 sans-serif',maxWidth:'90%',width:'max-content',zIndex:'1000',boxShadow:'0 5px 25px #0003'});document.body.append(notice);}notice.textContent=String(args.message||'').slice(0,240);notice.hidden=false;clearTimeout(notice.hideTimer);notice.hideTimer=setTimeout(()=>notice.hidden=true,3500);value={shown:true};break;}
-    case 'download':{if(!(args.image instanceof Blob)||args.image.size>16*1024*1024||!['image/jpeg','image/png'].includes(args.image.type))throw failure('INVALID_IMAGE','图片无法保存');value=showSaveImage(args.image);break;}
+    case 'closeViewer':window.xcwcPhotoSave.close();value={closed:true};break;
+    case 'viewImage':
+    case 'download':{if(!(args.image instanceof Blob)||args.image.size>16*1024*1024||!['image/jpeg','image/png'].includes(args.image.type))throw failure('INVALID_IMAGE','图片无法保存');value=window.xcwcPhotoSave.show(args.image,{label:args.label,createdAt:args.createdAt,note:args.note});break;}
     default:throw failure('UNSUPPORTED_OPERATION','未开放的操作');
    }
    frame.contentWindow.postMessage({channel:'xcwc-checkin-result',id:message.id,ok:true,value},'*');

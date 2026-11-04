@@ -43,35 +43,7 @@
       "quality": 84,
       "resampling": "Lanczos; no upscaling; whole image preserved",
       "reduction_percent": 96.5
-    },
-    {
-      "file": "happy-sticker-400.webp",
-      "width": 400,
-      "height": 329,
-      "bytes": 35098,
-      "source": "/Users/beluga/.codex/generated_images/01a19a2c-5a54-7951-a14e-34ea814ceecb/exec-ffb3440d-e053-46d2-909b-810269f0eb41.png",
-      "source_bytes": 2201793,
-      "source_sha256": "e1f9b06078e965faca33ae02dd12591dfbac006214c2e20b52d310f1e3002ec1",
-      "sha256": "e8ca91c3c9e5a209c0c478ccdf3082873ed42c3b393d3ac10717007797d1952d",
-      "alpha": true,
-      "quality": 84,
-      "resampling": "Lanczos; no upscaling; whole image preserved",
-      "reduction_percent": 98.41
-    },
-    {
-      "file": "happy-avatar-transparent-192.webp",
-      "width": 192,
-      "height": 158,
-      "bytes": 10838,
-      "source": "/Users/beluga/.codex/generated_images/01a19a2c-5a54-7951-a14e-34ea814ceecb/exec-ffb3440d-e053-46d2-909b-810269f0eb41.png",
-      "source_bytes": 2201793,
-      "source_sha256": "e1f9b06078e965faca33ae02dd12591dfbac006214c2e20b52d310f1e3002ec1",
-      "sha256": "5937e2611f5963e671897cc81aff40523e9aa85e08c29893bb2df21b2e954f07",
-      "alpha": true,
-      "quality": 80,
-      "resampling": "Lanczos; no upscaling; whole image preserved",
-      "reduction_percent": 99.51
     }
   ],
-  "total_bytes": 136342
+  "total_bytes": 90406
 }

@@ -2649,7 +2649,8 @@ if(globalThis.Tweak){const style={radius:30};new Tweak({container:root.querySele
       }
       if (height <= 10_000) {
         const width = isShare && storage != null ? frame.clientWidth : null;
-        frame.style.height = Math.ceil(height) + "px";
+        const nextHeight = Math.ceil(height) + "px";
+        if (frame.style.height !== nextHeight) frame.style.height = nextHeight;
         if (isShare && storage != null) {
           const size = JSON.stringify({
             fingerprint: sizeFingerprint,

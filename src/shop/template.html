@@ -1,10 +1,31 @@
-
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="cart" viewBox="0 0 24 24"><path d="m3 3 2 1 3 12h10l3-9H6M9 21h.01M18 21h.01"/></symbol><symbol id="bird" viewBox="0 0 24 24"><path d="M19 10a7 7 0 1 1-13-3c0-5 7-6 9-2l5 2-3 2M9 13c1 2 3 3 5 1M8 21v-3m6 3v-3"/><circle cx="12.5" cy="6" r=".5"/></symbol><symbol id="home" viewBox="0 0 24 24"><path d="m3 10 9-8 9 8M5 9v12h5v-7h4v7h5V9"/></symbol><symbol id="map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Zm6-2v16m6-14v16"/></symbol><symbol id="calendar" viewBox="0 0 24 24"><path d="M5 4h14a1 1 0 0 1 1 1v15H4V5a1 1 0 0 1 1-1ZM8 2v4m8-4v4M4 9h16m-12 6 3 3 5-6"/></symbol><symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3Z"/></symbol><symbol id="bag" viewBox="0 0 24 24"><path d="M5 7h14l2 14H3L5 7Zm4 2V6a3 3 0 0 1 6 0v3"/></symbol></svg>
-<div class="app"><header class="masthead"><div class="brand"><svg width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.5"><use href="#bird"/></svg><div>小鸟城市<small>BIRD CITY DIARY</small></div></div><div class="top-right"><span class="preview-label">演示商品</span><button class="cart-icon" aria-label="打开购物车" data-shop-click="openCart()"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6"><use href="#cart"/></svg><span class="count" id="cartCount" hidden>0</span></button></div></header>
-<section class="hero" aria-label="小黄莺的小店"><img class="hero-scene" src="__XCWC_ASSET_ORIGIN__/assets/scenes/treehouse-960.webp" width="960" height="1706" alt="" decoding="async"><div class="hero-sign"><span>小鸟城市旅行日记</span><h2>小黄莺的小店</h2><p>把喜欢的小鸟，带去更多城市</p></div><img class="hero-character" src="__XCWC_ASSET_ORIGIN__/assets/birds/huangying/happy-hero-640.webp" width="640" height="526" alt="开心的小黄莺" decoding="async"><button class="hero-rule" data-shop-click="openRules()">鸟蛋规则 ›</button></section>
-<section class="intro"><div><span class="eyebrow">A LITTLE BIRD, A NEW JOURNEY</span><h1>把一座城市，带回家。</h1><p>遇见城市限定小鸟，收藏属于你的旅行记忆</p></div><div class="intro-stamp">城市限定<br>温暖相伴</div></section>
-<div class="benefit"><span style="font-size:20px">🥚</span><b>绑定实体小鸟，解锁对应城市鸟蛋</b><button data-shop-click="openRules()">了解规则 ›</button></div>
-<section class="toolbar"><div class="category"><strong><svg width="20" height="20" fill="none" stroke="#52694a" stroke-width="1.5"><use href="#bird"/></svg>全部小鸟</strong><span id="resultCount"></span></div><div class="filters"><button class="filter active" id="defaultSort" data-shop-click="setSort('default')">综合排序</button><button class="filter" id="salesSort" data-shop-click="setSort('sales')">销量优先</button><button class="filter" id="priceSort" data-shop-click="setSort(sort==='asc'?'desc':'asc')">价格 ↕</button><div class="filter" id="cityFilter"><select id="city" aria-label="按城市筛选" data-shop-change="render()"><option value="">全部城市</option></select></div></div><button id="clearFilter" class="clear-filter" data-shop-click="resetFilters()">清除筛选 ×</button></section>
-<main id="products" class="products"></main><div class="end">一鸟一城 · 旅途未完待续</div>
+<svg xmlns="http://www.w3.org/2000/svg" class="shop-symbols" aria-hidden="true"><symbol id="cart" viewBox="0 0 24 24"><path d="m3 3 2 1 3 12h10l3-9H6M9 21h.01M18 21h.01"/></symbol><symbol id="bird" viewBox="0 0 24 24"><path d="M19 10a7 7 0 1 1-13-3c0-5 7-6 9-2l5 2-3 2M9 13c1 2 3 3 5 1M8 21v-3m6 3v-3"/><circle cx="12.5" cy="6" r=".5"/></symbol><symbol id="bag" viewBox="0 0 24 24"><path d="M5 7h14l2 14H3L5 7Zm4 2V6a3 3 0 0 1 6 0v3"/></symbol><symbol id="chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol></svg>
+<div class="app">
+ <header class="masthead">
+  <div class="brand"><span class="brand-mark"><svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><use href="#bird"/></svg></span><div>小鸟商城<small>BIRD CITY DIARY</small></div></div>
+  <button id="cartButton" class="cart-icon" type="button" aria-label="打开购物车" data-shop-action="cart"><svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#cart"/></svg><span class="count" id="cartCount" hidden>0</span></button>
+ </header>
+ <section class="hero" id="hero" aria-label="小鸟商城轮播">
+  <div id="slides" class="slides"></div>
+  <div id="carouselEmpty" class="carousel-empty" hidden>小店橱窗正在准备中</div>
+  <button id="carouselPause" class="carousel-pause" type="button" data-shop-action="carousel-pause" aria-pressed="false" hidden>暂停轮播</button>
+  <div id="carouselDots" class="carousel-dots" aria-label="切换轮播图片"></div>
+ </section>
+ <section class="intro" aria-label="城市小鸟旅行日记">
+  <div class="intro-copy"><p class="eyebrow">A LITTLE BIRD, A NEW JOURNEY</p><h1>把一座城市，带回家。</h1><p class="intro-description">遇见城市限定小鸟，收藏属于你的旅行记忆</p></div>
+  <div class="intro-stamp" aria-label="城市限定，温暖相伴"><span>城市限定<br>温暖相伴</span><i class="stamp-leaf" aria-hidden="true"></i></div>
+ </section>
+ <div class="benefit"><span class="egg-art" aria-hidden="true">🥚</span><b>绑定实体小鸟，解锁对应城市鸟蛋</b><button type="button" data-shop-action="rules">了解规则 <span aria-hidden="true">›</span></button></div>
+ <section class="toolbar" aria-label="商品筛选与排序">
+  <div class="category"><strong><img src="__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/happy-192.webp" alt="" width="28" height="28">全部小鸟</strong><span id="resultCount"></span></div>
+  <div class="filters"><button class="filter active" id="defaultSort" type="button" data-shop-action="sort-default" aria-pressed="true">综合排序</button><button class="filter" id="priceSort" type="button" data-shop-action="sort-price" aria-pressed="false">价格 ↕</button><div class="filter city-filter" id="cityFilter"><select id="city" aria-label="按城市筛选"><option value="">全部城市</option></select><span aria-hidden="true">▾</span></div></div>
+ </section>
+ <div class="shop-status" id="shopStatus" role="status" aria-live="polite"></div>
+ <div class="shop-retry"><button id="retry" class="secondary" type="button" data-shop-action="retry" hidden>重新加载</button></div>
+ <div class="shop-retry"><button id="clearCity" class="secondary" type="button" data-shop-action="clear-city" hidden>查看全部城市</button></div>
+ <div id="cartStatus" class="cart-status" role="status" hidden><span id="cartMessage"></span><button id="cartRetry" class="secondary" type="button" data-shop-action="cart-retry">重新读取购物车</button></div>
+ <main id="products" class="products" aria-label="小鸟商品列表"></main>
+ <div class="load-more"><button id="loadMore" class="secondary" type="button" data-shop-action="more" hidden>查看更多小鸟</button></div>
+ <div class="end">一鸟一城 · 旅途未完待续</div>
 </div>
-<div class="overlay" id="overlay" data-shop-click="if(event.target===this)closePanel()"><section class="panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle"><header class="panel-head"><h2 id="panelTitle"></h2><button class="close" data-shop-click="closePanel()" aria-label="关闭">×</button></header><div class="panel-content" id="panelContent"></div></section></div><div id="toast" class="toast" role="status"></div>
+<div class="overlay" id="overlay"><section class="panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle" tabindex="-1"><header class="panel-head"><h2 id="panelTitle"></h2><button class="close" type="button" data-shop-action="close" aria-label="关闭">×</button></header><div class="panel-content" id="panelContent"></div></section></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>

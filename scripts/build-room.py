@@ -1,11 +1,14 @@
 from pathlib import Path
 import html
+import base64
 import re
 import json
 import mimetypes
 import shutil
+from media_pipeline import MediaPlan
 
 ROOT = Path(__file__).resolve().parents[1]
+media = MediaPlan(ROOT)
 def data_image(name):
     p = ROOT / 'assets' / name
     return '__XCWC_ASSET_ORIGIN__/assets/' + name
@@ -68,16 +71,16 @@ for name, url in checkin_assets.items():
     checkin_css = checkin_css.replace('assets/' + name, url)
 template = (ROOT / 'src/checkin-template.html').read_text(encoding='utf-8')
 template = re.sub(r'src="assets/([^"]+)"', r'data-checkin-asset="\1"', template)
-app = (ROOT / 'src/checkin-photo.js').read_text(encoding='utf-8') + '\n' + (ROOT / 'src/checkin-page.js').read_text(encoding='utf-8')
+app = (ROOT / 'src/checkin-photo.js').read_text(encoding='utf-8') + '\n' + (ROOT / 'src/checkin-audio.js').read_text(encoding='utf-8') + '\n' + (ROOT / 'src/checkin-page.js').read_text(encoding='utf-8')
+app = app.replace('__CHECKIN_SHUTTER_AUDIO__', base64.b64encode((ROOT/'assets/audio/camera.mp3').read_bytes()).decode('ascii'))
 for token, file in [('__CHECKIN_CLOUD__','checkin-cloud.js'),('__CHECKIN_GENERATE__','checkin-generate.js'),('__CHECKIN_INITIALIZE__','checkin-initialize.js'),('__CHECKIN_MODEL__','checkin-model.mjs')]:
     app = app.replace(token, (ROOT / 'src' / file).read_text(encoding='utf-8'))
 app = app.replace('export ', '')
 app = app.replace('function toast(text){', "function toast(text){if(destroyed)return;rpc('notice',{message:text}).catch(()=>{});")
 app = app.replace('const host=root.querySelector(".checkin-page");', 'const host=root.querySelector(".checkin-page");host.querySelectorAll("[data-checkin-asset]").forEach(image=>image.src=checkinAssets[image.dataset.checkinAsset]);')
-app = app.replace('showViewer();', 'showViewer().catch(error=>{if(!destroyed)toast(error.message)});')
 asset_script = 'const checkinAssets=' + json.dumps(checkin_assets,ensure_ascii=False) + ';\n'
 rpc = (ROOT / 'src/checkin-rpc.js').read_text(encoding='utf-8')
-frame = frame.replace('function photoPage(){', rpc + '\n' + asset_script + 'const checkinTemplate=' + json.dumps(template,ensure_ascii=False) + ';\n' + app + '\nfunction photoPage(){',1)
+frame = frame.replace('function photoPage(){', rpc + '\n/*XCWC_ROUTE_PHOTO_BEGIN*/\n' + asset_script + 'const checkinTemplate=' + json.dumps(template,ensure_ascii=False) + ';\n' + app + '\n/*XCWC_ROUTE_PHOTO_END*/\nfunction photoPage(){',1)
 start = frame.index('function photoPage(){');end = frame.index('function wardrobe(){',start)
 frame = frame[:start] + 'function photoPage(){return checkinTemplate;}\n' + frame[end:]
 start = frame.index('function bindPhoto(){');end = frame.index('async function exportCard(){',start)
@@ -87,7 +90,7 @@ frame = frame.replace('function nav(p){', "function nav(p){if(p==='photo'&&s.pag
 frame = frame.replace("render();\nif(globalThis.Tweak)", "if(new URLSearchParams(location.search).get('page')==='photo')s.page='photo';render();\nif(globalThis.Tweak)")
 # srcdoc has about:srcdoc location; the parent forwards only the requested initial page, never credentials.
 frame = frame.replace("if(new URLSearchParams(location.search).get('page')==='photo')s.page='photo';", "if(window.openai?.widgetState?.privateContent?.initialCheckin)s.page='photo';")
-frame = frame.replace('</head>', '<style>' + checkin_css + '</style></head>',1)
+frame = frame.replace('</head>', '<style data-xcwc-route="photo">' + checkin_css + '</style></head>',1)
 frame = frame.replace('img-src blob: data:', 'img-src __XCWC_ASSET_ORIGIN__ blob: data:',1)
 # Confirmed shop V1.0: native route module with isolated styles and shared app state.
 shop_root = ROOT / 'src/shop'
@@ -99,7 +102,7 @@ shop_setup += 'const shopCss=' + json.dumps((shop_root/'shop.css').read_text(enc
 shop_setup += 'const shopTemplate=' + json.dumps((shop_root/'template.html').read_text(encoding='utf-8')) + ';\n'
 shop_setup += (shop_root/'shop.js').read_text(encoding='utf-8').replace('__SHOP_PRODUCTS__',shop_product_source)
 start=frame.index('function shop(){');end=frame.index('function profile(){',start)
-frame=frame[:start]+shop_setup+"\nfunction shop(){return `<section id='xcwc-shop' aria-label='小鸟商城'></section>`;}\n"+frame[end:]
+frame=frame[:start]+'/*XCWC_ROUTE_SHOP_BEGIN*/\n'+shop_setup+'\n/*XCWC_ROUTE_SHOP_END*/'+"\nfunction shop(){return `<section id='xcwc-shop' aria-label='小鸟商城'></section>`;}\n"+frame[end:]
 frame=frame.replace('referenceChrome();}',"referenceChrome();if(s.page==='shop')mountShop();}")
 frame=frame.replace('function render(){if(checkinCleanup)',"function render(){document.body.style.overflow='';root.classList.toggle('is-shop',s.page==='shop');if(checkinCleanup)",1)
 frame=frame.replace("['adopt','认领'],",'')
@@ -112,11 +115,17 @@ frame=frame.replace('</head>','<style>html:has(#bjd-review.is-shop),body:has(#bj
 
 import runpy
 frame=runpy.run_path(str(ROOT/'scripts/integrate-pages.py'))['integrate_pages'](frame)
+frame = media.rewrite(frame)
+frame = frame.replace('</head>', '<script>'+(ROOT/'src/media-lazy.js').read_text(encoding='utf-8')+'</script>'+media.helper() + '</head>', 1)
 frame = frame.replace('crypto.randomUUID()', 'xcwcRandomId()')
 frame = frame.replace('function accountRpc(', "function xcwcRandomId(){const b=new Uint8Array(16);crypto.getRandomValues(b);return Array.from(b,n=>n.toString(16).padStart(2,'0')).join('');}\nfunction accountRpc(",1)
+from runtime_bundle import RuntimeBundle
+runtime = RuntimeBundle(ROOT, media)
+frame = runtime.split_frame(frame)
 shell = (ROOT / 'src/shell.html').read_text(encoding='utf-8')
 # The srcdoc inherits its parent policy as well; allow local static vendor scripts.
 shell = shell.replace('script-src ', "script-src 'self' ", 1)
+shell = shell.replace('style-src ', "style-src 'self' ", 1)
 shell = re.sub(r'data-srcdoc=".*?"', lambda _: 'data-srcdoc="' + html.escape(frame, quote=True) + '"', shell, count=1, flags=re.S)
 shell = shell.replace('<title>bujidao-ui.html</title>', '<title>卜叽岛 · 小鸟的江南小窝</title>')
 shell = shell.replace('</head>', '<style>body{background:#eceee6} @media(max-width:520px){body{padding:0}iframe{height:100vh;max-width:100%}}</style></head>', 1)
@@ -127,26 +136,37 @@ shell = shell.replace('</body>', '<script>' + (ROOT/'src/account/session-store.j
 shell = shell.replace('</body>', '<script>' + (ROOT/'src/shop/host.js').read_text(encoding='utf-8') + '</script></body>',1)
 shell = shell.replace('</body>','<script>'+(ROOT/'src/browser-compat.js').read_text(encoding='utf-8')+'</script></body>',1)
 shell = shell.replace('</body>', '<script>'+(ROOT/'src/account-session.js').read_text(encoding='utf-8')+'</script></body>',1)
-guest_host=(ROOT/'src/guest-host.js').read_text(encoding='utf-8').replace('__GUEST_MODEL__',(ROOT/'src/guest-store.mjs').read_text(encoding='utf-8').replace('export ',''))
+wardrobe_catalog=(ROOT/'src/wardrobe-catalog.mjs').read_text(encoding='utf-8').replace('export ','')
+guest_model=(ROOT/'src/guest-store.mjs').read_text(encoding='utf-8')
+guest_model=guest_model.replace("import {WARDROBE_SKINS,getWardrobeSkin} from './wardrobe-catalog.mjs';\n",'').replace('export ','')
+guest_host=(ROOT/'src/guest-host.js').read_text(encoding='utf-8').replace('__GUEST_MODEL__',wardrobe_catalog+'\n'+guest_model)
 shell = shell.replace('</body>','<script>'+guest_host+'</script></body>',1)
 shell = shell.replace('</body>','<script>'+(ROOT/'src/guest-album.js').read_text(encoding='utf-8')+'</script></body>',1)
 shell = shell.replace('</body>','<script>'+(ROOT/'src/local-data-reset.js').read_text(encoding='utf-8')+'</script></body>',1)
+shell = shell.replace('</body>', '<script>' + (ROOT/'src/photo-save.js').read_text(encoding='utf-8') + '</script></body>',1)
 shell = shell.replace('</body>', '<script>' + (ROOT/'src/checkin-host.js').read_text(encoding='utf-8') + '</script></body>',1)
 shell=shell.replace('const initialGlobals = {', "if(new URLSearchParams(location.search).get('page')==='shop'){state={...state,privateContent:{...state?.privateContent,page:'shop',initialShop:true}};}\n  const initialGlobals = {",1)
 account_host=(ROOT/'src/account-host.js').read_text(encoding='utf-8').replace('__ADOPTION_ENTRY__',(ROOT/'src/adopt/entry.mjs').read_text(encoding='utf-8').replace('export ',''))
 shell = shell.replace('</body>', '<script>'+account_host+'</script></body>',1)
+shell = shell.replace('</body>', '<script>'+(ROOT/'src/navigation-host.js').read_text(encoding='utf-8')+'</script></body>',1)
 shell = shell.replace('const initialGlobals = {', "const routeParams=new URLSearchParams(location.search);const requestedPage=routeParams.has('birdCode')||routeParams.has('bird')?'adopt':routeParams.get('page');if(['home','city','adopt','photo','shop','profile','wardrobe','flock'].includes(requestedPage)){state={...state,privateContent:{...state?.privateContent,page:requestedPage}};}\n  const initialGlobals = {",1)
 shell = shell.replace('</head>', '<style>html,body{margin:0!important;padding:0!important}#codex-visualization{width:100%;max-width:none!important;margin:0!important;border:0;display:block}</style></head>',1)
 shell = shell.replace('frame.srcdoc = frameHtml;', "frame.srcdoc = frameHtml.replaceAll('__XCWC_ASSET_ORIGIN__', location.origin);")
 shell = shell.replace('crypto.randomUUID()', 'window.xcwcRandomId()')
 shell = re.sub(r'[ \t]+\n', '\n', shell)
+shell = media.rewrite(shell)
+shell = runtime.split_shell(shell)
+runtime.finish()
+# Fail missing-reference/budget checks before replacing any existing application shell.
+media.budgets(media.required(shell))
+(ROOT / 'dist').mkdir(exist_ok=True)
 (ROOT / 'dist/index.html').write_text(shell, encoding='utf-8')
-shutil.copytree(ROOT/'assets', ROOT/'dist/assets', dirs_exist_ok=True)
+for photo_save_file in ['photo-save.html','photo-save.js','photo-save-receiver.js']:
+    shutil.copy2(ROOT/'src'/photo_save_file,ROOT/'dist'/photo_save_file)
 shutil.copytree(ROOT/'vendor', ROOT/'dist/vendor', dirs_exist_ok=True)
-shutil.copytree(ROOT/'src/checkin-assets', ROOT/'dist/assets/checkin', dirs_exist_ok=True)
 account=ROOT/'src/account';(ROOT/'dist/preview').mkdir(exist_ok=True)
 for name in ['registration.js','registration.css','points.js','session-store.js']:
-    shutil.copy2(account/name,ROOT/'dist/preview'/name)
+    (ROOT/'dist/preview'/name).write_text(media.rewrite((account/name).read_text(encoding='utf-8')),encoding='utf-8')
 registration=(account/'register.html').read_text(encoding='utf-8').replace('</header>', '<a id="xcwc-return" href="/?page=photo">返回应用 →</a></header>',1)
 registration=registration.replace('<script type="module"', '<script src="/preview/session.js"></script><script type="module"',1)
 registration=registration.replace('</body>', '<script src="/preview/return.js"></script></body>')
@@ -157,4 +177,9 @@ shutil.copy2(ROOT/'src/account-session.js',ROOT/'dist/preview/session.js')
 shutil.copy2(account/'return.js',ROOT/'dist/preview/return.js')
 (ROOT/'dist/miniprogram/assets').mkdir(parents=True,exist_ok=True)
 shutil.copy2(account/'bird_calm.png',ROOT/'dist/miniprogram/assets/bird_calm.png')
+media_manifest = media.publish(shell)
+for generated_file in (ROOT/'dist').rglob('*'):
+    if generated_file.is_file() and (generated_file.name in {'.DS_Store','Thumbs.db'} or generated_file.name.startswith('._')):
+        generated_file.unlink()
+print('Published runtime media:', len(media_manifest['files']), 'files,', media_manifest['totalBytes'], 'bytes')
 print('Built sandboxed room experience:', (ROOT / 'dist/index.html').stat().st_size, 'bytes')
