@@ -524,14 +524,14 @@ async function verifyDelayedReads(browser){
   await nest.locator('#bird').click({force:true});
   await page.waitForFunction(()=>window.__nestFixturePetPending===true);
   await page.waitForTimeout(1150);
-  await nest.locator('[data-action=clean]').click({force:true});
+  await nest.locator('.tools [data-action=clean]').click({force:true});
   await page.waitForTimeout(100);
   assert.equal(await page.evaluate(()=>window.__nestFixturePetPending),true);
   assert.equal(await page.evaluate(id=>!!window.xcwcGuest.read().birds.find(b=>b.id===id).cleanedAt,second.id),false,'switch completion released the active pet save lock');
   await page.waitForFunction(()=>window.__nestFixturePetPending===false);
   await nest.locator('.actor img[data-emotion=shy]').waitFor();
   await page.waitForTimeout(150);
-  await nest.locator('[data-action=clean]').click({force:true});
+  await nest.locator('.tools [data-action=clean]').click({force:true});
   await page.waitForFunction(id=>!!window.xcwcGuest.read().birds.find(b=>b.id===id).cleanedAt,second.id);
   report.checks.push({width:390,name:'reunion completion cannot unlock a pending pet save, and the lock later releases',passed:true});
  }finally{await saving.context.close()}

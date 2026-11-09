@@ -47,9 +47,12 @@ def executable(attributes):
 
 
 class RuntimeBundle:
-    def __init__(self, root, media):
+    def __init__(self, root, media, output_dir=None):
         self.root, self.media = Path(root), media
+        self.dist = Path(output_dir) if output_dir is not None else self.root / 'dist'
         self.files = {}
+        self.initial_hints = {}
+        self.common_hints = ''
 
     def emit(self, name, text, suffix='js'):
         text = self.media.rewrite(text)
@@ -63,7 +66,7 @@ class RuntimeBundle:
         data = text.encode('utf-8')
         sha = hashlib.sha256(data).hexdigest()
         relative = f'runtime/{name}.{sha[:12]}.{suffix}'
-        target = self.root/'dist'/relative
+        target = self.dist/relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
         self.files[relative] = {'sha256': sha, 'bytes': len(data)}
@@ -96,7 +99,7 @@ globalThis.lucide={createIcons({attrs={}}={}){for(const old of document.querySel
             'photo': ('photo', 'checkinTemplate', 'mountCheckin'),
             'account': ('account', 'accountPage()', 'mountAccountPage'),
         }
-        dependencies = ('root,content,s,esc,liveAccount,accountRpc,ownedCurrent,refreshAccount,nav,'
+        dependencies = ('root,content,s,esc,liveAccount,accountRpc,ownedCurrent,refreshAccount,nav,createDeferredMedia,nestMedia,waitForVisibleMedia,prepareNest,createIntentPreloader,mayAutoPreload,'
             'mountIsolated,openPageDialog,installDialogClose,pageNotice,currentCheckin,getWardrobeSkin,'
             'birdArt,birdAssets,openWallet,localDataBadge,accountPage,checkinRpc,save,toast,matchesAdoptionBird,xcwcRandomId')
         for name, (route, template, mount) in definitions.items():
@@ -114,7 +117,7 @@ globalThis.lucide={createIcons({attrs={}}={}){for(const old of document.querySel
                 styles.append(self.emit(name, css, 'css'))
             frame = re.sub(style_pattern, '', frame, flags=re.S)
             chunk = ('globalThis.xcwcRoutes.register('+json.dumps(route)+',function(ctx){\nconst {'+
-                dependencies+'}=ctx;\n'+source+'\nreturn {html:()=>'+template+',mount:'+mount+'};\n});')
+                dependencies+'}=ctx;\n'+source+'\nreturn {html:()=>'+template+',mount:'+mount+(',preload:prefetchNestMedia' if name=='nest' else '')+'};\n});')
             routes[route] = {'script': self.emit(name, chunk), 'styles': styles, 'beforeCommon': route=='photo'}
             frame = frame[:match.start()]+frame[match.end():] if not styles else re.sub(pattern, '', frame, count=1, flags=re.S)
         # The shared renderer below is the only caller of route html/mount.
@@ -122,7 +125,8 @@ globalThis.lucide={createIcons({attrs={}}={}){for(const old of document.querySel
         frame = re.sub(r'function photoPage\(\)\{[^\n]*\}', 'function photoPage(){return ""}', frame, count=1)
         frame = re.sub(r'function bindPhoto\(\)\{[^\n]*\}', 'function bindPhoto(){}', frame, count=1)
         loader = (self.root/'src/route-loader.js').read_text(encoding='utf-8')
-        context = '''const routeContext={root,content,s,esc,liveAccount,accountRpc,ownedCurrent,refreshAccount,nav,
+        context = '''const routeContext={root,content,s,esc,liveAccount,accountRpc,ownedCurrent,refreshAccount,nav,createDeferredMedia,nestMedia,waitForVisibleMedia,createIntentPreloader,mayAutoPreload,
+prepareNest:()=>mayAutoPreload()?routeLoader.preload('home').then(module=>module.preload()):Promise.resolve(null),
 mountIsolated,openPageDialog,installDialogClose,pageNotice,currentCheckin,getWardrobeSkin,birdArt,birdAssets,
 openWallet,localDataBadge,accountPage,checkinRpc,save,toast,matchesAdoptionBird,xcwcRandomId,
 get pageCleanup(){return pageCleanup},set pageCleanup(value){pageCleanup=value},
@@ -172,16 +176,29 @@ document.addEventListener('pointerover',trigger,true);document.addEventListener(
         frame = frame.replace('</head>', '<link id="xcwc-common-style" rel="stylesheet" href="'+css_url+'"></head>',1)
         frame,scripts=extract(frame,'script',executable)
         js_url = self.emit('frame', '\n;\n'.join(scripts))
+        self.common_hints='<link rel="preload" as="script" href="'+js_url.replace('__XCWC_ASSET_ORIGIN__','')+'">'
+        # Discover the first route's media/scripts in the same opaque iframe
+        # that will consume them, rather than duplicate a parent preload.
+        adopt_script=routes['adopt']['script'].replace('__XCWC_ASSET_ORIGIN__','')
+        template=self.root/'src/adopt/v1/template.html'
+        hero=re.search(r'<img\b(?=[^>]*\bclass="[^"]*\bscene-art\b)[^>]*\bsrc="([^"]+)"',template.read_text(encoding='utf-8')) if template.is_file() else None
+        hints='<link rel="preload" as="script" href="'+adopt_script+'">'
+        if hero:
+            source=self.media.rewrite('/'+hero[1].lstrip('/'))
+            hints='<link rel="preload" as="image" fetchpriority="high" href="'+html.escape(source,quote=True)+'">'+hints
+        self.initial_hints['adopt']=hints
+        frame=frame.replace('</head>','__XCWC_INITIAL_PRELOADS__</head>',1)
         return frame.replace('</body>', '<script>globalThis.xcwcAssetOrigin="__XCWC_ASSET_ORIGIN__";</script><script src="'+js_url+'"></script></body>',1)
 
     def split_shell(self, shell):
         # Extract only real host scripts; escaped srcdoc is a data attribute.
         shell,scripts=extract(shell,'script',executable)
-        url = self.emit('host','\n;\n'.join(scripts)).replace('__XCWC_ASSET_ORIGIN__','')
+        hints='function xcwcInitialHints(page){const hints='+json.dumps(self.initial_hints,separators=(',',':'))+';return (Object.hasOwn(hints,page)?hints[page]:"")+'+json.dumps(self.common_hints)+';}\n'
+        url = self.emit('host',hints+'\n;\n'.join(scripts)).replace('__XCWC_ASSET_ORIGIN__','')
         return shell.replace('</body>','<script src="'+url+'"></script></body>',1)
 
     def finish(self):
-        dist = self.root/'dist'
+        dist = self.dist
         vendor=(self.root/'vendor/lucide.js').read_text(encoding='utf-8')
         notice=vendor[:vendor.index('*/')+2]+'\nExact Lucide icon nodes are used by the generated frame bundle.\n'
         self.emit('lucide-license',notice,'txt')

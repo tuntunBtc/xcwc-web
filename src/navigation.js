@@ -21,6 +21,7 @@ function nav(page,options={}){
  const previous=s.page,section=appSections.has(page)?page:page==='photo'||page==='adopt'?'home':navigationSection();
  s.navigationSection=appSections.has(options.section)?options.section:section;
  if(page===previous){referenceChrome();return;}
+ nestMedia.retain(page);
  if(page==='photo')checkinBack=previous;
  if(page==='city')s.cityDetail=false;
  if(page!=='photo'&&previous!=='photo')photoEntry=null;

@@ -9,7 +9,7 @@ let birds=[];
 const presets=[{name:'清新自然',filter:'none'},{name:'暖阳胶片',filter:'sepia(.28) saturate(.85) contrast(.93)'},{name:'柔和风景',filter:'saturate(.75) brightness(1.09)'},{name:'黑白记忆',filter:'grayscale(1) contrast(.9)'}];
 const images=new Map(),landscape=new Image();
 let selected=[],active=null,poses=arrangement(selected),style=0,photo=null,uploaded=false,busy=false,readingPhoto=false,localMode=false,dirty=false,entries=[],examples=[],uploadUrl='',uploadVersion=0,db=null,ready=false;
-let photoFit='cover',photoX=50,photoY=50,albumLoading=false,albumAvailable=false,albumExpanded=false,albumManaging=false,deleteEntry=null,deleteBusy=false,initializing=false,canvasReady=false;
+let photoFit='cover',photoX=50,photoY=50,albumLoading=false,albumAvailable=false,albumExpanded=false,albumManaging=false,deleteEntry=null,deleteBusy=false,initializing=false,canvasReady=false,canvasLoading=false,canvasVersion=0;
 // Use the image load lifecycle without requiring Image.decode() support.
 function loadImage(im){return new Promise((resolve,reject)=>{
  const loaded=()=>{cleanup();im.naturalWidth?resolve(im):reject(new Error('图片为空'));};
@@ -38,27 +38,52 @@ async function loadCheckinAsset(im,key){
   im.src=url;return await loadImage(im);
  }catch{assetUrls.delete(key);throw Object.assign(new Error('合照素材加载失败，请点击重新加载'),{code:'CHECKIN_ASSET_FAILED'});}
 }
-// Initialize owns asset loading and its errors; do not start an unobserved promise here.
-let imageReady=null;
-function ensureCanvasImages(){
- if(imageReady)return imageReady;
- const bySource=new Map();
- const pending=Promise.all([loadCheckinAsset(landscape,'background'),...birds.map(b=>{let shared=bySource.get(b.src);if(!shared){const image=new Image();shared={image,ready:loadCheckinAsset(image,'bird')};bySource.set(b.src,shared);}images.set(b.id,shared.image);return shared.ready;})]).catch(error=>{if(imageReady===pending)imageReady=null;throw error});
- imageReady=pending;return pending;
+// Keep decoded stickers shared, but prepare only birds actually used by the canvas.
+// The example landscape is unnecessary once a real photo has been selected.
+const stickerImages=new Map();let landscapeReady=null;
+function ensureCanvasImages(ids=selected,{background=!uploaded}={}){
+ const pending=ids.map(id=>birdFor(id)).filter(Boolean).map(bird=>{
+  let shared=stickerImages.get(bird.src);
+  if(!shared){
+   const image=new Image();
+   const ready=loadCheckinAsset(image,'bird').catch(error=>{if(stickerImages.get(bird.src)?.ready===ready)stickerImages.delete(bird.src);throw error});
+   shared={image,ready};stickerImages.set(bird.src,shared);
+  }
+  images.set(bird.id,shared.image);return shared.ready;
+ });
+ if(background){
+  if(!landscapeReady){const ready=loadCheckinAsset(landscape,'background').catch(error=>{if(landscapeReady===ready)landscapeReady=null;throw error});landscapeReady=ready;}
+  pending.push(landscapeReady);
+ }
+ return Promise.all(pending);
+}
+function canvasAssetsReady(ids=selected,{background=!uploaded}={}){
+ return (!background||!!landscape.naturalWidth)&&ids.every(id=>!!images.get(id)?.naturalWidth);
 }
 function toast(text){$('#ck-toast').textContent=text;$('#ck-toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#ck-toast').classList.remove('show'),3000)}
 function birdFor(id){return birds.find(b=>b.id===id)}
 function ratio(id){const im=images.get(id);return im?.naturalHeight/im?.naturalWidth||1}
 function setIssue(scope,message){const ids={data:'ck-dataError',assets:'ck-assetError',album:'ck-albumError'},box=$('#'+ids[scope]);box.hidden=!message;box.querySelector('p').textContent=message;}
-async function prepareCanvasImages(){try{await ensureCanvasImages();if(!destroyed){canvasReady=true;setIssue('assets','');}}catch(error){if(!destroyed){canvasReady=false;setIssue('assets','合照素材暂时无法加载。照片会保留，请重新加载后继续。');syncGenerate();}throw error}}
+async function prepareCanvasImages(ids=selected,options={}){
+ const version=++canvasVersion;canvasLoading=true;canvasReady=false;syncGenerate();
+ try{await ensureCanvasImages(ids,options);if(!destroyed&&version===canvasVersion){canvasReady=true;setIssue('assets','');}}
+ catch(error){if(!destroyed&&version===canvasVersion){canvasReady=false;setIssue('assets','合照素材暂时无法加载。照片会保留，请重新加载后继续。');}throw error}
+ finally{if(!destroyed&&version===canvasVersion){canvasLoading=false;syncGenerate();}}
+}
+function refreshCanvasSelection(){
+ // A late result for the previous cast must not enable export for the new cast.
+ canvasVersion++;canvasLoading=false;canvasReady=canvasAssetsReady();if(canvasReady)setIssue('assets','');
+ if(photo&&!canvasReady)void prepareCanvasImages().then(()=>{if(!destroyed)update(false)}).catch(()=>{});
+}
+
 function eligible(){return ready&&canvasReady&&authenticated&&uploaded&&selected.length>0&&dirty&&albumAvailable&&albumTotal<30&&!busy&&!readingPhoto}
 function syncGenerate(){
  $('#ck-download').disabled=!ready||!canvasReady||!uploaded||busy||readingPhoto;
  const button=$('#ck-generate');button.disabled=!eligible();
- $('.generate-text').textContent=busy?'正在收藏回忆…':readingPhoto?'正在处理照片…':!ready?'小鸟资料尚未准备好':!selected.length?'先选一只小鸟':!uploaded?'选择照片，开启合照':!canvasReady?'合照素材未就绪，请重试':albumLoading?'正在读取相册…':!albumAvailable?'相册暂不可用，请重试':albumTotal>=30?'相册已满，先管理合照':!dirty?'已收藏，调整后再合照':'生成并收藏';
+ $('.generate-text').textContent=busy?'正在收藏回忆…':readingPhoto?'正在处理照片…':!ready?'小鸟资料尚未准备好':!selected.length?'先选一只小鸟':!uploaded?'选择照片，开启合照':!canvasReady?(canvasLoading?'正在准备合照素材…':'合照素材未就绪，请重试'):albumLoading?'正在读取相册…':!albumAvailable?'相册暂不可用，请重试':albumTotal>=30?'相册已满，先管理合照':!dirty?'已收藏，调整后再合照':'生成并收藏';
  $('#ck-points').textContent=balance;
 }
-function renderBirdList(){const nodes=birds.map(b=>{const button=document.createElement('button');button.type='button';button.dataset.birdId=b.id;button.className='bird-card'+(selected.includes(b.id)?' selected':'')+(!b.adopted?' locked':'');button.disabled=!b.adopted;button.setAttribute('aria-label',b.name+(b.adopted?'，已领取':'，未领取，已锁定'));if(b.adopted)button.setAttribute('aria-pressed',String(selected.includes(b.id)));const portrait=document.createElement('span');portrait.className='bird-portrait';const im=document.createElement('img');im.alt='';im.decoding='async';im.loading='lazy';portrait.append(im);media.defer(im,()=>loadCheckinAsset(im,'bird').catch(()=>{if(!destroyed)im.alt='小鸟图片暂时无法显示'}));const badge=document.createElement('span');badge.className='bird-badge';badge.innerHTML=`<svg><use href="#ck-${b.adopted?'check':'lock'}"/></svg>`;portrait.append(badge);const title=document.createElement('strong');title.textContent=b.name;const sub=document.createElement('small');sub.textContent=b.adopted?'已领取':'未领取';button.append(portrait,title,sub);button.onclick=()=>{if(busy)return;const result=chooseBird(selected,b.id,birds);if(result.error)return toast(result.error);selected=result.selected;poses=reconcilePoses(selected,poses);active=selected.includes(active)?active:selected.at(-1)||null;if(selected.includes(b.id))active=b.id;renderBirdList();update()};return button});$('#ck-birdList').replaceChildren(...nodes);if(!nodes.length)media.defer($('#ck-birdList'),()=>canvasAssetUrl('bird').then(url=>{if(!destroyed)$('#ck-birdList').style.setProperty('--ck-empty-bird','url(\"'+url+'\")')}).catch(()=>{}));const activeSelect=$('#ck-activeBird');activeSelect.replaceChildren(...selected.map(id=>{const option=document.createElement('option');option.value=id;option.textContent=birdFor(id).name;return option}));activeSelect.disabled=!selected.length;activeSelect.value=active||'';$('#ck-noBirds').hidden=birds.some(b=>b.adopted);$('#ck-selectedCount').textContent=selected.length;$('#ck-selectedSummary').textContent=selected.length?'已选 '+selected.map(id=>birdFor(id).name).join('、'):'选一位小伙伴，一起出发吧'}
+function renderBirdList(){const nodes=birds.map(b=>{const button=document.createElement('button');button.type='button';button.dataset.birdId=b.id;button.className='bird-card'+(selected.includes(b.id)?' selected':'')+(!b.adopted?' locked':'');button.disabled=!b.adopted;button.setAttribute('aria-label',b.name+(b.adopted?'，已领取':'，未领取，已锁定'));if(b.adopted)button.setAttribute('aria-pressed',String(selected.includes(b.id)));const portrait=document.createElement('span');portrait.className='bird-portrait';const im=document.createElement('img');im.alt='';im.decoding='async';im.loading='lazy';portrait.append(im);media.defer(im,()=>loadCheckinAsset(im,'bird').catch(()=>{if(!destroyed)im.alt='小鸟图片暂时无法显示'}));const badge=document.createElement('span');badge.className='bird-badge';badge.innerHTML=`<svg><use href="#ck-${b.adopted?'check':'lock'}"/></svg>`;portrait.append(badge);const title=document.createElement('strong');title.textContent=b.name;const sub=document.createElement('small');sub.textContent=b.adopted?'已领取':'未领取';button.append(portrait,title,sub);button.onclick=()=>{if(busy)return;const result=chooseBird(selected,b.id,birds);if(result.error)return toast(result.error);selected=result.selected;poses=reconcilePoses(selected,poses);active=selected.includes(active)?active:selected.at(-1)||null;if(selected.includes(b.id))active=b.id;refreshCanvasSelection();renderBirdList();update()};return button});$('#ck-birdList').replaceChildren(...nodes);if(!nodes.length)media.defer($('#ck-birdList'),()=>canvasAssetUrl('bird').then(url=>{if(!destroyed)$('#ck-birdList').style.setProperty('--ck-empty-bird','url(\"'+url+'\")')}).catch(()=>{}));const activeSelect=$('#ck-activeBird');activeSelect.replaceChildren(...selected.map(id=>{const option=document.createElement('option');option.value=id;option.textContent=birdFor(id).name;return option}));activeSelect.disabled=!selected.length;activeSelect.value=active||'';$('#ck-noBirds').hidden=birds.some(b=>b.adopted);$('#ck-selectedCount').textContent=selected.length;$('#ck-selectedSummary').textContent=selected.length?'已选 '+selected.map(id=>birdFor(id).name).join('、'):'选一位小伙伴，一起出发吧'}
 $('#ck-styles').innerHTML=presets.map((p,i)=>`<button class="style ${i===0?'selected':''}" data-style="${i}" aria-label="${p.name}" aria-pressed="${i===0}"><span class="style-thumb" data-xcwc-bg="assets/checkin/felt-style-thumb-192.webp" style="filter:${p.filter}"></span><span>${p.name}</span><i>✓</i></button>`).join('');
 media.scan($('#ck-styles'));
 $('#ck-styles').onclick=e=>{if(busy)return;const b=e.target.closest('button');if(!b)return;style=Number(b.dataset.style);host.querySelectorAll('.style').forEach((el,i)=>{el.classList.toggle('selected',i===style);el.setAttribute('aria-pressed',String(i===style))});update()};
@@ -94,17 +119,19 @@ async function upload(file){
  if(busy||readingPhoto||!file)return;
  const token=++uploadVersion;let url='',processed=file;
  try{
-  const heic=await isCheckinHeic(file);
+  const heic=await isCheckinHeic(file);if(destroyed||token!==uploadVersion)return;
   if(!photoTypeAllowed(file)&&!heic)return toast('请选择手机拍摄的照片或 JPG、PNG、WEBP 图片');
   if(file.size>15*1024*1024)return toast('照片超过 15 MB，换一张小一点的吧');
   readingPhoto=true;$('#ck-file').disabled=true;syncGenerate();
   toast('正在读取照片…');
   url=rememberUrl(URL.createObjectURL(file));let im=new Image();im.src=url;
   try{await loadImage(im);}catch{
+   if(destroyed||token!==uploadVersion)return;
    // A data URL also works in iOS containers that fail to display file blob URLs.
    const data=await photoDataUrl(file);if(destroyed||token!==uploadVersion)return;
    im=new Image();im.src=data;
    try{await loadImage(im);}catch(error){
+    if(destroyed||token!==uploadVersion)return;
     if(!heic)throw error;
     toast('正在本机处理苹果照片，请稍候…');
     const converted=await convertCheckinHeic(file);processed=converted;if(destroyed||token!==uploadVersion)return;

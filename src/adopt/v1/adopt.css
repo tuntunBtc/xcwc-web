@@ -23,19 +23,20 @@
 .trait-label{left:0;width:16%;font-size:3cqw;transform:translate(-.33cqw,-.33cqw)}
 .trait-pill{width:25%;padding-left:6.4cqw;transform:translateY(.55cqw)}
 .trait-one{left:17.2%}.trait-two{left:45%}.trait-three{left:72.5%}
-/* Remove the marked upper 7/8-width scene; the remaining artwork keeps its scale. */
-.adoption-details{position:relative;display:flex;flex:none;min-height:calc(100cqw * 31 / 24);overflow:hidden;isolation:isolate;background:#c8df83}
-.details-art{position:absolute;left:0;top:-87.5cqw;z-index:-1;display:block;width:100%;height:auto;pointer-events:none}
-.name-form{position:relative;display:flex;flex:1;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:8cqw;margin:0;padding:4.5cqw 4.8cqw 30cqw}
+/* Let the grass fill the available screen instead of reserving the original image height. */
+.adoption-details{position:relative;display:flex;flex:1;min-height:0;overflow:hidden;isolation:isolate;background:#c8df83}
+.details-art{position:absolute;left:0;top:0;z-index:-1;display:block;width:100%;height:100%;object-fit:cover;object-position:center top;pointer-events:none}
+.details-art-bottom{top:auto;bottom:calc(-1 * var(--xcwc-nav-height));height:auto;-webkit-mask-image:linear-gradient(transparent,#000 30px);mask-image:linear-gradient(transparent,#000 30px)}
+.name-form{position:relative;display:flex;flex:1;flex-direction:column;justify-content:flex-start;align-items:stretch;gap:min(3.5cqw,14px);margin:0;padding:min(3.5cqw,14px) 4.8cqw min(5cqw,20px)}
 .name-heading{margin:0;text-align:center;font-size:clamp(18px,5.5cqw,26px);font-weight:700;line-height:1.4;letter-spacing:.025em;white-space:nowrap}
-.name-field{position:relative;flex:none;width:100%;height:14cqw;min-height:48px;display:flex;align-items:center;border:1px solid #fff9f1;border-radius:999px;background:linear-gradient(125deg,#fffaf4,#faeadd);box-shadow:inset 0 2px 4px #a87f5729,0 2px 4px #718d4224}
+.name-field{position:relative;flex:none;width:100%;height:min(14cqw,60px);min-height:48px;display:flex;align-items:center;border:1px solid #fff9f1;border-radius:999px;background:linear-gradient(125deg,#fffaf4,#faeadd);box-shadow:inset 0 2px 4px #a87f5729,0 2px 4px #718d4224}
 .name-field:focus-within{outline:2px solid #9bae68;outline-offset:2px}
 .name-field input{width:64%;height:100%;min-width:0;padding:0 5cqw;border:0;background:transparent;border-radius:999px;font-size:clamp(16px,4.5cqw,21px);outline:none;color:#785234}
 .name-field input::placeholder{color:#b49b85;opacity:1}.name-field input:disabled{opacity:.7}
 .random-name{width:36%;height:80%;min-height:44px;display:flex;align-items:center;justify-content:center;gap:1cqw;padding:0 1cqw;border-left:1px dashed #c3946f!important;font-size:clamp(14px,4cqw,19px)!important;font-weight:600!important;white-space:nowrap}
 .random-name span:first-child{font-size:5cqw;color:#b5793d}
-.validation{margin:-4cqw 0;padding:2cqw 3cqw;border-radius:10px;background:#fff4eb;color:#a0452c;font-size:13px;line-height:1.5}
-.adopt-button{position:relative;flex:none;width:100%;min-height:52px;height:15cqw;margin:0;padding:0 11cqw;border-radius:999px;background:#8eab30 url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/button-720.webp') center/200% 260% no-repeat!important;box-shadow:inset 0 1px 4px #edf2a58c8,0 5px 12px #748f3b30;color:#fff9df!important;font-size:clamp(21px,5.6cqw,27px)!important;font-weight:700!important;line-height:1.4!important;letter-spacing:.07em;text-shadow:0 1px 1px #6d812b}
+.validation{margin:0;padding:2cqw 3cqw;border-radius:10px;background:#fff4eb;color:#a0452c;font-size:13px;line-height:1.5}
+.adopt-button{position:relative;flex:none;width:100%;min-height:52px;height:min(15cqw,64px);margin:0;padding:0 11cqw;border-radius:999px;background:#8eab30 url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/button-720.webp') center/200% 260% no-repeat!important;box-shadow:inset 0 1px 4px #edf2a58c8,0 5px 12px #748f3b30;color:#fff9df!important;font-size:clamp(21px,5.6cqw,27px)!important;font-weight:700!important;line-height:1.4!important;letter-spacing:.07em;text-shadow:0 1px 1px #6d812b}
 .adopt-button::after{content:'';position:absolute;right:8%;top:50%;width:2.3cqw;height:2.3cqw;border-top:3px solid currentColor;border-right:3px solid currentColor;transform:translateY(-50%) rotate(45deg)}
 .adopt-button:disabled{opacity:.75;filter:saturate(.55)}
 .adopt-button:not(:disabled):active{transform:translateY(1px);filter:brightness(.97)}

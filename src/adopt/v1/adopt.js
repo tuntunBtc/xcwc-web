@@ -3,8 +3,9 @@ const adoptionV1Draft={code:null,nickname:'',prompted:false,account:null};
 const adoptionV1Defaults=Object.freeze({city:'杭州',type:'西湖小黄莺',skin:'绿色',nickname:'西湖小黄莺'});
 function mountAdoptionV1(){
  const shadow=mountIsolated('xcwc-adopt',adoptionV1Css,adoptionV1Template),$=selector=>shadow.querySelector(selector),controller=new AbortController(),{signal}=controller;
+ const media=createDeferredMedia({signal,root:content,margin:'0px'});media.scan(shadow);
  const adoptChrome=document.createElement('style');adoptChrome.dataset.adoptChrome='';adoptChrome.textContent=`
- #bjd-review.is-integrated:has(#xcwc-adopt) .phone{background:#dfe5c5}
+ #bjd-review.is-integrated:has(#xcwc-adopt) .phone{background:#c8df83 url('__XCWC_ASSET_ORIGIN__/assets/adopt-v1/felt/lower-visible-bottom.webp') center bottom/100% auto no-repeat}
  #bjd-review.is-integrated:has(#xcwc-adopt) .phone>main{background:#c8ddb7}
  `;document.head.append(adoptChrome);
  let alive=true,loading=false,busy=false,entry=null,bird=null,account=null,alreadyMine=false,randomIndex=0,composing=false;
@@ -48,6 +49,7 @@ function mountAdoptionV1(){
     if(alreadyMine){setText('action-note','这只小鸟已在你的领养名单中');$('[data-role="service-notice"]').hidden=true}
     else{setText('action-note','名字和实体属性确认后，再提交领养请求');$('[data-role="service-notice"]').hidden=true}
     setReady(true);$('[data-action="confirm"]').textContent=alreadyMine?'回小窝，看看它':'孵化并领养';
+    void waitForVisibleMedia([shadow,document.querySelector('.phone>.bottom')],signal).then(ready=>{if(ready&&alive&&!signal.aborted&&s.page==='adopt')return prepareNest()}).catch(()=>{});
    }
    if(false&&!account&&!adoptionV1Draft.prompted){adoptionV1Draft.prompted=true;await openLogin()}
   }catch(error){
@@ -58,12 +60,12 @@ function mountAdoptionV1(){
   }finally{loading=false;if(alive&&!bird)$('[data-action="confirm"]').textContent='读取资料后可领取'}
  }
  async function submitAdoption(){
-  if(busy||!bird)return;if(alreadyMine){await accountRpc('selectBird',{birdId:bird.id},signal);liveAccount.currentId=bird.id;nav('home');return;}rememberName();const name=adoptionV1Draft.nickname.trim(),parts=chars(name);
+  if(busy||!bird)return;if(alreadyMine){await accountRpc('selectBird',{birdId:bird.id},signal);if(!alive||signal.aborted)return;liveAccount.currentId=bird.id;nav('home');return;}rememberName();const name=adoptionV1Draft.nickname.trim(),parts=chars(name);
   if(entry?.previewTest){if(parts.length<1||parts.length>6){const error=$('.validation');error.textContent='请输入 1–6 个字，也可以使用随机取名。';error.hidden=false;$('#adopt-v1-name').setAttribute('aria-invalid','true');$('#adopt-v1-name').focus();return}showNotice('本地测试数据不会提交绑定请求，也不会发放鸟蛋或其他权益。');return}
   
   if(parts.length<1||parts.length>6){const error=$('.validation');error.textContent='请输入 1–6 个字，也可以使用随机取名。';error.hidden=false;$('#adopt-v1-name').setAttribute('aria-invalid','true');$('#adopt-v1-name').focus();return}
   busy=true;$('[data-action="confirm"]').disabled=true;$('[data-action="confirm"]').textContent='正在领取…';
-  try{const result=await accountRpc('adoptionConfirm',{code:entry.code,name},signal);if(!result?.bound||result.birdId!==bird.id||result.eggStatus!=='HATCHED')throw Error('领养结果尚未确认，请重试核对');alreadyMine=true;liveAccount.currentId=bird.id;if(alive){showNotice('领取成功，小鸟已免费孵化并保存到本机！');nav('home')}}
+  try{const result=await accountRpc('adoptionConfirm',{code:entry.code,name},signal);if(!alive||signal.aborted)return;if(!result?.bound||result.birdId!==bird.id||result.eggStatus!=='HATCHED')throw Error('领养结果尚未确认，请重试核对');alreadyMine=true;liveAccount.currentId=bird.id;if(alive){showNotice('领取成功，小鸟已免费孵化并保存到本机！');nav('home')}}
   catch(error){if(!alive||signal.aborted)return;if(error.code==='LOGIN_REQUIRED'){account=null;adoptionV1Draft.prompted=false;await openLogin()}else showNotice(error.message||'领养结果暂未确认，请保留当前页面重试，不会重复发放权益。','error')}
   finally{busy=false;if(alive&&bird&&!alreadyMine){$('[data-action="confirm"]').disabled=false;$('[data-action="confirm"]').textContent='孵化并领养'}}
  }

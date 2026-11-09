@@ -106,9 +106,15 @@ async function mountShop(){
  function closePanel(){panelVersion++;cartRenderVersion++;panelKind='';$('#overlay').classList.remove('show');$('.panel').classList.remove('is-detail');returnFocus?.focus()}
  async function detail(id,revalidate=false){if(!idPattern.test(id))throw Error('商品编号无效');if(!revalidate&&known.has(id)&&(knownUntil.get(id)||0)>Date.now())return known.get(id);try{const data=await api('detail',{id,revalidate}),b=product(data);known.set(id,b);knownUntil.set(id,freshness.get(data)||Date.now());return b}catch(error){knownUntil.delete(id);if(['PRODUCT_NOT_FOUND','SHOP_PRODUCT_NOT_FOUND'].includes(error.code))known.delete(id);throw error}}
  async function openDetail(id){
-  const token=panel('商品详情',[node('p','note','正在读取商品详情…')],true,'detail');
+  // Reuse the list cover immediately; opening never waits for speculative work.
+  const cached=known.get(id),imageStatus=node('div','detail-image-status');imageStatus.setAttribute('role','status');
+  if(cached)imageStatus.append(croppedPicture(cached.coverImageUrl,cached.title,'added-image',cached.coverCrop,true,panelMedia));
+  imageStatus.append(node('p','','正在读取商品详情…'));
+  const token=panel(cached?.title||'商品详情',[imageStatus],true,'detail');
   try{const b=await detail(id);if(!active||token!==panelVersion)return;if(!b.detailImageUrl)throw Error('商品详情图正在准备中');
-   const im=croppedPicture(b.detailImageUrl,b.title+'完整商品详情','detail-image',b.detailCrop,true),add=button('', 'add','detail-add-btn detail-hotspot',id),art=node('div','detail-art'),image=im.querySelector('img'),imageStatus=node('div','detail-image-status','正在读取商品图片…');imageStatus.setAttribute('role','status');
+   const im=croppedPicture(b.detailImageUrl,b.title+'完整商品详情','detail-image',b.detailCrop,true,panelMedia),add=button('', 'add','detail-add-btn detail-hotspot',id),art=node('div','detail-art'),image=im.querySelector('img');
+   if(!cached)imageStatus.prepend(croppedPicture(b.coverImageUrl,b.title,'added-image',b.coverCrop,true,panelMedia));
+   imageStatus.querySelector('p').textContent='正在读取商品图片…';
    detailRetailPrice(im,b);
    const area=b.cartHotspot||{left:.08,top:.87,width:.84,height:.08};
    if(!['left','top','width','height'].every(k=>Number.isFinite(area[k]))||area.left<0||area.top<0||area.width<=0||area.height<=0||area.left+area.width>1||area.top+area.height>1)throw Error('商品加购区域配置无效');
@@ -161,7 +167,7 @@ async function mountShop(){
  function openRules(){const wrap=node('div','rules');wrap.append(node('p','','通过商城挑选商品、加入购物车，再前往淘宝购买。'),node('p','','领取小鸟时，使用实体 NFC 或二维码链接查询资料，确认后完成本机领取。'),node('p','note','打开淘宝不会自动领取小鸟或发放鸟蛋。'));panel('一颗鸟蛋，一段城市旅程',[wrap])}
  shopRoot.addEventListener('click',event=>{
   const b=event.target.closest('[data-shop-action]');if(!b)return;const action=b.dataset.shopAction,id=b.dataset.id;
-  let job;switch(action){case 'cart':job=openCart();break;case 'cart-retry':job=readCart(true,true);break;case 'retry-banners':job=loadBanners(true);break;case 'clear-city':city='';$('#city').value='';job=loadProducts();break;case 'carousel-pause':carouselPaused=!carouselPaused;syncCarouselControl();break;case 'detail':job=openDetail(id);break;case 'add':job=addCart(id);break;case 'remove':job=removeCart(id);break;case 'buy':job=buy(id);break;case 'rules':openRules();break;case 'close':closePanel();break;case 'sort-default':sort='default';job=loadProducts();break;case 'sort-price':sort=sort==='priceAsc'?'priceDesc':'priceAsc';job=loadProducts();break;case 'retry':job=Promise.all([loadProducts(false,true),loadBanners(true)]);break;case 'more':if(!loading)job=loadProducts(true);break;case 'slide':showSlide(Number(b.dataset.index),true);break}
+  let job;switch(action){case 'cart':job=openCart();break;case 'cart-retry':job=readCart(true,true);break;case 'retry-banners':job=loadBanners(true);break;case 'clear-city':city='';$('#city').value='';job=loadProducts();break;case 'carousel-pause':carouselPaused=!carouselPaused;syncCarouselControl();break;case 'detail':job=openDetail(id);break;case 'add':job=addCart(id);break;case 'remove':job=removeCart(id);break;case 'buy':job=buy(id);break;case 'rules':openRules();break;case 'close':closePanel();break;case 'sort-default':sort='default';job=loadProducts();break;case 'sort-price':sort=sort==='priceAsc'?'priceDesc':'priceAsc';job=loadProducts();break;case 'retry':job=Promise.all([loadProducts(false,true),loadBanners(true),readCart(false,true)]);break;case 'more':if(!loading)job=loadProducts(true);break;case 'slide':showSlide(Number(b.dataset.index),true);break}
   if(job)Promise.resolve(job).catch(e=>{if(active)toast(e.message)});
  });
  $('#city').addEventListener('change',event=>{city=event.target.value;loadProducts()});
@@ -173,4 +179,13 @@ async function mountShop(){
  let touchX=null;$('#hero').addEventListener('pointerdown',e=>{touchX=e.clientX});$('#hero').addEventListener('pointerup',e=>{if(touchX!==null&&Math.abs(e.clientX-touchX)>35)showSlide(slide+(e.clientX<touchX?1:-1),true);touchX=null});$('#hero').addEventListener('pointercancel',()=>{touchX=null});
  pageCleanup=()=>{active=false;controller.abort();version++;panelVersion++;bannerVersion++;cartRenderVersion++;clearTimeout(toastTimer);clearInterval(carouselTimer);window.removeEventListener('message',receive);for(const [id,job]of pending){clearTimeout(job.timer);window.parent.postMessage({channel:'xcwc-shop-data',operation:'cancel',id},'*');job.reject(Error('商城已离开'))}pending.clear()};
  await Promise.all([loadProducts(),loadBanners(),readCart()]);
+ // Only the card the visitor is considering prepares its long detail image.
+ waitForVisibleMedia([$('#hero'),$('#products')],signal).then(ready=>{
+  if(!ready||!active)return;
+  createIntentPreloader({root:shopRoot,signal,resolve:target=>{
+   if(loading||$('#overlay').classList.contains('show'))return null;
+   const card=target.closest('#products [data-shop-action="detail"]');
+   return card&&!card.disabled?known.get(card.dataset.id)?.detailImageUrl||null:null;
+  }});
+ }).catch(()=>{});
 }

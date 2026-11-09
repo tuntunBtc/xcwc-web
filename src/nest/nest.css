@@ -78,7 +78,6 @@ dialog{position:absolute;max-height:calc(100dvh - 48px);overflow:auto;margin:0 a
 .needs button{min-width:70px;min-height:32px;padding:6px 9px;border:1px solid #d8c8a5;border-radius:16px;background:#fff6e7ed;color:#765434;font-size:12px;box-shadow:0 2px 5px #657b3020}
 .needs button.is-current{background:#edf5de;border-color:#819c62;box-shadow:0 0 0 2px #f9f1de}
 .play-prop{display:grid;place-items:center;width:34px;height:30px;font:700 26px/1 Georgia,serif;color:#879b51;transform:rotate(-12deg)}
-.emotion-label{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);white-space:nowrap;padding:3px 12px;border-radius:14px;background:#fff4dfed;color:#765434;font-size:12px;pointer-events:none}
 .thirst-drops{display:none;position:absolute;right:8%;top:15%;font-size:32px;filter:drop-shadow(0 2px 2px #fff);pointer-events:none}
 .is-thirsty .thirst-drops{display:block}
 .actor .emotion-portrait{position:absolute;left:-44px;top:-4px;width:76px;padding:4px 4px 6px;border:1px solid #d6c5a5;border-radius:18px;background:#fff7e9f5;box-shadow:0 3px 8px #546b3626;text-align:center;pointer-events:none}
@@ -87,7 +86,7 @@ dialog{position:absolute;max-height:calc(100dvh - 48px);overflow:auto;margin:0 a
 .play-tips{margin-top:18px;font-size:13px;line-height:1.7}.play-tips summary{min-height:44px;padding:12px 0;cursor:pointer}.play-tips p{margin:3px 0}
 .actor .emotion-retry{position:absolute;left:8%;top:35%;width:84%;height:auto;min-height:44px;padding:9px;border-radius:14px;background:#fff8e9;color:#765434;box-shadow:0 2px 8px #546b3633;font-size:12px;z-index:4}
 @media(max-width:360px){.needs{left:9px;top:139px}.needs button{min-width:65px;padding:6px 7px;font-size:11px}.actor .emotion-portrait{left:-40px;width:70px}.actor .emotion-portrait img{width:60px;height:54px}}
-@media(max-height:600px){.tools{top:134px;gap:2px}.tools button{min-height:44px}.tools .prop,.play-prop{height:25px}.tools button>span{padding-bottom:2px;font-size:11px}.emotion-label{bottom:-4px;padding:2px 9px;font-size:11px}}
+@media(max-height:600px){.tools{top:134px;gap:2px}.tools button{min-height:44px}.tools .prop,.play-prop{height:25px}.tools button>span{padding-bottom:2px;font-size:11px}}
 
 /* Ground yarn sits in front of the lowest few pixels, independently of the bird. */
 .grass-contact{position:absolute;z-index:1;left:15%;top:calc(var(--contact-line) - 3.6%);width:70%;height:5%;overflow:visible;pointer-events:none;filter:blur(.35px);transform-origin:50% 90%}
@@ -95,10 +94,28 @@ dialog{position:absolute;max-height:calc(100dvh - 48px);overflow:auto;margin:0 a
 .actor.is-idle .grass-contact{animation:nest-grass 16s ease-in-out infinite}
 .actor.happy .shadow{animation:nest-touch-contact .5s ease-in-out 2}
 .actor.happy .grass-contact{animation:nest-touch-grass .5s ease-in-out 2}
-.actor:has(#bird img:is([data-emotion="hungry"],[data-emotion="thirsty"],[data-emotion="unwell"])[data-skin-id=""]){--contact-line:94.2%}
-.actor:has(#bird img:is([data-emotion="hungry"],[data-emotion="thirsty"],[data-emotion="unwell"])[data-skin-id=""]) .shadow{left:12%;width:76%}
-.actor:has(#bird img:is([data-emotion="hungry"],[data-emotion="thirsty"],[data-emotion="unwell"])[data-skin-id=""]) .shadow::before{background:radial-gradient(ellipse 46% 90% at 50% 50%,#4a563675,transparent 78%)}
+.actor:has(#bird img:is([data-emotion="hungry"],[data-emotion="thirsty"],[data-emotion="unwell"])[data-skin-id=""][data-idle-poster="false"]){--contact-line:94.2%}
+.actor:has(#bird img:is([data-emotion="hungry"],[data-emotion="thirsty"],[data-emotion="unwell"])[data-skin-id=""][data-idle-poster="false"]) .shadow{left:12%;width:76%}
+.actor:has(#bird img:is([data-emotion="hungry"],[data-emotion="thirsty"],[data-emotion="unwell"])[data-skin-id=""][data-idle-poster="false"]) .shadow::before{background:radial-gradient(ellipse 46% 90% at 50% 50%,#4a563675,transparent 78%)}
 .actor:has(#bird img[data-skin-id]:not([data-skin-id=""])){--contact-line:89.3%}
 @keyframes nest-grass{0%,76%,81%,87%,100%{transform:scaleY(1)}78%,84%{transform:scaleY(.82)}}
 @keyframes nest-touch-contact{0%,100%{transform:scale(1);opacity:1}40%{transform:scale(.86,.8);opacity:.55}75%{transform:scale(1.04,1.08);opacity:1}}
 @keyframes nest-touch-grass{0%,40%,100%{transform:scaleY(1)}75%{transform:scaleY(.82)}}
+
+/* The video-derived idle frames already contain their own motion. */
+.actor .idle-canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 1px 1.5px #52613e1f)}
+.actor.idle-playing #bird>img{opacity:0;animation:none}
+.actor.idle-playing .shadow,.actor.idle-playing .grass-contact{animation:none}
+
+.actor .idle-retry{position:absolute;top:calc(100% + 24px);left:50%;transform:translateX(-50%);width:auto;height:auto;min-height:32px;padding:5px 12px;white-space:nowrap;font-size:11px;border:1px solid #fff5dfa6;border-radius:18px;background:#f4f0d8d9;color:#647a49;box-shadow:0 2px 5px #53633b1a;z-index:4}
+.actor .idle-retry:active{transform:translateX(-50%) scale(.97)}
+
+.actor.is-idle #bird>img,.actor.is-idle .shadow,.actor.is-idle .grass-contact{animation:none}
+.actor .idle-retry{left:auto;right:-3px;top:calc(100% + 10px);transform:none;min-width:44px;min-height:44px;padding:8px 10px;font-size:11px;background:#fff7e8bb;border-color:#fff8e4a6;box-shadow:0 1px 5px #53633b12}
+.actor .idle-retry:active{transform:scale(.97)}
+
+/* Reuse the original poop glyph beside the bird's feet, with a full touch target. */
+.nest-poop{position:absolute;left:10%;top:calc(76.5cqw + var(--core-shift) + var(--bird-size)*.947);width:clamp(44px,11.5cqw,52px);height:clamp(44px,11.5cqw,52px);padding:0;display:grid;place-items:center;border-radius:50%;font-size:clamp(28px,7.7cqw,36px);line-height:1;transform:translateY(-85%);filter:drop-shadow(0 2px 1px #5e503c35);touch-action:manipulation;z-index:3}
+.nest-poop::before{content:"";position:absolute;bottom:4px;left:15%;width:70%;height:13%;border-radius:50%;background:#65783d25;filter:blur(1px);z-index:-1}
+.nest-poop span{pointer-events:none}
+.nest-poop:active{transform:translateY(-85%) scale(.95)}

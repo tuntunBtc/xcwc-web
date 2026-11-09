@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGuestStore,GUEST_KEY} from '../src/guest-store.mjs';
+import {createGuestStore,GUEST_KEY,GUEST_RULES} from '../src/guest-store.mjs';
 const HOUR=3600000,DAY=24*HOUR;
 const bird=n=>({id:n.toString(16).padStart(32,'0'),cityCode:'hangzhou',typeName:'小黄莺',cityName:'杭州',active:true});
-function setup(){
+function setup(profile='normal'){
  const data=new Map();let now=Date.parse('2026-11-01T15:50:00Z'),broken=false,writes=0;
  const storage={getItem:k=>data.get(k)||null,setItem:(k,v)=>{if(broken)throw Error('quota');data.set(k,v);writes++;}};
- return {store:createGuestStore(storage,{clock:()=>now,profile:'normal'}),data,advance:ms=>now+=ms,now:()=>now,get writes(){return writes;},break:()=>broken=true,repair:()=>broken=false};
+ return {store:createGuestStore(storage,{clock:()=>now,profile}),data,advance:ms=>now+=ms,now:()=>now,get writes(){return writes;},break:()=>broken=true,repair:()=>broken=false};
 }
 function patch(x,fn){const s=JSON.parse(x.data.get(GUEST_KEY));fn(s);x.data.set(GUEST_KEY,JSON.stringify(s));}
 function legacy(x,fn=()=>{}){patch(x,s=>{delete s.careRulesVersion;for(const b of s.birds)for(const key of ['mood','lastCompanionAt','moodSettledAt','lastMoodPetAt','cryShownDate'])delete b[key];fn(s);});}
@@ -150,4 +150,78 @@ test('outfit writes fail safely and unknown catalog IDs cannot be redeemed or eq
  patch(x,s=>s.skins.push('unknown_legacy_asset'));const preserved=x.data.get(GUEST_KEY);
  for(const invalid of ['unknown_legacy_asset','',undefined,{}])assert.throws(()=>x.store.equip(bird(1).id,invalid),/装饰不存在/);
  assert.throws(()=>x.store.redeem('unknown_legacy_asset','outfit-unknown-request-01'),/装饰不存在/);assert.equal(x.data.get(GUEST_KEY),preserved);
+});
+
+test('new birds start clean and old caches without a poop schedule never gain historical droppings',()=>{
+ const x=setup();x.store.adopt({...bird(1),poopDueAt:0},'团团');
+ assert.equal(current(x).poopDueAt,null,'public bird metadata cannot seed local droppings');
+ patch(x,s=>{delete s.birds[0].poopDueAt;s.birds[0].cleanedAt='2026-10-01T00:00:00.000Z';});
+ const old=x.data.get(GUEST_KEY),writes=x.writes;x.advance(60000);
+ assert.equal(current(x).poopDueAt,undefined);assert.equal(x.data.get(GUEST_KEY),old);assert.equal(x.writes,writes);
+ x.store.care(bird(1).id,'feed');assert.equal(current(x).poopDueAt,x.now()+60000);
+});
+
+test('successful feeding schedules exactly sixty seconds in either profile and cleaning respects the boundary',()=>{
+ assert.equal(GUEST_RULES.poopDelayMs,60000);
+ for(const profile of ['normal','exhibition']){
+  const x=setup(profile);x.store.adopt(bird(1),'团团');
+  const due=x.now()+60000,feed=x.store.care(bird(1).id,'feed');
+  assert.equal(feed.changed,true);assert.equal(feed.bird.poopDueAt,due);
+  const wallet=x.store.snapshot().wallet.balance,ledger=x.store.read().ledger;
+  x.advance(59999);assert.equal(x.store.care(bird(1).id,'clean').bird.poopDueAt,due,'cleaning cannot cancel future digestion');
+  x.advance(1);const cleaned=x.store.care(bird(1).id,'clean');
+  assert.equal(cleaned.bird.poopDueAt,null);assert.equal(cleaned.bird.cleanedAt,new Date(x.now()).toISOString());
+  assert.equal(cleaned.message,'小窝打扫干净啦');assert.equal(x.store.snapshot().wallet.balance,wallet);assert.deepEqual(x.store.read().ledger,ledger);
+  assert.equal(x.store.care(bird(1).id,'clean').bird.poopDueAt,null,'cleaning twice cannot create another dropping');
+ }
+});
+
+test('repeated feeds preserve the first pending or visible dropping and a fresh feed after cleaning starts a new cycle',()=>{
+ const x=setup();x.store.adopt(bird(1),'团团');patch(x,s=>Object.assign(s.birds[0],{hunger:0,food:10}));
+ const first=x.store.care(bird(1).id,'feed').bird.poopDueAt;
+ x.advance(30000);assert.equal(x.store.care(bird(1).id,'feed').bird.poopDueAt,first,'a second serving must not delay the first dropping');
+ x.advance(30000);assert.equal(x.store.care(bird(1).id,'feed').bird.poopDueAt,first,'visible droppings do not accumulate a second queued serving');
+ x.store.care(bird(1).id,'clean');assert.equal(current(x).poopDueAt,null);
+ const next=x.store.care(bird(1).id,'feed');assert.equal(next.changed,true);assert.equal(next.bird.poopDueAt,x.now()+60000);
+});
+
+test('full feeding, insufficient food, water and other care never schedule droppings',()=>{
+ const x=setup();x.store.adopt(bird(1),'团团');patch(x,s=>Object.assign(s.birds[0],{hunger:100,water:0}));
+ assert.equal(x.store.care(bird(1).id,'feed').changed,false);assert.equal(current(x).poopDueAt,null);
+ x.store.care(bird(1).id,'water');x.store.care(bird(1).id,'clean');x.store.care(bird(1).id,'supply');
+ x.store.care(bird(1).id,'greet');x.store.care(bird(1).id,'rename','圆圆');x.store.pet(bird(1).id,req(999));
+ assert.equal(current(x).poopDueAt,null);
+ patch(x,s=>Object.assign(s.birds[0],{hunger:0,food:0}));const raw=x.data.get(GUEST_KEY);
+ assert.throws(()=>x.store.care(bird(1).id,'feed'),e=>e.code==='NO_STOCK');assert.equal(x.data.get(GUEST_KEY),raw);
+});
+
+test('each bird retains its own schedule through selection, reload, offline time and cross-day cleaning',()=>{
+ const x=setup();x.store.adopt(bird(1),'一号');x.store.adopt(bird(2),'二号');
+ const first=x.store.care(bird(1).id,'feed').bird.poopDueAt;x.advance(10000);
+ const second=x.store.care(bird(2).id,'feed').bird.poopDueAt;
+ x.store.select(bird(1).id);x.store.select(bird(2).id);x.advance(2*DAY);
+ const restored=createGuestStore({getItem:k=>x.data.get(k)||null,setItem:(k,v)=>x.data.set(k,v)},{clock:()=>x.now(),profile:'normal'});
+ assert.deepEqual(restored.snapshot().birds.map(b=>b.poopDueAt),[first,second]);
+ restored.care(bird(2).id,'clean');assert.deepEqual(restored.snapshot().birds.map(b=>b.poopDueAt),[first,null]);
+ assert.equal(restored.snapshot().wallet.balance,5);assert.equal(restored.snapshot().birds[0].name,'一号');
+});
+
+test('storage failures never confirm a new schedule or hide an existing dropping',()=>{
+ const x=setup();x.store.adopt(bird(1),'团团');const beforeFeed=x.data.get(GUEST_KEY);
+ x.break();assert.throws(()=>x.store.care(bird(1).id,'feed'),e=>e.code==='CACHE_FULL');assert.equal(x.data.get(GUEST_KEY),beforeFeed);
+ x.repair();x.advance(1000);const due=x.store.care(bird(1).id,'feed').bird.poopDueAt;
+ x.advance(60000);const beforeClean=x.data.get(GUEST_KEY);x.break();
+ assert.throws(()=>x.store.care(bird(1).id,'clean'),e=>e.code==='CACHE_FULL');assert.equal(x.data.get(GUEST_KEY),beforeClean);
+ x.repair();assert.equal(current(x).poopDueAt,due);assert.equal(x.store.care(bird(1).id,'clean').bird.poopDueAt,null);
+});
+
+test('damaged optional poop timestamps reject reads and care without overwriting the cache',()=>{
+ for(const invalid of ['0',-1,0.5,true,[],{},Number.MAX_SAFE_INTEGER+1]){
+  const x=setup();x.store.adopt(bird(1),'团团');patch(x,s=>s.birds[0].poopDueAt=invalid);const raw=x.data.get(GUEST_KEY);
+  for(const operation of [()=>x.store.snapshot(),()=>x.store.care(bird(1).id,'feed'),()=>x.store.care(bird(1).id,'clean')])assert.throws(operation,e=>e.code==='CACHE_INVALID');
+  assert.equal(x.data.get(GUEST_KEY),raw);
+ }
+ const x=setup();x.store.adopt(bird(1),'团团');patch(x,s=>s.birds[0].poopDueAt=0);
+ assert.equal(current(x).poopDueAt,0,'the epoch is a valid nonnegative persisted timestamp');
+ assert.equal(x.store.care(bird(1).id,'clean').bird.poopDueAt,null);
 });

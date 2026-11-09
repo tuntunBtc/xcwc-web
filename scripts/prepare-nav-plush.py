@@ -70,6 +70,7 @@ def main():
     height = round((crop[3]-crop[1]) * width / (crop[2]-crop[0]))
     jobs.append(job(background, 'nav-background', crop, [width, height],
                     '公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率'))
+    jobs[-1].update(encoding='lossy-webp', quality=94)
     records.append({**background, 'cropBox': crop, 'outputSize': [width, height]})
     for item in ['home', 'city', 'shop', 'profile']:
         pair = [measure(SOURCE / 'nav-icons' / f'nav-{item}-{state}.png') for state in ['default', 'active']]
@@ -87,7 +88,7 @@ def main():
     (OUTPUT / 'usage-jobs.json').write_text(json.dumps({'schemaVersion': 1, 'jobs': jobs}, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     audit = {'schemaVersion': 1, 'generator': 'scripts/prepare-nav-plush.py',
              'alphaThresholdForBounds': ALPHA_THRESHOLD, 'furPaddingSourcePixels': FUR_PADDING,
-             'pixelPolicy': 'Only bounds ignore alpha 1-3 noise; crop/resize retains source RGBA; encode through existing lossless usage derivative pipeline.',
+             'pixelPolicy': 'Only bounds ignore alpha 1-3 noise; crop/resize retains source RGBA; icons remain lossless; background uses reviewed q94 with exact alpha and >=40 dB validation.',
              'sources': records}
     (OUTPUT / 'source-audit.json').write_text(json.dumps(audit, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     print(json.dumps({'jobs': len(jobs), 'sourceBytes': sum(record['sourceBytes'] for record in records),

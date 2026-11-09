@@ -1,7 +1,7 @@
 import {WARDROBE_SKINS,getWardrobeSkin} from './wardrobe-catalog.mjs';
 // Phase-one browser-local experience. This cache is never sent as cloud ownership.
 export const GUEST_KEY='xcwc.guest.v1';
-export const GUEST_RULES=Object.freeze({initialFood:3,initialWater:3,initialHunger:60,initialHydration:60,feedGain:30,waterGain:30,petCooldownMs:30000,petDailyLimit:10,initialMood:80,minMood:20,maxMood:100,moodPetDailyLimit:3,moodCareDailyLimit:2});
+export const GUEST_RULES=Object.freeze({initialFood:3,initialWater:3,initialHunger:60,initialHydration:60,feedGain:30,waterGain:30,poopDelayMs:60000,petCooldownMs:30000,petDailyLimit:10,initialMood:80,minMood:20,maxMood:100,moodPetDailyLimit:3,moodCareDailyLimit:2});
 // Keep published profiles stable: a future cadence gets a new key so old time
 // can be settled with its original rules before moving to the new profile.
 export const GUEST_PROFILES=Object.freeze({
@@ -34,7 +34,7 @@ export function createGuestStore(storage,{clock=()=>Date.now(),profile=DEFAULT_G
    if(value.careProfile!=null&&!Object.hasOwn(GUEST_PROFILES,value.careProfile))throw Error();
    if(value.careProfileVersion!=null&&!knownProfile(value.careProfile,value.careProfileVersion))throw Error();
    if(value.careRulesVersion===1&&value.birds.some(b=>!Number.isInteger(b.mood)||b.mood<GUEST_RULES.minMood||b.mood>GUEST_RULES.maxMood||!timestamp(b.lastCompanionAt)||!timestamp(b.moodSettledAt)||(b.lastMoodPetAt!==null&&!timestamp(b.lastMoodPetAt))||(b.cryShownDate!==null&&typeof b.cryShownDate!=='string')))throw Error();
-   if(value.birds.some(b=>!record(b)||['lastMoodGainAt','lastCryAt'].some(key=>Object.hasOwn(b,key)&&b[key]!==null&&!timestamp(b[key]))||(Object.hasOwn(b,'cryEpisodeShown')&&typeof b.cryEpisodeShown!=='boolean')))throw Error();
+   if(value.birds.some(b=>!record(b)||['lastMoodGainAt','lastCryAt','poopDueAt'].some(key=>Object.hasOwn(b,key)&&b[key]!==null&&!timestamp(b[key]))||(Object.hasOwn(b,'cryEpisodeShown')&&typeof b.cryEpisodeShown!=='boolean')))throw Error();
    return value;
   }catch{fail('CACHE_INVALID','本机体验缓存无法读取，请先保留数据并联系支持，不会自动覆盖')}
  }
@@ -94,7 +94,7 @@ export function createGuestStore(storage,{clock=()=>Date.now(),profile=DEFAULT_G
  function adopt(bird,name){
   if(!/^[a-f0-9]{32}$/.test(bird?.id||'')||bird.active===false)fail('INVALID_BIRD','实体资料无效，不能领取');validateName(name);
   return write((s,now)=>{let b=s.birds.find(b=>b.id===bird.id);const replayed=!!b;
-   if(!b){b={...bird,name:name.trim(),localOnly:true,eggStatus:'HATCHED',hunger:GUEST_RULES.initialHunger,water:GUEST_RULES.initialHydration,food:GUEST_RULES.initialFood,waterStock:GUEST_RULES.initialWater,settledAt:now,claimedAt:new Date(now).toISOString(),equippedSkinId:null};initializeMood(b,now);s.birds.push(b);if(!s.welcome){points(s,5,'WELCOME',bird.id,now);s.welcome=true;}}
+   if(!b){b={...bird,name:name.trim(),localOnly:true,eggStatus:'HATCHED',hunger:GUEST_RULES.initialHunger,water:GUEST_RULES.initialHydration,food:GUEST_RULES.initialFood,waterStock:GUEST_RULES.initialWater,poopDueAt:null,settledAt:now,claimedAt:new Date(now).toISOString(),equippedSkinId:null};initializeMood(b,now);s.birds.push(b);if(!s.welcome){points(s,5,'WELCOME',bird.id,now);s.welcome=true;}}
    s.currentId=b.id;return {bound:true,birdId:b.id,eggStatus:'HATCHED',localOnly:true,replayed};
   });
  }
@@ -116,12 +116,12 @@ export function createGuestStore(storage,{clock=()=>Date.now(),profile=DEFAULT_G
   else if(action==='greet'){if(d.greeting)fail('ALREADY_CLAIMED','今天已经打过招呼啦');d.greeting=true;points(s,2,'GREETING',id,now);accompany(s,b,'greet',now);message='今日问候，叽分 +2';}
   else if(action==='feed'||action==='water'){
    const value=action==='feed'?'hunger':'water',stock=action==='feed'?'food':'waterStock';changed=b[value]<100;
-   if(changed){if(b[stock]<1)fail('NO_STOCK',exhibition?'补给不足，去补给里补充食物和水吧':'补给不足，去领取今日免费补给吧');b[stock]--;b[value]=Math.min(100,b[value]+(action==='feed'?GUEST_RULES.feedGain:GUEST_RULES.waterGain));accompany(s,b,action,now);}
+   if(changed){if(b[stock]<1)fail('NO_STOCK',exhibition?'补给不足，去补给里补充食物和水吧':'补给不足，去领取今日免费补给吧');b[stock]--;b[value]=Math.min(100,b[value]+(action==='feed'?GUEST_RULES.feedGain:GUEST_RULES.waterGain));if(action==='feed'&&b.poopDueAt==null)b.poopDueAt=now+GUEST_RULES.poopDelayMs;accompany(s,b,action,now);}
    // Existing local points eligibility stays independent from actual mood gain.
    d.care??={};const flags=d.care[id]??={};flags[action]=true;
    if(flags.feed&&flags.water&&!d.careReward){d.careReward=true;points(s,3,'CARE',id,now);message=changed?'食物和水都照顾好啦，叽分 +3':(action==='feed'?'已经吃饱啦':'喝够啦')+'，今日照料叽分 +3';}
    else message=changed?(action==='feed'?'吃得香香的':'水分补充好啦'):(action==='feed'?'已经吃饱啦，留着下次吃～':'喝够啦，谢谢你～');
-  }else if(action==='clean'){b.cleanedAt=new Date(now).toISOString();accompany(s,b,'clean',now);message='小窝打扫干净啦';}
+  }else if(action==='clean'){if(b.poopDueAt!=null&&b.poopDueAt<=now)b.poopDueAt=null;b.cleanedAt=new Date(now).toISOString();accompany(s,b,'clean',now);message='小窝打扫干净啦';}
   else if(action==='play'&&exhibition){accompany(s,b,'play',now);message='咦，你藏了什么小秘密呀？';}
   else fail('INVALID_ACTION','暂不支持该操作');
   return {message,bird:b,changed};

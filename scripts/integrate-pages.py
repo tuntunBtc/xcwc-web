@@ -5,7 +5,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def integrate_pages(frame):
     account=(ROOT/'src/account-pages.js').read_text(encoding='utf-8')
     shared,account_page=account.split('function feltProfileContent',1)
-    module=(ROOT/'src/wardrobe-catalog.mjs').read_text(encoding='utf-8').replace('export ','')+'\n'+(ROOT/'src/adopt/entry.mjs').read_text(encoding='utf-8').replace('export ','')+'\n'+(ROOT/'src/account-client.js').read_text(encoding='utf-8')+'\n'+(ROOT/'src/navigation.js').read_text(encoding='utf-8')+'\n'+shared
+    module=(ROOT/'src/wardrobe-catalog.mjs').read_text(encoding='utf-8').replace('export ','')+'\n'+(ROOT/'src/adopt/entry.mjs').read_text(encoding='utf-8').replace('export ','')+'\n'+(ROOT/'src/account-client.js').read_text(encoding='utf-8')+'\n'+(ROOT/'src/nest-preload.js').read_text(encoding='utf-8')+'\n'+(ROOT/'src/navigation.js').read_text(encoding='utf-8')+'\n'+shared
     module+='\n/*XCWC_ROUTE_ACCOUNT_BEGIN*/\nfunction feltProfileContent'+account_page+'\n/*XCWC_ROUTE_ACCOUNT_END*/\n'
     for name in ['nest','city']:
         module+='\n/*XCWC_ROUTE_'+name.upper()+'_BEGIN*/\nconst '+name+'Css='+json.dumps((ROOT/f'src/{name}/{name}.css').read_text(encoding='utf-8'),ensure_ascii=False)+';\n'
@@ -20,6 +20,29 @@ def integrate_pages(frame):
                     raise ValueError('Nest foot artwork changed; run scripts/prepare-nest-touch-areas.py: '+area['sourceFile'])
             runtime={key:{field:area[field] for field in ['width','height','masks']} for key,area in touch['areas'].items()}
             module+='const nestFootHitAreas='+json.dumps(runtime,separators=(',',':'))+';\n'
+            idle=json.loads((ROOT/'src/nest/idle-animation.json').read_text(encoding='utf-8'))
+            if idle.get('schemaVersion')!=1 or len(idle['footAreas'])!=idle['frameCount']:
+                raise ValueError('Invalid nest idle animation')
+            quality_file=ROOT/'src/nest/idle-quality.json'
+            if (idle.get('qualityFile')!='src/nest/idle-quality.json' or not quality_file.is_file()
+                    or hashlib.sha256(quality_file.read_bytes()).hexdigest()!=idle.get('qualitySha256')):
+                raise ValueError('Missing or changed nest idle visual review; run npm run media:optimize')
+            quality=json.loads(quality_file.read_text(encoding='utf-8'))
+            for path,key in [(ROOT/'scripts/prepare-nest-idle.py','generatorSha256'),(ROOT/'scripts/nest_idle_guard.py','guardSha256')]:
+                if hashlib.sha256(path.read_bytes()).hexdigest()!=idle.get(key) or quality.get(key)!=idle.get(key):
+                    raise ValueError('Nest idle generator/quality policy changed; run npm run media:optimize')
+            if (not quality.get('passed') or not quality.get('singleSourceExact') or not quality.get('runtimeAlphaExact')
+                    or quality.get('frameCount')!=idle['frameCount'] or quality.get('maxAlphaBandPixels',99)>3
+                    or quality.get('atlasSha256')!=idle['atlasSha256'] or quality.get('sourceSha256')!=idle['sourceSha256']):
+                raise ValueError('Nest idle failed single-frame / translucent-wing quality gate')
+            for file_key,hash_key in [('sourceFile','sourceSha256'),('atlasFile','atlasSha256'),('avifFile','avifSha256'),('audioFile','audioSha256')]:
+                path=(ROOT/idle[file_key]).resolve()
+                if not path.is_relative_to((ROOT/'assets').resolve()) or hashlib.sha256(path.read_bytes()).hexdigest()!=idle[hash_key]:
+                    raise ValueError('Nest idle artwork changed; run npm run media:optimize')
+            runtime={key:idle[key] for key in ['width','height','columns','frameCount','frameTimesMs','durationMs','footAreas']}
+            runtime['url']='__XCWC_ASSET_ORIGIN__/'+idle['atlasFile']
+            runtime['audioUrl']='__XCWC_ASSET_ORIGIN__/'+idle['audioFile']
+            module+='const nestIdleAnimation='+json.dumps(runtime,separators=(',',':'))+';\n'
         module+=(ROOT/f'src/{name}/{name}.js').read_text(encoding='utf-8')+'\n/*XCWC_ROUTE_'+name.upper()+'_END*/\n'
     adoption_root=ROOT/'src/adopt/v1'
     module+='\n/*XCWC_ROUTE_ADOPT_BEGIN*/\nconst adoptionV1Css='+json.dumps((adoption_root/'adopt.css').read_text(encoding='utf-8'),ensure_ascii=False)+';\n'

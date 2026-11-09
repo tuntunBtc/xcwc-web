@@ -29,8 +29,9 @@ def safe_file(root, relative):
 
 
 class MediaPlan:
-    def __init__(self, root):
+    def __init__(self, root, output_dir=None):
         self.root = Path(root)
+        self.dist = Path(output_dir) if output_dir is not None else self.root / 'dist'
         self.config = json.loads((self.root / 'config/media-runtime.json').read_text(encoding='utf-8'))
         self.derivatives = json.loads((self.root / 'config/media-derivatives.json').read_text(encoding='utf-8'))
         if self.config.get('schemaVersion') != 1 or self.derivatives.get('schemaVersion') != 1:
@@ -142,10 +143,17 @@ class MediaPlan:
                 raise ValueError('Purpose-specific alias must not replace a shared media source URL')
             safe_file(self.root, alias.lstrip('/'))
             expected_file = job['outputBaseFile'] + '.' + item['outputSha256'][:12] + '.webp'
+            lossless = job['encoding'] == 'lossless-webp'
+            if not lossless and (job['encoding'] != 'lossy-webp'
+                    or item.get('encoding') != 'lossy-webp' or item.get('quality') != job.get('quality')
+                    or not isinstance(job.get('quality'), int) or not 90 <= job['quality'] <= 100
+                    or item.get('alphaUnchanged') is not True
+                    or not isinstance(item.get('psnrDb'), (int, float)) or not 40 <= item['psnrDb'] <= 100):
+                raise ValueError('Purpose-specific media visual validation mismatch: ' + item['id'])
             if (item['outputFile'] != expected_file or not expected_file.startswith('assets/optimized/')
                     or item['outputUrl'] != '/' + item['outputFile']
                     or [item['width'], item['height']] != job['outputSize']
-                    or item['cropBox'] != job['cropBox'] or item.get('transformedPixelsExact') is not True):
+                    or item['cropBox'] != job['cropBox'] or item.get('transformedPixelsExact') is not lossless):
                 raise ValueError('Purpose-specific media geometry/output mismatch: ' + item['id'])
             target = safe_file(self.root, item['outputFile'])
             if not target.is_file() or digest(target) != item['outputSha256'] or target.stat().st_size != item['outputBytes']:
@@ -214,11 +222,11 @@ function xcwcMediaUrl(value){
             source = safe_file(self.root, relative)
             if source.is_file():
                 shell += '\n' + self.rewrite(source.read_text(encoding='utf-8'))
-        runtime = self.root/'dist/runtime-manifest.json'
+        runtime = self.dist/'runtime-manifest.json'
         if runtime.is_file():
             entries=json.loads(runtime.read_text(encoding='utf-8'))['files']
             for relative,record in entries.items():
-                file=safe_file(self.root/'dist',relative)
+                file=safe_file(self.dist,relative)
                 if not file.is_file() or digest(file)!=record['sha256']:
                     raise ValueError('Runtime chunk checksum mismatch: '+relative)
                 if file.suffix in {'.js','.css'}:
@@ -286,7 +294,7 @@ function xcwcMediaUrl(value){
     def publish(self, shell):
         required = self.required(shell)
         warnings = self.budgets(required)
-        dist = self.root / 'dist'
+        dist = self.dist
         destination = dist / 'assets'
         destination.mkdir(parents=True, exist_ok=True)
         for relative in sorted(required):
@@ -308,7 +316,7 @@ function xcwcMediaUrl(value){
         return manifest
 
     def check(self):
-        dist = self.root / 'dist'
+        dist = self.dist
         required = self.required((dist / 'index.html').read_text(encoding='utf-8'))
         warnings = self.budgets(required)
         manifest = json.loads((dist / 'media-manifest.json').read_text(encoding='utf-8'))

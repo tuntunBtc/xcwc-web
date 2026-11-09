@@ -127,8 +127,8 @@ def usage_image(job):
     # These explicit aliases are only for small UI uses. Full source URLs keep
     # their existing mapping and must never inherit this crop or resize.
     source = ROOT / job["sourceFile"]
-    if job["encoding"] != "lossless-webp":
-        raise ValueError("Purpose-specific media must retain transformed pixels losslessly")
+    if job["encoding"] not in {"lossless-webp", "lossy-webp"}:
+        raise ValueError("Unsupported purpose-specific media encoding")
     with Image.open(source) as opened:
         if list(opened.size) != job["sourceSize"] or getattr(opened, "n_frames", 1) != 1:
             raise ValueError("Purpose-specific media source geometry changed: " + str(source))
@@ -156,8 +156,15 @@ def validate_usage_record(job, record):
     expected = usage_image(job)
     with Image.open(output) as opened:
         actual = opened.convert("RGBA")
-        return (list(actual.size) == job["outputSize"]
-                and expected.tobytes() == actual.tobytes())
+        if list(actual.size) != job["outputSize"]:
+            return False
+        if job["encoding"] == "lossless-webp":
+            return expected.tobytes() == actual.tobytes()
+        return (record.get("encoding") == "lossy-webp"
+                and record.get("quality") == job["quality"]
+                and record.get("alphaUnchanged") is True
+                and alpha_equal(expected, actual)
+                and visual_psnr(expected, actual) >= POLICY["minimumPsnrDb"])
 
 
 def generate_usage_derivatives(previous=(), force=False):
@@ -172,7 +179,11 @@ def generate_usage_derivatives(previous=(), force=False):
         source_hash = sha256(source.read_bytes())
         image = usage_image(job)
         output = BytesIO()
-        image.save(output, format="WEBP", lossless=True, method=6, exact=True,
+        lossless = job["encoding"] == "lossless-webp"
+        options = {"lossless": True} if lossless else {"quality": job["quality"], "alpha_quality": 100}
+        if not lossless and (not isinstance(job["quality"], int) or not 90 <= job["quality"] <= 100):
+            raise ValueError("Reviewed purpose-specific quality must be an integer from 90 to 100")
+        image.save(output, format="WEBP", method=6, exact=True, **options,
                    **({"icc_profile": image.info["icc_profile"]} if image.info.get("icc_profile") else {}))
         data = output.getvalue()
         output_hash = sha256(data)
@@ -189,12 +200,17 @@ def generate_usage_derivatives(previous=(), force=False):
                   "width": image.width, "height": image.height, "resample": "lanczos",
                   "usageUrl": job["usageUrl"], "outputFile": output_file,
                   "outputUrl": "/" + output_file, "outputSha256": output_hash,
-                  "outputBytes": len(data), "encoding": "lossless-webp", "method": 6,
-                  "transformedPixelsExact": True, "purpose": job["purpose"]}
+                  "outputBytes": len(data), "encoding": job["encoding"], "method": 6,
+                  "transformedPixelsExact": lossless, "purpose": job["purpose"]}
+        if not lossless:
+            with Image.open(BytesIO(data)) as decoded:
+                actual = decoded.convert("RGBA")
+            record.update(quality=job["quality"], alphaUnchanged=alpha_equal(image, actual),
+                          psnrDb=round(visual_psnr(image, actual), 4))
         if not validate_usage_record(job, record):
             raise RuntimeError("Purpose-specific media changed transformed pixels: " + job["id"])
         records.append(record)
-        print(f"{job['usageUrl']}: {source.stat().st_size:,} -> {len(data):,} B, {image.width}x{image.height}, lossless", flush=True)
+        print(f"{job['usageUrl']}: {source.stat().st_size:,} -> {len(data):,} B, {image.width}x{image.height}, {job['encoding']}", flush=True)
     return records
 
 
@@ -206,7 +222,7 @@ def check_usage_derivatives(manifest):
     for job in jobs:
         if not validate_usage_record(job, records[job["id"]]):
             raise RuntimeError("Purpose-specific media validation failed: " + job["id"])
-    print(f"PASS: {len(jobs)} purpose-specific derivatives retain exact RGBA pixels after their declared crop/resize")
+    print(f"PASS: {len(jobs)} purpose-specific derivatives meet declared geometry, exact alpha and lossless/>=40 dB visual checks")
 
 
 def usage_only(check_only=False, force=False):
@@ -218,6 +234,9 @@ def usage_only(check_only=False, force=False):
 
 
 def optimize(force=False):
+    # Specialized video matting shares the established optimization entry point.
+    import runpy
+    runpy.run_path(str(ROOT / 'scripts/prepare-nest-idle.py'))['prepare']()
     previous = {}
     if MANIFEST.is_file():
         previous = json.loads(MANIFEST.read_text(encoding="utf-8"))

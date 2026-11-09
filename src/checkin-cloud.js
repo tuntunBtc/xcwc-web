@@ -28,7 +28,7 @@ async function restoreDraft(){
    restoredUrl=rememberUrl(URL.createObjectURL(draft.photoBlob));provisionalUrl=restoredUrl;restoredImage=new Image();restoredImage.src=restoredUrl;
    try{await loadImage(restoredImage)}catch{restoredImage=new Image();restoredImage.src=await photoDataUrl(draft.photoBlob);await loadImage(restoredImage)}
    if(destroyed)return;
-   await prepareCanvasImages();if(destroyed)return;
+   await prepareCanvasImages(valid,{background:false});if(destroyed)return;
   }
   selected=valid;poses=reconcilePoses(valid,draft.poses);active=valid.includes(draft.active)?draft.active:valid[0]||null;
   style=Math.max(0,Math.min(3,Number(draft.style)||0));photoFit=draft.photoFit==='contain'?'contain':'cover';photoX=draft.photoX??50;photoY=draft.photoY??50;

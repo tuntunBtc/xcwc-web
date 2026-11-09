@@ -20,6 +20,7 @@
     "existingLossyWebp": "retain"
   },
   "mapping": {
+    "/assets/adopt-v1/sources/lower-visible.png": "/assets/optimized/adopt-v1/sources/lower-visible.1887e6220e7f.webp",
     "/assets/bird-transparent.png": "/assets/optimized/bird-transparent.83e056a82adf.webp",
     "/assets/checkin/bird-0.png": "/assets/optimized/checkin/bird-0.e3f276de990a.webp",
     "/assets/checkin/bird-1.png": "/assets/optimized/checkin/bird-1.1c3135035286.webp",
@@ -68,6 +69,22 @@
     "/assets/导航栏/xcwc-ui-assets/nav-icons/nav-shop-default.png": "/assets/optimized/导航栏/xcwc-ui-assets/nav-icons/nav-shop-default.67ffa8432a88.webp"
   },
   "records": [
+    {
+      "sourceFile": "assets/adopt-v1/sources/lower-visible.png",
+      "sourceUrl": "/assets/adopt-v1/sources/lower-visible.png",
+      "sourceSha256": "8a6f2ce60ef444f3d389b6fee4943b9a3173bb38b0d82517b37e177efe04154a",
+      "sourceBytes": 1086856,
+      "width": 720,
+      "height": 930,
+      "frames": 1,
+      "outputFile": "assets/optimized/adopt-v1/sources/lower-visible.1887e6220e7f.webp",
+      "outputUrl": "/assets/optimized/adopt-v1/sources/lower-visible.1887e6220e7f.webp",
+      "outputSha256": "1887e6220e7fc6e94d44a2b1e2dc8f9f6ea77edab4b2270cf7303e5ad00f3319",
+      "outputBytes": 98394,
+      "quality": 90,
+      "alphaUnchanged": true,
+      "psnrDb": 40.2647
+    },
     {
       "sourceFile": "assets/bird-transparent.png",
       "sourceUrl": "/assets/bird-transparent.png",
@@ -1112,6 +1129,36 @@
       "reason": "already-lossy-webp-no-repeated-compression"
     },
     {
+      "sourceFile": "assets/nest/idle/huangying-idle.avif",
+      "sourceUrl": "/assets/nest/idle/huangying-idle.avif",
+      "sourceSha256": "9aa121f1e610984f304beba36b2d083b0e9d193bc04faeaa9f688e8b4dfac030",
+      "sourceBytes": 648811,
+      "width": 2048,
+      "height": 2552,
+      "frames": 1,
+      "status": "retained",
+      "reason": "insufficient-size-benefit"
+    },
+    {
+      "sourceFile": "assets/nest/idle/huangying-idle.m4a",
+      "sourceUrl": "/assets/nest/idle/huangying-idle.m4a",
+      "sourceSha256": "d366ae960772cc7a1982b128d5cac84893523d5c8a81207bc25d1a806ea568a4",
+      "sourceBytes": 99942,
+      "status": "retained",
+      "reason": "review-video-or-audio-separately"
+    },
+    {
+      "sourceFile": "assets/nest/idle/huangying-idle.webp",
+      "sourceUrl": "/assets/nest/idle/huangying-idle.webp",
+      "sourceSha256": "5537383d5cf6bc8e0bc218bd611e9211451ab567dee3c61494b996e703e56716",
+      "sourceBytes": 741564,
+      "width": 2048,
+      "height": 2552,
+      "frames": 1,
+      "status": "retained",
+      "reason": "already-lossy-webp-no-repeated-compression"
+    },
+    {
       "sourceFile": "assets/reference-bird.png",
       "sourceUrl": "/assets/reference-bird.png",
       "sourceSha256": "90b921fdaa947374bbac869c4ba9096d18c59172b4c0a88d9d523cffae85cdb7",
@@ -1363,6 +1410,25 @@
       "frames": 1,
       "status": "retained",
       "reason": "already-lossy-webp-no-repeated-compression"
+    },
+    {
+      "sourceFile": "assets/小窝页面动画.mp4",
+      "sourceUrl": "/assets/小窝页面动画.mp4",
+      "sourceSha256": "5f6f9a9bdaa05a5940056f3e10229e489b7e10e7ac34f318cefef1b755a1a220",
+      "sourceBytes": 482695,
+      "status": "retained",
+      "reason": "review-video-or-audio-separately"
+    },
+    {
+      "sourceFile": "assets/favicon/source/huangying-source.png",
+      "sourceUrl": "/assets/favicon/source/huangying-source.png",
+      "sourceSha256": "fe115c58dd6db8d04094da0033a73c12e845291180dc819f660c39e1e6811e6c",
+      "sourceBytes": 424757,
+      "width": 640,
+      "height": 580,
+      "frames": 1,
+      "status": "retained",
+      "reason": "User-provided transparent Huangying artwork retained as the source for the browser-tab favicon."
     }
   ],
   "usageDerivatives": [
@@ -1449,7 +1515,7 @@
     },
     {
       "id": "nav-plush-nav-background",
-      "jobSha256": "e980cc186f8c462f4fa0ed9ad6159582b3656acb8f71b5b2407a1778603a75a7",
+      "jobSha256": "580797ff6deafda3cd6026249ce66416c542ce4c7b62f9104483270787d2798a",
       "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-background.png",
       "sourceSha256": "1a886673f94019cd67a127ceccc200115bd3e439b5f5cb6a1254e37f02fe4853",
       "sourceBytes": 1421981,
@@ -1465,14 +1531,17 @@
       "height": 195,
       "resample": "lanczos",
       "usageUrl": "/assets/navigation/plush/nav-background.webp",
-      "outputFile": "assets/optimized/navigation/plush/nav-background.980678f6d5c4.webp",
-      "outputUrl": "/assets/optimized/navigation/plush/nav-background.980678f6d5c4.webp",
-      "outputSha256": "980678f6d5c4516d2082aa6e0f8546458e087e9b2a1481f82201fd94f939af7b",
-      "outputBytes": 195880,
-      "encoding": "lossless-webp",
+      "outputFile": "assets/optimized/navigation/plush/nav-background.5d20c3811683.webp",
+      "outputUrl": "/assets/optimized/navigation/plush/nav-background.5d20c3811683.webp",
+      "outputSha256": "5d20c3811683f32adfe46cd3aec44c7e20db5429ab669197ac468f4fc25fe9a5",
+      "outputBytes": 69012,
+      "encoding": "lossy-webp",
       "method": 6,
-      "transformedPixelsExact": true,
-      "purpose": "公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率"
+      "transformedPixelsExact": false,
+      "purpose": "公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率",
+      "quality": 94,
+      "alphaUnchanged": true,
+      "psnrDb": 42.6844
     },
     {
       "id": "nav-plush-nav-home-default",
@@ -1689,15 +1758,102 @@
       "method": 6,
       "transformedPixelsExact": true,
       "purpose": "公共底栏 profile active 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
+    },
+    {
+      "id": "adopt-lower-visible-top",
+      "jobSha256": "b433be56d31858a95db71143b843297f5ace55acd31799e216b9715a21274ede",
+      "sourceFile": "assets/adopt-v1/sources/lower-visible.png",
+      "sourceSha256": "8a6f2ce60ef444f3d389b6fee4943b9a3173bb38b0d82517b37e177efe04154a",
+      "sourceBytes": 1086856,
+      "sourceWidth": 720,
+      "sourceHeight": 930,
+      "cropBox": [
+        0,
+        0,
+        720,
+        720
+      ],
+      "width": 720,
+      "height": 720,
+      "resample": "lanczos",
+      "usageUrl": "/assets/adopt-v1/felt/lower-visible-top.webp",
+      "outputFile": "assets/optimized/adopt-v1/lower-visible-top.68a3708016a8.webp",
+      "outputUrl": "/assets/optimized/adopt-v1/lower-visible-top.68a3708016a8.webp",
+      "outputSha256": "68a3708016a8fa1efeda99a8bcca4d5bd2cf68e466c33fb2a11894eb92be4283",
+      "outputBytes": 74124,
+      "encoding": "lossy-webp",
+      "method": 6,
+      "transformedPixelsExact": false,
+      "purpose": "领养下部原件等比缩放后去除 CSS 已裁掉的顶部 630 px；原缩放和表单位置不变，分片仅在视口内读取。",
+      "quality": 92,
+      "alphaUnchanged": true,
+      "psnrDb": 41.5609
+    },
+    {
+      "id": "adopt-lower-visible-bottom",
+      "jobSha256": "6eaa7d9b8440783636ad3d26c49194198d20969638888c7cc788df8e86eeae7b",
+      "sourceFile": "assets/adopt-v1/sources/lower-visible.png",
+      "sourceSha256": "8a6f2ce60ef444f3d389b6fee4943b9a3173bb38b0d82517b37e177efe04154a",
+      "sourceBytes": 1086856,
+      "sourceWidth": 720,
+      "sourceHeight": 930,
+      "cropBox": [
+        0,
+        720,
+        720,
+        930
+      ],
+      "width": 720,
+      "height": 210,
+      "resample": "lanczos",
+      "usageUrl": "/assets/adopt-v1/felt/lower-visible-bottom.webp",
+      "outputFile": "assets/optimized/adopt-v1/lower-visible-bottom.7764e2c5e492.webp",
+      "outputUrl": "/assets/optimized/adopt-v1/lower-visible-bottom.7764e2c5e492.webp",
+      "outputSha256": "7764e2c5e492963cc44831885228911f2aa9f11e5cf4558639d058989f638f7f",
+      "outputBytes": 56028,
+      "encoding": "lossy-webp",
+      "method": 6,
+      "transformedPixelsExact": false,
+      "purpose": "领养下部原件等比缩放后去除 CSS 已裁掉的顶部 630 px；原缩放和表单位置不变，分片仅在视口内读取。",
+      "quality": 96,
+      "alphaUnchanged": true,
+      "psnrDb": 41.9196
+    },
+    {
+      "id": "nest-idle-poster",
+      "jobSha256": "07ff3e11c024ec69fa048e4b53deca6e3ee3ad05c20b081f714518c50bbaf7cb",
+      "sourceFile": "assets/nest/idle/huangying-idle.webp",
+      "sourceSha256": "5537383d5cf6bc8e0bc218bd611e9211451ab567dee3c61494b996e703e56716",
+      "sourceBytes": 741564,
+      "sourceWidth": 2048,
+      "sourceHeight": 2552,
+      "cropBox": [
+        0,
+        0,
+        256,
+        232
+      ],
+      "width": 256,
+      "height": 232,
+      "resample": "lanczos",
+      "usageUrl": "/assets/nest/idle/poster.webp",
+      "outputFile": "assets/optimized/nest/idle/poster.c0e2bc2da5eb.webp",
+      "outputUrl": "/assets/optimized/nest/idle/poster.c0e2bc2da5eb.webp",
+      "outputSha256": "c0e2bc2da5ebb1d56e39fad95407c85f9155789dc0a48de3e59963ee8974ea61",
+      "outputBytes": 50426,
+      "encoding": "lossless-webp",
+      "method": 6,
+      "transformedPixelsExact": true,
+      "purpose": "小窝正常静态待机封面，逐像素复用已审核动画图集首帧，不加载完整图集即可显示同姿态；脚区使用动画 footAreas[0]，无缩放或二次有损。"
     }
   ],
   "stats": {
-    "auditedMediaFiles": 97,
-    "optimizedFiles": 46,
-    "retainedFiles": 51,
-    "sourceBytes": 40449986,
-    "outputBytes": 9286494,
-    "savedBytes": 31163492,
-    "savedPercent": 77.04
+    "auditedMediaFiles": 102,
+    "optimizedFiles": 47,
+    "retainedFiles": 55,
+    "sourceBytes": 41536842,
+    "outputBytes": 9384888,
+    "savedBytes": 32151954,
+    "savedPercent": 77.41
   }
 }

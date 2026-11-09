@@ -117,7 +117,7 @@ async function verifySlowFeedback(browser,engine,width,base){
 
 async function run(browser,engine,width){
  const r={engine,width,passed:false,checks:[],images:[],taps:[],events:[],errors:[],failedResources:[],api:[]};report.cases.push(r);
- const context=await browser.newContext({viewport:{width,height:844},isMobile:true,hasTouch:true,reducedMotion:'no-preference',locale:'zh-CN',timezoneId:'Asia/Shanghai'}),page=await context.newPage();page.setDefaultTimeout(12000);
+ const context=await browser.newContext({viewport:{width,height:844},isMobile:true,hasTouch:true,reducedMotion:process.env.XCWC_NEST_REDUCED_MOTION==='1'?'reduce':'no-preference',locale:'zh-CN',timezoneId:'Asia/Shanghai'}),page=await context.newPage();page.setDefaultTimeout(12000);
  page.on('pageerror',e=>r.errors.push(e.message));
  page.on('request',req=>{if(req.url().includes('/emotions/'))r.images.push(new URL(req.url()).pathname)});
  page.on('response',res=>{if(!res.ok())r.failedResources.push({url:res.url(),status:res.status()})});
@@ -137,7 +137,7 @@ async function run(browser,engine,width){
   await page.evaluate(()=>xcwcGuest.adopt({id:'1234567890abcdef1234567890abcdef',active:true,typeId:'huangying',typeName:'小黄莺',cityCode:'hangzhou',cityName:'杭州'},'互动验收'));
   await page.reload();await ready('happy');await shot('happy');
   await pet();await ready('happy');const first=await state();await tick(100);await pet();await ready('happy');await tick(100);await pet();await ready('veryhappy');
-  assert.equal(await nest().locator('.emotion-label').innerText(),'很开心');assert.equal(await nest().locator('#speech').innerText(),'好开心呀，再陪我一会儿～');assert.match(await image().getAttribute('src'),/happy-v2\.[a-f0-9]{12}\.webp$/);
+  assert.match(await image().getAttribute('alt'),/很开心/);assert.equal(await nest().locator('#speech').innerText(),'好开心呀，再陪我一会儿～');assert.match(await image().getAttribute('src'),/happy-v2\.[a-f0-9]{12}\.webp$/);
   assert.equal((await state()).balance,first.balance);await shot('veryhappy');mark('third accepted pet shows very happy with current smile, with no extra points');
   await tick(1000);const requests=Object.keys((await state()).requests).length;await pet();assert(Object.keys((await state()).requests).length>requests);await ready('veryhappy');await tick(2600);assert.equal(await emotion(),'veryhappy');await tick(600);await ready('happy');mark('pet during very happy still accompanies but neither extends nor shortens four seconds');
   await pet();await ready('happy');await tick(100);await pet();await ready('happy');await tick(100);await pet();await ready('veryhappy');mark('reaction ends with cleared count; three new pets are required');
@@ -148,7 +148,7 @@ async function run(browser,engine,width){
   await nest().locator('[data-action=play]').tap();await tick(20);await ready('puzzled');await tick(3100);await ready('happy');mark('play retains puzzled feedback and restores the real state');
   await page.clock.setSystemTime(new Date(epoch+1000));await page.evaluate(()=>xcwcGuest.adopt({id:'abcdef1234567890abcdef1234567890',active:true,typeId:'huangying',typeName:'小黄莺',cityCode:'hangzhou',cityName:'杭州'},'陪伴验收'));
   await page.clock.setSystemTime(new Date(epoch+245000));await page.evaluate(()=>{const id='abcdef1234567890abcdef1234567890';for(const action of ['water','water','feed','feed'])xcwcGuest.care(id,action);xcwcGuest.select(id)});await page.goto(base+'/?page=home&fixture=off');await ready('unwell');
-  const low=(await state()).birds.find(b=>b.id==='abcdef1234567890abcdef1234567890');assert(low.hunger>=30&&low.water>=30&&low.mood<50);assert.match(await image().getAttribute('src'),/hungry-v3\.[a-f0-9]{12}\.webp$/);assert.equal(await nest().locator('.emotion-label').innerText(),'想你陪陪');await shot('company');mark('low mood keeps its real need and uses clean new prone art instead of the removed picture');
+  const low=(await state()).birds.find(b=>b.id==='abcdef1234567890abcdef1234567890');assert(low.hunger>=30&&low.water>=30&&low.mood<50);assert.match(await image().getAttribute('src'),/hungry-v3\.[a-f0-9]{12}\.webp$/);assert.match(await image().getAttribute('alt'),/想你陪陪/);await shot('company');mark('low mood keeps its real need and uses clean new prone art instead of the removed picture');
   await tap(207,525);await ready('happy');await tick(2200);await ready('unwell');mark('no hidden feet on shared low-mood prone art; touch remains ordinary companionship');
   for(let i=0;i<4;i++){const b=(await state()).birds.find(b=>b.id==='abcdef1234567890abcdef1234567890');if(b.mood>=50)break;await tick(5100);await pet();await ready('happy');await tick(2200)}
   assert((await state()).birds.find(b=>b.id==='abcdef1234567890abcdef1234567890').mood>=50);await ready('happy');mark('ordinary companionship still soothes the real low mood');

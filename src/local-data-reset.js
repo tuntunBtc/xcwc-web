@@ -13,6 +13,7 @@
  function keys(storage){const result=[];for(let i=0;i<storage.length;i++){const key=storage.key(i);if(typeof key==='string')result.push(key)}return result}
  function remove(storage,key){storage.removeItem(key);if(storage.getItem(key)!==null)throw Error('部分本机缓存未能删除，请重试')}
  async function reset(){
+  if(window.xcwcEnsureHostFeature)await Promise.all(['photo','shop'].map(name=>window.xcwcEnsureHostFeature(name)));
   if(typeof window.xcwcLocalAlbum?.clear!=='function')throw Error('本机相册尚未准备好，请刷新后重试');
   // Keep the generation after completion so another tab's pending photo cannot
   // repopulate the cleared album or award points when its hash finishes later.

@@ -80,6 +80,23 @@ class MediaGateTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'crop/size changed'):
             pipeline.MediaPlan(self.root)
 
+    def test_lossy_usage_needs_exact_alpha_and_existing_visual_threshold(self):
+        self.add_usage_derivative()
+        jobs=json.loads((self.root/'config/media-usage.json').read_text(encoding='utf-8'))
+        job=jobs['jobs'][0];job.update(encoding='lossy-webp',quality=94)
+        self.write_json('config/media-usage.json',jobs)
+        manifest=json.loads((self.root/'config/media-derivatives.json').read_text(encoding='utf-8'))
+        record=manifest['usageDerivatives'][0]
+        record.update(jobSha256=hashlib.sha256(json.dumps(job,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8')).hexdigest(),
+                      encoding='lossy-webp',quality=94,transformedPixelsExact=False,alphaUnchanged=True,psnrDb=42.6)
+        self.write_json('config/media-derivatives.json',manifest)
+        self.assertIn(job['usageUrl'],pipeline.MediaPlan(self.root).mapping)
+        for key,value in [('psnrDb',39.9),('alphaUnchanged',False),('quality',80)]:
+            previous=record[key];record[key]=value;self.write_json('config/media-derivatives.json',manifest)
+            with self.assertRaisesRegex(ValueError,'visual validation mismatch'):
+                pipeline.MediaPlan(self.root)
+            record[key]=previous
+
     def test_small_ui_alias_cannot_shadow_full_source_url(self):
         self.add_usage_derivative('/assets/bird.png')
         with self.assertRaisesRegex(ValueError, 'must not replace'):

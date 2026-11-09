@@ -60,6 +60,21 @@
       "reason": "User-provided profile-only full-height background, retained at 852x1846 without cropping; q92 is the first existing pipeline setting meeting 40 dB PSNR and preserves the felt texture. Only requested on the profile route.",
       "maxBytes": 332502,
       "sha256": "2d8cbe657c34113b3aa937c70117dbd0c95f5745a8ad6d6c8843a45455dfcccb"
+    },
+    "assets/nest/idle/huangying-idle.webp": {
+      "reason": "User explicitly retained original audio and rejected wing ghosting. Runtime uses one exact-alpha WebP atlas (82 single-source frames; 10 fps calm / original 24 fps wings), verified no temporal blending and <=3px translucent edge. Decoded 20.9 MB buffer released on exit. Original AAC copied without re-encoding, played in sync through the fixed host Blob bridge without changing CSP. AVIF is an unused comparison candidate; source MP4 excluded.",
+      "maxBytes": 741564,
+      "sha256": "5537383d5cf6bc8e0bc218bd611e9211451ab567dee3c61494b996e703e56716"
+    },
+    "assets/nest/idle/huangying-idle.avif": {
+      "reason": "User explicitly retained original audio and rejected wing ghosting. Runtime uses one exact-alpha WebP atlas (82 single-source frames; 10 fps calm / original 24 fps wings), verified no temporal blending and <=3px translucent edge. Decoded 20.9 MB buffer released on exit. Original AAC copied without re-encoding, played in sync through the fixed host Blob bridge without changing CSP. AVIF is an unused comparison candidate; source MP4 excluded.",
+      "maxBytes": 648811,
+      "sha256": "9aa121f1e610984f304beba36b2d083b0e9d193bc04faeaa9f688e8b4dfac030"
+    },
+    "assets/nest/idle/huangying-idle.m4a": {
+      "reason": "User explicitly retained original audio and rejected wing ghosting. Runtime uses one exact-alpha WebP atlas (82 single-source frames; 10 fps calm / original 24 fps wings), verified no temporal blending and <=3px translucent edge. Decoded 20.9 MB buffer released on exit. Original AAC copied without re-encoding, played in sync through the fixed host Blob bridge without changing CSP. AVIF is an unused comparison candidate; source MP4 excluded.",
+      "maxBytes": 99942,
+      "sha256": "d366ae960772cc7a1982b128d5cac84893523d5c8a81207bc25d1a806ea568a4"
     }
   }
 }

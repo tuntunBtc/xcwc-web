@@ -3,8 +3,21 @@
  const frame=document.getElementById('codex-visualization');
  const routes=new Set(['home','city','shop','profile','adopt','photo','wardrobe','flock']);
  const sections=new Set(['home','city','shop','profile']);
- let initialized=false;
+ let initialized=false,analyticsSessionId='';
  const sectionFor=(page,section)=>sections.has(page)?page:page==='photo'||page==='adopt'?'home':sections.has(section)?section:'home';
+ function recordPageView(page){
+  if(!routes.has(page))return;
+  try{
+   let sessionId=analyticsSessionId;
+   try{sessionId=sessionStorage.getItem('xcwc.analytics.session.v1')||sessionId}catch{}
+   if(!/^[a-f0-9]{32}$/.test(sessionId||'')){
+    const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);sessionId=Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
+    try{sessionStorage.setItem('xcwc.analytics.session.v1',sessionId)}catch{}
+   }
+   analyticsSessionId=sessionId;
+   fetch('/api/analytics/page-view',{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({page,sessionId})}).catch(()=>{});
+  }catch{}
+ }
  function state(page,section,depth){return {xcwcNavigation:1,page,section:sectionFor(page,section),depth};}
  function valid(value){return value?.xcwcNavigation===1&&routes.has(value.page)&&sections.has(value.section)&&Number.isSafeInteger(value.depth)&&value.depth>=0;}
  function publish(value){frame?.contentWindow?.postMessage({channel:'xcwc-navigation-state',page:value.page,section:value.section},'*');}
@@ -26,7 +39,7 @@
    const current=history.state,from=new URL(location.href).searchParams.get('from');
    const next=valid(current)&&current.page===message.page?current:state(message.page,sections.has(from)?from:message.section,0);
    // Preserve the exact first NFC/QR URL; reading a link never rewrites it.
-   replace(next);publish(next);return;
+   replace(next);publish(next);recordPageView(next.page);return;
   }
   if(!initialized)return;
   if(message.operation==='back'){
@@ -34,7 +47,7 @@
    const current=history.state;
    if(valid(current)&&current.depth>0){history.back();return;}
    const page=sections.has(message.fallback)?message.fallback:'home',next=state(page,page,0);
-   replace(next,routeUrl(page,page));publish(next);return;
+   replace(next,routeUrl(page,page));publish(next);recordPageView(page);return;
   }
   if(message.operation!=='navigate'||!routes.has(message.page))return;
   dismissNotice();
@@ -43,12 +56,13 @@
   const depth=valid(current)?current.depth:0,next=state(message.page,section,message.replace?depth:depth+1);
   if(message.replace)replace(next,routeUrl(message.page,section));
   else history.pushState({...next},'',routeUrl(message.page,section));
+  recordPageView(message.page);
  });
  window.addEventListener('popstate',event=>{
   if(!initialized)return;
   dismissNotice();
-  if(valid(event.state)){publish(event.state);return;}
+  if(valid(event.state)){publish(event.state);recordPageView(event.state.page);return;}
   const params=new URL(location.href).searchParams,page=params.has('birdCode')||params.has('bird')?'adopt':params.get('page')||'home';
-  const next=state(routes.has(page)?page:'home',params.get('from'),0);replace(next);publish(next);
+  const next=state(routes.has(page)?page:'home',params.get('from'),0);replace(next);publish(next);recordPageView(next.page);
  });
 })();

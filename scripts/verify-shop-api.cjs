@@ -41,7 +41,7 @@ const output=process.env.XCWC_SCREENSHOT_DIR||path.resolve('output/shop-api');fs
    assert((await shop.locator('.detail-image img').getAttribute('src')).endsWith(expected[0].detailImageUrl));
    await shop.locator('.detail-hotspot').click();await shop.locator('#panelTitle').filter({hasText:'已加入购物车'}).waitFor();
    await shop.locator('#panelContent [data-shop-action=cart]').click();await shop.locator('.cart-row').waitFor();assert.equal(await shop.locator('.cart-row').count(),1);
-   assert(await shop.locator('.taobao').isDisabled());assert.equal(await shop.locator('.taobao').textContent(),'购买链接待配置');await shop.locator('.close').click();
+   assert.equal(await shop.locator('.taobao').isDisabled(),!expected[0].purchaseUrl);assert.equal(await shop.locator('.taobao').textContent(),expected[0].purchaseUrl?'去淘宝购买 ↗':'购买链接待配置');await shop.locator('.close').click();
    await shop.locator('.add').first().click();await shop.locator('#panelTitle').filter({hasText:'这只小鸟已在购物车中'}).waitFor();assert.equal(await shop.locator('#cartCount').textContent(),'1');await shop.locator('.close').click();
    await page.reload({waitUntil:'domcontentloaded'});await shop.locator('.card').nth(expected.length-1).waitFor();await shop.locator('#cartButton').click();await shop.locator('.cart-row').waitFor();assert.equal(await shop.locator('.cart-row').count(),1);await shop.locator('.close').click();
    // Unknown/downlisted IDs survive catalogue filtering and remain removable.
@@ -55,7 +55,7 @@ const output=process.env.XCWC_SCREENSHOT_DIR||path.resolve('output/shop-api');fs
    assert.equal(await f.locator('.bottom').innerHTML(),navigation);assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
    await page.screenshot({path:path.join(output,'shop-'+engine.name()+'-390.png'),fullPage:true});
    for(const width of [320,430]){const small=await context.newPage();await small.setViewportSize({width,height:844});await small.goto(base+'/?page=shop',{waitUntil:'domcontentloaded'});const sf=small.frameLocator('iframe');await sf.locator('#xcwc-shop .card').nth(expected.length-1).waitFor();assert.equal(await sf.locator('body').evaluate(el=>el.scrollWidth>innerWidth),false);await small.screenshot({path:path.join(output,'shop-'+engine.name()+'-'+width+'.png')});await small.close()}
-   console.log('PASS '+engine.name()+': all configured real products, API price/cities, failed-filter retry, complete-image hotspot, local cart/dedup/reload, missing link/downlisted product, 320/390/430, unchanged nav, no API writes; total='+expected.length+'');
+   console.log('PASS '+engine.name()+': all configured real products, API price/cities, failed-filter retry, complete-image hotspot, local cart/dedup/reload, configured purchase state/downlisted product, 320/390/430, unchanged nav, no API writes; total='+expected.length+'');
   }finally{await browser.close()}
  }
 })().catch(error=>{console.error(error);process.exitCode=1});

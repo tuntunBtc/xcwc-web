@@ -1,11 +1,11 @@
 {
   "scope": "navigation-only runtime resources",
   "sourceBytes": 8006613,
-  "runtimeBytes": 302448,
+  "runtimeBytes": 175580,
   "assets": [
     {
       "id": "nav-plush-nav-background",
-      "jobSha256": "e980cc186f8c462f4fa0ed9ad6159582b3656acb8f71b5b2407a1778603a75a7",
+      "jobSha256": "580797ff6deafda3cd6026249ce66416c542ce4c7b62f9104483270787d2798a",
       "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-background.png",
       "sourceSha256": "1a886673f94019cd67a127ceccc200115bd3e439b5f5cb6a1254e37f02fe4853",
       "sourceBytes": 1421981,
@@ -21,14 +21,17 @@
       "height": 195,
       "resample": "lanczos",
       "usageUrl": "/assets/navigation/plush/nav-background.webp",
-      "outputFile": "assets/optimized/navigation/plush/nav-background.980678f6d5c4.webp",
-      "outputUrl": "/assets/optimized/navigation/plush/nav-background.980678f6d5c4.webp",
-      "outputSha256": "980678f6d5c4516d2082aa6e0f8546458e087e9b2a1481f82201fd94f939af7b",
-      "outputBytes": 195880,
-      "encoding": "lossless-webp",
+      "outputFile": "assets/optimized/navigation/plush/nav-background.5d20c3811683.webp",
+      "outputUrl": "/assets/optimized/navigation/plush/nav-background.5d20c3811683.webp",
+      "outputSha256": "5d20c3811683f32adfe46cd3aec44c7e20db5429ab669197ac468f4fc25fe9a5",
+      "outputBytes": 69012,
+      "encoding": "lossy-webp",
       "method": 6,
-      "transformedPixelsExact": true,
-      "purpose": "公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率"
+      "transformedPixelsExact": false,
+      "purpose": "公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率",
+      "quality": 94,
+      "alphaUnchanged": true,
+      "psnrDb": 42.6844
     },
     {
       "id": "nav-plush-nav-home-default",

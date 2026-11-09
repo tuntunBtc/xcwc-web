@@ -20,8 +20,9 @@
       ],
       "usageUrl": "/assets/navigation/plush/nav-background.webp",
       "outputBaseFile": "assets/optimized/navigation/plush/nav-background",
-      "encoding": "lossless-webp",
-      "purpose": "公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率"
+      "encoding": "lossy-webp",
+      "purpose": "公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率",
+      "quality": 94
     },
     {
       "id": "nav-plush-nav-home-default",

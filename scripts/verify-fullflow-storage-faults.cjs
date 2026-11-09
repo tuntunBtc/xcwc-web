@@ -1,11 +1,11 @@
-// Storage failure injection only; public bird data still comes from the real isolated backend.
+// Storage failure injection only; public bird data comes from the explicit local fixture backend/model.
 const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'/tmp/xcwc-browser-check/node_modules/playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const base=process.env.XCWC_PREVIEW_URL,code=process.env.XCWC_TEST_BIRD_CODE;
 if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base||'')||!code)throw Error('Explicit local backend preview and actual code required');
 const auditLabel=process.env.XCWC_AUDIT_LABEL||'';if(auditLabel&&!/^[a-zA-Z0-9_-]{1,80}$/.test(auditLabel))throw Error('Invalid audit label');
 const out=path.resolve(__dirname,'../output/full-audit/browser',auditLabel);fs.mkdirSync(out,{recursive:true});
-const report={base,code,method:'Real public entity GET; synchronous quota/open failures are injected only in the disposable browser context.',engines:[]};
+const report={base,code,method:'Local fixture entity GET; synchronous quota/open and damaged-cache failures are injected only in the disposable browser context.',engines:[]};
 async function run(engine){
  const browser=await engine.launch({headless:true,...(engine===chromium?{executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage();page.setDefaultTimeout(10000);
@@ -16,6 +16,15 @@ async function run(engine){
   await page.goto(base+'/register.html?birdCode='+code);const adopt=frame().locator('#xcwc-adopt');await adopt.locator('[data-action=confirm]').filter({hasText:/^孵化并领养$/}).waitFor();assert(await adopt.locator('[data-action=confirm]').isEnabled());await adopt.locator('#adopt-v1-name').fill('存储啾');
   await page.evaluate(()=>window.__storageFault.quota=true);await adopt.locator('[data-action=confirm]').click();await adopt.locator('[data-role=service-notice]').filter({hasText:'保存失败'}).waitFor();assert.equal(await page.evaluate(()=>window.xcwcGuest.read().birds.length),0);assert.equal(await page.evaluate(()=>window.xcwcGuest.read().balance),0);assert(await adopt.locator('[data-action=confirm]').isEnabled());r.checks.push({name:'quota failure does not confirm adoption or award points',passed:true});
   await page.evaluate(()=>window.__storageFault.quota=false);await adopt.locator('[data-action=confirm]').click();await frame().locator('#xcwc-nest #name').filter({hasText:'存储啾'}).waitFor();assert.equal(await page.evaluate(()=>window.xcwcGuest.read().birds.length),1);assert.equal(await page.evaluate(()=>window.xcwcGuest.read().balance),5);r.checks.push({name:'retry after quota restored adopts once',passed:true});
+  const validGuest=await page.evaluate(()=>localStorage.getItem('xcwc.guest.v1'));
+  await page.evaluate(()=>localStorage.setItem('xcwc.guest.v1','{damaged-cache'));await page.reload();
+  const nest=frame().locator('#xcwc-nest'),errorSheet=nest.locator('#sheet');
+  await errorSheet.filter({hasText:'本机记录暂不可用'}).waitFor({state:'visible'});
+  await errorSheet.locator('[data-action=retry]').click();
+  await frame().locator('#bjd-toast').filter({hasText:'本机体验缓存无法读取'}).waitFor({state:'visible'});
+  assert(await errorSheet.evaluate(dialog=>dialog.open));assert.equal(await page.evaluate(()=>localStorage.getItem('xcwc.guest.v1')),'{damaged-cache');r.checks.push({name:'retry while cache remains damaged keeps error dialog and original bytes',passed:true});
+  await page.evaluate(value=>localStorage.setItem('xcwc.guest.v1',value),validGuest);await errorSheet.locator('[data-action=retry]').click();
+  await errorSheet.waitFor({state:'hidden'});await nest.locator('#name').filter({hasText:'存储啾'}).waitFor();assert.equal(await page.evaluate(()=>window.xcwcGuest.read().balance),5);r.checks.push({name:'successful cache retry closes stale dialog and restores the bird without awarding again',passed:true});
   await page.evaluate(()=>window.__storageFault.album=true);await frame().locator('#xcwc-nest [data-action=checkin]').click();await frame().locator('#ck-albumError').filter({hasText:'暂时无法读取'}).waitFor();assert(r.requests.every(q=>q.method==='GET'));r.checks.push({name:'album unavailable is visible and never falls back to cloud upload',passed:true});
   await page.evaluate(()=>window.__storageFault.album=false);await frame().locator('.phone>.bottom [data-go=home]').click();await frame().locator('#xcwc-nest #name').filter({hasText:'存储啾'}).waitFor();await frame().locator('#xcwc-nest [data-action=checkin]').click();
   await frame().locator('#ck-albumError').waitFor({state:'hidden'});const description=await frame().locator('#ck-albumCapacity').innerText();const recovered=await frame().locator('#ck-albumError').isHidden();r.checks.push({name:'reenter album after synchronous storage permission failure recovers without reload',passed:recovered,description});

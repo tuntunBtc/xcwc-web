@@ -90,3 +90,12 @@ test('unable to persist the reset generation stops before deleting photos or exp
  await assert.rejects(reset(),/清除状态无法保存/);
  assert.equal(cleared,false);assert.equal(local.getItem('xcwc.guest.v1'),'birds');
 });
+
+
+test('reset loads optional stores before deleting any data and a load failure leaves all data intact',async()=>{
+ const h=host({local:storage([['xcwc.guest.v1','original']])}),features=[];
+ h.window.xcwcEnsureHostFeature=async name=>{features.push(name);throw Error('feature unavailable')};
+ await assert.rejects(h.reset(),/feature unavailable/);assert.equal(h.local.getItem('xcwc.guest.v1'),'original');
+ assert.deepEqual(features,['photo','shop']);
+ h.window.xcwcEnsureHostFeature=async()=>{};assert.equal((await h.reset()).cleared,true);
+});

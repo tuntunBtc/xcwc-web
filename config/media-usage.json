@@ -87,8 +87,9 @@
       ],
       "usageUrl": "/assets/navigation/plush/nav-background.webp",
       "outputBaseFile": "assets/optimized/navigation/plush/nav-background",
-      "encoding": "lossless-webp",
-      "purpose": "公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率"
+      "encoding": "lossy-webp",
+      "purpose": "公共底栏毛绒底板，保留两端花叶与半透明绒毛，手机约 2.2–2.6 倍分辨率",
+      "quality": 94
     },
     {
       "id": "nav-plush-nav-home-default",
@@ -265,6 +266,74 @@
       "outputBaseFile": "assets/optimized/navigation/plush/nav-profile-active",
       "encoding": "lossless-webp",
       "purpose": "公共底栏 profile active 绒线图标；与同项另一状态共用联合正方形裁切框及缩放"
+    },
+    {
+      "id": "adopt-lower-visible-top",
+      "sourceFile": "assets/adopt-v1/sources/lower-visible.png",
+      "sourceSize": [
+        720,
+        930
+      ],
+      "cropBox": [
+        0,
+        0,
+        720,
+        720
+      ],
+      "outputSize": [
+        720,
+        720
+      ],
+      "usageUrl": "/assets/adopt-v1/felt/lower-visible-top.webp",
+      "outputBaseFile": "assets/optimized/adopt-v1/lower-visible-top",
+      "encoding": "lossy-webp",
+      "quality": 92,
+      "purpose": "领养下部原件等比缩放后去除 CSS 已裁掉的顶部 630 px；原缩放和表单位置不变，分片仅在视口内读取。"
+    },
+    {
+      "id": "adopt-lower-visible-bottom",
+      "sourceFile": "assets/adopt-v1/sources/lower-visible.png",
+      "sourceSize": [
+        720,
+        930
+      ],
+      "cropBox": [
+        0,
+        720,
+        720,
+        930
+      ],
+      "outputSize": [
+        720,
+        210
+      ],
+      "usageUrl": "/assets/adopt-v1/felt/lower-visible-bottom.webp",
+      "outputBaseFile": "assets/optimized/adopt-v1/lower-visible-bottom",
+      "encoding": "lossy-webp",
+      "quality": 96,
+      "purpose": "领养下部原件等比缩放后去除 CSS 已裁掉的顶部 630 px；原缩放和表单位置不变，分片仅在视口内读取。"
+    },
+    {
+      "id": "nest-idle-poster",
+      "sourceFile": "assets/nest/idle/huangying-idle.webp",
+      "sourceSize": [
+        2048,
+        2552
+      ],
+      "cropBox": [
+        0,
+        0,
+        256,
+        232
+      ],
+      "outputSize": [
+        256,
+        232
+      ],
+      "usageUrl": "/assets/nest/idle/poster.webp",
+      "outputBaseFile": "assets/optimized/nest/idle/poster",
+      "encoding": "lossless-webp",
+      "purpose": "小窝正常静态待机封面，逐像素复用已审核动画图集首帧，不加载完整图集即可显示同姿态；脚区使用动画 footAreas[0]，无缩放或二次有损。"
     }
   ]
 }

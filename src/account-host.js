@@ -43,6 +43,13 @@
     if(!c.signal.aborted)frame.contentWindow.postMessage({channel:'xcwc-account-result',id:m.id,ok:true,value},'*');return;
    }
    switch(m.operation){
+    case 'nestIdleAudio':{
+     // One fixed public asset; the sandbox cannot select a URL or read credentials.
+     const response=await fetch('/assets/nest/idle/huangying-idle.m4a',{signal:c.signal,credentials:'omit',redirect:'error'});
+     if(!response.ok||Number(response.headers.get('content-length'))>150000)throw Error('动画原声暂时无法读取');
+     const bytes=await response.arrayBuffer();if(bytes.byteLength>150000)throw Error('动画原声文件超出限制');
+     value={audio:new Blob([bytes],{type:'audio/mp4'})};break;
+    }
     case 'bootstrap':{await restore(c.signal);if(!session()){value={...identity(),birds:[],wallet:null};break}const [birds,wallet]=await Promise.all([api('/me/birds',{signal:c.signal}),api('/me/points',{signal:c.signal})]);value={...identity(),birds,wallet};break}
     case 'identity':await restore(c.signal);value=identity();break;
     case 'adoptionContext':{const localPreview=['127.0.0.1','localhost','[::1]'].includes(location.hostname)&&new URLSearchParams(location.search).get('previewTest')==='1';value={...adoptionEntry(),previewTest:localPreview};break;}

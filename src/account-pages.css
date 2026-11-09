@@ -11,6 +11,8 @@
 #bjd-review.is-integrated:has(#xcwc-adopt) .phone{height:100dvh;display:flex;flex-direction:column}
 #bjd-review.is-integrated:has(#xcwc-adopt) .phone>main{flex:1;min-height:0;overflow:auto}
 #bjd-review.is-integrated:has(#xcwc-adopt) .bottom{flex-shrink:0}
+#bjd-review.is-integrated:has(#xcwc-adopt) .phone{--xcwc-nav-height:0px}
+#bjd-review.is-integrated:has(#xcwc-adopt) .phone>.bottom{display:none}
 
 /* Shared page frame: same phone width, scroll area and bottom navigation on all routes. */
 #bjd-review.is-integrated{--xcwc-paper:#fcf5e3;--xcwc-ink:#53472e;--xcwc-green:#64794a;--xcwc-muted:#92836a;--xcwc-line:#e5d9bb;--xcwc-card-radius:14px;height:100dvh;min-height:100dvh;overflow:hidden;padding:0;background:#f3efe3;color-scheme:light}
@@ -82,7 +84,8 @@
 
 /* One image-based felt navigation for every route. The shell reserves its
    full height; the decorative layer retains its 960:195 artwork ratio. */
-#bjd-review .phone>.bottom{--nav-art-height:calc((min(100vw,480px) - 8px)*195/960);position:relative;z-index:8;isolation:isolate;display:flex;flex:0 0 auto;align-items:stretch;gap:0;box-sizing:border-box;margin:0;height:calc(var(--nav-art-height) + env(safe-area-inset-bottom,0px));min-height:0;padding:12px 14px calc(7px + env(safe-area-inset-bottom,0px));overflow:visible;background:var(--xcwc-paper,#fcf5e3);border:0;border-radius:0;box-shadow:none}
+#bjd-review.is-integrated .phone{--xcwc-nav-height:calc((min(100vw,480px) - 8px)*195/960 + env(safe-area-inset-bottom,0px))}
+#bjd-review .phone>.bottom{--nav-art-height:calc((min(100vw,480px) - 8px)*195/960);position:relative;z-index:8;isolation:isolate;display:flex;flex:0 0 auto;align-items:stretch;gap:0;box-sizing:border-box;margin:0;height:var(--xcwc-nav-height);min-height:0;padding:12px 14px calc(7px + env(safe-area-inset-bottom,0px));overflow:visible;background:transparent;border:0;border-radius:0;box-shadow:none}
 #bjd-review .phone>.bottom::before{content:"";position:absolute;inset:0 4px auto;z-index:-1;aspect-ratio:960/195;pointer-events:none;background:url('__XCWC_ASSET_ORIGIN__/assets/navigation/plush/nav-background.webp') center/contain no-repeat}
 #bjd-review .phone>.bottom::after,#bjd-review .phone>.bottom button::before,#bjd-review .phone>.bottom button::after{content:none}
 #bjd-review .phone>.bottom button{position:relative;display:flex;flex:1 1 0;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-sizing:border-box;width:auto;min-width:0;min-height:44px;margin:0;padding:0;color:#80502c;font:600 clamp(12px,3.45vw,15px)/1.25 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif;white-space:nowrap;background:transparent;border:0;border-radius:0;box-shadow:none;text-shadow:0 1px 1px #fff3d9;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -90,6 +93,14 @@
 #bjd-review .phone>.bottom .navigation-icon{display:block;flex:none;width:clamp(27px,7.7vw,35px);height:clamp(27px,7.7vw,35px);max-width:none;margin:0;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none}
 #bjd-review .phone>.bottom button>span{display:block;letter-spacing:1px;line-height:1.25;white-space:nowrap;pointer-events:none}
 #bjd-review .phone>.bottom button:focus-visible{outline:2px solid #4e8c4c;outline-offset:-2px}
+/* The transparent navigation reveals each page's own scenery / ground color. */
+#bjd-review.is-integrated:has(#xcwc-city) .phone{background:#c0d28e}
+#bjd-review.is-integrated:has(#xcwc-shop) .phone{background:#f3f0d9}
+#bjd-review.is-integrated:has(.account-profile-felt) .phone{background:#c8df83 url('__XCWC_ASSET_ORIGIN__/assets/profile/felt/background-v1.png') center top/100% auto no-repeat}
+#bjd-review.is-integrated:has(#xcwc-account-page.account-profile-felt) .phone>main{background:transparent}
+#bjd-review.is-integrated:has(.account-wardrobe-felt) .phone{background:#dceac0 url('__XCWC_ASSET_ORIGIN__/assets/wardrobe/felt/scene-lower-v2-900.webp') center bottom/100% auto no-repeat}
+#bjd-review.is-integrated:has(.account-flock-felt) .phone{background:#e5edcb}
+#bjd-review.is-integrated.is-checkin .phone{background:#dbe8c9 url('__XCWC_ASSET_ORIGIN__/assets/checkin/felt-meadow-v1.jpg') center bottom/100% auto repeat-y}
 
 /* Shared account feedback remains readable and usable on narrow touch screens. */
 #bjd-review .account-page .account-back{width:auto;min-width:84px;min-height:44px;margin:0 0 10px;padding:8px 15px;font-size:14px}
