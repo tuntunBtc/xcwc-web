@@ -187,18 +187,6 @@
         </view>
     </view>
 
-    <!-- 我的衣橱：H5 为 wardrobe 路由，小程序尚未接入换装，保留同风格展示 -->
-    <view class="overlay" wx:if="{{wardrobeVisible}}" bindtap="closeSheets" catchtouchmove="noop">
-        <view class="sheet" catchtap="noop">
-            <view class="sheet-close" catchtap="closeSheets"><text>×</text></view>
-            <scroll-view class="sheet-body" scroll-y="true">
-                <text class="wardrobe-eyebrow">BUJIDAO · MY ISLAND</text>
-                <text class="sheet-h2">我的衣橱</text>
-                <text class="sheet-muted">服装展示 · 暂未开放</text>
-                <image class="wardrobe-bird" src="/assets/nest/poster.webp" mode="aspectFit"></image>
-                <text class="sheet-muted">换装功能本期暂未开放，服装仅作展示。</text>
-                <view class="sheet-action" bindtap="goHome"><text>回小窝看看</text></view>
-            </scroll-view>
-        </view>
-    </view>
+    <!-- 「我的 → 我的衣橱」已与小窝「换装」统一为独立 wardrobe 页，
+         原页内简易浮层移除，避免两套衣橱 UI 并存。 -->
 </view>

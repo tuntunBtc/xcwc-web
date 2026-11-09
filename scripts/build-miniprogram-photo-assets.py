@@ -138,9 +138,23 @@ def icon(name: str, draw_fn) -> None:
 
 def build_icons() -> None:
     def leaf(d: ImageDraw.ImageDraw) -> None:
-        d.ellipse((8, 6, 40, 34), outline=ICON_GREEN, width=3)
-        d.line((10, 40, 34, 12), fill=ICON_GREEN, width=3)
-        d.line((18, 29, 30, 17), fill=ICON_GREEN, width=2)
+        # 叶片：沿左下→右上的中轴，两侧按 sin 曲线外扩成透镜形。
+        def axis(u):
+            return 9 + 30 * u, 41 - 33 * u
+
+        width = 12
+        normal_x, normal_y = 0.74, 0.67
+        outline = []
+        for side in (1, -1):
+            seq = range(0, 21) if side == 1 else range(20, -1, -1)
+            for i in seq:
+                u = i / 20
+                x, y = axis(u)
+                bulge = width * math.sin(math.pi * u) * side
+                outline.append((x + normal_x * bulge, y + normal_y * bulge))
+        d.polygon(outline, fill=(209, 230, 123, 255), outline=ICON_GREEN)
+        d.line((9, 41, 34, 14), fill=ICON_GREEN, width=2)
+        d.line((16, 32, 26, 21), fill=ICON_GREEN, width=2)
     icon("icon-leaf.png", leaf)
 
     def camera(d: ImageDraw.ImageDraw) -> None:

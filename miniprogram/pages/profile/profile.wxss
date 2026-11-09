@@ -436,7 +436,7 @@ page {
     border: 6rpx solid #efe0bd;
     border-radius: 46rpx;
     background: #fff8e9;
-    color: #795d3e;
+    color: #604b31;
     box-shadow: 0 24rpx 70rpx rgba(90, 99, 56, 0.23);
 }
 
@@ -591,6 +591,7 @@ page {
     border: 6rpx solid #f4e2c9;
     border-radius: 52rpx;
     background: linear-gradient(135deg, #fff8e9, #f6e8ce);
+    color: #684c30;
 }
 
 .reset-body {

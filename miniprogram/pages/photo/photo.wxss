@@ -160,11 +160,12 @@
 }
 .bird-empty-art { position: absolute; right: 14rpx; bottom: 26rpx; width: 180rpx; height: 196rpx; opacity: .85; }
 .bird-empty-copy { position: relative; z-index: 1; font-size: 24rpx; font-weight: 550; line-height: 2; color: #8e7c48; }
+.bird-empty-copy text { display: block; }
 .selection-summary { display: flex; justify-content: space-between; align-items: center; gap: 12rpx;
     padding: 18rpx 30rpx 0; border-top: 2rpx solid rgba(234,201,165,.41); margin-top: 2rpx;
     font-size: 24rpx; color: #775c3b; line-height: 1.5; }
-.summary-text { max-width: 65%; }
-.swipe-note { font-size: 24rpx; color: #775c3b; white-space: nowrap; }
+.summary-text { display: block; max-width: 62%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.swipe-note { display: block; font-size: 24rpx; color: #775c3b; white-space: nowrap; }
 
 /* ---------- 合成面板 ---------- */
 .compose-panel { margin-top: 40rpx; padding: 38rpx 30rpx 34rpx; }

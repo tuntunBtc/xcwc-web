@@ -70,7 +70,7 @@
                     </scroll-view>
                     <view wx:else class="bird-empty">
                         <image class="bird-empty-art" src="/assets/photo/bird.webp" mode="aspectFit"></image>
-                        <view class="bird-empty-copy">还没有领取小鸟<text>\n</text>领取后，带它一起合照吧</view>
+                        <view class="bird-empty-copy"><text>还没有领取小鸟</text><text>领取后，带它一起合照吧</text></view>
                     </view>
 
                     <view class="selection-summary">
@@ -156,8 +156,8 @@
                             </view>
                             <view class="editor-tip">单指拖动小鸟，双指捏合或张开放大缩小</view>
                             <view class="photo-stack">
-                                <view class="canvas-stage" bindtouchstart="onTouchStart" bindtouchmove="onTouchMove"
-                                      bindtouchend="onTouchEnd" bindtouchcancel="onTouchEnd">
+                                <view class="canvas-stage" catchtouchstart="onTouchStart" catchtouchmove="onTouchMove"
+                                      catchtouchend="onTouchEnd" catchtouchcancel="onTouchEnd">
                                     <canvas type="2d" id="preview" class="preview-canvas" style="height:{{canvasHeightRpx}}rpx"></canvas>
                                     <view wx:if="{{selectionVisible}}" class="bird-selection"
                                           style="left:{{selectionBox.left}}%;top:{{selectionBox.top}}%;width:{{selectionBox.width}}%;height:{{selectionBox.height}}%">
@@ -272,7 +272,7 @@
                 <text class="viewer-title">打卡合照</text>
                 <view class="viewer-close" catchtap="onCloseViewer">×</view>
             </view>
-            <image class="viewer-image" src="{{viewer.image}}" mode="aspectFit" show-menu-by-longpress="true"></image>
+            <image class="viewer-image" src="{{viewer.image}}" mode="aspectFit" show-menu-by-longpress="{{true}}"></image>
             <view wx:if="{{viewer.meta}}" class="viewer-meta">{{viewer.meta}}</view>
             <view wx:if="{{viewer.note}}" class="viewer-note">{{viewer.note}}</view>
             <view class="viewer-save" catchtap="onSavePhoto">{{viewer.buttonText}}</view>

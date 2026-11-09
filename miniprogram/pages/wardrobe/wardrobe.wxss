@@ -1,0 +1,361 @@
+/* 网页端 src/wardrobe-felt.css 的等比换算。
+   基准：本项目通用 480px → 750rpx（1px = 1.5625rpx、1cqw = 7.5rpx）。
+   但 H5 在 390px 视口下 CSS px 不缩放，固定 px 值的视觉等效为 1px ≈ 1.92rpx
+   （750/390）。为使「UI 和网页端效果一样」，min-height / 字号 / padding 按
+   390px 视口下 H5 实测几何反推；百分比、cqw 类尺寸仍用 7.5rpx/cqw。
+   实测对照（390px）：back 84×44、hero 195、head 203×118、actor 218×198、
+   note 372×58、card 182×317、preview 156×156、wear 156×44、h2 18px。
+
+   平台替换：background-image 的上下场景/毛毡底板改用 <image> 铺底；
+   ::before 的 sepia(.32) saturate(.7) brightness(1.04) 已烘焙进素材；
+   cqw / :is() / :has() / grid 改为 rpx + flex 两列 + JS 预算左右列 class。 */
+
+page {
+    background: #dceac0;
+    color: #60462d;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.wardrobe-page view,
+.wardrobe-page text,
+.wardrobe-page image {
+    box-sizing: border-box;
+}
+
+.wardrobe-page {
+    position: relative;
+    min-height: 100vh;
+    padding: 19rpx 27rpx 38rpx;
+    background: #dceac0;
+    /* 不能设 overflow:hidden：<tab-bar /> 组件内部有 position:fixed 的底栏和
+       z-index:1000 的层级，父容器裁剪会在部分基础库把它一起裁掉。
+       背景平铺的多余部分由 .scene-lower 自身的 overflow:hidden 负责。 */
+}
+
+/* ---------- 场景：上段 63cqw，下段 repeat-y ---------- */
+.scene-top {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 472rpx;
+    z-index: 0;
+}
+
+.scene-lower {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 472rpx;
+    bottom: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.scene-lower-tile {
+    display: block;
+    width: 100%;
+}
+
+/* 状态栏 + 胶囊安全区；微信系统胶囊无法隐藏，属平台必需留白 */
+.status-space {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+}
+
+.flow {
+    position: relative;
+    z-index: 1;
+}
+
+.ui-hover {
+    opacity: 0.86;
+}
+
+/* ---------- 返回按钮（H5 .account-back：84×44 / 14px） ---------- */
+.back {
+    position: relative;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 162rpx;
+    min-height: 85rpx;
+    margin: 0 0 20rpx;
+    padding: 15rpx 29rpx;
+    border-radius: 39rpx;
+    background: rgba(255, 247, 226, 0.86);
+    color: #76603e;
+    font-size: 27rpx;
+    line-height: 1.5;
+}
+
+/* ---------- hero：标题卡 203×118 + 当前小鸟 218×198 ---------- */
+.hero {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    min-height: 375rpx;      /* H5 实测 195px */
+    margin: 0 -14rpx 8rpx;
+}
+
+.head {
+    position: relative;
+    z-index: 1;
+    width: 54%;
+    min-height: 227rpx;      /* H5 实测 118px */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 31rpx 23rpx;
+    text-align: center;
+}
+
+.head-tex {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.head-copy {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.eyebrow {
+    display: block;
+    max-width: 100%;
+    font-size: 19rpx;        /* H5 10px */
+    letter-spacing: 1rpx;
+    line-height: 1.4;
+    color: #aa8964;
+}
+
+.head-title {
+    display: block;
+    max-width: 100%;
+    margin: 10rpx 0 8rpx;
+    font-size: 53rpx;        /* H5 clamp 实测 27.5px */
+    font-weight: 700;
+    letter-spacing: 2rpx;
+    line-height: 1.3;
+    color: #674729;
+    text-shadow: 0 1rpx 1rpx #fff4d8;
+}
+
+.head-sub {
+    display: block;
+    max-width: 100%;
+    font-size: 23rpx;        /* H5 12px */
+    line-height: 1.5;
+    color: #76603e;
+}
+
+.actor {
+    position: absolute;
+    right: 0;
+    top: 12rpx;              /* H5 6px */
+    width: 58%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* ---------- 说明条（H5 58px） ---------- */
+.note {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 112rpx;
+    margin: 0 -10rpx 10rpx;
+    padding: 17rpx 35rpx;
+    text-align: center;
+}
+
+.note-tex,
+.local-tex {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.note-copy {
+    position: relative;
+    z-index: 1;
+    font-size: 23rpx;        /* H5 12px */
+    line-height: 1.8;
+    letter-spacing: 1rpx;
+    color: #665538;
+}
+
+/* ---------- 陈列标题（H5 18px / 11px） ---------- */
+.collection {
+    margin: 31rpx 0 0;
+}
+
+.collection-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 19rpx;
+    margin: 0 10rpx 16rpx;
+}
+
+.collection-title {
+    font-size: 35rpx;
+    font-weight: 650;
+    line-height: 1.6;
+    color: #665032;
+    text-shadow: 0 1rpx 3rpx #fff8d4;
+}
+
+.collection-count {
+    font-size: 23rpx;
+    color: #665538;
+}
+
+/* ---------- 两列服装卡（H5 182×317） ---------- */
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -10rpx;
+}
+
+.outfit-card {
+    position: relative;
+    /* 显式声明，不依赖标签选择器：两列宽度之和必须严格小于容器宽，
+       否则 flex-wrap 会把右列挤到下一行（真机与预览同风险）。 */
+    box-sizing: border-box;
+    width: calc((100% - 20rpx) / 2);
+    min-height: 610rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    padding: 54rpx 25rpx 35rpx;
+    margin-bottom: 16rpx;
+}
+
+.outfit-card.is-left {
+    /* 单列 margin 只给左列；两列合计 (100%-20rpx)/2*2 + 16rpx = 100%-4rpx，留 4rpx 余量 */
+    margin-right: 16rpx;
+}
+
+.card-tex {
+    position: absolute;
+    left: -2rpx;
+    top: 0;
+    width: calc(100% + 4rpx);
+    height: 100%;
+    z-index: 0;
+}
+
+.preview {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%;    /* aspect-ratio: 1，H5 实测 156×156 */
+    margin: 0 0 23rpx;
+    border-radius: 39rpx;
+    background: radial-gradient(circle, rgba(227, 235, 197, 0.33), transparent 72%);
+}
+
+.preview-img {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    transform: translateY(35rpx);   /* H5 clamp(12px,4.4cqw,18px) ≈ 18px */
+}
+
+.card-name {
+    position: relative;
+    z-index: 1;
+    display: block;
+    max-width: 100%;
+    margin: 0 0 8rpx;
+    font-size: 33rpx;        /* H5 17px */
+    font-weight: 650;
+    line-height: 1.5;
+    color: #584128;
+}
+
+.card-desc {
+    position: relative;
+    z-index: 1;
+    display: block;
+    max-width: 100%;
+    margin: 0 0 16rpx;
+    font-size: 23rpx;        /* H5 12px */
+    line-height: 1.7;
+    color: #665538;
+}
+
+/* H5 .wardrobe-wear 与 :disabled 态：文案「暂未开放」，不可兑换 */
+.wear {
+    position: relative;
+    z-index: 1;
+    margin-top: auto;
+    width: 100%;
+    min-height: 85rpx;       /* H5 44px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16rpx 10rpx;
+    border: 2rpx solid #fff3c9;
+    border-radius: 48rpx;
+    background: linear-gradient(#fdf3d4, #f4e7bc);
+    box-shadow: inset 0 1rpx 7rpx #fffbe6, 0 3rpx 6rpx rgba(198, 175, 109, 0.21);
+    color: #658349;
+    font-size: 29rpx;        /* H5 15px */
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.wear.is-disabled {
+    color: #aaa984;
+    background: linear-gradient(#f8eed0, #efe4bc);
+    box-shadow: inset 0 0 8rpx #fff8de, 0 2rpx 4rpx rgba(198, 175, 109, 0.14);
+}
+
+/* ---------- 本机体验说明（H5 61px / 12px） ---------- */
+.local-note {
+    position: relative;
+    margin: 10rpx -10rpx 0;
+    padding: 17rpx 33rpx;
+    min-height: 118rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.local-copy {
+    position: relative;
+    z-index: 1;
+    font-size: 23rpx;
+    line-height: 1.8;
+    color: #665538;
+    text-align: center;
+}
+
+/* 窄屏（≤359px 等价）微调标题与卡片内边距 */
+@media (max-width: 359px) {
+    .head-title { font-size: 46rpx; }
+    .card-name { font-size: 31rpx; }
+    .outfit-card { padding: 47rpx 21rpx 33rpx; }
+}

@@ -1,0 +1,69 @@
+<!-- 衣橱：按网页端 src/account-pages.js 的 feltWardrobeContent + src/wardrobe-felt.css 复刻。
+     480px 产品容器 → 750rpx（1px = 1.5625rpx，1cqw = 7.5rpx）。
+     WXSS 不支持 ::before 背景图 / cqw / :has / filter 链，故：
+     毛毡底板一律 <image> 铺底（sepia 效果已烘焙进素材），纵向平铺用有限张 image 拼接。
+     当前网页端为「服装展示 · 暂未开放」，所有卡片按钮保持禁用视觉，不伪造兑换。 -->
+<view class="wardrobe-page">
+
+    <!-- 背景：上段固定 63cqw，下段按 H5 的 repeat-y 纵向拼接（容器 bottom:0 不撑开文档流） -->
+    <image class="scene-top" src="/assets/wardrobe/felt/scene-top.webp" mode="scaleToFill"></image>
+    <view class="scene-lower">
+        <image wx:for="{{lowerTiles}}" wx:key="*this" class="scene-lower-tile"
+               src="/assets/wardrobe/felt/scene-lower.webp" mode="widthFix"></image>
+    </view>
+
+    <!-- 自定义导航：状态栏与胶囊安全区（微信胶囊不可隐藏，为平台必需留白） -->
+    <view class="status-space" style="height:{{topInset}}rpx"></view>
+
+    <view class="flow">
+        <view class="back" bindtap="onBack" hover-class="ui-hover">← 返回</view>
+
+        <!-- hero：左侧标题卡 + 右侧当前小鸟立绘（与 H5 wardrobe-actor 同位） -->
+        <view class="hero">
+            <view class="head">
+                <image class="head-tex" src="/assets/wardrobe/felt/panel-head.webp" mode="scaleToFill"></image>
+                <view class="head-copy">
+                    <text class="eyebrow">BUJIDAO · MY ISLAND</text>
+                    <text class="head-title">我的衣橱</text>
+                    <text class="head-sub">服装展示 · 暂未开放</text>
+                </view>
+            </view>
+            <image class="actor" src="/assets/wardrobe/felt/idle-640.webp" mode="widthFix"></image>
+        </view>
+
+        <!-- 说明条 -->
+        <view class="note">
+            <image class="note-tex" src="/assets/wardrobe/felt/panel-head.webp" mode="scaleToFill"></image>
+            <text class="note-copy">换装功能本期暂未开放，服装仅作展示。</text>
+        </view>
+
+        <!-- 服装陈列 -->
+        <view class="collection">
+            <view class="collection-head">
+                <text class="collection-title">小黄莺的新衣</text>
+                <text class="collection-count">{{outfitCount}} 套装扮</text>
+            </view>
+            <view class="grid">
+                <view wx:for="{{outfits}}" wx:key="id" class="outfit-card {{item.isLeft ? 'is-left' : 'is-right'}}"
+                      data-id="{{item.id}}" bindtap="onOutfitTap" hover-class="ui-hover">
+                    <image class="card-tex" src="/assets/wardrobe/felt/panel-card.webp" mode="scaleToFill"></image>
+                    <view class="preview">
+                        <image class="preview-img" src="{{item.thumb}}" mode="aspectFit"></image>
+                    </view>
+                    <text class="card-name">{{item.name}}</text>
+                    <text class="card-desc">服装展示</text>
+                    <view class="wear is-disabled">暂未开放</view>
+                </view>
+            </view>
+        </view>
+
+        <view class="local-note">
+            <image class="local-tex" src="/assets/wardrobe/felt/panel-head.webp" mode="scaleToFill"></image>
+            <text class="local-copy">本机体验 · 无需登录；清除小程序数据或换设备后不会自动恢复。</text>
+        </view>
+    </view>
+
+    <!-- 非 tab 页不会自动挂载自定义 tabBar，显式复用同一组件保持四项导航与网页端一致。
+         组件自带 tab-bar-space 占位（正常流）+ fixed 底栏，故页面不再另加 spacer。 -->
+    <tab-bar />
+</view>

@@ -7,6 +7,8 @@
     pointer-events: none;
 }
 
+/* fixed 层只占底板那 149rpx：上方的 Home Indicator 安全区完全属于页面，
+   不会盖住页面底部按钮、也不需要靠 pointer-events 透传来放行点击。 */
 .tab-bar {
     position: fixed;
     left: 0;
@@ -15,7 +17,6 @@
     z-index: 1000;
     box-sizing: border-box;
     background: transparent;
-    pointer-events: none;
 }
 
 /* 960×195 原图等比铺满宽度：734rpx / (960/195) = 149rpx，不做任何纵向拉伸，

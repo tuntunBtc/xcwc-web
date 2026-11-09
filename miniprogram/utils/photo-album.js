@@ -141,8 +141,16 @@ function create(payload, store) {
         return Promise.resolve({ item: view(existing), reward: existing.reward === 1 ? 1 : 0, replayed: true, error: null });
     }
     if (rows.length >= LIMIT) return Promise.resolve({ error: 'ALBUM_FULL', message: '相册已保存 30 张，请先管理合照腾出空间' });
-    if (!payload.birdIds || !payload.birdIds.length || payload.birdIds.length > 3) {
+    if (!payload.birdIds || !payload.birdIds.length || payload.birdIds.length > 3 ||
+        new Set(payload.birdIds).size !== payload.birdIds.length) {
         return Promise.resolve({ error: 'INVALID_BIRDS', message: '请选择 1–3 只已领取的小鸟' });
+    }
+    // 与 H5 一致：提交时二次核对出镜小鸟仍是本机已领取实体，不按前缀推断。
+    var snapshot = store.snapshot();
+    var state = snapshot.data ? snapshot.data.snapshot : null;
+    var ownedId = state && state.hasBird ? (state.birdCode || 'local-bird') : '';
+    if (!ownedId || payload.birdIds.some(function (id) { return id !== ownedId; })) {
+        return Promise.resolve({ error: 'INVALID_BIRDS', message: '本机领取记录已变化，请重新选择小鸟' });
     }
     var image = '';
     var original = '';

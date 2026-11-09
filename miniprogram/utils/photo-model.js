@@ -109,14 +109,19 @@ function photoPlacement(width, height, mode, horizontal, vertical) {
     };
 }
 
+// 不用 String.padStart：低版本 iOS WebView 可能没有该运行时方法。
+function pad2(value) {
+    return value < 10 ? '0' + value : String(value);
+}
+
 function formatDate(time) {
     var d = new Date(time);
-    return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '.' + pad2(d.getMonth() + 1) + '.' + pad2(d.getDate());
 }
 
 function formatDateTime(time) {
     var d = new Date(time);
-    return formatDate(time).slice(2) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return formatDate(time).slice(2) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
 
 // H5 syncGenerate() 的按钮文案状态机；小程序用同一套判定，避免两套口径。

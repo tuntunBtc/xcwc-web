@@ -306,8 +306,17 @@ Page({
             this.openSheet({ type: 'supply', title: '问候与补给' });
             return;
         }
-        // 打卡与衣橱是独立功能页，本轮只做小窝视觉复刻，不伪造入口。
-        this.showToast(key === 'checkin' ? '合照打卡暂未接入' : '换装暂未接入');
+        if (key === 'checkin') {
+            // 网页端从小窝右侧「合照打卡」直达 photo 路由；此处为同一入口。
+            wx.navigateTo({ url: '/pages/photo/photo' });
+            return;
+        }
+        // 网页端小窝「换装」直达 wardrobe 路由；这里是同一个独立衣橱页。
+        // 该页当前为「服装展示 · 暂未开放」，与网页端保持一致，不伪造兑换或穿戴。
+        if (key === 'dress') {
+            wx.navigateTo({ url: '/pages/wardrobe/wardrobe' });
+            return;
+        }
     },
 
     onNeed(event) {

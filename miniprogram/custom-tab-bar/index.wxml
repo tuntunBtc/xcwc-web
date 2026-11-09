@@ -3,7 +3,7 @@
      底板保持 960×195 原始比例贴在窗口物理底边，四个入口与底板同轴垂直居中；
      上方多出的 Home Indicator 安全区不画底板、也不拦截页面点击。 -->
 <view class="tab-bar-space" style="height: {{barHeight}}rpx"></view>
-<view class="tab-bar" style="height: {{barHeight}}rpx">
+<view class="tab-bar" style="height: {{artHeight}}rpx">
     <image class="tab-bar-art" src="/assets/navigation/plush/nav-background.webp" mode="scaleToFill"></image>
     <view class="tab-bar-items">
         <view class="tab-bar-item" wx:for="{{list}}" wx:key="pagePath"

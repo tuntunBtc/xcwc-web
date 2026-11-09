@@ -1,0 +1,9 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#DCEAC0",
+  "usingComponents": {
+    "tab-bar": "/custom-tab-bar/index"
+  }
+}

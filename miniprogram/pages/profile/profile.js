@@ -1,6 +1,7 @@
 'use strict';
 
 const store = require('../../utils/store');
+const photoAlbum = require('../../utils/photo-album');
 const entry = require('../../utils/entry');
 const config = require('../../utils/config');
 const tabBar = require('../../utils/tab-bar');
@@ -27,7 +28,6 @@ function closedSheets() {
         walletVisible: false,
         resetVisible: false,
         birdsVisible: false,
-        wardrobeVisible: false,
         resetBusy: false,
     };
 }
@@ -47,7 +47,6 @@ Page({
         walletVisible: false,
         resetVisible: false,
         birdsVisible: false,
-        wardrobeVisible: false,
         localNoteOpen: false,
         rulesOpen: false,
         resetBusy: false,
@@ -112,7 +111,10 @@ Page({
     },
 
     onWardrobe() {
-        this.setData(Object.assign(closedSheets(), { wardrobeVisible: true }));
+        // 网页端「我的 → 我的衣橱」与小窝「换装」共用 wardrobe 路由，
+        // 不再用页内浮层，统一跳独立衣橱页（当前为服装展示 · 暂未开放）。
+        this.setData(closedSheets());
+        wx.navigateTo({ url: '/pages/wardrobe/wardrobe' });
     },
 
     onReset() {
@@ -137,10 +139,12 @@ Page({
         }
         this.setData({ resetBusy: true });
         const result = store.reset();
+        // 二次确认文案已承诺删除本机相册原图与作品，这里同步清理相册文件与草稿。
+        const albumCleared = photoAlbum.clear();
         this.loadProfile();
         this.setData(closedSheets());
         wx.showToast({
-            title: result && result.error ? '清除未完成，请重试' : '已清除',
+            title: (result && result.error) || !albumCleared ? '清除未完成，请重试' : '已清除',
             icon: 'none',
         });
     },

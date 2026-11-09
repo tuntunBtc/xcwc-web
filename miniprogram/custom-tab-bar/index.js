@@ -66,7 +66,10 @@ Component({
     data: {
         selected: 0,
         list: TABS,
+        // 文档流占位高度：底板 149rpx + Home Indicator 安全区。
         barHeight: ART_HEIGHT_RPX,
+        // 视觉层（底板 + 四入口）固定 149rpx，与页面其它布局解耦。
+        artHeight: ART_HEIGHT_RPX,
     },
 
     lifetimes: {

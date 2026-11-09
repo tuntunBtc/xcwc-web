@@ -4,7 +4,9 @@
     "pages/city/city",
     "pages/shop/shop",
     "pages/profile/profile",
-    "pages/adopt/adopt"
+    "pages/adopt/adopt",
+    "pages/photo/photo",
+    "pages/wardrobe/wardrobe"
   ],
   "window": {
     "navigationBarTitleText": "卜叽岛 · 小鸟伙伴",
