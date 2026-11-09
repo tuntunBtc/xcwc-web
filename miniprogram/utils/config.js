@@ -9,6 +9,10 @@ module.exports = {
     // 前端只拿服务端结算后的可兑换结果，不自行发放叽分。
     DEBUG_TODAY_STEPS: 6800,
 
+    // 步数兑换服务端接口。前端只提交密文（encryptedData/iv）与一次性 requestId，
+    // 由后端 WxRunService 用 session_key 解密并按北京时间自然日幂等结算。
+    STEPS_REDEEM_ENDPOINT: '/api/steps/redeem',
+
     // 调试期示例实体编码：仅用于预览卡/站内入口模拟「NFC 链接带 birdCode 进入领养页」。
     // 正式接入 URL Link / URL Scheme 后删除，编码一律来自链接参数，不再内置示例。
     DEBUG_DEMO_BIRD_CODE: 'HZ-HY-2116909225920720901',

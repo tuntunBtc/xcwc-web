@@ -1,71 +1,926 @@
-.hero {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 28rpx;
+/* 网页端 src/shop/shop.css 的现行版式换算：H5 手机视口 CSS px → 小程序 rpx（1px = 2rpx，
+   390px 视口下 1rpx = 0.52px）。布局宽度按 750rpx 栅格重算：
+   .products 左右 16rpx + 列间距 16rpx → 卡片 351rpx，卡内宽 311rpx，封面 311/1.18 = 264rpx。
+   WXSS 不支持本地 background-image / cqw / :has() / mix-blend-mode / ::before，
+   毛毡纹理一律用绝对定位 image 铺底，渐变圆钮与印章叶片用真实 view 绘制。 */
+.shop-page {
+    min-height: 100vh;
+    background: #edf0d7;
+    color: #79502d;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 28rpx;
 }
 
-.product-grid {
+.status-space {
+    width: 100%;
+    background: linear-gradient(180deg, #dfedce 0%, #e6edcf 100%);
+}
+
+.app {
+    width: 100%;
+    /* 底部留白兼容全站 custom-tab-bar（毛绒底栏约 187rpx + Home Indicator）。 */
+    padding: 20rpx 0 230rpx;
+    background: linear-gradient(180deg, #dfedce 0%, #f5f0dc 41%, #f3f0d9 100%);
+}
+
+.masthead-bg,
+.benefit-bg,
+.filter-bg,
+.panel-head-bg,
+.button-bg,
+.intro-texture,
+.stamp-bg,
+.card-bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+/* 品牌条 66px */
+.masthead {
+    position: relative;
+    z-index: 1;
+    height: 128rpx;
+    margin: 0 12rpx;
+    padding: 0 38rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.brand {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+}
+
+.brand-mark {
+    width: 68rpx;
+    height: 68rpx;
+    margin-right: 20rpx;
+    border: 4rpx solid #8eac63;
+    border-radius: 50%;
+    background: #fffbeb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-10deg);
+    box-sizing: border-box;
+}
+
+.brand-icon {
+    width: 52rpx;
+    height: 52rpx;
+}
+
+.brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand-name {
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 42rpx;
+    font-weight: 700;
+    letter-spacing: 4rpx;
+    line-height: 1.2;
+}
+
+.brand-en {
+    margin-top: 8rpx;
+    font-size: 18rpx;
+    letter-spacing: 6rpx;
+    font-family: Arial, sans-serif;
+}
+
+.cart-icon {
+    position: relative;
+    z-index: 1;
+    width: 88rpx;
+    height: 88rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-img {
+    width: 56rpx;
+    height: 56rpx;
+}
+
+.cart-count {
+    position: absolute;
+    right: 2rpx;
+    top: 2rpx;
+    min-width: 36rpx;
+    height: 36rpx;
+    padding: 0 6rpx;
+    border-radius: 20rpx;
+    background: #7f9f45;
+    color: #fffdf0;
+    font-size: 20rpx;
+    font-weight: 600;
+    line-height: 36rpx;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+/* 橱窗 916/438 */
+.hero {
+    position: relative;
+    width: 100%;
+    height: 359rpx;
+    margin-top: 2rpx;
+    background: #e6edcf;
+    overflow: hidden;
+}
+
+.hero-swiper {
+    width: 100%;
+    height: 100%;
+}
+
+.hero-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.hero-dots {
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-dot-hit {
+    width: 88rpx;
+    height: 88rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-dot {
+    width: 16rpx;
+    height: 16rpx;
+    border-radius: 50%;
+    background: rgba(255, 255, 225, 0.65);
+    box-shadow: 0 0 0 2rpx rgba(169, 184, 138, 0.25);
+}
+
+.hero-dot.is-active {
+    background: #fffdf0;
+    transform: scale(1.15);
+}
+
+.carousel-pause {
+    position: absolute;
+    z-index: 3;
+    right: 16rpx;
+    top: 16rpx;
+    min-height: 88rpx;
+    padding: 16rpx 24rpx;
+    border-radius: 44rpx;
+    background: rgba(255, 248, 233, 0.93);
+    color: #755331;
+    font-size: 24rpx;
+    line-height: 1.6;
+}
+
+/* 城市旅行日记 112px */
+.intro {
+    position: relative;
+    min-height: 216rpx;
+    padding: 34rpx 34rpx 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    background: linear-gradient(160deg, #fff4e3 0%, #f5eed6 100%);
+    overflow: hidden;
+}
+
+.intro-texture {
+    opacity: 0.21;
+}
+
+.intro-copy {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.eyebrow {
+    color: #b17e54;
+    font-size: 16rpx;
+    letter-spacing: 5rpx;
+    font-family: Arial, sans-serif;
+    margin-bottom: 18rpx;
+}
+
+.intro-title {
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 48rpx;
+    font-weight: 700;
+    letter-spacing: 4rpx;
+    line-height: 1.25;
+    margin-bottom: 16rpx;
+    white-space: nowrap;
+}
+
+.intro-desc {
+    color: #a18a68;
+    font-size: 24rpx;
+    line-height: 1.7;
+}
+
+.intro-stamp {
+    position: relative;
+    z-index: 1;
+    width: 150rpx;
+    height: 148rpx;
+    flex-shrink: 0;
+    margin-left: 14rpx;
+    margin-top: 16rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-12deg);
+    color: #8a5b31;
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 24rpx;
+    font-weight: 700;
+    line-height: 1.8;
+    text-align: center;
+}
+
+.stamp-line {
+    position: relative;
+    z-index: 1;
+}
+
+.stamp-leaf {
+    position: absolute;
+    z-index: 1;
+    right: -6rpx;
+    bottom: 14rpx;
+    width: 44rpx;
+    height: 22rpx;
+    background: linear-gradient(155deg, #c5df72, #7ea539);
+    border-radius: 100% 0 100% 0;
+    transform: rotate(-28deg);
+}
+
+/* 权益条 54px */
+.benefit {
+    position: relative;
+    min-height: 104rpx;
+    margin: 0 14rpx 18rpx;
+    padding: 16rpx 34rpx;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    color: #87592f;
+}
+
+.egg-art {
+    position: relative;
+    z-index: 1;
+    font-size: 50rpx;
+    line-height: 1;
+    margin-right: 18rpx;
+    transform: rotate(-10deg);
+}
+
+.benefit-copy {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    font-size: 24rpx;
+    font-weight: 600;
+    line-height: 1.7;
+}
+
+.benefit-action {
+    position: relative;
+    z-index: 1;
+    min-height: 80rpx;
+    display: flex;
+    align-items: center;
+    padding-left: 8rpx;
+}
+
+.benefit-action-text {
+    font-size: 24rpx;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.benefit-action-arrow {
+    font-size: 46rpx;
+    line-height: 0;
+    margin-left: 4rpx;
+}
+
+/* 筛选工具列 */
+.toolbar {
+    position: relative;
+    z-index: 2;
+    padding: 0 26rpx 20rpx;
+}
+
+.category {
+    min-height: 86rpx;
+    padding: 10rpx 2rpx 14rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 4rpx solid #fff8e8;
+    box-sizing: border-box;
+}
+
+.category-title {
+    display: flex;
+    align-items: center;
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 34rpx;
+    font-weight: 700;
+    letter-spacing: 2rpx;
+}
+
+.category-icon {
+    width: 56rpx;
+    height: 56rpx;
+    margin-right: 8rpx;
+}
+
+.result-count {
+    color: #aa8c66;
+    font-size: 24rpx;
+    line-height: 1.7;
+}
+
+.filters {
+    display: flex;
+    align-items: stretch;
+    padding-top: 20rpx;
+}
+
+.filter {
+    position: relative;
+    flex: 1;
+    height: 90rpx;
+    margin: 0 8rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-radius: 48rpx;
+}
+
+.filter-label {
+    position: relative;
+    z-index: 1;
+    color: #79502d;
+    font-size: 26rpx;
+    font-weight: 600;
+    letter-spacing: 1rpx;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.filter.is-active .filter-label {
+    color: #39561c;
+}
+
+.filter-arrow {
+    position: relative;
+    z-index: 1;
+    margin-left: 8rpx;
+    color: #79502d;
+    font-size: 24rpx;
+}
+
+/* 与网页端 .filters>.city-filter{padding:0} 对齐：城市 picker 由 filter-inner 承载内容。 */
+.city-filter {
+    padding: 0;
+}
+
+.filter-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 商品网格 */
+.shop-status {
+    padding: 16rpx 40rpx;
+    color: #8e795d;
+    font-size: 24rpx;
+    line-height: 1.8;
+    text-align: center;
+}
+
+.shop-retry {
+    text-align: center;
+    padding: 0 24rpx 20rpx;
+}
+
+.retry-text {
+    display: inline-block;
+    min-height: 88rpx;
+    padding: 22rpx 50rpx;
+    color: #855d39;
+    font-size: 24rpx;
+    line-height: 44rpx;
+    border-radius: 44rpx;
+    background: #fff6e8;
+}
+
+.products {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    padding: 0 16rpx;
 }
 
-.product-card {
+.card {
+    position: relative;
+    width: 351rpx;
+    margin-bottom: 20rpx;
+    padding: 22rpx 20rpx 26rpx;
     box-sizing: border-box;
-    width: 48%;
-    margin-bottom: 24rpx;
-    padding: 18rpx;
-    border: 2rpx solid #E7E2D5;
-    border-radius: 24rpx;
-    background: #FFFDF8;
-    display: flex;
-    flex-direction: column;
 }
 
-.product-cover {
+.card-left {
+    margin-right: 16rpx;
+}
+
+.photo {
+    position: relative;
+    z-index: 1;
+    display: block;
     width: 100%;
-    height: 240rpx;
-    border-radius: 16rpx;
-    background: #EFEDE3;
+    height: 264rpx;
+    border-radius: 36rpx;
+    background: #f4f3df;
+}
+
+.card-body {
+    position: relative;
+    z-index: 1;
+    padding: 10rpx 6rpx 0;
 }
 
 .product-name {
-    margin-top: 16rpx;
+    display: block;
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 30rpx;
+    font-weight: 700;
+    letter-spacing: 1rpx;
+    line-height: 1.5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.product-remark {
+    display: block;
+    margin-top: 6rpx;
+    color: #735f40;
+    font-size: 24rpx;
+    line-height: 1.6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-bottom {
+    margin-top: 6rpx;
+    min-height: 84rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.price {
+    color: #cc7044;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 50rpx;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.add {
+    position: relative;
+    width: 84rpx;
+    height: 84rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-circle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 70rpx;
+    height: 70rpx;
+    margin-left: -35rpx;
+    margin-top: -35rpx;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 25%, #b7d76b, #83b447 75%);
+    box-shadow: inset 0 0 0 4rpx #d9ec9e, 0 6rpx 10rpx rgba(154, 163, 83, 0.21);
+}
+
+.add-circle.is-added {
+    background: radial-gradient(circle at 30% 25%, #9dbd60, #6f9c3e 75%);
+}
+
+.add-icon {
+    position: relative;
+    z-index: 1;
+    width: 44rpx;
+    height: 44rpx;
+}
+
+.add-check {
+    position: relative;
+    z-index: 1;
+    color: #fffde5;
+    font-size: 44rpx;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.end {
+    padding: 40rpx 0 28rpx;
+    color: #796448;
+    font-size: 24rpx;
+    letter-spacing: 4rpx;
+    line-height: 1.7;
+    text-align: center;
+}
+
+/* 详情 / 购物车 / 规则浮层 */
+.overlay {
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    padding: 28rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(55, 56, 44, 0.46);
+}
+
+.panel {
+    width: 100%;
+    max-height: 1180rpx;
+    border-radius: 50rpx;
+    background: #fff4e1;
+    box-shadow: 0 40rpx 160rpx rgba(48, 48, 32, 0.31), 0 0 0 6rpx rgba(255, 249, 233, 0.7);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-head {
+    position: relative;
+    flex-shrink: 0;
+    min-height: 106rpx;
+    padding: 22rpx 30rpx 20rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+.panel-title {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 38rpx;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.panel-close {
+    position: relative;
+    z-index: 1;
+    width: 84rpx;
+    height: 84rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-mark {
+    color: #a6733e;
+    font-size: 64rpx;
+    font-weight: 300;
+    line-height: 1;
+}
+
+.panel-content {
+    height: 1000rpx;
+    max-height: 76vh;
+    background: #fff4e1;
+}
+
+.panel-content.is-short {
+    height: 480rpx;
+    max-height: 62vh;
+}
+
+.detail-cover {
+    display: block;
+    width: 100%;
+    height: 470rpx;
+    background: #fff4e4;
+}
+
+.detail-body {
+    padding: 24rpx 36rpx 44rpx;
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-title {
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 40rpx;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.detail-remark {
+    margin-top: 10rpx;
+    color: #a18a68;
+    font-size: 26rpx;
+    line-height: 1.7;
+}
+
+.detail-price {
+    margin-top: 18rpx;
+    color: #cc7044;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 56rpx;
+    font-weight: 700;
+}
+
+.detail-divider {
+    height: 2rpx;
+    margin: 28rpx 0;
+    background: #eadac2;
+}
+
+.detail-desc {
+    color: #79502d;
+    font-size: 28rpx;
+    line-height: 1.8;
+}
+
+.detail-note {
+    margin-top: 22rpx;
+    padding: 20rpx 24rpx;
+    border-radius: 24rpx;
+    background: #f2efda;
+    color: #796448;
+    font-size: 22rpx;
+    line-height: 1.8;
+}
+
+.detail-text-head {
+    min-height: 88rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #79502d;
     font-size: 28rpx;
     font-weight: 600;
 }
 
-.product-price {
-    margin-top: 10rpx;
-    color: #A4683B;
-    font-size: 28rpx;
+.detail-text-arrow {
+    color: #a18a68;
+    font-size: 32rpx;
 }
 
-.detail-mask {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(47, 51, 41, 0.45);
+.detail-text-block {
+    padding: 8rpx 0 20rpx;
+}
+
+.detail-text-line {
+    color: #79502d;
+    font-size: 26rpx;
+    line-height: 1.9;
+}
+
+.detail-add-btn {
+    position: relative;
+    height: 110rpx;
+    margin: 12rpx 0 0;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: center;
+    color: #fffce8;
+    font-size: 34rpx;
+    font-weight: 600;
+    letter-spacing: 2rpx;
 }
 
-.detail-panel {
-    box-sizing: border-box;
-    width: 100%;
-    padding: 32rpx;
-    border-radius: 32rpx 32rpx 0 0;
-    background: #FFFDF8;
+.detail-add-label {
+    position: relative;
+    z-index: 1;
+}
+
+/* 购物车面板 */
+.cart-panel-status {
+    padding: 0 8rpx 20rpx;
+    color: #79502d;
+    font-size: 26rpx;
+    line-height: 1.7;
+}
+
+.cart-row {
+    display: flex;
+    gap: 24rpx;
+    padding: 28rpx 0;
+    border-bottom: 2rpx solid #e8d8b9;
+}
+
+.cart-cover {
+    width: 156rpx;
+    height: 156rpx;
+    flex-shrink: 0;
+    border-radius: 26rpx;
+    background: #f3efd8;
+}
+
+.cart-copy {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
 }
 
-.detail-cover {
-    width: 100%;
-    height: 360rpx;
+.cart-name {
+    font-size: 28rpx;
+    line-height: 1.5;
+    letter-spacing: 1rpx;
+}
+
+.cart-price {
+    margin-top: 10rpx;
+    color: #cc7044;
+    font-size: 30rpx;
+}
+
+.cart-actions {
+    margin-top: 12rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cart-buy {
+    padding: 14rpx 20rpx;
+    border-radius: 36rpx;
+    background: #d8d2bd;
+    color: #7b715e;
+    font-size: 24rpx;
+}
+
+.cart-remove {
+    min-height: 76rpx;
+    padding: 0 20rpx;
+    color: #a58766;
+    font-size: 24rpx;
+    line-height: 76rpx;
+}
+
+.cart-empty {
+    padding: 48rpx 12rpx;
+    color: #9a8666;
+    font-size: 26rpx;
+    line-height: 2;
+    text-align: center;
+}
+
+.cart-note {
+    margin-top: 20rpx;
+    padding: 20rpx 24rpx;
+    border-radius: 24rpx;
+    background: #f2efda;
+    color: #796448;
+    font-size: 22rpx;
+    line-height: 1.8;
+}
+
+/* 加购结果 */
+.added-cover {
+    display: block;
+    width: 320rpx;
+    height: 280rpx;
+    margin: 0 auto 20rpx;
+    border-radius: 24rpx;
+    background: #f3efd8;
+}
+
+.added-title {
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 34rpx;
+    font-weight: 700;
+    text-align: center;
+}
+
+.added-note {
+    margin-top: 14rpx;
+    color: #a18a68;
+    font-size: 24rpx;
+    line-height: 1.8;
+    text-align: center;
+}
+
+.primary-btn {
+    position: relative;
+    height: 96rpx;
+    margin-top: 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fffce7;
+    font-size: 30rpx;
+    font-weight: 600;
+    letter-spacing: 1rpx;
+}
+
+.primary-label {
+    position: relative;
+    z-index: 1;
+}
+
+.ghost-btn {
+    height: 88rpx;
+    margin-top: 16rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #855d39;
+    font-size: 28rpx;
+}
+
+.rules {
+    padding: 20rpx 36rpx 48rpx;
+    display: flex;
+    flex-direction: column;
+}
+
+.rules-title {
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 34rpx;
+    font-weight: 700;
     margin-bottom: 24rpx;
-    border-radius: 20rpx;
-    background: #EFEDE3;
+}
+
+.rules-line {
+    color: #887354;
+    font-size: 26rpx;
+    line-height: 2;
+    margin-bottom: 20rpx;
+}
+
+.toast {
+    position: fixed;
+    z-index: 200;
+    left: 50%;
+    bottom: 260rpx;
+    max-width: 640rpx;
+    padding: 22rpx 36rpx;
+    transform: translateX(-50%);
+    border-radius: 40rpx;
+    background: rgba(99, 126, 64, 0.95);
+    color: #fffbe9;
+    font-size: 24rpx;
+    line-height: 1.6;
+    text-align: center;
 }

@@ -1,4 +1,7 @@
 {
-  "navigationBarTitleText": "小窝",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#B7D68F",
+  "disableScroll": false,
   "usingComponents": {}
 }

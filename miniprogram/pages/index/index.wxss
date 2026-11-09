@@ -1,20 +1,866 @@
-.hero {
+/* 小窝页：网页端 src/nest/nest.css 的 480px 容器换算为 750rpx（1px = 1.5625rpx，1cqw = 7.5rpx）。
+   平台差异处理：
+   - WXSS 不能可靠引用本地 background-image → 纹理与雪碧图用 <image> + .clip 裁切框；
+   - 不支持 cqw / aspect-ratio / :has() / ::before / dialog → 由 utils/nest-layout.js 算好 rpx 内联注入；
+   - 背景图从状态栏下方铺满，右上角胶囊由 readTopInsetRpx 留出安全区。 */
+page {
+    background: #B7D68F;
+}
+
+.nest {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #B7D68F;
+    color: #795336;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+}
+
+.scene,
+.scene-shade {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.scene {
+    z-index: 0;
+}
+
+.scene-shade {
+    z-index: 1;
+    background: linear-gradient(to bottom, rgba(255, 249, 223, 0.04), rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0) 85%, rgba(228, 232, 170, 0.08));
+}
+
+/* 纹理底图：H5 的 pill-v2-800 / bubble-v2-500 / tool-cloud-v3-256 */
+.tex-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.clip {
+    position: relative;
+    overflow: hidden;
+    flex: none;
+}
+
+.sprite {
+    position: absolute;
+    display: block;
+    top: 0;
+    left: 0;
+}
+
+.ui-hover {
+    opacity: 0.9;
+}
+
+/* ---------- HUD ---------- */
+.hud {
+    position: absolute;
+    left: 19rpx;
+    right: 19rpx;
     display: flex;
-    flex-direction: column;
-    margin-bottom: 28rpx;
+    gap: 19rpx;
+    align-items: center;
+    z-index: 6;
 }
 
-.nest-card {
-    text-align: left;
+.identity {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    height: 91rpx;
+    padding: 9rpx 13rpx 9rpx 8rpx;
 }
 
-.bird-image {
+.avatar {
+    position: relative;
+    width: 72rpx;
+    height: 72rpx;
+    flex: none;
+    border-radius: 50%;
+    background: #F6EED0;
+    padding: 3rpx;
+    border: 3rpx solid #FFF6E5;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.avatar image {
     display: block;
     width: 100%;
-    height: 360rpx;
-    margin-bottom: 20rpx;
+    height: 100%;
 }
 
-.btn-row .btn + .btn {
-    margin-left: 16rpx;
+.identity-text {
+    position: relative;
+    min-width: 0;
+    flex: 1;
+    margin-left: 13rpx;
+    z-index: 1;
+}
+
+.name {
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    height: 42rpx;
+}
+
+.name-text {
+    font-size: 25rpx;
+    font-weight: 650;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pen {
+    font-size: 27rpx;
+    color: #B58E6C;
+}
+
+.place {
+    display: block;
+    font-size: 17rpx;
+    line-height: 1.5;
+    color: #795B3E;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.companion {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 47rpx;
+    flex: none;
+    z-index: 1;
+}
+
+.hud-clip {
+    width: 47rpx;
+    height: 47rpx;
+}
+
+/* hud-icons-v2-768.webp = 3 列 × 2 行，背景 300% × 200% */
+.hud-clip .sprite {
+    width: 300%;
+    height: 200%;
+}
+
+.icon-companion {
+    top: -100%;
+    left: 0;
+}
+
+.companion-text {
+    font-size: 14rpx;
+    color: #A17B53;
+    line-height: 1.2;
+}
+
+.switch {
+    position: relative;
+    width: 44rpx;
+    flex: none;
+    font-size: 39rpx;
+    color: #9A704C;
+    line-height: 69rpx;
+    text-align: center;
+    z-index: 1;
+}
+
+.wallet {
+    position: relative;
+    height: 83rpx;
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 5rpx;
+    padding: 9rpx 16rpx 9rpx 9rpx;
+}
+
+.feather-clip {
+    width: 47rpx;
+    height: 56rpx;
+    z-index: 1;
+}
+
+.feather-clip .sprite {
+    width: 300%;
+    height: 200%;
+}
+
+.icon-feather {
+    left: -100%;
+    top: -100%;
+}
+
+.wallet-num {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    gap: 5rpx;
+    z-index: 1;
+}
+
+.points {
+    font-size: 28rpx;
+    font-weight: 650;
+    max-width: 74rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.unit {
+    font-size: 17rpx;
+}
+
+.wallet-plus {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38rpx;
+    height: 38rpx;
+    border-radius: 50%;
+    background: #F5B87F;
+    color: #FFF7E8;
+    font-size: 34rpx;
+    line-height: 1;
+    z-index: 1;
+}
+
+/* ---------- 三条状态 ---------- */
+.status {
+    position: absolute;
+    left: 19rpx;
+    right: 19rpx;
+    display: flex;
+    gap: 13rpx;
+    z-index: 3;
+}
+
+.stat {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    padding: 14rpx 19rpx 17rpx;
+}
+
+.stat-line {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    z-index: 1;
+}
+
+.stat-icon-clip {
+    width: 38rpx;
+    height: 38rpx;
+}
+
+.stat-icon-clip .sprite {
+    width: 300%;
+    height: 200%;
+}
+
+.icon-food {
+    left: 0;
+    top: 0;
+}
+
+.icon-water {
+    left: -100%;
+    top: 0;
+}
+
+.icon-mood {
+    left: -200%;
+    top: 0;
+}
+
+.stat-label {
+    font-size: 19rpx;
+    line-height: 28rpx;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.stat-value {
+    font-size: 17rpx;
+    margin-left: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.stat-track {
+    position: relative;
+    display: block;
+    height: 11rpx;
+    margin-top: 9rpx;
+    background: #BED3A1;
+    border: 2rpx solid #FFF7E3;
+    border-radius: 16rpx;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.stat-fill {
+    display: block;
+    height: 100%;
+    background: #91B77B;
+    border-radius: 9rpx;
+    transition: width 0.4s;
+}
+
+/* ---------- 需求气泡 ---------- */
+.needs {
+    position: absolute;
+    left: 19rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8rpx;
+    z-index: 4;
+}
+
+.need {
+    min-width: 109rpx;
+    min-height: 50rpx;
+    padding: 9rpx 14rpx;
+    border: 2rpx solid #D8C8A5;
+    border-radius: 25rpx;
+    background: rgba(255, 246, 231, 0.93);
+    color: #765434;
+    font-size: 19rpx;
+    line-height: 32rpx;
+    text-align: center;
+}
+
+.need.is-current {
+    background: #EDF5DE;
+    border-color: #819C62;
+    box-shadow: 0 0 0 3rpx #F9F1DE;
+}
+
+/* ---------- 右侧工具 ---------- */
+.tools {
+    position: absolute;
+    right: 19rpx;
+    display: flex;
+    flex-direction: column;
+    gap: 8rpx;
+    z-index: 5;
+}
+
+.tool {
+    position: relative;
+    width: 84rpx;
+    min-height: 78rpx;
+    padding: 3rpx 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-hover {
+    opacity: 0.85;
+}
+
+.tool-prop-clip {
+    width: 53rpx;
+    height: 47rpx;
+    z-index: 1;
+}
+
+/* tools-512.webp = 2 列 × 2 行，背景 200% × 200% */
+.tool-prop-clip .sprite {
+    width: 200%;
+    height: 200%;
+}
+
+.prop-clean {
+    left: 0;
+    top: 0;
+}
+
+.prop-supply {
+    left: -100%;
+    top: 0;
+}
+
+.prop-checkin {
+    left: 0;
+    top: -100%;
+}
+
+.prop-dress {
+    left: -100%;
+    top: -100%;
+}
+
+.tool-label {
+    position: relative;
+    padding: 0 3rpx 6rpx;
+    font-size: 19rpx;
+    line-height: 1.2;
+    font-weight: 600;
+    text-align: center;
+    z-index: 1;
+}
+
+.tool-dot {
+    position: absolute;
+    right: 5rpx;
+    top: 5rpx;
+    width: 14rpx;
+    height: 14rpx;
+    border-radius: 50%;
+    background: #F39393;
+    border: 3rpx solid #FFF5E6;
+    z-index: 2;
+}
+
+/* ---------- 对话气泡 ---------- */
+.speech {
+    position: absolute;
+    left: 28%;
+    width: 48%;
+    padding: 31rpx 47rpx 41rpx;
+    z-index: 3;
+}
+
+.speech-text {
+    position: relative;
+    display: block;
+    font-size: 19rpx;
+    line-height: 1.65;
+    font-weight: 550;
+    white-space: pre-line;
+    z-index: 1;
+}
+
+/* ---------- 小鸟立绘 ---------- */
+.actor {
+    position: absolute;
+    left: 24%;
+    width: 52%;
+    height: 322rpx;
+    z-index: 2;
+}
+
+.bird-hit {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+}
+
+.bird-art {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.actor.has-bird .bird-art {
+    animation: nest-breathe 4s ease-in-out infinite;
+}
+
+.actor.is-happy .bird-art {
+    animation: nest-happy 0.5s ease-in-out 2;
+}
+
+.actor.motion-paused .bird-art,
+.actor.motion-paused .shadow {
+    animation-play-state: paused;
+}
+
+.shadow {
+    position: absolute;
+    top: 90%;
+    left: 19%;
+    width: 62%;
+    height: 10%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 48%, rgba(66, 92, 59, 0.27), rgba(126, 150, 92, 0.19) 53%, rgba(255, 255, 255, 0) 74%);
+    z-index: 1;
+}
+
+.is-hidden {
+    opacity: 0;
+}
+
+.grass {
+    position: absolute;
+    left: 15%;
+    top: 91%;
+    width: 70%;
+    height: 5%;
+    z-index: 1;
+}
+
+.blade {
+    position: absolute;
+    bottom: 0;
+    width: 4rpx;
+    height: 100%;
+    border-radius: 4rpx;
+    background: #7B934C;
+    opacity: 0.58;
+}
+
+.b1 { left: 4%; transform: rotate(-16deg); }
+.b2 { left: 10%; height: 130%; transform: rotate(8deg); }
+.b3 { right: 22%; height: 140%; transform: rotate(-10deg); }
+.b4 { right: 12%; transform: rotate(20deg); background: #B8CD83; opacity: 0.9; }
+
+.hearts {
+    position: absolute;
+    top: 5%;
+    right: 12%;
+    font-size: 50rpx;
+    color: #F6AEB1;
+    opacity: 0;
+    z-index: 3;
+}
+
+.actor.is-happy .hearts {
+    animation: nest-heart 1s ease-out;
+}
+
+.drops {
+    position: absolute;
+    right: 8%;
+    top: 15%;
+    font-size: 50rpx;
+    z-index: 3;
+}
+
+/* 喂食动效：谷粒从鸟嘴前弹出、上飘并淡出（配合 wx:if 重挂载实现重复触发） */
+.feed-fx {
+    position: absolute;
+    top: 32%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 58rpx;
+    line-height: 1;
+    z-index: 4;
+    pointer-events: none;
+    animation: nest-feed 0.9s ease-out forwards;
+}
+
+@keyframes nest-feed {
+    0%   { opacity: 0; transform: translate(-50%, 22rpx) scale(0.55) rotate(-12deg); }
+    22%  { opacity: 1; transform: translate(-50%, 2rpx) scale(1) rotate(0deg); }
+    60%  { opacity: 1; transform: translate(-50%, -26rpx) scale(1) rotate(6deg); }
+    100% { opacity: 0; transform: translate(-50%, -70rpx) scale(0.82) rotate(10deg); }
+}
+
+@keyframes nest-breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.012); }
+}
+
+@keyframes nest-happy {
+    40% { transform: translateY(-16rpx) rotate(-3deg); }
+    75% { transform: rotate(2deg); }
+}
+
+@keyframes nest-heart {
+    30% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-63rpx) rotate(15deg); }
+}
+
+/* ---------- 空态领取 ---------- */
+.claim-help {
+    position: absolute;
+    left: 28%;
+    width: 44%;
+    min-height: 69rpx;
+    padding: 14rpx 19rpx;
+    z-index: 4;
+    background: #FFF2D9;
+    border: 2rpx solid #D5BF91;
+    border-radius: 34rpx;
+    font-size: 20rpx;
+    color: #6B512F;
+    text-align: center;
+    line-height: 40rpx;
+}
+
+/* ---------- 底部 dock ---------- */
+.dock {
+    position: absolute;
+    left: 16rpx;
+    right: 16rpx;
+    display: flex;
+    gap: 9rpx;
+    z-index: 5;
+}
+
+.dock-btn {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 162rpx;
+    overflow: hidden;
+    border-radius: 34rpx;
+}
+
+.dock-hover {
+    opacity: 0.88;
+}
+
+/* cards-1200.webp = 3 列 × 1 行，背景 300% × 125% */
+.dock-sheet {
+    position: absolute;
+    top: -12.5%;
+    left: 0;
+    width: 300%;
+    height: 125%;
+}
+
+.card-feed { left: 0; }
+.card-water { left: -100%; }
+.card-touch { left: -200%; }
+
+.dock-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 12%;
+    font-size: 30rpx;
+    font-weight: 650;
+    line-height: 1.25;
+    text-align: center;
+    color: #835635;
+    white-space: nowrap;
+    z-index: 1;
+}
+
+.dock-arrow {
+    font-size: 36rpx;
+    font-weight: 400;
+    margin-left: 8rpx;
+}
+
+/* 喂食按钮剩余食物角标：红底白字小圆标，0 份转灰避免「红色 0」歧义 */
+.dock-badge {
+    position: absolute;
+    top: 9rpx;
+    right: 9rpx;
+    min-width: 40rpx;
+    height: 40rpx;
+    padding: 0 9rpx;
+    box-sizing: border-box;
+    border-radius: 20rpx;
+    background: #F0453C;
+    color: #FFFFFF;
+    font-size: 23rpx;
+    font-weight: 700;
+    line-height: 34rpx;
+    text-align: center;
+    border: 3rpx solid #FFF6E5;
+    box-shadow: 0 5rpx 12rpx rgba(196, 41, 35, 0.32);
+    z-index: 3;
+}
+
+.dock-badge.is-empty {
+    background: #C7C2B4;
+    box-shadow: none;
+}
+
+/* ---------- toast ---------- */
+.toast {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 660rpx;
+    padding: 8rpx 24rpx;
+    border: 2rpx solid rgba(255, 255, 255, 0.62);
+    border-radius: 28rpx;
+    background: rgba(255, 249, 234, 0.86);
+    color: #65482F;
+    font-size: 19rpx;
+    line-height: 1.6;
+    text-align: center;
+    z-index: 10;
+}
+
+/* ---------- 底部面板（替代 <dialog>） ---------- */
+.sheet-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(39, 45, 34, 0.35);
+    z-index: 20;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.sheet {
+    position: relative;
+    width: 100%;
+    /* 相对遮罩高度（已上移 tabBarHeight）的 92%，既保证长内容可滚动，
+       又在大屏上给顶部留出背景空间，避免面板顶到状态栏。 */
+    max-height: 92%;
+    padding: 45rpx 38rpx 60rpx;
+    border-radius: 39rpx 39rpx 0 0;
+    background: #FFFAF0;
+    border: 2rpx solid #E7D9BA;
+    overflow-y: auto;
+}
+
+.sheet-handle {
+    position: absolute;
+    top: 16rpx;
+    left: 50%;
+    margin-left: -25rpx;
+    width: 50rpx;
+    height: 6rpx;
+    border-radius: 6rpx;
+    background: #DED9C8;
+}
+
+.sheet-close {
+    position: absolute;
+    top: 19rpx;
+    right: 19rpx;
+    width: 69rpx;
+    height: 69rpx;
+    line-height: 69rpx;
+    text-align: center;
+    color: #8B866E;
+    font-size: 38rpx;
+}
+
+.sheet-title {
+    display: block;
+    margin: 16rpx 0 13rpx;
+    font-size: 36rpx;
+    font-weight: 600;
+    font-family: "Songti SC", "STSong", serif;
+}
+
+.sheet-desc {
+    display: block;
+    font-size: 21rpx;
+    line-height: 1.9;
+    color: #8C8269;
+    margin-bottom: 10rpx;
+}
+
+.ledger {
+    margin-top: 8rpx;
+}
+
+.sheet-subtitle {
+    display: block;
+    margin: 30rpx 0 12rpx;
+    font-size: 23rpx;
+    font-weight: 600;
+    color: #765F40;
+}
+
+.sheet-note {
+    display: block;
+    margin-top: 16rpx;
+    font-size: 19rpx;
+    line-height: 1.8;
+    color: #85765C;
+}
+
+.sheet-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14rpx 0;
+    border-bottom: 2rpx solid #EFE8D6;
+    font-size: 23rpx;
+}
+
+.sheet-input {
+    width: 100%;
+    padding: 20rpx;
+    margin: 16rpx 0;
+    font-size: 24rpx;
+    border: 2rpx solid #D4D8BD;
+    border-radius: 19rpx;
+    background: #FFFEF8;
+    color: #795336;
+}
+
+.sheet-primary,
+.sheet-secondary {
+    display: block;
+    width: 100%;
+    margin-top: 30rpx;
+    padding: 22rpx 30rpx;
+    border-radius: 22rpx;
+    font-size: 23rpx;
+    text-align: center;
+}
+
+.sheet-primary {
+    background: #667D4F;
+    color: #FFFBEA;
+}
+
+.sheet-primary.is-disabled {
+    opacity: 0.55;
+}
+
+.sheet-secondary {
+    background: #F1EFDF;
+    color: #66794A;
+}
+
+.bird-choice {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    padding: 19rpx;
+    margin-top: 20rpx;
+    border: 2rpx solid #82965E;
+    border-radius: 27rpx;
+    background: #EDF1DF;
+}
+
+.bird-choice image {
+    width: 138rpx;
+    height: 138rpx;
+}
+
+.choice-name {
+    display: block;
+    font-size: 23rpx;
+    font-weight: 600;
+}
+
+.choice-meta {
+    display: block;
+    font-size: 19rpx;
+    color: #765F40;
 }

@@ -1,27 +1,1030 @@
-.hero {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 28rpx;
+/* 按网页端 src/city/city.css 换算：H5 产品态 480px 宽 = 750rpx，1px = 1.5625rpx。
+   差异处理：WXSS 不能引用本地背景图 / cqw / 伪元素 / dialog，
+   毛毡底板改用 image 铺底，六宫格用放大 3x2 的雪碧图取格，弹层改为遮罩 + view。 */
+page {
+    background: #dce8bd;
+    color: #77502b;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
-.city-row {
+/* H5 的 :host 用 *{box-sizing:border-box}；小程序默认 content-box 会让
+   min-height + padding 叠出 4~8px 的系统性偏移，这里对齐同一盒模型。 */
+.city-page view,
+.city-page text,
+.city-page image {
+    box-sizing: border-box;
+}
+
+.city-page {
+    box-sizing: border-box;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #a9d3bf 0%, #cfdfb5 45%, #d4e3ad 85%, #c0d28e 100%);
+}
+
+.felt-pill,
+.felt-panel {
+    position: relative;
+}
+
+.felt-bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.is-pressed {
+    opacity: 0.88;
+}
+
+/* 自定义导航：顶部用主视觉天空色延展状态栏与胶囊安全区，
+   下方 hero-stage 保持网页端完整坐标系，所有叠层整体下移不错位。 */
+.hero {
+    box-sizing: border-box;
+    width: 100%;
+    background: linear-gradient(180deg, #9ec8b6 0%, #a8d4c1 100%);
+}
+
+.hero-stage {
+    position: relative;
+    width: 100%;
+    height: 519rpx;
+    overflow: hidden;
+}
+
+.hero-art {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 564rpx;
+}
+
+.hero-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 55rpx;
+    background: linear-gradient(180deg, rgba(203, 220, 181, 0) 0%, #cbdcb5 100%);
+    z-index: 1;
+}
+
+.topbar {
+    position: absolute;
+    left: 20rpx;
+    right: 20rpx;
+    top: 19rpx;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20rpx 0;
-    border-bottom: 2rpx solid #EFEDE3;
+    z-index: 3;
 }
 
-.city-row:last-child {
-    border-bottom: none;
+.profile {
+    box-sizing: border-box;
+    flex: 1;
+    min-width: 0;
+    height: 81rpx;
+    padding: 6rpx 14rpx 8rpx 9rpx;
+    display: flex;
+    align-items: center;
 }
 
-.city-info {
+.profile-avatar {
+    position: relative;
+    z-index: 1;
+    width: 63rpx;
+    height: 63rpx;
+    flex: none;
+    border-radius: 50%;
+    background: #f9edcf;
+}
+
+.profile-copy {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-width: 0;
+    margin-left: 9rpx;
     display: flex;
     flex-direction: column;
 }
 
-.city-name {
-    font-size: 30rpx;
+.profile-name {
+    display: block;
+    max-width: 206rpx;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #77502b;
+    font-size: 25rpx;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.profile-sub {
+    color: #a4825c;
+    font-size: 17rpx;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.profile-arrow {
+    position: relative;
+    z-index: 1;
+    color: #ad8765;
+    font-size: 34rpx;
+    line-height: 1;
+}
+
+.points-group {
+    flex: none;
+    display: flex;
+    align-items: center;
+    min-height: 78rpx;
+    padding: 0 5rpx 0 9rpx;
+    margin-left: 13rpx;
+}
+
+.points {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 69rpx;
+    padding: 8rpx 6rpx;
+}
+
+.points-star {
+    color: #f2c761;
+    font-size: 34rpx;
+    line-height: 1;
+    margin-right: 5rpx;
+    text-shadow: 0 2rpx 0 #fff0b9;
+}
+
+.points-value {
+    display: block;
+    max-width: 81rpx;
+    overflow: hidden;
+    white-space: nowrap;
+    color: #77502b;
+    font-size: 31rpx;
+    font-weight: 650;
+    line-height: 1.3;
+}
+
+.points-unit {
+    color: #77502b;
+    font-size: 16rpx;
+    margin-left: 4rpx;
+}
+
+.points-earn {
+    position: relative;
+    z-index: 1;
+    width: 69rpx;
+    height: 69rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.points-earn-text {
+    position: relative;
+    z-index: 2;
+    width: 53rpx;
+    height: 53rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffca91 0%, #f2a35d 100%);
+    color: #fff7eb;
+    font-size: 39rpx;
+    line-height: 1;
+    box-shadow: inset 0 0 6rpx #ffe2b7;
+}
+
+.hero-copy {
+    position: absolute;
+    left: 45rpx;
+    top: 134rpx;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    color: #fff5e7;
+    text-shadow: 0 3rpx 11rpx rgba(95, 139, 136, 0.43);
+}
+
+.hero-eyebrow {
+    color: #effbf5;
+    font-size: 11rpx;
+    font-weight: 500;
+    letter-spacing: 2rpx;
+    line-height: 1.2;
+}
+
+.hero-title-row {
+    display: flex;
+    align-items: flex-end;
+    margin: 11rpx 0 9rpx;
+}
+
+.hero-title {
+    color: #ffeddf;
+    font-family: "Songti SC", "STSong", serif;
+    font-size: 69rpx;
+    font-weight: 800;
+    line-height: 1.22;
+    letter-spacing: 5rpx;
+    text-shadow: 2rpx 2rpx 0 #d5af94, -2rpx -2rpx 0 #fff9ef, 0 3rpx 11rpx rgba(104, 141, 125, 0.42);
+    white-space: nowrap;
+}
+
+.hero-flower {
+    display: inline-block;
+    transform: translate(-2rpx, 8rpx);
+    color: #f5b5bd;
+    font-family: serif;
+    font-size: 41rpx;
+    line-height: 1;
+    text-shadow: 0 2rpx 3rpx #f8f7c5;
+}
+
+.hero-description {
+    display: flex;
+    flex-direction: column;
+    margin-top: 9rpx;
+}
+
+.hero-description text {
+    display: block;
+    color: #fff5e7;
+    font-size: 23rpx;
+    line-height: 1.7;
+    letter-spacing: 3rpx;
+}
+
+.hero-rule {
+    margin-top: 6rpx;
+    color: #fff9ea;
+    font-size: 19rpx;
+    font-weight: 500;
+    line-height: 1.7;
+    letter-spacing: 1rpx;
+    text-shadow: 0 2rpx 3rpx #466d55, 0 0 8rpx #3e695c;
+}
+
+.journey-tag {
+    position: absolute;
+    left: 28rpx;
+    bottom: 22rpx;
+    z-index: 2;
+    padding: 13rpx 22rpx;
+    transform: rotate(-8deg);
+    white-space: nowrap;
+    font-size: 17rpx;
+    line-height: 1.3;
+    letter-spacing: 2rpx;
+}
+
+.journey-flower,
+.journey-copy {
+    position: relative;
+    z-index: 1;
+}
+
+/* H5 的花朵 span 是 inline-block + 12px 行高，不撑高整块底板。 */
+.journey-flower {
+    display: inline-block;
+    vertical-align: middle;
+    color: #efa8b2;
+    font-size: 34rpx;
+    line-height: 19rpx;
+    text-shadow: 0 0 2rpx #fff9ce;
+}
+
+.collection {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    margin-top: -3rpx;
+    /* 预留底栏空间：兼容当前系统 tabBar 与并行任务即将启用的
+       960x195 毛毡自定义 tabBar（约 149rpx + Home Indicator 安全区）。 */
+    padding: 0 19rpx 190rpx;
+}
+
+.handbook {
+    padding: 19rpx 31rpx;
+    margin: 0 -3rpx 13rpx;
+}
+
+.section-heading {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.heading-copy {
+    display: flex;
+    flex-direction: column;
+}
+
+.eyebrow {
+    color: #aa825d;
+    font-size: 11rpx;
+    letter-spacing: 2rpx;
+    line-height: 1.2;
+}
+
+.handbook-title {
+    margin-top: 3rpx;
+    color: #77502b;
+    font-size: 36rpx;
+    font-weight: 650;
+    line-height: 1.35;
+    letter-spacing: 1rpx;
+    white-space: nowrap;
+}
+
+.progress-text {
+    color: #739b35;
+    font-size: 33rpx;
     font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.progress-track {
+    position: relative;
+    z-index: 1;
+    height: 13rpx;
+    margin-top: 11rpx;
+    border-radius: 19rpx;
+    background: linear-gradient(180deg, #fff9ef 0%, #f5ddc4 100%);
+    box-shadow: inset 0 2rpx 5rpx rgba(186, 157, 119, 0.38);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 19rpx;
+    background: linear-gradient(180deg, #c9db6c 0%, #a7bd50 45%, #8ba53b 100%);
+    box-shadow: inset 0 0 5rpx #e0f19c;
+    transition: width 0.45s ease;
+}
+
+.tabs {
+    display: flex;
+    min-height: 69rpx;
+    padding: 5rpx;
+    margin-bottom: 14rpx;
+}
+
+.tab {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-width: 0;
+    min-height: 69rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 38rpx;
+    color: #a57b52;
+    font-size: 20rpx;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.tab.is-active {
+    color: #fffcdf;
+    background: linear-gradient(180deg, #c2d569 0%, #93b141 65%, #7d9a34 100%);
+    box-shadow: inset 0 0 11rpx #e2ef9c, 0 2rpx 11rpx rgba(135, 167, 75, 0.48);
+    text-shadow: 0 2rpx 3rpx #6a8c26;
+}
+
+.tab-count {
+    font-size: 17rpx;
+    margin-left: 5rpx;
+}
+
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.city-card {
+    box-sizing: border-box;
+    width: 228rpx;
+    margin: 0 14rpx 17rpx 0;
+    padding-bottom: 13rpx;
+    border: 5rpx solid #fff0e2;
+    border-radius: 38rpx;
+    background: #ffe9d9;
+    box-shadow: 0 0 11rpx 5rpx rgba(255, 240, 224, 0.5), 0 6rpx 13rpx rgba(126, 152, 101, 0.28);
+    overflow: hidden;
+}
+
+/* 三列网格每行第三张去掉右间距，筛选后末行不足三张时仍靠左排，
+   与 H5 grid-template-columns: repeat(3, ...) 一致。 */
+.row-end {
+    margin-right: 0;
+}
+
+/* 末行不再留底部间距，对齐 H5 grid 的 row-gap（只在行与行之间生效）。 */
+.row-last {
+    margin-bottom: 0;
+}
+
+.city-art {
+    position: relative;
+    width: 100%;
+    height: 227rpx;
+    border-radius: 31rpx 31rpx 0 0;
+    overflow: hidden;
+}
+
+/* 1200x800 的六宫格：整图按容器 3 倍宽 / 2 倍高铺开，
+   left/top 各偏移一个格子即可取到对应城市，与 H5 background-position 等价。 */
+.cities-sprite {
+    position: absolute;
+    width: 300%;
+    height: 200%;
+}
+
+.art-shade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(232, 237, 248, 0.63) 0%, rgba(232, 237, 248, 0) 46%, rgba(255, 233, 217, 0) 83%, #ffe9d9 100%);
+}
+
+.city-name {
+    position: absolute;
+    left: 16rpx;
+    top: 17rpx;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+}
+
+.city-cn {
+    color: #80562e;
+    font-size: 39rpx;
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: 3rpx;
+    text-shadow: 0 2rpx 3rpx #fff5e3;
+}
+
+.city-en {
+    margin-top: 5rpx;
+    color: #966a46;
+    font-size: 13rpx;
+    font-weight: 500;
+    letter-spacing: 1rpx;
+}
+
+/* H5 用 clip-path 画书签底端的 V 形缺口，边框橙棕、内部留浅色。
+   不支持 clip-path 的机型会退化成矩形，功能不受影响。 */
+.state-icon {
+    position: absolute;
+    right: 14rpx;
+    top: 17rpx;
+    z-index: 2;
+    box-sizing: border-box;
+    width: 17rpx;
+    height: 23rpx;
+    padding: 2rpx 2rpx 5rpx;
+    background: #e6bf85;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+}
+
+.state-icon-inner {
+    width: 100%;
+    height: 100%;
+    background: #fff8ee;
+}
+
+.bird-mini {
+    position: absolute;
+    right: 4%;
+    bottom: 5%;
+    width: 43%;
+    height: 42%;
+    opacity: 0.85;
+}
+
+.question {
+    position: absolute;
+    right: 16%;
+    bottom: 22rpx;
+    z-index: 3;
+    color: #fff8dd;
+    font-size: 31rpx;
+    font-weight: 500;
+    line-height: 1.3;
+    text-shadow: 0 2rpx 3rpx rgba(190, 170, 115, 0.42);
+}
+
+.city-card-body {
+    position: relative;
+    box-sizing: border-box;
+    min-height: 105rpx;
+    padding: 5rpx 8rpx 0;
+}
+
+.body-bg {
+    position: absolute;
+    left: -17rpx;
+    top: -6rpx;
+    width: 263rpx;
+    height: 131rpx;
+    opacity: 0.96;
+    z-index: 0;
+}
+
+.card-status {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    color: #77502b;
+    font-size: 19rpx;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.tiny-dot {
+    width: 5rpx;
+    height: 5rpx;
+    margin-right: 5rpx;
+    border-radius: 50%;
+    background: #945c28;
+}
+
+.card-line {
+    position: relative;
+    z-index: 1;
+    display: block;
+    min-height: 63rpx;
+    margin: 5rpx 0 9rpx;
+    color: #795331;
+    font-size: 19rpx;
+    line-height: 1.65;
+}
+
+.card-action {
+    position: relative;
+    box-sizing: border-box;
+    min-height: 56rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8d5a27;
+    font-size: 19rpx;
+    font-weight: 550;
+}
+
+.card-action-text {
+    position: relative;
+    z-index: 1;
+}
+
+.city-card.unlocked .card-action {
+    border-radius: 34rpx;
+    background: linear-gradient(180deg, #c1d768 0%, #90af3f 70%, #7d9a34 100%);
+    box-shadow: inset 0 0 8rpx #e4f4a0, 0 2rpx 9rpx rgba(165, 186, 100, 0.45);
+    color: #fffbe7;
+    text-shadow: 0 2rpx 3rpx #6d8e2f;
+}
+
+.city-card.unlocked .card-action .felt-bg {
+    opacity: 0;
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 41rpx 16rpx;
+    text-align: center;
+}
+
+.empty-flower {
+    color: #d89b8b;
+    font-size: 50rpx;
+}
+
+.empty-title {
+    margin-top: 16rpx;
+    color: #8b9861;
+    font-size: 27rpx;
+    font-weight: 600;
+}
+
+.empty-description {
+    margin-top: 12rpx;
+    color: #8f805e;
+    font-size: 19rpx;
+    line-height: 1.8;
+}
+
+.empty-button {
+    min-height: 69rpx;
+    margin-top: 20rpx;
+    padding: 16rpx 34rpx;
+    border: 2rpx solid #e4d3ac;
+    border-radius: 34rpx;
+    background: #fcebd3;
+    color: #77502b;
+    font-size: 19rpx;
+    line-height: 2.1;
+}
+
+.footnote {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 28rpx 2rpx 16rpx;
+    color: #715734;
+    font-size: 19rpx;
+    line-height: 1.8;
+    text-align: center;
+}
+
+.footnote-main {
+    display: block;
+}
+
+.footnote-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 6rpx;
+}
+
+.footnote-extra {
+    display: block;
+    color: #8a7350;
+    font-size: 17rpx;
+}
+
+.footnote-retry {
+    min-height: 52rpx;
+    margin-left: 12rpx;
+    padding: 8rpx 24rpx;
+    border: 2rpx solid #e5c49b;
+    border-radius: 28rpx;
+    background: #f9e5c9;
+    color: #7d6741;
+    font-size: 19rpx;
+}
+
+/* 弹层：H5 使用 dialog + ::backdrop，小程序改为遮罩 + 居中浮层。
+   原生 tabBar 由系统绘制在 WebView 之上，浮层上移避开底部区域。 */
+.sheet-mask {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    /* 自定义 tabBar 组件的 z-index 是 1000；遮罩与弹层必须更高，
+       才能像 H5 dialog::backdrop 一样把底栏一起压暗、模糊。 */
+    z-index: 1200;
+    background: rgba(50, 70, 49, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.sheet {
+    position: fixed;
+    left: 50%;
+    top: 40rpx;
+    transform: translateX(-50%);
+    z-index: 1201;
+    box-sizing: border-box;
+    width: 663rpx;
+    /* max-height 由页面按视口动态内联给出（短屏要避开自定义底栏）。 */
+    overflow-y: auto;
+    border: 2rpx solid #eed8b8;
+    border-radius: 39rpx;
+    background: #fff2df;
+    color: #795736;
+    box-shadow: 0 28rpx 100rpx rgba(51, 65, 43, 0.33);
+}
+
+.sheet-head {
+    position: relative;
+    box-sizing: border-box;
+    padding: 39rpx 34rpx 25rpx;
+    border-bottom: 2rpx solid #edd9bd;
+    background: linear-gradient(120deg, #ffedde 0%, #fff5e7 100%);
+    display: flex;
+    flex-direction: column;
+}
+
+.sheet-close {
+    position: absolute;
+    right: 13rpx;
+    top: 13rpx;
+    width: 69rpx;
+    height: 69rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a18260;
+    font-size: 41rpx;
+    line-height: 1;
+}
+
+.sheet-eyebrow {
+    color: #ba9970;
+    font-size: 13rpx;
+    letter-spacing: 2rpx;
+}
+
+.sheet-title {
+    margin-top: 11rpx;
+    color: #795736;
+    font-size: 38rpx;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.sheet-subtitle {
+    margin-top: 6rpx;
+    color: #795f3d;
+    font-size: 19rpx;
+    line-height: 1.8;
+}
+
+.sheet-body {
+    box-sizing: border-box;
+    padding: 28rpx 34rpx 44rpx;
+}
+
+.bird-row {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 16rpx;
+    margin-bottom: 17rpx;
+    border: 2rpx solid #ead8b9;
+    border-radius: 27rpx;
+    background: #fff8eb;
+}
+
+.bird-row-art {
+    width: 97rpx;
+    height: 106rpx;
+    flex: none;
+}
+
+.bird-row-copy {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    margin-left: 17rpx;
+}
+
+.bird-row-name {
+    color: #795736;
+    font-size: 22rpx;
+    line-height: 1.5;
+}
+
+.bird-row-desc {
+    color: #795f3d;
+    font-size: 19rpx;
+    line-height: 1.7;
+}
+
+.bird-pill {
+    flex: none;
+    min-width: 88rpx;
+    min-height: 69rpx;
+    padding: 13rpx 11rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 19rpx;
+    background: #e7edce;
+    color: #6f8d3b;
+    font-size: 19rpx;
+    white-space: nowrap;
+}
+
+.catalog-status {
+    box-sizing: border-box;
+    padding: 24rpx 22rpx;
+    border-radius: 20rpx;
+    background: #f6e8d0;
+}
+
+.catalog-text {
+    display: block;
+    color: #795f3d;
+    font-size: 20rpx;
+    line-height: 1.8;
+}
+
+.catalog-retry {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 62rpx;
+    margin-top: 16rpx;
+    padding: 8rpx 24rpx;
+    border: 2rpx solid #e5c49b;
+    border-radius: 28rpx;
+    background: #f9e5c9;
+    color: #7d6741;
+    font-size: 19rpx;
+}
+
+.instructions {
+    box-sizing: border-box;
+    margin: 25rpx 0;
+    padding: 19rpx 22rpx;
+    border-radius: 20rpx;
+    background: #f6e8d0;
+    color: #795f3d;
+    font-size: 19rpx;
+    line-height: 1.9;
+}
+
+.sheet-primary {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 69rpx;
+    margin-top: 28rpx;
+    padding: 19rpx 28rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 25rpx;
+    background: #8da94e;
+    color: #fffae7;
+    font-size: 20rpx;
+    line-height: 1.5;
+}
+
+.city-wallet-body {
+    color: #795f3d;
+    font-size: 20rpx;
+    line-height: 1.8;
+}
+
+.wallet-balance {
+    display: block;
+    margin: 8rpx 0 16rpx;
+}
+
+.wallet-balance-value {
+    display: block;
+    color: #739b35;
+    font-size: 39rpx;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.wallet-badge {
+    display: flex;
+    align-items: center;
+    min-height: 69rpx;
+    color: #795f3d;
+    font-size: 19rpx;
+}
+
+.wallet-badge-arrow {
+    margin-right: 10rpx;
+    color: #8e7655;
+    font-size: 17rpx;
+}
+
+.wallet-local-note {
+    display: block;
+    margin: 8rpx 0 12rpx;
+    color: #795f3d;
+    font-size: 19rpx;
+    line-height: 1.8;
+}
+
+.wallet-today {
+    display: block;
+    margin-top: 20rpx;
+    color: #8e7655;
+    font-size: 19rpx;
+}
+
+.wallet-heading {
+    display: block;
+    color: #795736;
+    font-size: 25rpx;
+    font-weight: 600;
+    margin: 28rpx 0 13rpx;
+}
+
+.wallet-sub {
+    display: block;
+    margin-bottom: 20rpx;
+    color: #8e7655;
+    font-size: 19rpx;
+}
+
+.wallet-ledger {
+    margin-bottom: 25rpx;
+}
+
+.ledger-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16rpx 0;
+    border-bottom: 2rpx solid #ead9bd;
+}
+
+.ledger-copy {
+    display: flex;
+    flex-direction: column;
+}
+
+.ledger-note {
+    color: #795f3d;
+    font-size: 20rpx;
+}
+
+.ledger-day {
+    color: #8e7655;
+    font-size: 17rpx;
+}
+
+.ledger-amount {
+    color: #6f8d3b;
+    font-size: 20rpx;
+    white-space: nowrap;
+}
+
+.wallet-empty {
+    display: block;
+    color: #8e7655;
+    font-size: 19rpx;
+    line-height: 1.8;
+}
+
+.wallet-rules {
+    box-sizing: border-box;
+    margin: 25rpx 0;
+    padding: 19rpx 22rpx;
+    border: 2rpx solid #e5d7b3;
+    border-radius: 24rpx;
+    background: #f3efd8;
+}
+
+.wallet-rules-heading {
+    display: block;
+    color: #795736;
+    font-size: 22rpx;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.wallet-rules-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 69rpx;
+    color: #795736;
+    font-size: 22rpx;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+.wallet-rules-arrow {
+    margin-right: 12rpx;
+    color: #8e7655;
+    font-size: 19rpx;
+}
+
+.wallet-rules-text {
+    display: block;
+    margin-top: 16rpx;
+    color: #795f3d;
+    font-size: 19rpx;
+    line-height: 1.9;
 }

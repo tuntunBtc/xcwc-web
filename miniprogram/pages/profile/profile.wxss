@@ -1,57 +1,734 @@
-.hero {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 28rpx;
+/* 「我的」页毛毡视觉，按网页端 src/account-felt.css + src/account-pages.css 复刻。
+   换算基准：390px 产品态视口 → 750rpx（1px ≈ 1.923rpx），
+   与本轮抓取的 H5 浏览器基线逐项比对（head 601rpx / 卡片 233rpx / 菜单 146rpx）。
+   WXSS 不支持本地 background-image、伪元素与 <dialog>：
+   毛毡纹理用 <image> 铺底，3×2 / 2×2 雪碧图用 .clip + .sprite 取格，弹层用遮罩 + view。 */
+page {
+    background: #c8df83;
 }
 
-.profile-card {
+.profile-page {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    background: #c8df83;
+    color: #755334;
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+}
+
+/* 网页端插画挂在固定的 .phone 上，不随 main 滚动；小程序用 fixed 达到同样效果。 */
+.bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 0;
+}
+
+.status-space {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+}
+
+.flow {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 42rpx;
+}
+
+/* ---- hero：插画留白 + 标题 ---- */
+.hero {
+    padding: 44rpx 35rpx 19rpx;
+}
+
+.head {
+    display: flex;
+    flex-direction: column;
+    min-height: 601rpx;
+    padding: 0 10rpx;
+}
+
+.eyebrow {
+    display: block;
+    margin-top: 17rpx;
+    font-size: 15rpx;
+    font-weight: 600;
+    line-height: 26rpx;
+    letter-spacing: 5rpx;
+    color: #6a8564;
+}
+
+.title-row {
     display: flex;
     align-items: center;
+    gap: 15rpx;
+    margin-top: 10rpx;
+}
+
+.title {
+    font-size: 62rpx;
+    font-weight: 700;
+    line-height: 86rpx;
+    letter-spacing: 4rpx;
+    color: #765133;
+    font-family: 'Songti SC', 'STSong', serif;
+    text-shadow: 0 4rpx 0 #fff1d5, 0 0 14rpx #fff8d6;
+}
+
+.title-flower {
+    font-size: 48rpx;
+    line-height: 1;
+    color: #efa6af;
+    text-shadow: 0 2rpx 0 #fff9e4;
+}
+
+.subtitle {
+    display: block;
+    margin-top: 12rpx;
+    font-size: 23rpx;
+    line-height: 39rpx;
+    letter-spacing: 1rpx;
+    color: #6d7d5d;
+    text-shadow: 0 2rpx 4rpx #f9f5d7;
+}
+
+/* ---- 当前小鸟 / 叽分卡片 ---- */
+.profile-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 13rpx;
+    box-sizing: border-box;
+    min-height: 233rpx;
+    padding: 33rpx 38rpx 37rpx 25rpx;
+}
+
+.card-tex {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
 }
 
 .avatar {
-    width: 96rpx;
-    height: 96rpx;
-    margin-right: 24rpx;
-    border-radius: 50%;
-    background: #EAF0E2;
-    color: #4F6A3E;
-    font-size: 44rpx;
-    line-height: 96rpx;
-    text-align: center;
+    position: relative;
+    z-index: 1;
+    flex: none;
+    width: 146rpx;
+    height: 152rpx;
 }
 
-.profile-main {
+.card-copy {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 auto;
+    min-width: 0;
     display: flex;
     flex-direction: column;
 }
 
-.nickname {
-    font-size: 34rpx;
-    font-weight: 600;
+.card-small {
+    display: block;
+    font-size: 23rpx;
+    line-height: 35rpx;
+    color: #796646;
 }
 
-.menu-card {
-    padding: 8rpx 28rpx;
+.card-name {
+    display: block;
+    margin-top: 8rpx;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 37rpx;
+    font-weight: 650;
+    line-height: 57rpx;
+    letter-spacing: 1rpx;
+    color: #77512e;
+    font-family: 'Songti SC', 'STSong', serif;
+}
+
+.card-sub {
+    display: block;
+    margin-top: 4rpx;
+    font-size: 23rpx;
+    line-height: 39rpx;
+    color: #726442;
+}
+
+.points {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 125rpx;
+    min-height: 138rpx;
+    padding: 0 4rpx 0 13rpx;
+    border-left: 2rpx dashed rgba(209, 185, 152, 0.5);
+}
+
+.points-num {
+    font-size: 44rpx;
+    font-weight: 650;
+    line-height: 53rpx;
+    color: #98703a;
+    font-family: Georgia, serif;
+    font-variant-numeric: tabular-nums;
+}
+
+.points-label {
+    font-size: 23rpx;
+    line-height: 39rpx;
+    color: #726442;
+    white-space: nowrap;
+}
+
+/* ---- 分组与菜单 ---- */
+.section {
+    margin: 33rpx 29rpx 0;
+}
+
+.section-head {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+    height: 55rpx;
+    margin-bottom: 6rpx;
+    padding-left: 10rpx;
+}
+
+.section-title {
+    font-size: 35rpx;
+    font-weight: 650;
+    line-height: 55rpx;
+    letter-spacing: 2rpx;
+    color: #7f633f;
+    font-family: 'Songti SC', 'STSong', serif;
+    text-shadow: 0 2rpx 0 #fff4d8;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 2rpx;
 }
 
 .menu-item {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 26rpx 0;
-    border-bottom: 2rpx solid #EFEDE3;
+    gap: 15rpx;
+    box-sizing: border-box;
+    min-height: 146rpx;
+    padding: 23rpx 46rpx 25rpx 33rpx;
 }
 
-.menu-item:last-child {
-    border-bottom: none;
+.item-tex {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
 }
 
-.menu-text {
-    font-size: 28rpx;
+.item-label {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 17rpx;
+    min-width: 0;
 }
 
-.menu-arrow {
-    color: #8A8578;
-    font-size: 32rpx;
+.item-icon {
+    flex: none;
+    width: 83rpx;
+    height: 83rpx;
+}
+
+.item-text {
+    font-size: 29rpx;
+    font-weight: 550;
+    color: #7b5635;
+    white-space: nowrap;
+}
+
+.item-meta {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 13rpx;
+    min-width: 0;
+}
+
+.meta-text {
+    font-size: 23rpx;
+    color: #726442;
+    white-space: nowrap;
+}
+
+.arrow {
+    font-size: 46rpx;
+    line-height: 1;
+    color: #b7986c;
+    font-family: Georgia, serif;
+}
+
+.ui-hover {
+    opacity: 0.88;
+}
+
+/* ---- 雪碧图裁切：百分比位移相对裁剪框，与 H5 background-position 等价 ---- */
+.clip {
+    position: relative;
+    overflow: hidden;
+    flex: none;
+}
+
+.sprite {
+    position: absolute;
+    display: block;
+    top: 0;
+    left: 0;
+}
+
+.hud-sprite {
+    width: 300%;
+    height: 200%;
+}
+
+.tool-sprite {
+    width: 200%;
+    height: 200%;
+}
+
+.feather-clip {
+    width: 50rpx;
+    height: 50rpx;
+}
+
+.flower-clip {
+    width: 48rpx;
+    height: 48rpx;
+}
+
+.item-icon-clip {
+    width: 83rpx;
+    height: 83rpx;
+}
+
+/* hud-icons 3×2：花朵=左下(0,-100%)、羽毛与钱包=中下(-100%,-100%) */
+.icon-flower {
+    left: 0;
+    top: -100%;
+}
+
+.icon-feather,
+.icon-wallet {
+    left: -100%;
+    top: -100%;
+}
+
+/* tools 2×2：衣橱=右下(-100%,-100%)、清理=左上(0,0) */
+.icon-outfit {
+    left: -100%;
+    top: -100%;
+}
+
+.icon-clean {
+    left: 0;
+    top: 0;
+}
+
+/* ---- 页尾 ---- */
+.signoff {
+    display: block;
+    margin: 37rpx 29rpx 0;
+    text-align: center;
+    font-size: 19rpx;
+    line-height: 33rpx;
+    letter-spacing: 1rpx;
+    color: #8d9b70;
+}
+
+.local-note {
+    display: block;
+    margin: 15rpx auto 0;
+    max-width: 558rpx;
+    padding: 0 15rpx;
+    text-align: center;
+    font-size: 23rpx;
+    line-height: 42rpx;
+    color: #726442;
+}
+
+.empty {
+    box-sizing: border-box;
+    margin: 35rpx 29rpx 0;
+    padding: 42rpx 35rpx;
+    border-radius: 42rpx;
+    background: #fff7e6;
+    text-align: center;
+}
+
+.empty-title {
+    display: block;
+    font-size: 33rpx;
+    font-weight: 600;
+    color: #755334;
+}
+
+.empty-desc {
+    display: block;
+    margin-top: 15rpx;
+    font-size: 27rpx;
+    line-height: 51rpx;
+    color: #796646;
+}
+
+.empty-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 25rpx;
+    padding: 16rpx 40rpx;
+    border: 2rpx solid #ddcfac;
+    border-radius: 27rpx;
+    background: #fff9e9;
+    color: #62794a;
+    font-size: 27rpx;
+}
+
+/* 自定义 tabBar 为 fixed 层；正常流预留空间，避免遮住页尾内容。 */
+.tab-space {
+    height: 190rpx;
+}
+
+/* ---- 弹层：对齐 H5 .account-wallet-dialog / .account-cache-dialog ---- */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(66, 83, 62, 0.5);
+}
+
+.sheet {
+    position: relative;
+    box-sizing: border-box;
+    width: 724rpx;
+    padding: 100rpx 42rpx 46rpx;
+    border: 6rpx solid #efe0bd;
+    border-radius: 46rpx;
+    background: #fff8e9;
+    color: #795d3e;
+    box-shadow: 0 24rpx 70rpx rgba(90, 99, 56, 0.23);
+}
+
+.sheet-body {
+    max-height: 70vh;
+}
+
+.sheet-close {
+    position: absolute;
+    top: 12rpx;
+    right: 14rpx;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 85rpx;
+    height: 85rpx;
+    border-radius: 50%;
+    background: #e8edce;
+}
+
+.sheet-close text {
+    font-size: 54rpx;
+    line-height: 1;
+    color: #566d3d;
+}
+
+.sheet-h2 {
+    display: block;
+    font-size: 44rpx;
+    line-height: 66rpx;
+    color: #604b31;
+}
+
+.sheet-h3 {
+    display: block;
+    margin-top: 38rpx;
+    font-size: 33rpx;
+    line-height: 50rpx;
+    color: #604b31;
+}
+
+.sheet-muted {
+    display: block;
+    margin-top: 10rpx;
+    font-size: 25rpx;
+    line-height: 45rpx;
+    color: #6f6049;
+}
+
+.wallet-balance {
+    display: block;
+    margin-top: 12rpx;
+    font-size: 56rpx;
+    font-weight: 650;
+    line-height: 84rpx;
+    color: #5b743c;
+    font-family: Georgia, serif;
+}
+
+.fold {
+    margin-top: 20rpx;
+    padding: 0 23rpx;
+    border: 2rpx solid #d9e0be;
+    border-radius: 29rpx;
+    background: rgba(255, 249, 231, 0.92);
+}
+
+.rules-fold {
+    margin-top: 31rpx;
+    padding: 0;
+    border: 0;
+    border-top: 2rpx solid #e1d5bb;
+    border-radius: 0;
+    background: transparent;
+}
+
+.fold-title {
+    display: block;
+    padding: 19rpx 0;
+    font-size: 25rpx;
+    line-height: 44rpx;
+    color: #604b31;
+}
+
+.fold-body {
+    display: block;
+    padding: 0 0 23rpx;
+    font-size: 25rpx;
+    line-height: 42rpx;
+    color: #63583e;
+}
+
+.wallet-today {
+    display: block;
+    margin-top: 29rpx;
+    font-size: 27rpx;
+    line-height: 46rpx;
+    color: #604b31;
+}
+
+.ledger {
+    margin-top: 19rpx;
+}
+
+.ledger-row {
+    padding: 23rpx 0;
+    border-bottom: 2rpx solid #e1d5bb;
+}
+
+.ledger-time,
+.ledger-balance {
+    display: block;
+    font-size: 25rpx;
+    line-height: 42rpx;
+    color: #6f6049;
+}
+
+.ledger-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12rpx;
+    margin-top: 6rpx;
+}
+
+.ledger-note {
+    font-size: 27rpx;
+    color: #604b31;
+}
+
+.ledger-amount {
+    font-size: 27rpx;
+    color: #526f3b;
+}
+
+.ledger-balance {
+    margin-top: 2rpx;
+    text-align: right;
+}
+
+.ledger-empty {
+    display: block;
+    margin-top: 19rpx;
+    font-size: 25rpx;
+    line-height: 42rpx;
+    color: #6f6049;
+}
+
+/* 重置弹层：H5 用渐变毛毡底 + 两枚圆角按钮 */
+.reset-sheet {
+    padding: 46rpx 46rpx 42rpx;
+    border: 6rpx solid #f4e2c9;
+    border-radius: 52rpx;
+    background: linear-gradient(135deg, #fff8e9, #f6e8ce);
+}
+
+.reset-body {
+    max-height: 70vh;
+}
+
+.reset-h2 {
+    display: block;
+    font-size: 38rpx;
+    line-height: 56rpx;
+    color: #684c30;
+}
+
+.reset-desc {
+    display: block;
+    margin-top: 19rpx;
+    font-size: 27rpx;
+    line-height: 48rpx;
+    color: #795d3e;
+}
+
+.reset-warn {
+    display: block;
+    margin-top: 19rpx;
+    font-size: 27rpx;
+    font-weight: 600;
+    line-height: 46rpx;
+    color: #9b572e;
+}
+
+.reset-actions {
+    display: flex;
+    gap: 19rpx;
+    margin-top: 38rpx;
+}
+
+.reset-cancel,
+.reset-confirm {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 88rpx;
+    border-radius: 29rpx;
+    font-size: 27rpx;
+}
+
+.reset-cancel {
+    background: #e4ebcf;
+    color: #6d8053;
+}
+
+.reset-confirm {
+    background: #9d593e;
+    color: #fff8eb;
+}
+
+/* 我的小鸟 / 我的衣橱浮层 */
+.bird-row {
+    display: flex;
+    align-items: center;
+    gap: 19rpx;
+    margin-top: 25rpx;
+    padding: 23rpx;
+    border-radius: 29rpx;
+    background: rgba(255, 251, 235, 0.9);
+}
+
+.bird-avatar {
+    flex: none;
+    width: 116rpx;
+    height: 106rpx;
+}
+
+.bird-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.bird-name {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 31rpx;
+    font-weight: 600;
+    color: #755334;
+}
+
+.bird-code {
+    display: block;
+    margin-top: 6rpx;
+    font-size: 23rpx;
+    line-height: 38rpx;
+    color: #8c7858;
+}
+
+.bird-current {
+    flex: none;
+    font-size: 23rpx;
+    color: #5b743c;
+}
+
+.birds-empty {
+    display: block;
+    margin-top: 25rpx;
+    padding: 31rpx;
+    border-radius: 29rpx;
+    background: rgba(255, 251, 235, 0.9);
+    font-size: 27rpx;
+    line-height: 46rpx;
+    color: #795d3e;
+}
+
+.wardrobe-eyebrow {
+    display: block;
+    font-size: 19rpx;
+    letter-spacing: 4rpx;
+    color: #8c7858;
+}
+
+.wardrobe-bird {
+    display: block;
+    width: 420rpx;
+    height: 380rpx;
+    margin: 25rpx auto 0;
+}
+
+.sheet-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 88rpx;
+    margin-top: 31rpx;
+    border-radius: 29rpx;
+    background: #e4ebcf;
+    color: #6d8053;
+    font-size: 27rpx;
 }

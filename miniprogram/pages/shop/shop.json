@@ -1,4 +1,8 @@
 {
-  "navigationBarTitleText": "商城",
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#DFEDCE",
+  "backgroundTextStyle": "light",
   "usingComponents": {}
 }

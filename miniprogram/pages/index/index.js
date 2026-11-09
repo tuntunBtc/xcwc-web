@@ -3,86 +3,477 @@
 const store = require('../../utils/store');
 const entry = require('../../utils/entry');
 const config = require('../../utils/config');
+const tabBar = require('../../utils/tab-bar');
+const rules = require('../../utils/nest-rules');
+const nestLayout = require('../../utils/nest-layout');
 
-const ERROR_TEXT = {
-    NO_BIRD: '请先领养一只小鸟',
-    COOLDOWN: '小鸟还在回味，稍等一下',
-    DAILY_LIMIT: '今日叽分已达上限',
-    NO_FOOD: '食物不够了',
-    NO_WATER: '水不够了',
-    INVALID_STEPS: '步数数据不可用',
-    ALREADY_CLAIMED: '今日步数已经兑换过',
-    NO_REWARD: '今日暂无可兑换叽分',
-    STORAGE_UNAVAILABLE: '本机数据读取失败',
-};
+// 与网页端 src/nest/template.html 的导航、工具、状态顺序一致。
+// 雪碧图格位对应 H5 的 .tools .p0~p3、cards-1200 三格、hud-icons 3×2。
+const TOOLS = Object.freeze([
+    { key: 'clean', label: '清洁', propClass: 'prop-clean' },
+    { key: 'supply', label: '补给', propClass: 'prop-supply' },
+    { key: 'checkin', label: '合照打卡', propClass: 'prop-checkin' },
+    { key: 'dress', label: '换装', propClass: 'prop-dress' },
+]);
+const DOCK = Object.freeze([
+    { key: 'feed', label: '喂食', cardClass: 'card-feed' },
+    { key: 'water', label: '添水', cardClass: 'card-water' },
+    { key: 'touch', label: '摸摸', cardClass: 'card-touch' },
+]);
+const STAT_META = Object.freeze([
+    { key: 'hunger', label: '饱食', iconClass: 'icon-food' },
+    { key: 'water', label: '水分', iconClass: 'icon-water' },
+    { key: 'mood', label: '心情', iconClass: 'icon-mood' },
+]);
 
 Page({
     data: {
-        viewState: 'loading',
-        heroTitle: '小窝',
-        petButtonText: '摸摸 +1 叽分',
-        ledger: [],
+        // 静态兜底：onLoad 算出真实机型数值前，首帧也能正确布局。
+        layout: {
+            pageHeight: 1279, tabBarHeight: 149, dockBottom: 9, toastBottom: 340,
+            hudTop: 198, statusTop: 304, needsTop: 406, toolsTop: 446,
+            speechTop: 506, claimTop: 641, actorTop: 750,
+        },
         hasBird: false,
+        displayName: '等待小鸟入住',
+        placeText: '⌖ 我的小窝',
+        birdCodeShort: '',
+        points: 0,
+        todayPoints: 0,
+        dailyLimit: 10,
+        food: 3,
+        water: 3,
+        satiety: 0,
+        hydration: 0,
+        mood: 0,
+        supplyClaimed: false,
+        todayStepClaimed: false,
+        redeeming: false,
+        ledger: [],
+        stats: [],
+        needs: [],
+        speech: '',
+        birdArt: '/assets/nest/poster.webp',
+        thirsty: false,
+        happy: false,
+        motionPaused: false,
+        toast: '',
+        sheet: null,
+        sheetMaskBottom: 149,        // 弹框遮罩底边：默认落在 tabBar 上沿（兜底值，onLoad 后精确化）
+        keyboardHeightRpx: 0,        // 改名输入框唤起键盘时的高度（rpx），用于抬升面板
+        renameValue: '',
+        feedFxId: 0,                 // 喂食动效计数：每次喂食 +1，配合 wx:if 重触发谷粒动画
+        tools: TOOLS,
+        dock: DOCK,
     },
 
-    onShow() {
+    onLoad() {
+        this.toastTimer = null;
+        this.happyTimer = null;
+        this.feedbackTimer = null;
+        this.feedback = null;
+        // 改名弹框含输入框，需随键盘抬升面板；用箭头函数绑定 this 以便卸载时 off 注销（E-09）。
+        this.onKeyboardHeightChange = (e) => this.handleKeyboardChange(e);
+        try { wx.onKeyboardHeightChange(this.onKeyboardHeightChange); } catch (err) { /* 老基础库无此 API，忽略 */ }
+        this.setData({ layout: nestLayout.readNestLayout() });
+        this.recalcSheetMask();
         this.refresh();
     },
 
-    refresh() {
-        const result = store.snapshot();
-        const snapshot = result.data.snapshot;
-        const petButtonText = snapshot.canPet
-            ? '摸摸 +1 叽分'
-            : (snapshot.petWaitSeconds > 0 ? '冷却 ' + String(snapshot.petWaitSeconds) + ' 秒' : '今日已达上限');
-        this.setData(Object.assign({}, snapshot, {
-            viewState: result.error ? 'error' : (snapshot.hasBird ? 'ready' : 'empty'),
-            heroTitle: snapshot.hasBird ? snapshot.nickname : '还没有小鸟',
-            petButtonText: petButtonText,
-            stepRedeemDisabled: snapshot.stepEarnable <= 0,
-            errorMessage: result.error ? (ERROR_TEXT[result.error] || '请重试') : '',
-        }));
+    onShow() {
+        tabBar.syncSelected(this, 0);
+        // 面板若仍打开（例如切走再切回），动画应保持暂停，不能与遮罩状态相反。
+        this.setData({ motionPaused: !!this.data.sheet });
+        this.refresh();
     },
 
-    applyResult(result) {
+    onHide() {
+        // 后台暂停动画、收起面板并清理计时器，避免离页后持续占用（E-09）。
+        this.setData({ motionPaused: true, sheet: null, keyboardHeightRpx: 0 });
+        this.clearTimers();
+    },
+
+    onUnload() {
+        if (this.onKeyboardHeightChange) {
+            try { wx.offKeyboardHeightChange(this.onKeyboardHeightChange); } catch (err) { /* ignore */ }
+        }
+        this.clearTimers();
+    },
+
+    clearTimers() {
+        if (this.toastTimer) {
+            clearTimeout(this.toastTimer);
+            this.toastTimer = null;
+        }
+        if (this.happyTimer) {
+            clearTimeout(this.happyTimer);
+            this.happyTimer = null;
+        }
+        if (this.feedbackTimer) {
+            clearTimeout(this.feedbackTimer);
+            this.feedbackTimer = null;
+        }
+        if (this.feedFxTimer) {
+            clearTimeout(this.feedFxTimer);
+            this.feedFxTimer = null;
+        }
+        if (this.feedFxHideTimer) {
+            clearTimeout(this.feedFxHideTimer);
+            this.feedFxHideTimer = null;
+        }
+        this.feedback = null;
+    },
+
+    // 单次 setData 只提交展示字段，不把整个状态对象塞进视图层（E-02）。
+    refresh() {
+        const result = store.snapshot();
+        const s = result.data ? result.data.snapshot : null;
+        if (!s) {
+            this.setData({ hasBird: false, speech: '本机记录暂时无法读取，请重试。' });
+            return;
+        }
+        const state = rules.describeNestState(s, s.hasBird);
+        // 交互反馈有效期内，气泡文案与开心表情不被状态刷新覆盖（对齐 H5 的 interactionEmotion）。
+        const feedbackActive = !!(this.feedback && Date.now() < this.feedback.until);
+        const stats = STAT_META.map(function (meta) {
+            const value = meta.key === 'hunger' ? s.satiety : (meta.key === 'water' ? s.hydration : s.mood);
+            const percent = s.hasBird ? Math.min(100, Math.max(0, value)) : 0;
+            return {
+                key: meta.key,
+                label: meta.label,
+                iconClass: meta.iconClass,
+                text: s.hasBird ? percent + '%' : '—',
+                percent: percent,
+            };
+        });
+        const needs = state.needs.map(function (need) {
+            return {
+                key: need.key,
+                label: need.label,
+                isCurrent: need.key === state.need,
+            };
+        });
+        const code = s.birdCode || '';
+        this.setData({
+            hasBird: s.hasBird,
+            displayName: s.hasBird ? s.nickname : '等待小鸟入住',
+            placeText: s.hasBird ? '⌖ 江南小窝' : '⌖ 我的小窝',
+            birdCodeShort: code ? '编码 ···' + code.slice(-6) : '尚未领养',
+            points: s.points,
+            todayPoints: s.todayPoints,
+            dailyLimit: s.dailyLimit,
+            food: s.food,
+            water: s.water,
+            satiety: s.satiety,
+            hydration: s.hydration,
+            mood: s.mood,
+            supplyClaimed: !!s.supplyClaimed,
+            todayStepClaimed: !!s.todayStepClaimed,
+            ledger: s.ledger,
+            stats: stats,
+            needs: needs,
+            speech: feedbackActive ? this.feedback.speech : state.speech,
+            birdArt: feedbackActive ? '/assets/nest/emotion-happy.webp' : rules.emotionArt(state.emotion),
+            thirsty: state.emotion === 'thirsty',
+        });
+    },
+
+    showToast(text) {
+        if (this.toastTimer) {
+            clearTimeout(this.toastTimer);
+        }
+        this.setData({ toast: text });
+        const page = this;
+        this.toastTimer = setTimeout(function () {
+            page.setData({ toast: '' });
+            page.toastTimer = null;
+        }, 2200);
+    },
+
+    // store 的 commit 不返回 changed 字段，故以动作结果是否成功为准。
+    applyResult(result, action, closeSheetOnSuccess) {
         if (result.error) {
-            wx.showToast({ title: ERROR_TEXT[result.error] || '操作未完成', icon: 'none' });
+            this.showToast(rules.ERROR_TEXT[result.error] || '操作未完成');
+            return false;
+        }
+        const copy = rules.careCopy(action, true);
+        if (copy.speech) {
+            this.showFeedback(copy.speech, 1600);
+        }
+        this.refresh();
+        if (closeSheetOnSuccess) {
+            this.setData({ sheet: null, motionPaused: false });
+        }
+        return true;
+    },
+
+    // 对齐网页端 nest.js 的 interactionEmotion：反馈期间保留气泡与开心表情，
+    // 到期后再回到状态驱动，避免 setData 与紧随的 refresh 互相覆盖。
+    showFeedback(speech, duration) {
+        const keep = duration || 1600;
+        this.feedback = { until: Date.now() + keep, speech: speech };
+        if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
+        if (this.happyTimer) clearTimeout(this.happyTimer);
+        this.setData({ speech: speech, birdArt: '/assets/nest/emotion-happy.webp', happy: false });
+        const page = this;
+        // 下一帧再加 class，确保连续点击时动画能重新触发。
+        this.happyTimer = setTimeout(function () {
+            page.setData({ happy: true });
+        }, 30);
+        this.feedbackTimer = setTimeout(function () {
+            page.feedback = null;
+            page.feedbackTimer = null;
+            page.happyTimer = null;
+            page.setData({ happy: false });
+            page.refresh();
+        }, keep);
+    },
+
+    // 面板文案承诺「满值不扣库存」，而规则层 careAction 目前仍会扣库存且不返回 changed，
+    // 故在页面层先拦截；后续规则层补 changed 字段后可改为读 result.data.changed。
+    careBlocked(action) {
+        if (action === 'feed' && this.data.satiety >= 100) {
+            return rules.careCopy('feed', false).notice;
+        }
+        if (action === 'water' && this.data.hydration >= 100) {
+            return rules.careCopy('water', false).notice;
+        }
+        return '';
+    },
+
+    doCare(action, closeSheetOnSuccess) {
+        if (!this.requireBird()) return;
+        const blocked = this.careBlocked(action);
+        if (blocked) {
+            this.showToast(blocked);
+            return;
+        }
+        this.applyResult(action === 'feed' ? store.feed() : store.water(), action, closeSheetOnSuccess);
+    },
+
+    requireBird() {
+        if (this.data.hasBird) {
+            return true;
+        }
+        this.openSheet({ type: 'claim', title: '把伙伴带回小窝' });
+        return false;
+    },
+
+    // ---------- 底部 dock ----------
+    onDock(event) {
+        const key = event.currentTarget.dataset.key;
+        if (key === 'feed') {
+            this.onFeed();
+            return;
+        }
+        if (key === 'water') {
+            this.doCare('water', false);
+            return;
+        }
+        if (key === 'touch') {
+            this.pet();
+        }
+    },
+
+    pet() {
+        if (!this.requireBird()) return;
+        const result = store.pet();
+        if (result.error) {
+            this.showToast(rules.ERROR_TEXT[result.error] || '摸摸未完成');
+            return;
+        }
+        this.showFeedback('嘿嘿，你摸摸我，我就开心啦～', 1600);
+        if (result.data && result.data.granted > 0) {
+            this.showToast('叽分 +' + result.data.granted);
         }
         this.refresh();
     },
 
-    handlePet() {
-        this.applyResult(store.pet());
+    onPet() {
+        this.pet();
     },
 
-    handleFeed() {
-        this.applyResult(store.feed());
+    // ---------- 右侧工具 ----------
+    onTool(event) {
+        const key = event.currentTarget.dataset.key;
+        if (key === 'clean') {
+            if (!this.requireBird()) return;
+            this.applyResult(store.clean(), 'clean', false);
+            return;
+        }
+        if (key === 'supply') {
+            if (!this.requireBird()) return;
+            this.openSheet({ type: 'supply', title: '问候与补给' });
+            return;
+        }
+        // 打卡与衣橱是独立功能页，本轮只做小窝视觉复刻，不伪造入口。
+        this.showToast(key === 'checkin' ? '合照打卡暂未接入' : '换装暂未接入');
     },
 
-    handleWater() {
-        this.applyResult(store.water());
+    onNeed(event) {
+        const key = event.currentTarget.dataset.key;
+        if (!this.requireBird()) return;
+        if (key === 'food' || key === 'water') {
+            this.doCare(key === 'food' ? 'feed' : 'water', false);
+        } else {
+            this.pet();
+        }
     },
 
-    handleClean() {
-        this.applyResult(store.clean());
+    // ---------- 面板 ----------
+    openSheet(sheet) {
+        this.setData({ sheet: sheet, motionPaused: true });
+        this.recalcSheetMask(sheet);
     },
 
-    handleRedeemSteps() {
-        // 调试期使用 config.DEBUG_TODAY_STEPS 模拟「服务端已解密的当日步数」。
-        this.applyResult(store.redeemSteps(require('../../utils/config').DEBUG_TODAY_STEPS));
+    // 弹框遮罩要停靠在自定义 tabBar 上沿：框架层 tabBar 的 z-index:1000 盖不住，
+    // 只能把面板整体从屏幕底部上移到 tabBarHeight 之上（与 toast/dock 规避同构）。
+    // 改名弹框含输入框，需额外叠加键盘高度，避免被软键盘盖住。
+    recalcSheetMask(sheet) {
+        const target = sheet || this.data.sheet;
+        const extra = (target && target.type === 'rename') ? (this.data.keyboardHeightRpx || 0) : 0;
+        const bottom = (this.data.layout.tabBarHeight || 149) + extra;
+        if (bottom !== this.data.sheetMaskBottom) {
+            this.setData({ sheetMaskBottom: bottom });
+        }
     },
 
-    handleCheckin() {
-        wx.showToast({ title: '合照打卡暂未接入', icon: 'none' });
+    handleKeyboardChange(e) {
+        let rpx = 0;
+        try {
+            const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+            const width = info.windowWidth || 375;
+            rpx = Math.round((e.height * 750) / width);
+        } catch (err) {
+            rpx = 0;
+        }
+        this.setData({ keyboardHeightRpx: rpx });
+        this.recalcSheetMask();
     },
 
-    handleRetry() {
+    closeSheet() {
+        this.setData({ sheet: null, motionPaused: false, keyboardHeightRpx: 0 });
+        this.recalcSheetMask(null);
         this.refresh();
     },
 
+    noop() {},
+
+    onRename() {
+        if (!this.requireBird()) return;
+        this.setData({ renameValue: this.data.displayName });
+        this.openSheet({ type: 'rename', title: '给小鸟改个名字', desc: '1–6 个字，仅保存在本机。' });
+    },
+
+    onRenameInput(event) {
+        this.setData({ renameValue: event.detail.value });
+    },
+
+    onSaveRename() {
+        const result = store.rename(this.data.renameValue);
+        if (result.error) {
+            this.showToast(rules.ERROR_TEXT[result.error] || '昵称未保存');
+            return;
+        }
+        this.showToast('昵称已保存');
+        this.setData({ sheet: null, motionPaused: false });
+        this.showFeedback('新名字真好听呀～', 1600);
+        this.refresh();
+    },
+
+    onWallet() {
+        this.openSheet({ type: 'wallet', title: '叽分钱包' });
+    },
+
+    onSwitch() {
+        this.openSheet({ type: 'switch', title: '今天，想陪谁？' });
+    },
+
+    onClaimHelp() {
+        this.openSheet({ type: 'claim', title: '把伙伴带回小窝' });
+    },
+
+    onSupply() {
+        if (this.data.supplyClaimed) {
+            this.showToast('今日已补给');
+            return;
+        }
+        const result = store.supply();
+        if (result.error) {
+            this.showToast(rules.ERROR_TEXT[result.error] || '补给未完成');
+            return;
+        }
+        this.showToast('食物 +1、水 +1');
+        this.setData({ sheet: null, motionPaused: false });
+        this.showFeedback('这下可以安心玩啦～', 1600);
+        this.refresh();
+    },
+
+    // 直接喂食：不再弹框，扣库存 + 饱食 +20，并播放谷粒动效与小鸟开心反馈。
+    onFeed() {
+        if (!this.requireBird()) return;
+        const blocked = this.careBlocked('feed');
+        if (blocked) {
+            this.showToast(blocked);
+            return;
+        }
+        const result = store.feed();
+        if (result.error) {
+            this.showToast(rules.ERROR_TEXT[result.error] || '喂食未完成');
+            return;
+        }
+        this.triggerFeedFx();
+        this.applyResult(result, 'feed', false);
+    },
+
+    // 谷粒动效：先归零再置位，确保连续点击也能重新触发 CSS 动画（与 showFeedback 的 happy 重触发同构）。
+    triggerFeedFx() {
+        if (this.feedFxTimer) clearTimeout(this.feedFxTimer);
+        if (this.feedFxHideTimer) clearTimeout(this.feedFxHideTimer);
+        const page = this;
+        this.setData({ feedFxId: 0 });
+        this.feedFxTimer = setTimeout(function () {
+            page.setData({ feedFxId: 1 });
+            page.feedFxHideTimer = setTimeout(function () {
+                page.setData({ feedFxId: 0 });
+                page.feedFxHideTimer = null;
+            }, 900);
+            page.feedFxTimer = null;
+        }, 20);
+    },
+
+    async onRedeemSteps() {
+        if (this.data.redeeming) return;
+        this.setData({ redeeming: true });
+        try {
+            const result = await store.redeemSteps();
+            if (result.error === 'WERUN_DENIED') {
+                this.showToast('请在「设置」中开启微信运动后重试');
+                return;
+            }
+            if (result.error === 'WX_LOGIN_REQUIRED') {
+                this.showToast('请先在微信中授权登录');
+                return;
+            }
+            if (result.error) {
+                this.showToast(result.degraded ? '当前为离线预览，步数未真实兑换' : (rules.ERROR_TEXT[result.error] || '兑换未完成'));
+                this.refresh();
+                return;
+            }
+            const granted = (result.data && result.data.granted) || 0;
+            if (result.degraded) {
+                this.showToast('离线预览：步数兑换 · 叽分 +' + granted);
+            } else {
+                this.showToast(granted > 0 ? ('步数兑换 · 叽分 +' + granted) : '今日步数已兑换');
+            }
+            this.refresh();
+        } finally {
+            this.setData({ redeeming: false });
+        }
+    },
+
     goAdopt() {
-        // 调试期用示例编码模拟 NFC 链接带参进入领养页，便于在预览卡中直接查看；
-        // 正式版入口来自 URL Link / URL Scheme / 小程序码，不在站内写死编码。
+        this.setData({ sheet: null, motionPaused: false });
         wx.navigateTo({ url: entry.buildAdoptUrl(config.DEBUG_DEMO_BIRD_CODE) });
     },
 });

@@ -1,33 +1,196 @@
-<view class="page">
-    <view class="hero">
-        <text class="eyebrow">SHOP · 商城</text>
-        <text class="title">小鸟的小伙伴们</text>
-        <text class="subtitle">调试版 · 商品资料快照来自项目商品目录</text>
-    </view>
+<view class="shop-page">
+    <view class="status-space" style="height: {{topInset}}rpx;"></view>
 
-    <view class="card">
-        <text class="muted">{{notice}}</text>
-    </view>
-
-    <view class="product-grid">
-        <view class="product-card" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="handleOpen">
-            <image class="product-cover" src="{{item.cover}}" mode="aspectFill"></image>
-            <text class="product-name">{{item.name}}</text>
-            <text class="muted">{{item.city}} · {{item.tag}}</text>
-            <text class="product-price">{{item.priceText}}</text>
-        </view>
-    </view>
-
-    <view wx:if="{{detailOpen}}" class="detail-mask" bindtap="handleClose">
-        <view class="detail-panel" catchtap="noop">
-            <image class="detail-cover" src="{{detail.cover}}" mode="aspectFill"></image>
-            <text class="section-title">{{detail.name}}</text>
-            <text class="muted">{{detail.city}} · {{detail.tag}} · {{detail.priceText}}</text>
-            <view class="divider"></view>
-            <text class="muted">{{detail.description}}</text>
-            <view class="btn-row">
-                <button class="btn btn-ghost" bindtap="handleClose">返回列表</button>
+    <view class="app">
+        <view class="masthead">
+            <image class="masthead-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
+            <view class="brand">
+                <view class="brand-mark">
+                    <image class="brand-icon" src="/assets/shop/icons/bird.png" mode="aspectFit"></image>
+                </view>
+                <view class="brand-text">
+                    <text class="brand-name">小鸟商城</text>
+                    <text class="brand-en">BIRD CITY DIARY</text>
+                </view>
+            </view>
+            <view class="cart-icon" bindtap="handleOpenCart">
+                <image class="cart-img" src="/assets/shop/icons/cart.png" mode="aspectFit"></image>
+                <view wx:if="{{cartCount}}" class="cart-count">{{cartCount}}</view>
             </view>
         </view>
+
+        <view class="hero">
+            <swiper class="hero-swiper" autoplay="{{bannerAutoplay}}" interval="5000" circular="{{true}}" current="{{bannerIndex}}" bindchange="handleSlide">
+                <swiper-item wx:for="{{banners}}" wx:key="id">
+                    <image class="hero-image" src="{{item.image}}" mode="aspectFill"></image>
+                </swiper-item>
+            </swiper>
+            <view wx:if="{{bannerDots}}" class="hero-dots">
+                <view wx:for="{{banners}}" wx:key="id" class="hero-dot-hit" data-index="{{index}}" bindtap="handleDot">
+                    <view class="hero-dot {{index === bannerIndex ? 'is-active' : ''}}"></view>
+                </view>
+            </view>
+            <view wx:if="{{bannerDots}}" class="carousel-pause" bindtap="handleCarouselPause">{{carouselPaused ? '继续轮播' : '暂停轮播'}}</view>
+        </view>
+
+        <view class="intro">
+            <image class="intro-texture" src="/assets/shop/felt/cream-panel.webp" mode="scaleToFill"></image>
+            <view class="intro-copy">
+                <text class="eyebrow">A LITTLE BIRD, A NEW JOURNEY</text>
+                <text class="intro-title">把一座城市，带回家。</text>
+                <text class="intro-desc">遇见城市限定小鸟，收藏属于你的旅行记忆</text>
+            </view>
+            <view class="intro-stamp">
+                <image class="stamp-bg" src="/assets/shop/felt/cream-panel.webp" mode="scaleToFill"></image>
+                <text class="stamp-line">城市限定</text>
+                <text class="stamp-line">温暖相伴</text>
+                <view class="stamp-leaf"></view>
+            </view>
+        </view>
+
+        <view class="benefit">
+            <image class="benefit-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
+            <text class="egg-art">🥚</text>
+            <text class="benefit-copy">绑定实体小鸟，解锁对应城市鸟蛋</text>
+            <view class="benefit-action" bindtap="handleRules">
+                <text class="benefit-action-text">了解规则</text>
+                <text class="benefit-action-arrow">›</text>
+            </view>
+        </view>
+
+        <view class="toolbar">
+            <view class="category">
+                <view class="category-title">
+                    <image class="category-icon" src="/assets/shop/icons/happy.webp" mode="aspectFit"></image>
+                    <text>全部小鸟</text>
+                </view>
+                <text class="result-count">共 {{total}} 只城市小鸟</text>
+            </view>
+            <view class="filters">
+                <view class="filter" bindtap="handleSortDefault">
+                    <image class="filter-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
+                    <text class="filter-label">综合排序</text>
+                </view>
+                <view class="filter {{sort !== 'default' ? 'is-active' : ''}}" bindtap="handleSortPrice">
+                    <image class="filter-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
+                    <image wx:if="{{sort !== 'default'}}" class="filter-bg" src="/assets/shop/felt/green-button.webp" mode="scaleToFill"></image>
+                    <text class="filter-label">{{sortLabel}}</text>
+                </view>
+                <picker class="filter city-filter" mode="selector" range="{{cityNames}}" value="{{cityIndex}}" bindchange="handleCityChange">
+                    <view class="filter-inner">
+                        <image class="filter-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
+                        <text class="filter-label">{{cityLabel}}</text>
+                        <text class="filter-arrow">▾</text>
+                    </view>
+                </picker>
+            </view>
+        </view>
+
+        <view wx:if="{{emptyVisible}}" class="shop-status">该城市暂无商品，去看看其他城市的小鸟吧。</view>
+        <view wx:if="{{emptyVisible}}" class="shop-retry" bindtap="handleClearCity"><text class="retry-text">查看全部城市</text></view>
+
+        <view class="products">
+            <view class="card {{item.isLeft ? 'card-left' : ''}}" wx:for="{{visibleProducts}}" wx:key="id" data-id="{{item.id}}" bindtap="handleOpen">
+                <image class="card-bg" src="/assets/shop/felt/card.webp" mode="scaleToFill"></image>
+                <image class="photo" src="{{item.cover}}" mode="aspectFill" lazy-load="{{true}}"></image>
+                <view class="card-body">
+                    <text class="product-name">{{item.title}}</text>
+                    <text class="product-remark">{{item.remark}}</text>
+                    <view class="card-bottom">
+                        <text class="price">{{item.priceText}}</text>
+                        <view class="add" data-id="{{item.id}}" catchtap="handleAdd">
+                            <view class="add-circle {{item.added ? 'is-added' : ''}}"></view>
+                            <text wx:if="{{item.added}}" class="add-check">✓</text>
+                            <image wx:else class="add-icon" src="/assets/shop/icons/cart-white.png" mode="aspectFit"></image>
+                        </view>
+                    </view>
+                </view>
+            </view>
+        </view>
+
+        <view class="end">一鸟一城 · 旅途未完待续</view>
     </view>
+
+    <view wx:if="{{panelVisible}}" class="overlay" bindtap="handleClose">
+        <view class="panel" catchtap="noop">
+            <view class="panel-head">
+                <image class="panel-head-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
+                <text class="panel-title">{{panelTitle}}</text>
+                <view class="panel-close" bindtap="handleClose"><text class="close-mark">×</text></view>
+            </view>
+            <scroll-view scroll-y class="panel-content {{panelKind === 'rules' || panelKind === 'added' ? 'is-short' : ''}}">
+                <block wx:if="{{panelKind === 'detail'}}">
+                    <image class="detail-cover" src="{{detail.cover}}" mode="aspectFill"></image>
+                    <view class="detail-body">
+                        <text class="detail-title">{{detail.title}}</text>
+                        <text class="detail-remark">{{detail.city}} · {{detail.remark}}</text>
+                        <text class="detail-price">{{detail.priceText}}</text>
+                        <view class="detail-divider"></view>
+                        <text class="detail-desc">{{detail.description}}</text>
+                        <text class="detail-note">商品价格与库存以实际售卖页面为准。当前小程序不提供站内下单、支付与订单，也不因浏览或加购发放鸟蛋。</text>
+                        <view class="detail-text-head" bindtap="handleTextToggle">
+                            <text>商品文字信息</text>
+                            <text class="detail-text-arrow">{{detailTextOpen ? '−' : '+'}}</text>
+                        </view>
+                        <view wx:if="{{detailTextOpen}}" class="detail-text-block">
+                            <text class="detail-text-line">参考价格：{{detail.priceText}}</text>
+                            <text class="detail-text-line">所属城市：{{detail.city}}</text>
+                            <text class="detail-text-line">{{detail.remark}}</text>
+                        </view>
+                        <view class="detail-add-btn" data-id="{{detail.id}}" bindtap="handleDetailAdd">
+                            <image class="button-bg" src="/assets/shop/felt/green-button.webp" mode="scaleToFill"></image>
+                            <text class="detail-add-label">{{detail.added ? '已在购物车中' : '加入购物车'}}</text>
+                        </view>
+                    </view>
+                </block>
+
+                <block wx:elif="{{panelKind === 'cart'}}">
+                    <view class="detail-body">
+                        <text class="cart-panel-status">我的购物车 · {{cartCount}} 只小鸟</text>
+                        <view wx:if="{{cartCount === 0}}" class="cart-empty">还没有小鸟来做客，把喜欢的小鸟加入购物车吧。</view>
+                        <view wx:for="{{cartItems}}" wx:key="id" class="cart-row">
+                            <image class="cart-cover" src="{{item.cover}}" mode="aspectFill"></image>
+                            <view class="cart-copy">
+                                <text class="cart-name">{{item.title}}</text>
+                                <text class="cart-price">{{item.priceText}}</text>
+                                <view class="cart-actions">
+                                    <text class="cart-buy" bindtap="handleBuy">购买暂未开通</text>
+                                    <text class="cart-remove" data-id="{{item.id}}" catchtap="handleCartRemove">移除</text>
+                                </view>
+                            </view>
+                        </view>
+                        <text class="cart-note">购物车只保存在本机，不代表已下单；当前小程序不跳淘宝、不支付、不产生订单，清除缓存会清空记录。</text>
+                        <view wx:if="{{cartCount === 0}}" class="primary-btn" bindtap="handleClose">
+                            <image class="button-bg" src="/assets/shop/felt/green-button.webp" mode="scaleToFill"></image>
+                            <text class="primary-label">继续逛逛</text>
+                        </view>
+                    </view>
+                </block>
+
+                <block wx:elif="{{panelKind === 'added'}}">
+                    <view class="detail-body">
+                        <image class="added-cover" src="{{detail.cover}}" mode="aspectFill"></image>
+                        <text class="added-title">{{detail.title}}</text>
+                        <text class="added-note">{{addedAlready ? '这只小鸟已在购物车中' : '已加入购物车'}}，可前往购物车查看。</text>
+                        <view class="primary-btn" bindtap="handleOpenCart">
+                            <image class="button-bg" src="/assets/shop/felt/green-button.webp" mode="scaleToFill"></image>
+                            <text class="primary-label">去购物车看看</text>
+                        </view>
+                        <view class="ghost-btn" bindtap="handleClose"><text>继续逛逛</text></view>
+                    </view>
+                </block>
+
+                <block wx:else>
+                    <view class="rules">
+                        <text class="rules-title">一颗鸟蛋，一段城市旅程</text>
+                        <text class="rules-line">碰一碰实体小鸟或扫描已建档链接，即可在本机领取属于你的城市小鸟。</text>
+                        <text class="rules-line">挑选喜欢的城市小鸟加入本机购物车；购物车不代表已下单，当前不提供淘宝跳转、站内支付与订单管理。</text>
+                        <text class="rules-line">浏览或加购商品不会领取小鸟、发放鸟蛋或叽分；调试期数据只保存在本机，不跨设备同步。</text>
+                    </view>
+                </block>
+            </scroll-view>
+        </view>
+    </view>
+
+    <view wx:if="{{toastVisible}}" class="toast"><text>{{toastText}}</text></view>
 </view>

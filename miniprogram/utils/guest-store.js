@@ -39,6 +39,12 @@ function defaultState(now) {
         ledger: [],
         dayPoints: {},
         stepClaims: {},
+        supplyDays: {},
+        // 合照打卡：原图去重、每日最多 3 张新原图、请求编号幂等。
+        // 与 H5 guest-store.mjs 的 photoHashes / daily.photos / requests 对应。
+        photoHashes: [],
+        photoDays: {},
+        photoRequests: {},
         lastPetAt: 0,
         care: {
             food: 3,
@@ -81,6 +87,33 @@ function normalize(raw, now) {
             const claim = raw.stepClaims[key];
             if (claim && isNumber(claim.steps) && isNumber(claim.points)) {
                 state.stepClaims[key] = { steps: claim.steps, points: claim.points };
+            }
+        });
+    }
+    if (raw.supplyDays && typeof raw.supplyDays === 'object') {
+        Object.keys(raw.supplyDays).slice(0, 60).forEach(function (key) {
+            if (raw.supplyDays[key] === true) {
+                state.supplyDays[key] = true;
+            }
+        });
+    }
+    if (raw.photoHashes && Array.isArray(raw.photoHashes)) {
+        state.photoHashes = raw.photoHashes.filter(function (value) {
+            return typeof value === 'string' && value.length > 0 && value.length <= 128;
+        }).slice(0, 400);
+    }
+    if (raw.photoDays && typeof raw.photoDays === 'object') {
+        Object.keys(raw.photoDays).slice(0, 60).forEach(function (key) {
+            if (isNumber(raw.photoDays[key])) {
+                state.photoDays[key] = clamp(Math.floor(raw.photoDays[key]), 0, 3);
+            }
+        });
+    }
+    if (raw.photoRequests && typeof raw.photoRequests === 'object') {
+        Object.keys(raw.photoRequests).slice(0, 400).forEach(function (key) {
+            const prior = raw.photoRequests[key];
+            if (prior && isNumber(prior.reward)) {
+                state.photoRequests[key] = { reward: clamp(Math.floor(prior.reward), 0, 1) };
             }
         });
     }
@@ -168,18 +201,28 @@ function publicSnapshot(state, now, rules, debugSteps) {
         petWaitSeconds: petWaitSeconds,
         todayStepClaim: claim,
         todayStepClaimed: !!claim,
+        supplyClaimed: !!state.supplyDays[day],
+        todayPhotos: state.photoDays[day] || 0,
         debugSteps: debugSteps,
         stepEarnable: claim ? 0 : stepReward(debugSteps, state, now, rules),
         stepUnit: rules.stepUnit,
         stepDailyCap: rules.stepDailyCap,
-        ledger: state.ledger.slice(0, 8).map(function (item) {
-            return {
-                id: item.id,
-                note: item.note,
-                amountText: '+' + String(item.amount) + ' 叽分',
-                day: item.day,
-            };
-        }),
+        ledger: (function () {
+            let running = state.points;
+            return state.ledger.slice(0, 8).map(function (item) {
+                const entry = {
+                    id: item.id,
+                    note: item.note,
+                    amount: item.amount,
+                    amountText: '+' + String(item.amount) + ' 叽分',
+                    at: item.at,
+                    day: item.day,
+                    balanceAfter: running,
+                };
+                running -= item.amount;
+                return entry;
+            });
+        })(),
     };
 }
 
@@ -282,6 +325,44 @@ function createGuestStore(storage, options) {
         return commit(state, at, null, { granted: granted });
     }
 
+    // 服务端已结算后的本地镜像：严格按服务端下发的 granted 记录，前端不再用步数重算（防篡改）。
+    function recordExact(state, amount, note, now) {
+        const day = dayKey(now);
+        state.dayPoints[day] = (state.dayPoints[day] || 0) + amount;
+        state.points += amount;
+        state.ledger.unshift({
+            id: String(now) + '-steps-' + String(amount),
+            kind: 'steps',
+            amount: amount,
+            note: note,
+            at: now,
+            day: day,
+        });
+        state.ledger = state.ledger.slice(0, 40);
+        return amount;
+    }
+
+    function applyServerReward(granted, steps, date, now, claimed) {
+        const at = isNumber(now) ? now : Date.now();
+        const state = read(at);
+        if (!state.bird) {
+            return commit(state, at, 'NO_BIRD');
+        }
+        const day = (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) ? date : dayKey(at);
+        if (state.stepClaims[day]) {
+            return commit(state, at, 'ALREADY_CLAIMED');
+        }
+        let given = 0;
+        if (granted > 0) {
+            given = recordExact(state, granted, '微信步数兑换', at);
+        }
+        state.stepClaims[day] = { steps: steps || 0, points: given };
+        if (given <= 0 && !claimed) {
+            return commit(state, at, 'NO_REWARD');
+        }
+        return commit(state, at, null, { granted: given });
+    }
+
     function adopt(code, nickname, now) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
@@ -297,6 +378,63 @@ function createGuestStore(storage, options) {
         // 调试期为单鸟本机模型；正式版由服务端按账号与实体编码做幂等绑定。
         state.bird = { code: cleanCode, nickname: cleanName, adoptedAt: at };
         return commit(state, at, null, { birdCode: cleanCode });
+    }
+
+    // 网页端小窝的「补给 / 改名」两个本机交互。都不发放叽分，避免与每日上限规则冲突。
+    function supply(now) {
+        const at = isNumber(now) ? now : Date.now();
+        const state = read(at);
+        if (!state.bird) {
+            return commit(state, at, 'NO_BIRD');
+        }
+        const day = dayKey(at);
+        if (state.supplyDays[day]) {
+            return commit(state, at, 'ALREADY_CLAIMED');
+        }
+        state.care.food = clamp(state.care.food + 1, 0, 99);
+        state.care.water = clamp(state.care.water + 1, 0, 99);
+        state.supplyDays[day] = true;
+        return commit(state, at, null, { granted: 0 });
+    }
+
+    function rename(nickname, now) {
+        const at = isNumber(now) ? now : Date.now();
+        const state = read(at);
+        if (!state.bird) {
+            return commit(state, at, 'NO_BIRD');
+        }
+        const cleanName = text(nickname, 12).trim();
+        const length = Array.from(cleanName).length;
+        if (length < 1 || length > 6) {
+            return commit(state, at, 'INVALID_NICKNAME');
+        }
+        state.bird.nickname = cleanName;
+        return commit(state, at, null);
+    }
+
+    // 合照收藏：同一请求编号幂等，同一张原图只发一次，每日最多 3 张新原图各 +1。
+    // 沿用本机全局叽分日上限；额度用尽时不记入本张原图，可稍后再试。
+    function photoReward(id, hash, now) {
+        const at = isNumber(now) ? now : Date.now();
+        const state = read(at);
+        if (!state.bird) return commit(state, at, 'NO_BIRD');
+        const request = 'photo:' + String(id);
+        if (Object.prototype.hasOwnProperty.call(state.photoRequests, request)) {
+            return commit(state, at, null, { reward: state.photoRequests[request].reward, replayed: true });
+        }
+        const day = dayKey(at);
+        const digest = typeof hash === 'string' ? hash.slice(0, 128) : '';
+        let reward = 0;
+        if (digest && state.photoHashes.indexOf(digest) < 0 && (state.photoDays[day] || 0) < 3) {
+            const granted = award(state, 'photo', 1, '合照打卡', at, rules);
+            if (granted > 0) {
+                reward = 1;
+                state.photoHashes.push(digest);
+                state.photoDays[day] = (state.photoDays[day] || 0) + 1;
+            }
+        }
+        state.photoRequests[request] = { reward: reward };
+        return commit(state, at, null, { reward: reward, replayed: false });
     }
 
     function reset(now) {
@@ -321,7 +459,11 @@ function createGuestStore(storage, options) {
         water: function (now) { return careAction('water', now); },
         clean: function (now) { return careAction('clean', now); },
         redeemSteps: redeemSteps,
+        applyServerReward: applyServerReward,
+        supply: supply,
+        rename: rename,
         adopt: adopt,
+        photoReward: photoReward,
         reset: reset,
     };
 }

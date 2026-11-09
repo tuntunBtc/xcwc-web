@@ -1,0 +1,11 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "",
+  "navigationBarTextStyle": "black",
+  "navigationBarBackgroundColor": "#98B89B",
+  "backgroundColor": "#DBE8C9",
+  "backgroundTextStyle": "light",
+  "usingComponents": {
+    "photo-tab-bar": "/custom-tab-bar/index"
+  }
+}

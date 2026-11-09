@@ -1,30 +1,204 @@
-<view class="page">
-    <view class="hero">
-        <text class="eyebrow">PROFILE · 我的</text>
-        <text class="title">{{title}}</text>
-        <text class="subtitle">{{subtitle}}</text>
+<!-- 「我的」页：按网页端 src/account-pages.js 的 feltProfileContent + account-felt.css 复刻。
+     WXSS 不能可靠引用本地 background-image / 伪元素 / dialog，
+     毛毡纹理用 image 铺底，雪碧图用 clip + sprite 取格，弹层用 view + 遮罩。 -->
+<view class="profile-page">
+    <image class="bg" src="/assets/profile/felt/background.webp" mode="widthFix"></image>
+    <view class="status-space" style="height: {{topInset}}rpx;"></view>
+
+    <view class="flow">
+        <view class="hero">
+            <view class="head">
+                <text class="eyebrow">MY LITTLE ISLAND</text>
+                <view class="title-row">
+                    <text class="title">我的小日子</text>
+                    <text class="title-flower">✿</text>
+                </view>
+                <text class="subtitle">和小鸟一起，把日常过得软乎乎。</text>
+            </view>
+
+            <view class="profile-card">
+                <image class="card-tex" src="/assets/nest/felt/panel.webp" mode="scaleToFill"></image>
+                <image class="avatar" src="/assets/nest/avatar.webp" mode="aspectFit"></image>
+                <view class="card-copy">
+                    <text class="card-small">今天也有小鸟陪你</text>
+                    <text class="card-name">{{displayName}}</text>
+                    <text class="card-sub">{{birdSubtitle}}</text>
+                </view>
+                <view class="points" bindtap="onWallet" hover-class="ui-hover">
+                    <view class="clip feather-clip">
+                        <image class="sprite hud-sprite icon-feather" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image>
+                    </view>
+                    <text class="points-num">{{points}}</text>
+                    <text class="points-label">我的叽分 ›</text>
+                </view>
+            </view>
+        </view>
+
+        <view class="section">
+            <view class="section-head">
+                <view class="clip flower-clip">
+                    <image class="sprite hud-sprite icon-flower" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image>
+                </view>
+                <text class="section-title">我的伙伴</text>
+            </view>
+            <view class="menu">
+                <view class="menu-item" bindtap="onBirds" hover-class="ui-hover">
+                    <image class="item-tex" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                    <view class="item-label">
+                        <image class="item-icon" src="/assets/nest/happy-192.webp" mode="aspectFit"></image>
+                        <text class="item-text">我的小鸟</text>
+                    </view>
+                    <view class="item-meta">
+                        <text class="meta-text">{{birdCount}} 只伙伴</text>
+                        <text class="arrow">›</text>
+                    </view>
+                </view>
+            </view>
+        </view>
+
+        <view class="section">
+            <view class="section-head">
+                <view class="clip flower-clip">
+                    <image class="sprite hud-sprite icon-flower" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image>
+                </view>
+                <text class="section-title">日常管理</text>
+            </view>
+            <view class="menu">
+                <view class="menu-item" bindtap="onWardrobe" hover-class="ui-hover">
+                    <image class="item-tex" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                    <view class="item-label">
+                        <view class="clip item-icon-clip">
+                            <image class="sprite tool-sprite icon-outfit" src="/assets/nest/tools.webp" mode="scaleToFill"></image>
+                        </view>
+                        <text class="item-text">我的衣橱</text>
+                    </view>
+                    <view class="item-meta">
+                        <text class="meta-text">换装暂未开放</text>
+                        <text class="arrow">›</text>
+                    </view>
+                </view>
+                <view class="menu-item" bindtap="onWallet" hover-class="ui-hover">
+                    <image class="item-tex" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                    <view class="item-label">
+                        <view class="clip item-icon-clip">
+                            <image class="sprite hud-sprite icon-wallet" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image>
+                        </view>
+                        <text class="item-text">叽分钱包</text>
+                    </view>
+                    <view class="item-meta">
+                        <text class="meta-text">余额与流水</text>
+                        <text class="arrow">›</text>
+                    </view>
+                </view>
+                <view class="menu-item" bindtap="onReset" hover-class="ui-hover">
+                    <image class="item-tex" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                    <view class="item-label">
+                        <view class="clip item-icon-clip">
+                            <image class="sprite tool-sprite icon-clean" src="/assets/nest/tools.webp" mode="scaleToFill"></image>
+                        </view>
+                        <text class="item-text">重置本机数据</text>
+                    </view>
+                    <view class="item-meta">
+                        <text class="meta-text">删除小鸟与相册 ›</text>
+                    </view>
+                </view>
+            </view>
+        </view>
+
+        <text class="signoff">一只小鸟，一点温柔，都是日常的小美好。</text>
+
+        <view wx:if="{{!hasBird}}" class="empty">
+            <text class="empty-title">等待第一位小伙伴</text>
+            <text class="empty-desc">用手机碰一碰实体小鸟的 NFC 标签，或扫描包装二维码，打开专属领取链接。确认名字后即可免费孵化，无需登录。</text>
+            <view class="empty-btn" bindtap="goHome"><text>回小窝看看</text></view>
+        </view>
+
+        <text class="local-note">本机体验 · 无需登录；清除小程序数据或换设备后不会自动恢复。</text>
+        <view class="tab-space"></view>
     </view>
 
-    <view class="card profile-card">
-        <view class="avatar">{{avatarText}}</view>
-        <view class="profile-main">
-            <text class="nickname">{{displayNickname}}</text>
-            <text class="muted">{{displayIntro}}</text>
+    <!-- 叽分钱包：对齐 H5 .account-wallet-dialog -->
+    <view class="overlay" wx:if="{{walletVisible}}" bindtap="closeSheets" catchtouchmove="noop">
+        <view class="sheet" catchtap="noop">
+            <view class="sheet-close" catchtap="closeSheets"><text>×</text></view>
+            <scroll-view class="sheet-body" scroll-y="true">
+                <text class="sheet-h2">本机叽分</text>
+                <text class="wallet-balance">{{points}} 叽分</text>
+                <view class="fold" bindtap="toggleLocalNote">
+                    <text class="fold-title">{{localNoteOpen ? '▾' : '▸'}} 本机保存 · 查看说明</text>
+                    <text wx:if="{{localNoteOpen}}" class="fold-body">{{localNoteText}}</text>
+                </view>
+                <text class="wallet-today">今日抚摸奖励 {{todayPoints}} / {{dailyLimit}} 次</text>
+                <text class="sheet-h3">最近流水</text>
+                <text class="sheet-muted">按北京时间显示，最多 50 条。</text>
+                <view wx:if="{{ledger.length}}" class="ledger">
+                    <view class="ledger-row" wx:for="{{ledger}}" wx:key="id">
+                        <text class="ledger-time">{{item.dayText}}</text>
+                        <view class="ledger-line">
+                            <text class="ledger-note">{{item.note}}</text>
+                            <text class="ledger-amount">{{item.amountText}}</text>
+                        </view>
+                        <text class="ledger-balance">{{item.balanceText}}</text>
+                    </view>
+                </view>
+                <text wx:else class="ledger-empty">还没有叽分记录。领取小鸟后，可以通过互动获得叽分。</text>
+                <view class="fold rules-fold" bindtap="toggleRules">
+                    <text class="fold-title">{{rulesOpen ? '▾' : '▸'}} 查看叽分获取与使用规则</text>
+                    <text wx:if="{{rulesOpen}}" class="fold-body">{{pointsRules}}</text>
+                </view>
+            </scroll-view>
         </view>
     </view>
 
-    <view class="card">
-        <text class="section-title">叽分</text>
-        <view class="divider"></view>
-        <view class="row"><text>当前余额</text><text>{{points}} 叽分</text></view>
-        <view class="row"><text>今日获得</text><text>{{todayPoints}} / {{dailyLimit}}</text></view>
-        <view class="row"><text>步数兑换</text><text>{{stepText}}</text></view>
+    <!-- 重置本机数据：对齐 H5 .account-cache-dialog -->
+    <view class="overlay" wx:if="{{resetVisible}}" bindtap="closeSheets" catchtouchmove="noop">
+        <view class="sheet reset-sheet" catchtap="noop">
+            <scroll-view class="sheet-body reset-body" scroll-y="true">
+                <text class="reset-h2">重置全部本机体验数据？</text>
+                <text class="reset-desc">{{resetDesc}}</text>
+                <text class="reset-warn">清除后无法恢复，请先导出需要保留的照片。</text>
+                <view class="reset-actions">
+                    <view class="reset-cancel" bindtap="closeSheets"><text>暂不清除</text></view>
+                    <view class="reset-confirm" bindtap="confirmReset"><text>{{resetBusy ? '正在清除…' : '确认清除'}}</text></view>
+                </view>
+            </scroll-view>
+        </view>
     </view>
 
-    <view class="menu-card card" wx:for="{{menuGroups}}" wx:for-item="group" wx:for-index="groupIndex" wx:key="key">
-        <view class="menu-item" wx:for="{{group.items}}" wx:for-item="menuItem" wx:for-index="itemIndex" wx:key="key" data-group="{{groupIndex}}" data-index="{{itemIndex}}" bindtap="handleMenuTap">
-            <text class="menu-text">{{menuItem.text}}</text>
-            <text class="menu-arrow">›</text>
+    <!-- 我的小鸟：H5 为 flock 路由，小程序调试期是单鸟本机模型，用同风格浮层展示 -->
+    <view class="overlay" wx:if="{{birdsVisible}}" bindtap="closeSheets" catchtouchmove="noop">
+        <view class="sheet" catchtap="noop">
+            <view class="sheet-close" catchtap="closeSheets"><text>×</text></view>
+            <scroll-view class="sheet-body" scroll-y="true">
+                <text class="sheet-h2">我的小伙伴</text>
+                <view wx:if="{{hasBird}}" class="bird-row">
+                    <image class="bird-avatar" src="/assets/nest/avatar.webp" mode="aspectFit"></image>
+                    <view class="bird-copy">
+                        <text class="bird-name">{{displayName}}</text>
+                        <text class="bird-code">实体编码 {{birdCode}}</text>
+                    </view>
+                    <text class="bird-current">当前陪伴</text>
+                </view>
+                <text wx:else class="birds-empty">还没有领养小鸟。用实体标签上的链接领养第一只吧。</text>
+                <text class="sheet-muted">调试期本机只保存一只小鸟，暂不支持多只切换。</text>
+                <view wx:if="{{!hasBird}}" class="sheet-action debug-action" bindtap="goAdopt"><text>预览 NFC 领养页（调试）</text></view>
+                <view class="sheet-action" bindtap="goHome"><text>回小窝看看</text></view>
+            </scroll-view>
+        </view>
+    </view>
+
+    <!-- 我的衣橱：H5 为 wardrobe 路由，小程序尚未接入换装，保留同风格展示 -->
+    <view class="overlay" wx:if="{{wardrobeVisible}}" bindtap="closeSheets" catchtouchmove="noop">
+        <view class="sheet" catchtap="noop">
+            <view class="sheet-close" catchtap="closeSheets"><text>×</text></view>
+            <scroll-view class="sheet-body" scroll-y="true">
+                <text class="wardrobe-eyebrow">BUJIDAO · MY ISLAND</text>
+                <text class="sheet-h2">我的衣橱</text>
+                <text class="sheet-muted">服装展示 · 暂未开放</text>
+                <image class="wardrobe-bird" src="/assets/nest/poster.webp" mode="aspectFit"></image>
+                <text class="sheet-muted">换装功能本期暂未开放，服装仅作展示。</text>
+                <view class="sheet-action" bindtap="goHome"><text>回小窝看看</text></view>
+            </scroll-view>
         </view>
     </view>
 </view>

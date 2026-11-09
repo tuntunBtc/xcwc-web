@@ -1,23 +1,204 @@
-<view class="page">
-    <view class="hero">
-        <text class="eyebrow">CITY · 城市</text>
-        <text class="title">小鸟的城市旅行</text>
-        <text class="subtitle">{{birdHint}}</text>
-    </view>
+<!-- 按网页端 src/city/template.html + city.css 复刻。
+     WXSS 不能引用本地背景图，毛毡底板一律用 image 绝对定位铺底；
+     六宫格雪碧图用放大 3x2 的 image 配合 left/top 偏移取格；
+     dialog 改为遮罩 + 浮层，六城顺序、文案、状态与网页端一致。 -->
+<view class="city-page">
 
-    <view class="card">
-        <text class="section-title">城市巡游</text>
-        <view class="divider"></view>
-        <view class="city-row" wx:for="{{cities}}" wx:key="id">
-            <view class="city-info">
-                <text class="city-name">{{item.name}}</text>
-                <text class="muted">{{item.hint}}</text>
+    <view class="hero" style="padding-top:{{topInset}}rpx">
+        <view class="hero-stage">
+            <image class="hero-art" src="/assets/city/felt/hero.webp" mode="scaleToFill"></image>
+            <view class="hero-fade"></view>
+
+            <view class="topbar">
+                <view class="profile felt-pill" hover-class="is-pressed" bindtap="handleProfile">
+                    <image class="felt-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                    <image class="profile-avatar" src="/assets/bird/happy.webp" mode="aspectFit"></image>
+                    <view class="profile-copy">
+                        <text class="profile-name">{{birdName}}</text>
+                        <text class="profile-sub">和小鸟一起出发</text>
+                    </view>
+                    <text class="profile-arrow">›</text>
+                </view>
+                <view class="points-group felt-pill">
+                    <image class="felt-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                    <view class="points" hover-class="is-pressed" bindtap="handlePoints">
+                        <text class="points-star">✦</text>
+                        <text class="points-value">{{points}}</text>
+                        <text class="points-unit">叽分</text>
+                    </view>
+                    <view class="points-earn" hover-class="is-pressed" bindtap="handlePointsRules">
+                        <text class="points-earn-text">＋</text>
+                    </view>
+                </view>
             </view>
-            <text class="badge">{{statusText}}</text>
+
+            <view class="hero-copy">
+                <text class="hero-eyebrow">A LITTLE BIRD, A BIG WORLD</text>
+                <view class="hero-title-row">
+                    <text class="hero-title">城市之旅</text>
+                    <text class="hero-flower">✿</text>
+                </view>
+                <view class="hero-description">
+                    <text>把喜欢的城市，</text>
+                    <text>一点点收进回忆里。</text>
+                </view>
+                <text class="hero-rule">认领一只小鸟，开启一座城。</text>
+            </view>
+
+            <view class="journey-tag felt-pill">
+                <image class="felt-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                <text class="journey-flower">✿</text>
+                <text class="journey-copy"> 下一站，和你一起</text>
+            </view>
         </view>
     </view>
 
-    <view class="card">
-        <text class="muted">{{note}}</text>
+    <view class="collection">
+        <view class="handbook felt-panel">
+            <image class="felt-bg" src="/assets/nest/felt/panel.webp" mode="scaleToFill"></image>
+            <view class="section-heading">
+                <view class="heading-copy">
+                    <text class="eyebrow">MY CITY COLLECTION</text>
+                    <text class="handbook-title">我的城市手账</text>
+                </view>
+                <text class="progress-text">{{progressText}}</text>
+            </view>
+            <view class="progress-track">
+                <view class="progress-bar" style="width:{{progressPercent}}%"></view>
+            </view>
+        </view>
+
+        <view class="tabs felt-pill">
+            <image class="felt-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+            <view class="tab {{filter === 'all' ? 'is-active' : ''}}" hover-class="is-pressed" data-filter="all" bindtap="handleFilter">
+                <text>全部城市 </text><text class="tab-count">{{cityTotal}}</text>
+            </view>
+            <view class="tab {{filter === 'unlocked' ? 'is-active' : ''}}" hover-class="is-pressed" data-filter="unlocked" bindtap="handleFilter">
+                <text>已解锁 </text><text class="tab-count">{{unlockedCount}}</text>
+            </view>
+            <view class="tab {{filter === 'locked' ? 'is-active' : ''}}" hover-class="is-pressed" data-filter="locked" bindtap="handleFilter">
+                <text>未解锁 </text><text class="tab-count">{{lockedCount}}</text>
+            </view>
+        </view>
+
+        <view class="grid">
+            <view class="city-card {{item.status}} {{item.rowEnd ? 'row-end' : ''}} {{item.rowLast ? 'row-last' : ''}}" wx:for="{{visibleCities}}" wx:key="id" hover-class="is-pressed" data-id="{{item.id}}" bindtap="handleCity">
+                <view class="city-art">
+                    <image class="cities-sprite" src="/assets/city/felt/cities.webp" style="left:{{item.artLeft}};top:{{item.artTop}}" mode="scaleToFill"></image>
+                    <view class="art-shade"></view>
+                    <view class="city-name">
+                        <text class="city-cn">{{item.name}}</text>
+                        <text class="city-en">{{item.en}}</text>
+                    </view>
+                    <view class="state-icon"><view class="state-icon-inner"></view></view>
+                    <image class="bird-mini" src="/assets/city/felt/bird-silhouette.png" mode="aspectFit"></image>
+                    <text class="question">?</text>
+                </view>
+                <view class="city-card-body">
+                    <image class="body-bg" src="/assets/nest/felt/panel.webp" mode="scaleToFill"></image>
+                    <view class="card-status">
+                        <view class="tiny-dot"></view>
+                        <text>{{item.statusText}}</text>
+                    </view>
+                    <text class="card-line">{{item.line}}</text>
+                    <view class="card-action">
+                        <image class="felt-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                        <text class="card-action-text">查看小鸟 ›</text>
+                    </view>
+                </view>
+            </view>
+        </view>
+
+        <view class="empty" wx:if="{{showEmpty}}">
+            <text class="empty-flower">✿</text>
+            <text class="empty-title">{{emptyTitle}}</text>
+            <text class="empty-description">{{emptyDescription}}</text>
+            <view class="empty-button" hover-class="is-pressed" bindtap="handleShowAll">看看全部城市</view>
+        </view>
+
+        <view class="footnote">
+            <text class="footnote-main">城市状态来自本机领取缓存 · 不代表云端购买权益</text>
+            <view class="footnote-row">
+                <text class="footnote-extra">公开小鸟目录暂未接入，仍可查看本机伙伴。</text>
+                <view class="footnote-retry" hover-class="is-pressed" bindtap="handleRetryCatalog">重新读取目录</view>
+            </view>
+        </view>
+    </view>
+
+    <view class="sheet-mask" wx:if="{{sheetVisible}}" catchtouchmove="noop" bindtap="handleCloseSheet"></view>
+    <!-- 弹层不拦截 touchmove：内容变长时仍可在 WebView 内滚动；
+         背景滚动由遮罩的 catchtouchmove 阻止。 -->
+    <view class="sheet" wx:if="{{sheetVisible}}" style="top:{{sheetTop}}rpx;max-height:{{sheetMaxHeight}}rpx">
+
+        <view wx:if="{{sheetKind === 'birds'}}">
+            <view class="sheet-head">
+                <view class="sheet-close" hover-class="is-pressed" bindtap="handleCloseSheet">×</view>
+                <text class="sheet-eyebrow">CITY BIRD COLLECTION</text>
+                <text class="sheet-title">{{sheetCityName}}的小鸟伙伴</text>
+                <text class="sheet-subtitle">查看本机已领取的伙伴与公开小鸟目录。</text>
+            </view>
+            <view class="sheet-body">
+                <view class="bird-row" wx:if="{{sheetHasBird}}">
+                    <image class="bird-row-art" src="/assets/bird/happy.webp" mode="aspectFit"></image>
+                    <view class="bird-row-copy">
+                        <text class="bird-row-name">{{sheetBirdName}}</text>
+                        <text class="bird-row-desc">已领取 · 本机已孵化</text>
+                    </view>
+                    <view class="bird-pill" hover-class="is-pressed" bindtap="handleVisitBird">去小窝</view>
+                </view>
+                <view class="catalog-status" wx:if="{{!sheetHasBird}}">
+                    <text class="catalog-text">公开小鸟目录暂时无法读取，本机伙伴仍可查看。</text>
+                    <view class="catalog-retry" hover-class="is-pressed" bindtap="handleRetryCatalog">重新读取目录</view>
+                </view>
+                <view class="instructions">碰一碰实体小鸟的 NFC 或扫描小程序码，打开对应领取页面。领取无需登录，记录仅保存在当前小程序。</view>
+                <view class="sheet-primary" hover-class="is-pressed" bindtap="handleCloseSheet">返回城市手账</view>
+            </view>
+        </view>
+
+        <view wx:elif="{{sheetKind === 'wallet'}}">
+            <view class="sheet-head">
+                <view class="sheet-close" hover-class="is-pressed" bindtap="handleCloseSheet">×</view>
+                <text class="sheet-eyebrow">{{walletRulesFirst ? 'JI POINTS GUIDE' : 'MY JI POINTS'}}</text>
+                <text class="sheet-title">{{walletTitle}}</text>
+            </view>
+            <view class="sheet-body city-wallet-body">
+                <view class="wallet-rules" wx:if="{{walletRulesFirst}}">
+                    <text class="wallet-rules-heading">叽分获取与使用规则</text>
+                    <text class="wallet-rules-text">{{pointsRules}}</text>
+                    <text class="wallet-rules-text">{{pointsRulesExtra}}</text>
+                </view>
+                <view class="wallet-balance">
+                    <text class="wallet-balance-value">{{points}} 叽分</text>
+                </view>
+                <view class="wallet-badge" hover-class="is-pressed" bindtap="handleToggleLocalNote">
+                    <text class="wallet-badge-arrow">{{walletLocalNoteOpen ? '▼' : '▶'}}</text>
+                    <text>本机保存 · 查看说明</text>
+                </view>
+                <text class="wallet-local-note" wx:if="{{walletLocalNoteOpen}}">小鸟、养成、叽分和装扮仅保存在当前小程序，不与云端账号同步。清除缓存、卸载或更换设备后不会自动恢复。</text>
+                <text class="wallet-today">今日抚摸奖励 {{todayPoints}} / {{dailyLimit}} 次</text>
+                <text class="wallet-heading">最近流水</text>
+                <text class="wallet-sub">按北京时间显示，最多 50 条。</text>
+                <view class="wallet-ledger" wx:if="{{ledger.length > 0}}">
+                    <view class="ledger-row" wx:for="{{ledger}}" wx:key="id">
+                        <view class="ledger-copy">
+                            <text class="ledger-note">{{item.note}}</text>
+                            <text class="ledger-day">{{item.day}}</text>
+                        </view>
+                        <text class="ledger-amount">{{item.amountText}}</text>
+                    </view>
+                </view>
+                <text class="wallet-empty" wx:else>还没有叽分记录。领取小鸟后，可以通过互动获得叽分。</text>
+                <view class="wallet-rules" wx:if="{{!walletRulesFirst}}">
+                    <view class="wallet-rules-toggle" hover-class="is-pressed" bindtap="handleToggleRules">
+                        <text class="wallet-rules-arrow">{{walletRulesOpen ? '▼' : '▶'}}</text>
+                        <text>查看叽分获取与使用规则</text>
+                    </view>
+                    <text class="wallet-rules-text" wx:if="{{walletRulesOpen}}">{{pointsRules}}</text>
+                    <text class="wallet-rules-text" wx:if="{{walletRulesOpen}}">{{pointsRulesExtra}}</text>
+                </view>
+                <view class="sheet-primary" hover-class="is-pressed" bindtap="handleCloseSheet">返回城市手账</view>
+            </view>
+        </view>
+
     </view>
 </view>

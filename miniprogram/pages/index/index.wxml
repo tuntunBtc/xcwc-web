@@ -1,78 +1,150 @@
-<view class="page">
-    <view class="hero">
-        <text class="eyebrow">NEST · 小窝</text>
-        <text class="title">{{heroTitle}}</text>
-        <text class="subtitle">调试版 · 免登录 · 数据仅保存在本机</text>
+<!-- 小窝：按网页端 src/nest/template.html + nest.css 的叠层结构复刻。
+     WXSS 不能可靠引用本地 background-image，故所有纹理与雪碧图改用 <image> + 裁切框。 -->
+<view class="nest" style="height:{{layout.pageHeight}}rpx">
+
+    <image class="scene" src="/assets/nest/background.webp" mode="scaleToFill"></image>
+    <view class="scene-shade"></view>
+
+    <!-- 顶部 HUD：头像 / 名字 / 城市 / 相伴 / 切换 / 叽分钱包 -->
+    <view class="hud" style="top:{{layout.hudTop}}rpx">
+        <view class="identity" bindtap="onSwitch" hover-class="ui-hover">
+            <image class="tex-bg" src="/assets/nest/pill.webp" mode="scaleToFill"></image>
+            <view class="avatar"><image src="/assets/nest/avatar.webp" mode="aspectFill"></image></view>
+            <view class="identity-text">
+                <view class="name" catchtap="onRename"><text class="name-text">{{displayName}}</text><text class="pen">✎</text></view>
+                <text class="place">{{placeText}}</text>
+            </view>
+            <view class="companion">
+                <view class="clip hud-clip"><image class="sprite icon-companion" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image></view>
+                <text class="companion-text">相伴</text>
+            </view>
+            <text class="switch">›</text>
+        </view>
+        <view class="wallet" bindtap="onWallet" hover-class="ui-hover">
+            <image class="tex-bg" src="/assets/nest/pill.webp" mode="scaleToFill"></image>
+            <view class="clip feather-clip"><image class="sprite icon-feather" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image></view>
+            <view class="wallet-num"><text class="points">{{points}}</text><text class="unit">叽分</text></view>
+            <text class="wallet-plus">＋</text>
+        </view>
     </view>
 
-    <view wx:if="{{viewState === 'loading'}}" class="state-card">
-        <text class="state-title">正在读取本机数据</text>
-        <text class="state-description">请稍候。</text>
+    <!-- 三条状态进度 -->
+    <view class="status" style="top:{{layout.statusTop}}rpx">
+        <view class="stat" wx:for="{{stats}}" wx:key="key">
+            <image class="tex-bg" src="/assets/nest/pill.webp" mode="scaleToFill"></image>
+            <view class="stat-line">
+                <view class="clip stat-icon-clip"><image class="sprite {{item.iconClass}}" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image></view>
+                <text class="stat-label">{{item.label}}</text>
+                <text class="stat-value">{{item.text}}</text>
+            </view>
+            <view class="stat-track"><view class="stat-fill" style="width:{{item.percent}}%"></view></view>
+        </view>
     </view>
 
-    <view wx:elif="{{viewState === 'error'}}" class="state-card">
-        <text class="state-title">读取失败</text>
-        <text class="state-description">{{errorMessage}}</text>
-        <button class="btn btn-primary" bindtap="handleRetry">重新读取</button>
+    <!-- 需求气泡 -->
+    <view class="needs" style="top:{{layout.needsTop}}rpx" wx:if="{{needs.length > 0}}">
+        <view wx:for="{{needs}}" wx:key="key" class="need {{item.isCurrent ? 'is-current' : ''}}" data-key="{{item.key}}" bindtap="onNeed" hover-class="ui-hover">{{item.label}}</view>
     </view>
 
-    <view wx:elif="{{viewState === 'empty'}}" class="state-card">
-        <text class="state-title">还没有领养小鸟</text>
-        <text class="state-description">从实体标签的小程序跳转链接进入领养页，即可开始陪伴。</text>
-        <button class="btn btn-primary" bindtap="goAdopt">查看领养页</button>
+    <!-- 右侧工具列 -->
+    <view class="tools" style="top:{{layout.toolsTop}}rpx">
+        <view wx:for="{{tools}}" wx:key="key" class="tool" data-key="{{item.key}}" bindtap="onTool" hover-class="tool-hover">
+            <image class="tex-bg" src="/assets/nest/cloud.webp" mode="scaleToFill"></image>
+            <view class="clip tool-prop-clip"><image class="sprite {{item.propClass}}" src="/assets/nest/tools.webp" mode="scaleToFill"></image></view>
+            <text class="tool-label">{{item.label}}</text>
+            <view wx:if="{{item.key === 'supply' && !supplyClaimed}}" class="tool-dot"></view>
+        </view>
     </view>
 
-    <block wx:else>
-        <view class="card nest-card">
-            <image class="bird-image" src="/assets/bird/happy.webp" mode="aspectFit"></image>
-            <view class="row">
-                <text class="section-title">{{nickname}}</text>
-                <text class="badge">{{points}} 叽分</text>
-            </view>
-            <text class="muted">实体编码 {{birdCode}}</text>
-            <view class="divider"></view>
-            <view class="row"><text>饱食</text><text>{{satiety}} / 100</text></view>
-            <view class="row"><text>水分</text><text>{{hydration}} / 100</text></view>
-            <view class="row"><text>心情</text><text>{{mood}} / 100</text></view>
-            <view class="row"><text>今日叽分</text><text>{{todayPoints}} / {{dailyLimit}}</text></view>
-        </view>
+    <!-- 对话气泡 -->
+    <view class="speech" style="top:{{layout.speechTop}}rpx">
+        <image class="tex-bg" src="/assets/nest/bubble.webp" mode="scaleToFill"></image>
+        <text class="speech-text">{{speech}}</text>
+    </view>
 
-        <view class="card">
-            <text class="section-title">照顾小鸟</text>
-            <view class="btn-row">
-                <button class="btn btn-primary" disabled="{{!canPet}}" bindtap="handlePet">{{petButtonText}}</button>
-            </view>
-            <view class="btn-row">
-                <button class="btn btn-ghost" bindtap="handleFeed">喂食 {{food}}</button>
-                <button class="btn btn-ghost" bindtap="handleWater">添水 {{water}}</button>
-                <button class="btn btn-ghost" bindtap="handleClean">清洁</button>
-            </view>
-        </view>
+    <!-- 空态领取入口 -->
+    <view wx:if="{{!hasBird}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover">如何领取小鸟</view>
 
-        <view class="card">
-            <text class="section-title">微信步数兑换叽分</text>
-            <text class="muted">调试步数 {{debugSteps}} 步 · 每 {{stepUnit}} 步 1 叽分 · 每日上限 {{stepDailyCap}} 叽分</text>
-            <view class="row"><text>今日可兑</text><text>{{stepEarnable}} 叽分</text></view>
-            <view class="row"><text>今日状态</text><text>{{todayStepClaimed ? '已兑换' : '未兑换'}}</text></view>
-            <view class="btn-row">
-                <button class="btn btn-primary" disabled="{{stepRedeemDisabled}}" bindtap="handleRedeemSteps">兑换步数</button>
-            </view>
-            <text class="muted">正式版由服务端解密微信运动数据并结算，前端不自行发放叽分。</text>
+    <!-- 小鸟立绘 -->
+    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}}" style="top:{{layout.actorTop}}rpx">
+        <view class="shadow {{hasBird ? '' : 'is-hidden'}}"></view>
+        <view class="grass {{hasBird ? '' : 'is-hidden'}}">
+            <view class="blade b1"></view><view class="blade b2"></view>
+            <view class="blade b3"></view><view class="blade b4"></view>
         </view>
+        <view class="bird-hit" bindtap="onPet" hover-class="none">
+            <image class="bird-art" src="{{birdArt}}" mode="aspectFit"></image>
+        </view>
+        <view wx:if="{{feedFxId > 0}}" class="feed-fx">🌾</view>
+        <text class="hearts">♡</text>
+        <text wx:if="{{thirsty}}" class="drops">💧</text>
+    </view>
 
-        <view class="card">
-            <text class="section-title">叽分记录</text>
-            <view wx:if="{{ledger.length > 0}}">
-                <view class="row" wx:for="{{ledger}}" wx:key="id">
-                    <text>{{item.note}} · {{item.day}}</text>
-                    <text>{{item.amountText}}</text>
-                </view>
-            </view>
-            <text wx:else class="muted">还没有叽分记录</text>
+    <!-- 底部三按钮 dock -->
+    <view class="dock" style="bottom:{{layout.dockBottom}}rpx">
+        <view wx:for="{{dock}}" wx:key="key" class="dock-btn" data-key="{{item.key}}" bindtap="onDock" hover-class="dock-hover">
+            <image class="dock-sheet {{item.cardClass}}" src="/assets/nest/cards.webp" mode="scaleToFill"></image>
+            <text class="dock-label">{{item.label}} <text class="dock-arrow">›</text></text>
+            <!-- 喂食按钮右上角：剩余食物份数角标（红底白字，0 份转灰） -->
+            <view wx:if="{{item.key === 'feed'}}" class="dock-badge {{food === 0 ? 'is-empty' : ''}}">{{food}}</view>
         </view>
-
-        <view class="card">
-            <button class="btn btn-ghost" bindtap="handleCheckin">合照打卡（暂未接入）</button>
-        </view>
-    </block>
+    </view>
 </view>
+
+<!-- 浮层放在场景容器之外，避免被 .nest 的 overflow:hidden 裁剪 -->
+<!-- 轻提示 -->
+<view wx:if="{{toast}}" class="toast" style="bottom:{{layout.toastBottom}}rpx">{{toast}}</view>
+
+    <!-- 底部弹出面板（网页端 <dialog> 的等价实现） -->
+    <view wx:if="{{sheet}}" class="sheet-mask" style="bottom:{{sheetMaskBottom}}rpx" bindtap="closeSheet">
+        <view class="sheet" catchtap="noop">
+            <view class="sheet-handle"></view>
+            <view class="sheet-close" catchtap="closeSheet">×</view>
+            <text class="sheet-title">{{sheet.title}}</text>
+            <text wx:if="{{sheet.desc}}" class="sheet-desc">{{sheet.desc}}</text>
+
+            <block wx:if="{{sheet.type === 'rename'}}">
+                <input class="sheet-input" value="{{renameValue}}" bindinput="onRenameInput" maxlength="6" placeholder="1–6 个字" />
+                <view class="sheet-primary" catchtap="onSaveRename">保存昵称</view>
+            </block>
+
+            <block wx:if="{{sheet.type === 'wallet'}}">
+                <view class="sheet-row"><text>当前余额</text><text>{{points}} 叽分</text></view>
+                <view class="sheet-row"><text>今日获得</text><text>{{todayPoints}} / {{dailyLimit}}</text></view>
+                <view class="sheet-row"><text>步数兑换</text><text>{{todayStepClaimed ? '今日已兑换' : '今日未兑换'}}</text></view>
+                <text class="sheet-subtitle">叽分记录</text>
+                <view wx:if="{{ledger.length > 0}}" class="ledger">
+                    <view class="sheet-row" wx:for="{{ledger}}" wx:key="id"><text>{{item.note}} · {{item.day}}</text><text>{{item.amountText}}</text></view>
+                </view>
+                <text wx:else class="sheet-desc">还没有叽分记录</text>
+                <view class="sheet-secondary {{todayStepClaimed || redeeming ? 'is-disabled' : ''}}" catchtap="onRedeemSteps">{{todayStepClaimed ? '今日已兑换' : (redeeming ? '兑换中…' : '兑换今日步数')}}</view>
+            </block>
+
+            <block wx:if="{{sheet.type === 'supply'}}">
+                <view class="sheet-row"><text>食物剩余</text><text>{{food}} 份</text></view>
+                <view class="sheet-row"><text>水剩余</text><text>{{water}} 份</text></view>
+                <view class="sheet-primary {{supplyClaimed ? 'is-disabled' : ''}}" catchtap="onSupply">{{supplyClaimed ? '今日已补给' : '领取今日补给 · 各 +1'}}</view>
+                <text class="sheet-note">每只小鸟每天可免费领取食物和水各 1 份。</text>
+            </block>
+
+            <block wx:if="{{sheet.type === 'switch'}}">
+                <text class="sheet-desc">本机调试版为单鸟模型，当前伙伴：</text>
+                <view class="bird-choice">
+                    <image src="/assets/nest/avatar.webp" mode="aspectFit"></image>
+                    <view><text class="choice-name">{{displayName}}</text><text class="choice-meta">{{birdCodeShort}}</text></view>
+                </view>
+                <view class="sheet-secondary" catchtap="goAdopt">从实体标签领养</view>
+            </block>
+
+            <block wx:if="{{sheet.type === 'claim'}}">
+                <text class="sheet-desc">1. 用支持 NFC 的手机碰一碰实体小鸟，打开系统弹出的链接；或扫描小鸟的小程序码。</text>
+                <text class="sheet-desc">2. 在领取页确认资料与昵称，免费孵化后回到小窝。</text>
+                <text class="sheet-desc">领取无需登录。小鸟、叽分与合照仅保存在本机，换设备不会自动恢复。</text>
+                <view class="sheet-primary" catchtap="goAdopt">查看领养页（调试示例编码）</view>
+            </block>
+
+            <block wx:if="{{sheet.type === 'info'}}">
+                <view class="sheet-primary" catchtap="closeSheet">知道啦</view>
+            </block>
+        </view>
+    </view>

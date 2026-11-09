@@ -1,0 +1,84 @@
+/* 网页端 .phone>.bottom 的等比换算：H5 480px 产品态对应 750rpx，
+   底栏 960×195 铺满宽度时恒定 149rpx 高（rpx 会随屏宽等比缩放）。
+   底板与四个入口都固定 149rpx 并贴 bottom:0，比例不变形、入口与底板同轴居中；
+   容器多出的 Home Indicator 安全区留在上方且透明，不再拉伸毛绒图。 */
+.tab-bar-space {
+    width: 100%;
+    pointer-events: none;
+}
+
+.tab-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    box-sizing: border-box;
+    background: transparent;
+    pointer-events: none;
+}
+
+/* 960×195 原图等比铺满宽度：734rpx / (960/195) = 149rpx，不做任何纵向拉伸，
+   花朵、叶子与圆角描边保持原始形状。 */
+.tab-bar-art {
+    position: absolute;
+    bottom: 0;
+    left: 8rpx;
+    width: calc(100% - 16rpx);
+    height: 149rpx;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* 与底板同高、同底边，四个入口在这 149rpx 内垂直居中。 */
+.tab-bar-items {
+    position: absolute;
+    bottom: 0;
+    left: 28rpx;
+    right: 28rpx;
+    height: 149rpx;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    pointer-events: auto;
+}
+
+.tab-bar-item {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tab-bar-item-hover {
+    opacity: 0.72;
+}
+
+.tab-bar-icon {
+    display: block;
+    flex: none;
+    width: 58rpx;
+    height: 58rpx;
+    pointer-events: none;
+}
+
+.tab-bar-text {
+    display: block;
+    margin-top: 4rpx;
+    color: #80502c;
+    font-size: 26rpx;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 2rpx;
+    white-space: nowrap;
+    text-shadow: 0 2rpx 2rpx #fff3d9;
+    pointer-events: none;
+}
+
+.tab-bar-text.is-active {
+    color: #4e8c4c;
+}
