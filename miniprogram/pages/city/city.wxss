@@ -1,0 +1,27 @@
+.hero {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 28rpx;
+}
+
+.city-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20rpx 0;
+    border-bottom: 2rpx solid #EFEDE3;
+}
+
+.city-row:last-child {
+    border-bottom: none;
+}
+
+.city-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.city-name {
+    font-size: 30rpx;
+    font-weight: 600;
+}

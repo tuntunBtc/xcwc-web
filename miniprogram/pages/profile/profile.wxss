@@ -1,0 +1,57 @@
+.hero {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 28rpx;
+}
+
+.profile-card {
+    display: flex;
+    align-items: center;
+}
+
+.avatar {
+    width: 96rpx;
+    height: 96rpx;
+    margin-right: 24rpx;
+    border-radius: 50%;
+    background: #EAF0E2;
+    color: #4F6A3E;
+    font-size: 44rpx;
+    line-height: 96rpx;
+    text-align: center;
+}
+
+.profile-main {
+    display: flex;
+    flex-direction: column;
+}
+
+.nickname {
+    font-size: 34rpx;
+    font-weight: 600;
+}
+
+.menu-card {
+    padding: 8rpx 28rpx;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 26rpx 0;
+    border-bottom: 2rpx solid #EFEDE3;
+}
+
+.menu-item:last-child {
+    border-bottom: none;
+}
+
+.menu-text {
+    font-size: 28rpx;
+}
+
+.menu-arrow {
+    color: #8A8578;
+    font-size: 32rpx;
+}

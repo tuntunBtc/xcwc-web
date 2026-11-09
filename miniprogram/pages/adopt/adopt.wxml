@@ -1,0 +1,64 @@
+<view class="adopt-page">
+    <view class="immersive-top" style="height: {{topInset}}rpx;"></view>
+
+    <view class="scene">
+        <image class="scene-art" src="/assets/adopt/scene.webp" mode="aspectFill"></image>
+        <view class="scene-title">
+            <text>领养你的</text>
+            <text>城市小鸟</text>
+        </view>
+        <text class="scene-subtitle">一场相遇，正在等待确认</text>
+
+        <view class="scroll-card">
+            <text class="scroll-name">{{birdName}}</text>
+            <view class="scroll-divider"></view>
+            <text class="scroll-city">{{cityText}}</text>
+            <text class="scroll-detail">{{styleText}}</text>
+            <text class="scroll-detail">{{skinText}}</text>
+        </view>
+
+        <view class="trait-row">
+            <text class="trait-label">性格档案</text>
+            <text wx:for="{{traits}}" wx:key="*this" class="trait-pill pill-{{index}}">{{item}}</text>
+        </view>
+    </view>
+
+    <view wx:if="{{notice}}" class="notice notice-{{noticeKind}}">
+        <text class="notice-text">{{notice}}</text>
+        <view class="retry" bindtap="handleRetry"><text>重新读取小鸟资料</text></view>
+    </view>
+
+    <view class="details">
+        <image class="details-top" src="/assets/adopt/lower-top.webp" mode="aspectFill"></image>
+        <image class="details-bottom" src="/assets/adopt/lower-bottom.webp" mode="aspectFill"></image>
+
+        <view class="form">
+            <text class="name-heading">{{heading}}</text>
+            <view class="name-field">
+                <input
+                    class="name-input"
+                    value="{{nicknameInput}}"
+                    maxlength="6"
+                    disabled="{{!ready || alreadyMine}}"
+                    placeholder="请输入 1–6 个字"
+                    placeholder-class="name-placeholder"
+                    bindinput="handleInput"
+                />
+                <view wx:if="{{!alreadyMine}}" class="random-btn" bindtap="handleRandom">
+                    <text>⚄ 随机取名</text>
+                </view>
+            </view>
+            <text wx:if="{{validation}}" class="validation">{{validation}}</text>
+
+            <view class="adopt-button {{buttonDisabled ? 'is-disabled' : ''}}" bindtap="handleAdopt">
+                <image class="adopt-button-art" src="/assets/adopt/button.webp" mode="aspectFill"></image>
+                <text class="adopt-button-text">{{buttonText}}</text>
+            </view>
+            <text class="action-note">{{actionNote}}</text>
+        </view>
+    </view>
+
+    <view wx:if="{{showBackLink}}" class="back-link" bindtap="handleBack">
+        <text>返回上一页</text>
+    </view>
+</view>

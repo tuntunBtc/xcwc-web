@@ -1,0 +1,78 @@
+<view class="page">
+    <view class="hero">
+        <text class="eyebrow">NEST · 小窝</text>
+        <text class="title">{{heroTitle}}</text>
+        <text class="subtitle">调试版 · 免登录 · 数据仅保存在本机</text>
+    </view>
+
+    <view wx:if="{{viewState === 'loading'}}" class="state-card">
+        <text class="state-title">正在读取本机数据</text>
+        <text class="state-description">请稍候。</text>
+    </view>
+
+    <view wx:elif="{{viewState === 'error'}}" class="state-card">
+        <text class="state-title">读取失败</text>
+        <text class="state-description">{{errorMessage}}</text>
+        <button class="btn btn-primary" bindtap="handleRetry">重新读取</button>
+    </view>
+
+    <view wx:elif="{{viewState === 'empty'}}" class="state-card">
+        <text class="state-title">还没有领养小鸟</text>
+        <text class="state-description">从实体标签的小程序跳转链接进入领养页，即可开始陪伴。</text>
+        <button class="btn btn-primary" bindtap="goAdopt">查看领养页</button>
+    </view>
+
+    <block wx:else>
+        <view class="card nest-card">
+            <image class="bird-image" src="/assets/bird/happy.webp" mode="aspectFit"></image>
+            <view class="row">
+                <text class="section-title">{{nickname}}</text>
+                <text class="badge">{{points}} 叽分</text>
+            </view>
+            <text class="muted">实体编码 {{birdCode}}</text>
+            <view class="divider"></view>
+            <view class="row"><text>饱食</text><text>{{satiety}} / 100</text></view>
+            <view class="row"><text>水分</text><text>{{hydration}} / 100</text></view>
+            <view class="row"><text>心情</text><text>{{mood}} / 100</text></view>
+            <view class="row"><text>今日叽分</text><text>{{todayPoints}} / {{dailyLimit}}</text></view>
+        </view>
+
+        <view class="card">
+            <text class="section-title">照顾小鸟</text>
+            <view class="btn-row">
+                <button class="btn btn-primary" disabled="{{!canPet}}" bindtap="handlePet">{{petButtonText}}</button>
+            </view>
+            <view class="btn-row">
+                <button class="btn btn-ghost" bindtap="handleFeed">喂食 {{food}}</button>
+                <button class="btn btn-ghost" bindtap="handleWater">添水 {{water}}</button>
+                <button class="btn btn-ghost" bindtap="handleClean">清洁</button>
+            </view>
+        </view>
+
+        <view class="card">
+            <text class="section-title">微信步数兑换叽分</text>
+            <text class="muted">调试步数 {{debugSteps}} 步 · 每 {{stepUnit}} 步 1 叽分 · 每日上限 {{stepDailyCap}} 叽分</text>
+            <view class="row"><text>今日可兑</text><text>{{stepEarnable}} 叽分</text></view>
+            <view class="row"><text>今日状态</text><text>{{todayStepClaimed ? '已兑换' : '未兑换'}}</text></view>
+            <view class="btn-row">
+                <button class="btn btn-primary" disabled="{{stepRedeemDisabled}}" bindtap="handleRedeemSteps">兑换步数</button>
+            </view>
+            <text class="muted">正式版由服务端解密微信运动数据并结算，前端不自行发放叽分。</text>
+        </view>
+
+        <view class="card">
+            <text class="section-title">叽分记录</text>
+            <view wx:if="{{ledger.length > 0}}">
+                <view class="row" wx:for="{{ledger}}" wx:key="id">
+                    <text>{{item.note}} · {{item.day}}</text>
+                    <text>{{item.amountText}}</text>
+                </view>
+            </view>
+            <text wx:else class="muted">还没有叽分记录</text>
+        </view>
+
+        <view class="card">
+            <button class="btn btn-ghost" bindtap="handleCheckin">合照打卡（暂未接入）</button>
+        </view>
+    </block>
+</view>

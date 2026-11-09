@@ -1,0 +1,51 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/city/city",
+    "pages/shop/shop",
+    "pages/profile/profile",
+    "pages/adopt/adopt"
+  ],
+  "window": {
+    "navigationBarTitleText": "卜叽岛 · 小鸟伙伴",
+    "navigationBarBackgroundColor": "#F7F5F0",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F5F3EC",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#8A8578",
+    "selectedColor": "#5F7A4F",
+    "backgroundColor": "#F7F5F0",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "小窝",
+        "iconPath": "assets/nav/home-default.png",
+        "selectedIconPath": "assets/nav/home-active.png"
+      },
+      {
+        "pagePath": "pages/city/city",
+        "text": "城市",
+        "iconPath": "assets/nav/city-default.png",
+        "selectedIconPath": "assets/nav/city-active.png"
+      },
+      {
+        "pagePath": "pages/shop/shop",
+        "text": "商城",
+        "iconPath": "assets/nav/shop-default.png",
+        "selectedIconPath": "assets/nav/shop-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "assets/nav/profile-default.png",
+        "selectedIconPath": "assets/nav/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

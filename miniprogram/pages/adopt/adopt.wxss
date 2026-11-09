@@ -1,0 +1,303 @@
+/* 按网页端 src/adopt/v1/template.html + adopt.css 的一屏叠图版式换算为 rpx。
+   WXSS 不支持 cqw / aspect-ratio / ::before 噪声层，改用百分比定位与固定 4:3 高度。 */
+.adopt-page {
+    min-height: 100vh;
+    background: #c8df83;
+}
+
+/* 自定义导航栏后页面从屏幕顶端渲染。这里用主视觉顶色（scene.webp y=0 平均 #98b89b）
+   做一段天空延展，占位状态栏与右上角胶囊：插画从安全区下方完整铺开，百分比叠层不错位，
+   也不会被灵动岛或胶囊压住标题、灯笼与卷轴。高度由 readTopInsetRpx() 按机型动态给出。 */
+.immersive-top {
+    width: 100%;
+    background: linear-gradient(180deg, #a9c8ae 0%, #98b89b 100%);
+}
+
+.scene {
+    position: relative;
+    width: 100%;
+    height: 562rpx;
+    overflow: hidden;
+}
+
+.scene-art {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.scene-title {
+    position: absolute;
+    left: 29%;
+    top: 11%;
+    width: 39%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #8c5a36;
+    font-family: "Kaiti SC", "STKaiti", "Songti SC", serif;
+    font-size: 54rpx;
+    font-weight: 800;
+    line-height: 1.18;
+    letter-spacing: 2rpx;
+    text-shadow: 0 1rpx 0 #f1c5a8;
+}
+
+.scene-subtitle {
+    position: absolute;
+    left: 20%;
+    top: 37%;
+    width: 60%;
+    text-align: center;
+    color: #80512e;
+    font-size: 24rpx;
+    font-weight: 600;
+}
+
+.scroll-card {
+    position: absolute;
+    left: 66.5%;
+    top: 39%;
+    width: 29%;
+    height: 45%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 16rpx 6rpx;
+    color: #754a29;
+}
+
+.scroll-name {
+    font-family: "Kaiti SC", "STKaiti", "Songti SC", serif;
+    font-size: 32rpx;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: center;
+}
+
+.scroll-divider {
+    width: 72%;
+    height: 1rpx;
+    margin: 10rpx 0;
+    border-top: 1rpx dashed #bf8b60;
+}
+
+.scroll-city,
+.scroll-detail {
+    font-size: 22rpx;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.trait-row {
+    position: absolute;
+    left: 4.5%;
+    bottom: 1%;
+    width: 91%;
+    height: 62rpx;
+}
+
+.trait-label {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 16%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #754a29;
+    font-size: 20rpx;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.trait-pill {
+    position: absolute;
+    top: 0;
+    width: 25%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #754a29;
+    font-size: 20rpx;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pill-0 { left: 17.2%; }
+.pill-1 { left: 45%; }
+.pill-2 { left: 72.5%; }
+
+.notice {
+    margin: 0 20rpx;
+    padding: 18rpx 24rpx;
+    border-radius: 18rpx;
+    background: #fff6e7;
+    color: #695337;
+    font-size: 26rpx;
+    line-height: 1.7;
+}
+
+.notice-error {
+    background: #fff0e8;
+    color: #a0452c;
+}
+
+.retry {
+    display: inline-block;
+    margin-top: 12rpx;
+    padding: 12rpx 22rpx;
+    border: 1rpx solid #d4dfb8;
+    border-radius: 16rpx;
+    background: #edf2d8;
+    color: #4e6e35;
+    font-size: 26rpx;
+}
+
+.details {
+    position: relative;
+    min-height: 620rpx;
+    overflow: hidden;
+    background: #c8df83;
+}
+
+.details-top {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 560rpx;
+}
+
+.details-bottom {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 200rpx;
+}
+
+.form {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding: 296rpx 40rpx 40rpx;
+}
+
+.name-heading {
+    margin-bottom: 18rpx;
+    text-align: center;
+    color: #754a29;
+    font-size: 34rpx;
+    font-weight: 700;
+}
+
+.name-field {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: 88rpx;
+    border: 1rpx solid #fff9f1;
+    border-radius: 999rpx;
+    background: #fffaf4;
+    box-shadow: inset 0 2rpx 4rpx rgba(168, 127, 87, 0.16);
+    overflow: hidden;
+}
+
+.name-input {
+    flex: 1;
+    height: 100%;
+    padding: 0 28rpx;
+    color: #785234;
+    font-size: 30rpx;
+}
+
+.name-placeholder {
+    color: #b49b85;
+}
+
+.random-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 36%;
+    height: 76%;
+    border-left: 1rpx dashed #c3946f;
+    color: #785234;
+    font-size: 26rpx;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.validation {
+    margin-top: 12rpx;
+    padding: 12rpx 18rpx;
+    border-radius: 10rpx;
+    background: #fff4eb;
+    color: #a0452c;
+    font-size: 24rpx;
+}
+
+.adopt-button {
+    position: relative;
+    height: 96rpx;
+    margin-top: 20rpx;
+    border-radius: 999rpx;
+    background: #8eab30;
+    box-shadow: 0 5rpx 12rpx rgba(116, 143, 59, 0.2);
+    overflow: hidden;
+}
+
+.adopt-button.is-disabled {
+    opacity: 0.72;
+}
+
+.adopt-button-art {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.32;
+}
+
+.adopt-button-text {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff9df;
+    font-size: 36rpx;
+    font-weight: 700;
+    letter-spacing: 2rpx;
+    text-shadow: 0 1rpx 1rpx #6d812b;
+}
+
+.action-note {
+    margin-top: 16rpx;
+    text-align: center;
+    color: #6b7c4a;
+    font-size: 20rpx;
+    line-height: 1.5;
+}
+
+/* 顶部不放返回按钮；仅从站内页面跳入时，在页尾保留一个不显眼的退出口。 */
+.back-link {
+    padding: 24rpx 0 48rpx;
+    text-align: center;
+    color: #6b7c4a;
+    font-size: 24rpx;
+}

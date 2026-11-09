@@ -1,0 +1,55 @@
+{
+  "description": "卜叽岛小鸟伙伴 - 微信小程序调试版（本机数据、免登录、商城仅展示）",
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": ".workbuddy"
+      },
+      {
+        "type": "file",
+        "value": "小程序项目档案.md"
+      }
+    ],
+    "include": []
+  },
+  "setting": {
+    "bundle": false,
+    "es6": true,
+    "minified": true,
+    "postcss": true,
+    "urlCheck": true
+  },
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "projectname": "xcwc-miniprogram",
+  "miniprogramRoot": "./",
+  "condition": {
+    "miniprogram": {
+      "current": 0,
+      "list": [
+        {
+          "id": 0,
+          "name": "NFC领养-URL Link query",
+          "pathName": "pages/adopt/adopt",
+          "query": "birdCode=HZ-HY-2116909225920720901",
+          "scene": null
+        },
+        {
+          "id": 1,
+          "name": "NFC领养-小程序码 scene",
+          "pathName": "pages/adopt/adopt",
+          "query": "scene=HZ-HY-2116909225920720901",
+          "scene": null
+        },
+        {
+          "id": 2,
+          "name": "NFC领养-缺码空态",
+          "pathName": "pages/adopt/adopt",
+          "query": "",
+          "scene": null
+        }
+      ]
+    }
+  }
+}

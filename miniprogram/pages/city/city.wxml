@@ -1,0 +1,23 @@
+<view class="page">
+    <view class="hero">
+        <text class="eyebrow">CITY · 城市</text>
+        <text class="title">小鸟的城市旅行</text>
+        <text class="subtitle">{{birdHint}}</text>
+    </view>
+
+    <view class="card">
+        <text class="section-title">城市巡游</text>
+        <view class="divider"></view>
+        <view class="city-row" wx:for="{{cities}}" wx:key="id">
+            <view class="city-info">
+                <text class="city-name">{{item.name}}</text>
+                <text class="muted">{{item.hint}}</text>
+            </view>
+            <text class="badge">{{statusText}}</text>
+        </view>
+    </view>
+
+    <view class="card">
+        <text class="muted">{{note}}</text>
+    </view>
+</view>

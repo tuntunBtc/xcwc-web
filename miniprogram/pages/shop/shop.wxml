@@ -1,0 +1,33 @@
+<view class="page">
+    <view class="hero">
+        <text class="eyebrow">SHOP · 商城</text>
+        <text class="title">小鸟的小伙伴们</text>
+        <text class="subtitle">调试版 · 商品资料快照来自项目商品目录</text>
+    </view>
+
+    <view class="card">
+        <text class="muted">{{notice}}</text>
+    </view>
+
+    <view class="product-grid">
+        <view class="product-card" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="handleOpen">
+            <image class="product-cover" src="{{item.cover}}" mode="aspectFill"></image>
+            <text class="product-name">{{item.name}}</text>
+            <text class="muted">{{item.city}} · {{item.tag}}</text>
+            <text class="product-price">{{item.priceText}}</text>
+        </view>
+    </view>
+
+    <view wx:if="{{detailOpen}}" class="detail-mask" bindtap="handleClose">
+        <view class="detail-panel" catchtap="noop">
+            <image class="detail-cover" src="{{detail.cover}}" mode="aspectFill"></image>
+            <text class="section-title">{{detail.name}}</text>
+            <text class="muted">{{detail.city}} · {{detail.tag}} · {{detail.priceText}}</text>
+            <view class="divider"></view>
+            <text class="muted">{{detail.description}}</text>
+            <view class="btn-row">
+                <button class="btn btn-ghost" bindtap="handleClose">返回列表</button>
+            </view>
+        </view>
+    </view>
+</view>
