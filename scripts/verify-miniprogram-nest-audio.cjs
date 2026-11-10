@@ -92,9 +92,21 @@ ok('nest-idle 以 currentTime 到达时长收尾（动画与音乐同步停止�
 ok('nest-idle onEnded 总是停音（无提前 return 跳过 stop）',
     /audio\.onEnded\(endCycle\)/.test(idleJs) && !/audio\.onEnded\(function/.test(idleJs));
 ok('nest-idle 存在 endCycle 收尾函数', /function endCycle\(\)/.test(idleJs));
+// 问题③（本次）：音乐一直循环空转——根因是 play(false) 被 refresh/sync 频繁调用却不过 cadence 闸门。
+// 修复：play 增加冷却闸门（非手势、非 cadence 触发且处于冷却期则拒绝重播），对齐网页端 canStart 闸门。
+ok('nest-idle play 含 cadence 冷却闸门（防止 refresh 频繁重播空转）',
+    /function play\(fromGesture, fromCadence\)[\s\S]{0,560}Date\.now\(\) < cadenceNextAt[\s\S]{0,120}scheduleAutoplay\(\)/.test(idleJs));
+ok('nest-idle play 正在播放时短路（不掐断进行中的一轮）',
+    /function play\(fromGesture, fromCadence\)[\s\S]{0,260}!audio\.paused\) \{ startDrawIfReady\(\); return setUi\(\); \}/.test(idleJs));
+ok('nest-idle scheduleAutoplay 越过冷却闸门 play(false, true)',
+    /play\(false, true\)/.test(idleJs));
+ok('nest-idle 播放开始锁定冷却 started(durationMs+gap)',
+    /cadenceNextAt = Date\.now\(\) \+ META\.durationMs \+ GAP_MS/.test(idleJs));
 
 // ---------------------------------------------------------------- 动态实跑 nest-idle（桩环境）
-const dynamicPromise = checkAsync('nest-idle 在桩环境可实例化、驱动且收尾停音', async function () {
+// 注意：两个动态测试共享 global.wx 桩，必须顺序执行（不在顶层并发启动），
+// 否则后一个会把 global.wx 覆盖，导致前一个桩环境里音频未被创建。
+async function runDynamicIdle() {
     const meta = require(path.join(ROOT, 'utils/nest-idle-meta.js'));
     const audios = [];
     // 构造最小 wx 桩：画布/图片同步就绪；音频 play 仅翻转 paused，onPlay/onEnded 由测试手动触发，
@@ -187,12 +199,77 @@ const dynamicPromise = checkAsync('nest-idle 在桩环境可实例化、驱动�
         const audio = audios[audios.length - 1];
         assert.strictEqual(audio.destroyed, true, '卸载应销毁音频上下文');
     }
-});
+}
+
+// ---------------------------------------------------------------- 动态实跑：cadence 冷却闸门（防止音乐空转循环）
+async function runDynamicCadence() {
+    const meta = require(path.join(ROOT, 'utils/nest-idle-meta.js'));
+    const realNow = Date.now;
+    let fakeNow = realNow();
+    Date.now = function () { return fakeNow; };
+    const audios = [];
+    function makeCtx() { return { clearRect: function () {}, drawImage: function () {} }; }
+    function makeCanvas() { return { width: 0, height: 0, getContext: makeCtx, createImage: makeImage }; }
+    function makeImage() {
+        const img = { onload: null, onerror: null }; let _src = '';
+        Object.defineProperty(img, 'src', { get: function () { return _src; }, set: function (v) { _src = v; if (img.onload) img.onload(); } });
+        return img;
+    }
+    function makeAudio() {
+        const a = { _src: '', paused: true, currentTime: 0, error: null, loop: false, destroyed: false, _playCalls: 0, _stopCalls: 0, _onPlay: null, _onEnded: null, _onError: null,
+            set src(v) { this._src = v; }, get src() { return this._src; },
+            play: function () { this.paused = false; this._playCalls += 1; },
+            stop: function () { this.paused = true; this._stopCalls += 1; },
+            destroy: function () { this.destroyed = true; }, seek: function () {},
+            onPlay: function (fn) { this._onPlay = fn; }, onError: function (fn) { this._onError = fn; }, onEnded: function (fn) { this._onEnded = fn; } };
+        audios.push(a); return a;
+    }
+    function makeQuery() { const api = { select: function () { return { fields: function () { return { exec: function (cb) { cb([{ node: makeCanvas(), width: 195, height: 161 }]); } }; } }; } }; api.in = function () { return api; }; return api; }
+    global.wx = { createInnerAudioContext: makeAudio, createSelectorQuery: makeQuery };
+    try {
+        delete require.cache[require.resolve(path.join(ROOT, 'utils/nest-idle.js'))];
+        const mod = require(path.join(ROOT, 'utils/nest-idle.js'));
+        const data = {};
+        const page = { setData: function (patch) { Object.assign(data, patch); } };
+        const idle = mod.createNestIdle(page, { audioSrc: '/assets/nest/idle/idle.m4a', atlasSrc: '/assets/nest/idle/atlas.webp', canvasId: '#idleCanvas' });
+        try {
+            idle.sync(true, false, 'local-bird', true);
+            await new Promise(function (r) { setImmediate(r); });
+            const audio = audios[audios.length - 1];
+            // 手势启动第一轮（play(true) 越过冷却闸门）。
+            idle.kick();
+            assert.strictEqual(audio._playCalls, 1, '手势应触发一次 play');
+            // 模拟音轨真正开始 → 锁定冷却到下一段允许起点（started: durationMs+gap）。
+            audio._onPlay();
+            assert.ok(audio._onPlay && audio._onEnded, '应已注册 onPlay / onEnded');
+            const expectedCooldownEnd = fakeNow + meta.durationMs + 30000;
+            // 模拟本轮自然结束（onEnded）→ endCycle 收尾停音。
+            audio.currentTime = meta.durationMs;
+            audio._onEnded();
+            assert.strictEqual(audio._stopCalls >= 1, true, '收尾应停音');
+            assert.strictEqual(audio.paused, true, '收尾后音频应暂停');
+            // —— 冷却期内（仍处于 durationMs+gap 之内）：模拟多次 refresh/sync（页面每次状态刷新都走这里）。
+            for (let i = 0; i < 10; i++) { idle.sync(true, false, 'local-bird', true); }
+            assert.strictEqual(audio._playCalls, 1, '冷却期内多次 sync/refresh 不应重播（这是「音乐一直循环空转」的根因已修复）');
+            // 让潜在 draw 轮询自然消亡。
+            await new Promise(function (r) { setTimeout(r, 80); });
+            // —— 冷却结束之后：再 sync 一次，应启动下一轮（play 调用次数 +1）。
+            fakeNow = expectedCooldownEnd + 100;
+            idle.sync(true, false, 'local-bird', true);
+            assert.strictEqual(audio._playCalls, 2, '冷却结束后 sync 应启动下一轮');
+        } finally {
+            idle.dispose();
+        }
+    } finally {
+        Date.now = realNow;
+    }
+}
 
 // ---------------------------------------------------------------- 汇总
 (async function () {
-    // 等动态实跑（含微任务）结束，确保结果计入后再汇总。
-    try { await dynamicPromise; } catch (e) { /* 已在 problems 记录 */ }
+    // 两个动态测试顺序执行（共享 global.wx 桩，不能并发），确保结果计入后再汇总。
+    await checkAsync('nest-idle 在桩环境可实例化、驱动且收尾停音', runDynamicIdle);
+    await checkAsync('nest-idle cadence 闸门：冷却期内 refresh 不重播、冷却后才播下一轮', runDynamicCadence);
     check('frameAt 取帧正确', function () {
         delete require.cache[require.resolve(path.join(ROOT, 'utils/nest-idle.js'))];
         const mod = require(path.join(ROOT, 'utils/nest-idle.js'));

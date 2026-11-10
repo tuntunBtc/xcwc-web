@@ -76,14 +76,16 @@ function createNestIdle(page, opts) {
     // 一段原声播完（约 6.08s）后，保持 30s 冷却再自驱播放下一段，
     // 与网页端以原声音轨 ended 确认后进入 cadence 的语义一致；
     // 后台 / 面板打开（paused）时不排程，避免离页或弹框期间持续占用。
+    // 延时取「剩余冷却」，精确在 cadence 边界自驱；由 play(false, true) 越过冷却闸门真正播放。
     function scheduleAutoplay() {
         clearTimer();
         if (!enabled || paused || !ready || !audio || disposed) return;
+        var delay = Math.max(0, cadenceNextAt - Date.now());
         timer = setTimeout(function () {
             timer = null;
             if (!enabled || paused || disposed) return;
-            play(false);
-        }, GAP_MS);
+            play(false, true);
+        }, delay);
     }
 
     function stop() {
@@ -105,7 +107,9 @@ function createNestIdle(page, opts) {
     function endCycle() {
         stop();
         if (disposed) return;
-        cadenceNextAt = Date.now() + GAP_MS;
+        // 对齐网页端 ended()：冷却推到「现在 + gap」。started() 已在播放开始时锁到 duration+gap，
+        // 取较大值后不变（即下一段允许起点 = 本段开始 + duration + gap，约等于本段结束后 30s）。
+        cadenceNextAt = Math.max(cadenceNextAt, Date.now() + GAP_MS);
         onCycleEnd();
         if (!enabled || paused) return;
         scheduleAutoplay();
@@ -152,11 +156,21 @@ function createNestIdle(page, opts) {
         if (timer === null) draw();
     }
 
-    function play(fromGesture) {
+    // fromGesture：用户手势触发（kick/retry），可越过冷却直接播；
+    // fromCadence：cadence 计时器在冷却边界触发，亦可越过冷却；二者皆非时受 cadenceNextAt 约束。
+    function play(fromGesture, fromCadence) {
         if (!enabled || paused || !ready || !audio || disposed) { setUi(); return; }
         if (playPending) return setUi();
         if (blocked && !fromGesture) return setUi();
+        // 先按「当前一轮正在播放」短路：进行中的一轮不受影响，避免被状态刷新掐断或重排。
         if (!audio.paused) { startDrawIfReady(); return setUi(); }
+        // 冷却期内（上一段已播完 / 刚启动未满 duration+gap）：非手势、非 cadence 触发的重播一律拒绝，
+        // 改为排程 cadence 计时器在剩余冷却后自驱下一轮——这是「音乐不会一直循环空转」的关键：
+        // refresh()/sync 每次状态刷新都会走到这里，若无此闸门会立刻重播造成连续循环（对齐网页端 canStart 闸门）。
+        if (!fromGesture && !fromCadence && Date.now() < cadenceNextAt) {
+            scheduleAutoplay();
+            return setUi();
+        }
         if (audio.error) { try { audio.stop(); } catch (e) { /* ignore */ } }
         audio.loop = false;
         if (restart) { try { audio.seek(0); } catch (e) { /* ignore */ } restart = false; }
@@ -170,6 +184,9 @@ function createNestIdle(page, opts) {
             if (disposed || ticket !== playGen) return;
             playPending = false;
             if (!enabled || paused) { stop(); return; }
+            // 一轮真正开始：锁定冷却到下一段允许起点（对齐网页端 started(durationMs)），
+            // 即使本轮被面板/离页中断，冷却依旧生效，照料/切鸟不会把中断变成立即重播。
+            cadenceNextAt = Date.now() + META.durationMs + GAP_MS;
             draw();
             onStarted();
         });
