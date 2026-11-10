@@ -156,9 +156,10 @@
                             </view>
                             <view class="editor-tip">单指拖动小鸟，双指捏合或张开放大缩小</view>
                             <view class="photo-stack">
-                                <view class="canvas-stage" catchtouchstart="onTouchStart" catchtouchmove="onTouchMove"
-                                      catchtouchend="onTouchEnd" catchtouchcancel="onTouchEnd">
-                                    <canvas type="2d" id="preview" class="preview-canvas" style="height:{{canvasHeightRpx}}rpx"></canvas>
+                                <view class="canvas-stage">
+                                    <canvas type="2d" id="preview" class="preview-canvas" style="height:{{canvasHeightRpx}}rpx"
+                                            disable-scroll="true" bindtouchstart="onTouchStart" bindtouchmove="onTouchMove"
+                                            bindtouchend="onTouchEnd" bindtouchcancel="onTouchCancel"></canvas>
                                     <view wx:if="{{selectionVisible}}" class="bird-selection"
                                           style="left:{{selectionBox.left}}%;top:{{selectionBox.top}}%;width:{{selectionBox.width}}%;height:{{selectionBox.height}}%">
                                         <text class="selection-name">{{activeName}}</text>

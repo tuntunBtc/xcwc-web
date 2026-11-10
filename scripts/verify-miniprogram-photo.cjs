@@ -77,6 +77,7 @@ const missing = Array.from(handlers).filter(function (name) {
     return !new RegExp('(^|\\n)\\s*(?:async\\s+)?' + name + '\\s*\\(', 'm').test(js);
 });
 ok('事件处理器全部定义 (' + handlers.size + ')', missing.length === 0, missing.join(','));
+ok('画布直接接收本地触点', /<canvas\b[^>]*\bbindtouchstart="onTouchStart"[^>]*>/.test(wxml));
 
 // 素材引用
 const refs = new Set();
@@ -205,7 +206,12 @@ check('清除缓存清空合照去重', (function () {
 // ---------------------------------------------------------------- 页面状态机实跑
 const storageMap = {};
 const filesOnDisk = {};
-const calls = { share: 0, preview: 0, saveAlbum: 0, drawImage: 0, filterReads: 0, shutter: 0, navigateBack: 0 };
+const failedImages = new Set();
+const calls = { share: 0, preview: 0, saveAlbum: 0, drawImage: 0, filterReads: 0, shutter: 0, navigateBack: 0, selector: 0 };
+const previewSize = { width: 277, height: 280 };
+let canvasAvailable = true;
+let holdNextSelector = false;
+let finishSelector;
 const fakeCtx = {
     setTransform: function () {}, fillRect: function () {}, save: function () {}, beginPath: function () {},
     rect: function () {}, clip: function () {}, drawImage: function () { calls.drawImage += 1; },
@@ -220,7 +226,10 @@ const fakeCanvas = {
         Object.defineProperty(image, 'src', {
             set: function (value) {
                 image._src = value;
-                setTimeout(function () { if (image.onload) image.onload(); }, 0);
+                setTimeout(function () {
+                    const callback = failedImages.has(value) ? image.onerror : image.onload;
+                    if (callback) callback();
+                }, 0);
             },
             get: function () { return image._src; },
         });
@@ -246,15 +255,32 @@ const wxMock = {
     getFileInfo: function (options) { options.success({ digest: String(options.filePath).replace(/[^a-zA-Z0-9]/g, '') }); },
     getImageInfo: function (options) { options.success({ path: options.src }); },
     createSelectorQuery: function () {
+        let fields;
         return {
             in: function () { return this; },
             select: function () { return this; },
-            fields: function () { return this; },
-            exec: function (cb) { cb([{ node: fakeCanvas, left: 0, top: 0, width: 277, height: 280 }]); },
+            fields: function (options) { fields = options; return this; },
+            exec: function (cb) {
+                calls.selector += 1;
+                const item = {};
+                if (fields.node) item.node = fakeCanvas;
+                if (fields.size) Object.assign(item, previewSize);
+                if (fields.rect) Object.assign(item, { left: 0, top: 600 });
+                const result = canvasAvailable ? [item] : [];
+                if (holdNextSelector) {
+                    holdNextSelector = false;
+                    finishSelector = function () { cb(result); };
+                } else {
+                    cb(result);
+                }
+            },
         };
     },
     canvasToTempFilePath: function (options) { options.success({ tempFilePath: '/tmp/work-' + Date.now() + '.jpg' }); },
-    chooseMedia: function (options) { options.success({ tempFiles: [{ tempFilePath: '/tmp/photo-1.jpg', size: 100000 }] }); },
+    chooseMedia: function (options) {
+        options.success({ tempFiles: [{ tempFilePath: '/tmp/photo-1.jpg', size: 100000 }] });
+        options.complete();
+    },
     createInnerAudioContext: function () {
         return { src: '', stop: function () {}, play: function () { calls.shutter += 1; }, destroy: function () {} };
     },
@@ -324,6 +350,38 @@ function makePage() {
         assert.strictEqual(page.data.selectedCount, 1);
     });
 
+    await checkAsync('首次画布节点缺失，原地重试会重新查询', async function () {
+        canvasAvailable = false;
+        try {
+            page.toggleEditor();
+            assert.strictEqual(await page.canvasPreparation, false);
+            assert.match(page.data.assetError, /画布暂时不可用/);
+        } finally {
+            canvasAvailable = true;
+        }
+        const queries = calls.selector;
+        assert.strictEqual(await page.onRetryAssets(), true);
+        assert.strictEqual(calls.selector, queries + 1);
+        assert.strictEqual(page.data.assetError, '');
+        page.toggleEditor();
+    });
+
+    await checkAsync('关闭重开后，旧画布查询结果不覆盖新画布', async function () {
+        holdNextSelector = true;
+        canvasAvailable = false;
+        page.toggleEditor();
+        const oldPreparation = page.canvasPreparation;
+        page.toggleEditor();
+        canvasAvailable = true;
+        page.toggleEditor();
+        assert.strictEqual(await page.canvasPreparation, true);
+        finishSelector();
+        assert.strictEqual(await oldPreparation, false);
+        assert.strictEqual(page.canvasReady, true);
+        assert.strictEqual(page.data.assetError, '');
+        page.toggleEditor();
+    });
+
     await checkAsync('切换风格标脏并应用滤镜', async function () {
         page.toggleEditor();
         await settle(80);
@@ -346,6 +404,30 @@ function makePage() {
         assert.strictEqual(page.data.size, 34);
     });
 
+    await checkAsync('滚动后仍能拖动和双指缩放，取消后不残留手势', function () {
+        const pose = page.poses[page.active];
+        const start = { cx: pose.cx, cy: pose.cy, size: pose.size };
+        function touch(identifier, x, y, scrollTop) {
+            const localX = x * previewSize.width / model.CANVAS_W;
+            const localY = y * previewSize.height / model.CANVAS_H;
+            return { identifier, x: localX, y: localY, clientX: localX + 20, clientY: localY + 900 - scrollTop };
+        }
+        page.onTouchStart({ touches: [touch(1, start.cx, start.cy, 800)] });
+        page.onTouchMove({ touches: [touch(1, start.cx - 30, start.cy - 25, 800)] });
+        assert.ok(Math.abs(pose.cx - (start.cx - 30)) < 0.01);
+        assert.ok(Math.abs(pose.cy - (start.cy - 25)) < 0.01);
+
+        const cx = pose.cx;
+        const cy = pose.cy;
+        page.onTouchStart({ touches: [touch(1, cx - 30, cy, 800), touch(2, cx + 30, cy, 800)] });
+        page.onTouchMove({ touches: [touch(1, cx - 36, cy, 800), touch(2, cx + 36, cy, 800)] });
+        assert.ok(Math.abs(pose.size - start.size * 1.2) < 0.01);
+        page.onTouchCancel();
+        assert.deepStrictEqual(page.pointers, {});
+        assert.strictEqual(page.gesture, null);
+        page.onResetBird();
+    });
+
     await checkAsync('选图后画布就绪、按钮可点', async function () {
         page.onChoosePhoto();
         await settle(120);
@@ -355,6 +437,34 @@ function makePage() {
         assert.strictEqual(page.data.generateText, '生成并收藏');
         assert.strictEqual(page.data.generateDisabled, false);
         assert.strictEqual(page.data.previewBadge, '编辑中');
+    });
+
+    await checkAsync('损坏替换图保留上一张照片、构图和待重试草稿', async function () {
+        const oldPhoto = page.photo;
+        const oldPath = page.photoPath;
+        const pending = { id: 'still-pending' };
+        const photoX = page.photoX;
+        page.photoX = 21;
+        page.pendingSubmission = pending;
+        failedImages.add('/tmp/corrupt.jpg');
+        try {
+            const replacement = page.readPhoto({ tempFilePath: '/tmp/corrupt.jpg', size: 100 });
+            page.toggleEditor();
+            assert.strictEqual(page.data.editorOpen, true);
+            await page.readPhoto({ tempFilePath: '/tmp/concurrent.jpg', size: 100 });
+            await replacement;
+            assert.strictEqual(page.photo, oldPhoto);
+            assert.strictEqual(page.photoPath, oldPath);
+            assert.strictEqual(page.data.uploadThumb, oldPath);
+            assert.strictEqual(page.photoX, 21);
+            assert.strictEqual(page.pendingSubmission, pending);
+            assert.strictEqual(page.canvasReady, true);
+            assert.match(page.data.toast, /照片没能打开/);
+        } finally {
+            failedImages.delete('/tmp/corrupt.jpg');
+            page.photoX = photoX;
+            page.pendingSubmission = null;
+        }
     });
 
     await checkAsync('生成并收藏：+1 叽分、打开查看器', async function () {
@@ -451,6 +561,48 @@ function makePage() {
         assert.strictEqual(fresh.canvasReady, true);
         assert.strictEqual(fresh.data.generateText, '生成并收藏');
         fresh.onUnload();
+    });
+
+    await checkAsync('贴纸加载失败保留已解码照片并可重试', async function () {
+        const photoAlbum = require(path.join(ROOT, 'utils/photo-album.js'));
+        photoAlbum.clearDraft();
+        const fresh = makePage();
+        fresh.onLoad();
+        failedImages.add('/assets/photo/bird.webp');
+        try {
+            await fresh.readPhoto({ tempFilePath: '/tmp/valid.jpg', size: 100 });
+            assert.strictEqual(fresh.canvasReady, false);
+            assert.strictEqual(fresh.data.generateDisabled, true);
+            assert.strictEqual(fresh.photoPath, '/tmp/valid.jpg');
+            assert.match(fresh.data.toast, /素材暂时无法加载/);
+        } finally {
+            failedImages.delete('/assets/photo/bird.webp');
+        }
+        assert.strictEqual(await fresh.onRetryAssets(), true);
+        assert.strictEqual(fresh.data.generateDisabled, false);
+        fresh.onUnload();
+    });
+
+    await checkAsync('离页后的旧导出回调不会重新写入已清除的草稿', async function () {
+        const photoAlbum = require(path.join(ROOT, 'utils/photo-album.js'));
+        const fresh = makePage();
+        fresh.onLoad();
+        assert.strictEqual(await fresh.prepareCanvasImages(), true);
+        const exportCanvas = wxMock.canvasToTempFilePath;
+        let finishExport;
+        wxMock.canvasToTempFilePath = function (options) { finishExport = options.success; };
+        try {
+            const total = photoAlbum.history().total;
+            const generating = fresh.onGenerate();
+            fresh.onUnload();
+            photoAlbum.clearDraft();
+            finishExport({ tempFilePath: '/tmp/stale-export.jpg' });
+            await generating;
+            assert.strictEqual(photoAlbum.readDraft(), null);
+            assert.strictEqual(photoAlbum.history().total, total);
+        } finally {
+            wxMock.canvasToTempFilePath = exportCanvas;
+        }
     });
 
     await checkAsync('清除缓存清空相册文件与草稿', function () {

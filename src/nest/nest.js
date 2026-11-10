@@ -306,11 +306,14 @@ function mountNest(){
  const emotionNames={happy:'开心',veryhappy:'很开心',hungry:'肚子饿了',thirsty:'想喝水',unwell:'想你陪陪',puzzled:'好奇',angry:'被摸痒了',crying:'想念你'};
  const feltBird={};
  for(const emotion of Object.keys(emotionNames))feltBird[emotion]=xcwcMediaUrl('__XCWC_ASSET_ORIGIN__/assets/nest/felt/emotions/'+nestEmotionArtwork(emotion).filename);
- // The scene remains scoped to the nest; shared navigation and other pages are untouched.
+ // The shared bottom navigation is a transparent plush plate, so the scene must
+ // also paint behind it. This style and the matching shell class live only while
+ // the nest is mounted; a plain class avoids depending on :has() support.
+ const nestPhone=document.querySelector('.phone');nestPhone?.classList.add('is-nest-scene');
  const homeChrome=document.createElement('style');homeChrome.dataset.nestChrome='';homeChrome.textContent=`
- #bjd-review.is-integrated:has(#xcwc-nest) .phone{background:#bad493 url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/home-background.png') center top/100% 100% no-repeat}
- #bjd-review.is-integrated:has(#xcwc-nest) .phone>main{background:#bad493}
- #bjd-review.is-integrated:has(#xcwc-nest) #bjd-toast{
+ #bjd-review.is-integrated .phone.is-nest-scene{background:#bad493 url('__XCWC_ASSET_ORIGIN__/assets/nest/felt/home-background.png') center top/100% 100% no-repeat}
+ #bjd-review.is-integrated .phone.is-nest-scene>main{background:#bad493}
+ #bjd-review.is-integrated .phone.is-nest-scene #bjd-toast{
   position:fixed!important;top:auto!important;
   bottom:calc(var(--xcwc-nav-height,72px) + clamp(72px,21.6vw,104px) + 8px)!important;
   left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100% - 36px);
@@ -560,7 +563,7 @@ function mountNest(){
  },100);
 
  pageCleanup=()=>{
-  alive=false;homeChrome.remove();birdAudio.dispose();controller.abort();clearInterval(refreshTimer);clearInterval(needTimer);backgroundRefresh?.abort();stateRead?.abort();
+  alive=false;homeChrome.remove();nestPhone?.classList.remove('is-nest-scene');birdAudio.dispose();controller.abort();clearInterval(refreshTimer);clearInterval(needTimer);backgroundRefresh?.abort();stateRead?.abort();
   resetInteractions();shadow.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
  };
  installDialogClose(shadow,signal);

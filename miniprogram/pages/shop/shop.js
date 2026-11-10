@@ -3,6 +3,7 @@
 const catalog = require('../../utils/catalog');
 const safeArea = require('../../utils/safe-area');
 const tabBar = require('../../utils/tab-bar');
+const cartStorage = require('../../utils/cart-storage');
 
 // 与网页端 src/shop/shop.js 的状态机对齐：品牌条角标、加购/已加购、购物车、
 // 排序与城市筛选、详情浮层与文字信息、规则说明、轮播暂停/圆点、toast。
@@ -14,7 +15,6 @@ const PRODUCTS = catalog.PRODUCTS.slice();
 const BANNERS = catalog.BANNERS.slice();
 const CITIES = catalog.CITIES.slice();
 const CITY_NAMES = CITIES.map(function (item) { return item.name; });
-const CART_KEY = 'xcwc.shop.cart.mp.v1';
 const CART_LIMIT = 100;
 const ID_PATTERN = /^[a-z0-9_-]{1,64}$/;
 
@@ -57,23 +57,6 @@ function normalizeCart(raw) {
     return out;
 }
 
-function readCart() {
-    try {
-        return normalizeCart(wx.getStorageSync(CART_KEY));
-    } catch (error) {
-        return [];
-    }
-}
-
-function writeCart(ids) {
-    try {
-        wx.setStorageSync(CART_KEY, ids);
-        return true;
-    } catch (error) {
-        return false;
-    }
-}
-
 Page({
     data: {
         topInset: 176,
@@ -103,17 +86,18 @@ Page({
     },
 
     onLoad() {
-        this.cartIds = readCart();
+        this.cartIds = [];
         this.setData({
             topInset: safeArea.readTopInsetRpx(),
-            cartCount: this.cartIds.length,
         });
+        this.syncCart();
         this.applyFilter();
     },
 
     onShow() {
         // 自定义 tabBar 选中态由全站组件自校正，这里只做轻量同步（E-07）。
         tabBar.syncSelected(this, 2);
+        this.syncCart();
     },
 
     onHide() {
@@ -188,6 +172,28 @@ Page({
     },
 
     // ---- 本机购物车 ----------------------------------------------------
+    syncCart() {
+        let next;
+        try {
+            next = normalizeCart(cartStorage.read());
+            this.cartStorageUnavailable = false;
+        } catch (error) {
+            this.cartStorageUnavailable = true;
+            return false;
+        }
+        const previous = this.cartIds || [];
+        if (previous.length === next.length && previous.every(function (id, index) { return id === next[index]; })) return true;
+        this.cartIds = next;
+        const patch = { cartCount: next.length, cartItems: this.buildCartItems() };
+        if (this.data.detail && this.data.panelKind === 'detail') {
+            patch['detail.added'] = next.indexOf(this.data.detail.id) >= 0;
+        }
+        this.setData(patch);
+        this.applyFilter();
+        if (this.data.panelKind === 'added' && this.data.detail && next.indexOf(this.data.detail.id) < 0) this.handleClose();
+        return true;
+    },
+
     // 只更新变化字段，避免整表 setData（E-02）。
     syncAddedState(id, added) {
         const patch = { cartCount: this.cartIds.length };
@@ -216,6 +222,10 @@ Page({
     addToCart(id) {
         const product = findProduct(id);
         if (!product) return;
+        if (this.cartStorageUnavailable && !this.syncCart()) {
+            this.toast('本机存储不可用，加购未保存');
+            return;
+        }
         const already = this.cartIds.indexOf(id) >= 0;
         if (already) {
             this.showAdded(product, true);
@@ -226,7 +236,7 @@ Page({
             return;
         }
         const next = this.cartIds.concat([id]);
-        if (!writeCart(next)) {
+        if (!cartStorage.write(next)) {
             this.toast('本机存储不可用，加购未保存');
             return;
         }
@@ -266,12 +276,16 @@ Page({
     },
 
     handleCartRemove(event) {
+        if (this.cartStorageUnavailable && !this.syncCart()) {
+            this.toast('本机存储不可用，移除未保存');
+            return;
+        }
         const id = event.currentTarget.dataset.id;
         const index = this.cartIds.indexOf(id);
         if (index < 0) return;
         const next = this.cartIds.slice();
         next.splice(index, 1);
-        if (!writeCart(next)) {
+        if (!cartStorage.write(next)) {
             this.toast('本机存储不可用，移除未保存');
             return;
         }

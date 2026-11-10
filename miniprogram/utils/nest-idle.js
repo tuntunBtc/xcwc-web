@@ -65,7 +65,7 @@ function createNestIdle(page, opts) {
         page.setData({
             idleReady: ready,
             idlePlaying: ready && !canvasHidden,
-            showIdleButton: blocked && canPrepare && !paused,
+            showIdleButton: (blocked || failed) && canPrepare && !paused,
         });
     }
 
@@ -202,8 +202,20 @@ function createNestIdle(page, opts) {
         failed = false;
         var ticket = ++loadGen;
         setUi();
-        initCanvas().then(function (ok) {
-            if (!ok || disposed || ticket !== loadGen) return;
+        function failLoad() {
+            if (disposed || ticket !== loadGen) return;
+            failed = true;
+            loading = false;
+            setUi();
+        }
+        initCanvas().then(function (item) {
+            if (disposed || ticket !== loadGen) return;
+            if (!item || !item.node) { failLoad(); return; }
+            canvas = item.node;
+            canvas.width = Math.max(1, Math.round(item.width || FRAME_W));
+            canvas.height = Math.max(1, Math.round(item.height || FRAME_H));
+            ctx = canvas.getContext('2d');
+            if (!ctx) { failLoad(); return; }
             var img = canvas.createImage();
             img.onload = function () {
                 if (disposed || ticket !== loadGen) return;
@@ -218,31 +230,15 @@ function createNestIdle(page, opts) {
                 setUi();
                 apply();
             };
-            img.onerror = function () {
-                if (disposed || ticket !== loadGen) return;
-                failed = true;
-                loading = false;
-                setUi();
-            };
+            img.onerror = failLoad;
             img.src = atlasSrc;
-        });
+        }).catch(failLoad);
     }
 
     function initCanvas() {
         return new Promise(function (resolve) {
-            wx.createSelectorQuery().in(page).select(canvasId).fields({ node: true, rect: true }).exec(function (res) {
-                var item = res && res[0];
-                if (item && item.node) {
-                    canvas = item.node;
-                    var w = Math.max(1, Math.round(item.width || FRAME_W));
-                    var h = Math.max(1, Math.round(item.height || FRAME_H));
-                    canvas.width = w;
-                    canvas.height = h;
-                    ctx = canvas.getContext('2d');
-                    resolve(true);
-                } else {
-                    resolve(false);
-                }
+            wx.createSelectorQuery().in(page).select(canvasId).fields({ node: true, size: true }).exec(function (res) {
+                resolve(res && res[0]);
             });
         });
     }
@@ -257,6 +253,15 @@ function createNestIdle(page, opts) {
     // 网页端 sync：切换小鸟先停、记录当前鸟；再按 eligible / suspended / prepareEligible 决定播放。
     function sync(eligible, suspended, birdId, prepareEligible) {
         if (currentBird !== birdId) { stop(); currentBird = birdId; frame = 0; blocked = false; gestureArmed = false; }
+        if (canPrepare && !prepareEligible) {
+            loadGen += 1;
+            loading = false;
+            failed = false;
+            ready = false;
+            canvas = null;
+            ctx = null;
+            atlas = null;
+        }
         enabled = eligible;
         paused = suspended;
         canPrepare = prepareEligible;

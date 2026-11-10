@@ -6,10 +6,16 @@ const assert = require('assert');
 
 const guestStore = require('../miniprogram/utils/guest-store');
 const store = require('../miniprogram/utils/store');
+const config = require('../miniprogram/utils/config');
 
 let passed = 0, failed = 0;
 function check(name, fn) {
     try { fn(); passed++; console.log('PASS ' + name); }
+    catch (e) { failed++; console.log('FAIL ' + name + ' -> ' + (e && e.message)); }
+}
+
+async function checkAsync(name, fn) {
+    try { await fn(); passed++; console.log('PASS ' + name); }
     catch (e) { failed++; console.log('FAIL ' + name + ' -> ' + (e && e.message)); }
 }
 
@@ -86,22 +92,64 @@ check('guest-store: 跨日可再次兑换（不同 target 日期）', function (
     assert.strictEqual(r.data.snapshot.points, 8, '两日积分应累加');
 });
 
-check('store: USE_LOCAL_FIXTURE 走本机 mock 结算', async function () {
-    // store.js 在 require 时不调用 wx，这里补一个最小 wx 全局即可。
-    global.wx = {
-        getStorageSync: function () { return null; },
-        setStorageSync: function () {},
-        removeStorageSync: function () {},
-    };
-    const r = await store.redeemSteps(NOW);
-    assert.ok(r && r.data && r.data.snapshot, '应返回 snapshot');
-    assert.strictEqual(r.data.snapshot.todayStepClaimed, true, 'fixture 模式下应标记已兑换');
-    assert.strictEqual(r.data.snapshot.points, 5, 'fixture 应发放 5 叽分');
-});
-
 check('store: 导出 redeemSteps 且为函数', function () {
     assert.strictEqual(typeof store.redeemSteps, 'function');
 });
 
-console.log('\nTOTAL passed=' + passed + ' failed=' + failed);
-process.exit(failed > 0 ? 1 : 0);
+async function runBridgeChecks() {
+    const originalConfig = { USE_LOCAL_FIXTURE: config.USE_LOCAL_FIXTURE, API_BASE: config.API_BASE };
+    try {
+        await checkAsync('store: 显式 fixture 模式模拟兑换', async function () {
+            config.USE_LOCAL_FIXTURE = true;
+            global.wx = memoryStorage();
+            store.adopt('TEST-WERUN-01', '小叽', NOW);
+            const r = await store.redeemSteps(NOW);
+            assert.strictEqual(r.error, null);
+            assert.strictEqual(r.data.snapshot.todayStepClaimed, true);
+            assert.strictEqual(r.data.snapshot.points, 5);
+        });
+
+        await checkAsync('store: 缺地址、拒绝授权、请求失败和无奖励均不改本机叽分', async function () {
+            config.USE_LOCAL_FIXTURE = false;
+            config.API_BASE = '';
+            const storage = memoryStorage({ auth_token: 'test-token' });
+            const unexpected = () => { throw Error('不应调用此 API'); };
+            global.wx = Object.assign({}, storage, { request: unexpected, getWeRunData: unexpected });
+            store.adopt('TEST-WERUN-02', '小叽', NOW);
+            const before = store.snapshot(NOW).data.snapshot;
+            global.wx.setStorageSync = unexpected;
+
+            async function assertFailure(error) {
+                assert.strictEqual((await store.redeemSteps(NOW)).error, error);
+                assert.deepStrictEqual(store.snapshot(NOW).data.snapshot, before);
+            }
+            await assertFailure('NO_ENDPOINT');
+            config.API_BASE = 'https://example.invalid';
+            global.wx.requirePrivacyAuthorize = options => options.fail();
+            global.wx.getSetting = unexpected;
+            await assertFailure('PRIVACY_NOT_AUTHORIZED');
+            global.wx.requirePrivacyAuthorize = options => options.success();
+            global.wx.getSetting = options => options.success({ authSetting: {} });
+            global.wx.authorize = options => options.fail();
+            await assertFailure('WERUN_DENIED');
+            global.wx.getSetting = options => options.success({ authSetting: { 'scope.werun': true } });
+            global.wx.getWeRunData = options => options.success({ encryptedData: 'test', iv: 'test' });
+            global.wx.request = options => options.fail();
+            await assertFailure('REDEEM_FAILED');
+            global.wx.request = options => options.success({ statusCode: 200, data: {} });
+            await assertFailure('REDEEM_FAILED');
+            global.wx.request = options => options.success({
+                statusCode: 200, data: { granted: 0, steps: 700, date: DAY, claimed: false },
+            });
+            await assertFailure('NO_REWARD');
+        });
+    } finally {
+        Object.assign(config, originalConfig);
+        delete global.wx;
+    }
+}
+
+runBridgeChecks().then(function () {
+    console.log('\nTOTAL passed=' + passed + ' failed=' + failed);
+    process.exitCode = failed > 0 ? 1 : 0;
+});

@@ -3,6 +3,7 @@
 const store = require('../../utils/store');
 const entry = require('../../utils/entry');
 const safeArea = require('../../utils/safe-area');
+const config = require('../../utils/config');
 
 // 与网页端 src/adopt/v1/adopt.js 的 adoptionV1Defaults / suggestions 对齐。
 // 调试期不联网，使用本机展示资料；正式版由 GET /api/birds/by-code/{birdCode} 读取，
@@ -20,7 +21,7 @@ const SUGGESTIONS = ['湖小叽', '西湖团团', '小桂', '啾啾', '慢慢'];
 const ERROR_TEXT = {
     INVALID_CODE: '实体编码不可用，请从标签链接重新进入',
     INVALID_NICKNAME: '昵称需为 1–6 个字符',
-    STORAGE_UNAVAILABLE: '本机数据写入失败，请重试',
+    STORAGE_UNAVAILABLE: '本机数据暂时无法读写，请重试',
 };
 
 // 入口参数统一交给 utils/entry.js 解析：
@@ -79,8 +80,11 @@ Page({
         const code = readEntryBirdCode(this.entryOptions);
         const result = store.snapshot();
         const snapshot = result.data ? result.data.snapshot : null;
-        const alreadyMine = !!(snapshot && snapshot.hasBird && snapshot.birdCode === code && code);
-        const ready = !!code;
+        const ready = !!(code && snapshot && config.USE_LOCAL_FIXTURE);
+        const alreadyMine = ready && snapshot.hasBird && snapshot.birdCode === code;
+        const notice = !snapshot ? ERROR_TEXT.STORAGE_UNAVAILABLE
+            : !config.USE_LOCAL_FIXTURE ? '当前版本暂未开放实体领养。'
+                : '请碰一碰实体小鸟并打开系统弹出的链接。';
 
         this.randomIndex = 0;
         this.setData({
@@ -100,14 +104,14 @@ Page({
                 ? '回小窝，看看它'
                 : (ready ? '孵化并领养' : '读取资料后可领取'),
             buttonDisabled: !ready,
-            notice: ready ? '' : '请碰一碰实体小鸟并打开系统弹出的链接。',
+            notice: ready ? '' : notice,
             noticeKind: ready ? 'info' : 'error',
         });
+        return ready;
     },
 
     handleRetry() {
-        this.load();
-        wx.showToast({ title: '已重新读取本机资料', icon: 'none' });
+        if (this.load()) wx.showToast({ title: '已重新读取本机资料', icon: 'none' });
     },
 
     handleBack() {
@@ -133,8 +137,8 @@ Page({
     },
 
     handleAdopt() {
-        if (!this.data.ready) {
-            wx.showToast({ title: '请先从实体标签链接进入', icon: 'none' });
+        if (!this.data.ready || !config.USE_LOCAL_FIXTURE) {
+            wx.showToast({ title: this.data.notice || '请先从实体标签链接进入', icon: 'none' });
             return;
         }
         if (this.data.alreadyMine) {

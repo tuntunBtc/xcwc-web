@@ -2,6 +2,7 @@
 
 const store = require('../../utils/store');
 const photoAlbum = require('../../utils/photo-album');
+const cartStorage = require('../../utils/cart-storage');
 const entry = require('../../utils/entry');
 const config = require('../../utils/config');
 const tabBar = require('../../utils/tab-bar');
@@ -138,15 +139,16 @@ Page({
             return;
         }
         this.setData({ resetBusy: true });
-        const result = store.reset();
-        // 二次确认文案已承诺删除本机相册原图与作品，这里同步清理相册文件与草稿。
-        const albumCleared = photoAlbum.clear();
+        // 相册先保留未删文件的索引以便重试，再清除购物车和养成记录。
+        const cleared = photoAlbum.clear() && cartStorage.clear() && !store.reset().error;
+        if (!cleared) {
+            this.setData({ resetBusy: false });
+            wx.showToast({ title: '清除未完成，请重试', icon: 'none' });
+            return;
+        }
         this.loadProfile();
         this.setData(closedSheets());
-        wx.showToast({
-            title: (result && result.error) || !albumCleared ? '清除未完成，请重试' : '已清除',
-            icon: 'none',
-        });
+        wx.showToast({ title: '已清除', icon: 'none' });
     },
 
     goHome() {
