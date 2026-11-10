@@ -73,7 +73,8 @@
             <view class="blade b3"></view><view class="blade b4"></view>
         </view>
         <view class="bird-hit" bindtap="onPet" hover-class="none">
-            <image class="bird-art" src="{{birdArt}}" mode="aspectFit"></image>
+            <!-- 待机动画播放时隐藏静态表情海报，避免动画小鸟与表情海报重叠（动画画布覆盖在立绘之上）。 -->
+            <image class="bird-art {{idlePlaying ? 'is-hidden' : ''}}" src="{{birdArt}}" mode="aspectFit"></image>
         </view>
         <!-- 待机动画画布：覆盖在立绘之上，逐帧绘制 idle 序列帧并随原声同步；
              pointer-events:none 让点击穿透到 bird-hit 仍可摸摸。无鸟时不挂载，避免空态冗余节点。 -->

@@ -98,11 +98,29 @@ function createNestIdle(page, opts) {
         setUi();
     }
 
+    // 一轮原声自然播完的收尾：停音频 + 清画布，并进入 30s 冷却自驱下一轮。
+    // 与网页端以原声音轨 ended 确认后进入 cadence 一致；且不依赖 onEnded 是否准时触发——
+    // draw() 也会在 currentTime 到达 durationMs 时主动调用本函数，确保动画与音乐同步收尾，
+    // 避免部分机型 onEnded / paused 翻转滞后导致「画面已停、音乐仍空转」。
+    function endCycle() {
+        stop();
+        if (disposed) return;
+        cadenceNextAt = Date.now() + GAP_MS;
+        onCycleEnd();
+        if (!enabled || paused) return;
+        scheduleAutoplay();
+    }
+
     function draw() {
         if (!ctx || !atlas || disposed) return;
         if (paused || !enabled) { stop(); return; }
-        if (!audio || audio.paused) { stop(); onBlocked(); return; }
-        var next = frameAt(audio.currentTime * 1000);
+        if (!audio) { stop(); return; }
+        var timeMs = audio.currentTime * 1000;
+        // 以音轨 currentTime 驱动取帧；到达设计时长即结束本轮，保证动画与音乐同步收尾，
+        // 不依赖 onEnded / paused 翻转是否准时（部分机型可能滞后导致音乐空转）。
+        if (timeMs >= META.durationMs) { endCycle(); return; }
+        if (audio.paused) { stop(); onBlocked(); return; }
+        var next = frameAt(timeMs);
         if (canvasHidden || next !== frame) {
             frame = next;
             var boxW = canvas.width || FRAME_W;
@@ -176,13 +194,7 @@ function createNestIdle(page, opts) {
                 if (!audio) {
                     audio = wx.createInnerAudioContext();
                     audio.src = audioSrc;
-                    audio.onEnded(function () {
-                        if (!enabled || paused || disposed) return;
-                        stop();
-                        cadenceNextAt = Date.now() + GAP_MS;
-                        onCycleEnd();
-                        scheduleAutoplay();
-                    });
+                    audio.onEnded(endCycle);
                 }
                 ready = true;
                 loading = false;
@@ -246,13 +258,7 @@ function createNestIdle(page, opts) {
         if (!audio) {
             audio = wx.createInnerAudioContext();
             audio.src = audioSrc;
-            audio.onEnded(function () {
-                if (!enabled || paused || disposed) return;
-                stop();
-                cadenceNextAt = Date.now() + GAP_MS;
-                onCycleEnd();
-                scheduleAutoplay();
-            });
+            audio.onEnded(endCycle);
         }
         if (!ready) { ensure(); }
         // 已在冷却期内（上一段播完不足 30s）时不重播，避免照料后立刻又播。

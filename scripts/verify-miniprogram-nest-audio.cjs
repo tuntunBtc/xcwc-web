@@ -77,16 +77,28 @@ ok('WXML 含 idle 画布', /id="idleCanvas"/.test(indexWxml));
 ok('WXML 含手动播放入口', /idle-retry/.test(indexWxml));
 ok('WXML onIdleRetry 处理器闭环', /catchtap="onIdleRetry"/.test(indexWxml) && /onIdleRetry\s*\(/.test(indexJs));
 ok('idle 画布仅在有鸟时挂载', /wx:if="{{hasBird}}"[\s\S]{0,80}id="idleCanvas"/.test(indexWxml));
+// 问题①：待机动画播放时应隐藏静态表情海报，避免动画小鸟与表情海报重叠。
+ok('WXML 待机播放时隐藏静态表情海报（避免与动画重叠）',
+    /class="bird-art \{\{idlePlaying \? 'is-hidden' : ''\}\}"/.test(indexWxml));
 
 // ---------------------------------------------------------------- 模块内部
 ok('nest-idle 导出 createNestIdle', /module\.exports\s*=\s*\{[\s\S]{0,400}createNestIdle/.test(idleJs));
 ok('nest-idle 自驱 cadence (scheduleAutoplay)', /scheduleAutoplay/.test(idleJs));
 ok('nest-idle stop 清空画布', /clearRect/.test(idleJs));
 ok('nest-idle 用 type=2d 选择器', /createSelectorQuery\(\)\.in\(page\)\.select\(canvasId\)/.test(idleJs));
+// 问题②：动画与音乐同步收尾——draw 在 currentTime 到达时长时主动结束本轮，不依赖 onEnded 是否准时；
+// onEnded 必须总是停音（去掉「提前 return 跳过 stop」的旧逻辑）。
+ok('nest-idle 以 currentTime 到达时长收尾（动画与音乐同步停止）', /timeMs >= META\.durationMs/.test(idleJs));
+ok('nest-idle onEnded 总是停音（无提前 return 跳过 stop）',
+    /audio\.onEnded\(endCycle\)/.test(idleJs) && !/audio\.onEnded\(function/.test(idleJs));
+ok('nest-idle 存在 endCycle 收尾函数', /function endCycle\(\)/.test(idleJs));
 
 // ---------------------------------------------------------------- 动态实跑 nest-idle（桩环境）
-const dynamicPromise = checkAsync('nest-idle 在桩环境可实例化与驱动', async function () {
-    // 构造最小 wx 桩：音频不触发 onPlay（避免 draw 的 20ms 轮询进入无限循环），画布/图片同步就绪。
+const dynamicPromise = checkAsync('nest-idle 在桩环境可实例化、驱动且收尾停音', async function () {
+    const meta = require(path.join(ROOT, 'utils/nest-idle-meta.js'));
+    const audios = [];
+    // 构造最小 wx 桩：画布/图片同步就绪；音频 play 仅翻转 paused，onPlay/onEnded 由测试手动触发，
+    // 以便精确验证「到达时长即停音」与「onEnded 总是停音」。
     function makeCtx() {
         return { clearRect: function () {}, drawImage: function () {} };
     }
@@ -103,15 +115,20 @@ const dynamicPromise = checkAsync('nest-idle 在桩环境可实例化与驱动',
         return img;
     }
     function makeAudio() {
-        return {
+        const a = {
             _src: '', paused: true, currentTime: 0, error: null, loop: false, destroyed: false,
+            _stopCalls: 0, _onPlay: null, _onEnded: null, _onError: null,
             set src(v) { this._src = v; }, get src() { return this._src; },
             play: function () { this.paused = false; },
-            stop: function () { this.paused = true; },
+            stop: function () { this.paused = true; this._stopCalls += 1; },
             destroy: function () { this.destroyed = true; },
             seek: function () {},
-            onPlay: function () {}, onError: function () {}, onEnded: function () {},
+            onPlay: function (fn) { this._onPlay = fn; },
+            onError: function (fn) { this._onError = fn; },
+            onEnded: function (fn) { this._onEnded = fn; },
         };
+        audios.push(a);
+        return a;
     }
     function makeQuery() {
         const api = {
@@ -124,32 +141,52 @@ const dynamicPromise = checkAsync('nest-idle 在桩环境可实例化与驱动',
     }
     global.wx = { createInnerAudioContext: makeAudio, createSelectorQuery: makeQuery };
 
+    delete require.cache[require.resolve(path.join(ROOT, 'utils/nest-idle.js'))];
     const mod = require(path.join(ROOT, 'utils/nest-idle.js'));
     assert.strictEqual(typeof mod.createNestIdle, 'function', '缺少 createNestIdle');
     assert.strictEqual(typeof mod.frameAt, 'function', '缺少 frameAt');
     assert.ok(mod.META && mod.META.frameCount === 82, 'META 帧数错误');
 
     const data = {};
-    const page = {
-        setData: function (patch) { Object.assign(data, patch); },
-    };
+    const page = { setData: function (patch) { Object.assign(data, patch); } };
     const idle = mod.createNestIdle(page, {
         audioSrc: '/assets/nest/idle/idle.m4a',
         atlasSrc: '/assets/nest/idle/atlas.webp',
         canvasId: '#idleCanvas',
     });
-    // 已领养、未暂停 → 应加载并在首帧就绪（画布/图集同步就绪，onPlay 不触发故不真正画）。
-    idle.sync(true, false, 'local-bird', true);
-    // ensure() 内部 initCanvas().then 为微任务，需等一拍再断言。
-    await new Promise(function (r) { setImmediate(r); });
-    assert.strictEqual(data.idleReady, true, '资源就绪后 idleReady 应为 true');
-    assert.strictEqual(data.idlePlaying, false, 'onPlay 未触发时不应处于播放中');
-    assert.strictEqual(data.showIdleButton, false, '资源成功加载不应显示手动入口');
-    // 手势踢动：应不抛错（音频已在手势栈内 play）。
-    idle.kick();
-    // 卸载：应销毁音频并清空引用。
-    idle.dispose();
-    assert.strictEqual(true, true);
+    try {
+        // 已领养、未暂停 → 应加载并在首帧就绪（画布/图集同步就绪，onPlay 未触发故未进入绘制）。
+        idle.sync(true, false, 'local-bird', true);
+        await new Promise(function (r) { setImmediate(r); });
+        assert.strictEqual(data.idleReady, true, '资源就绪后 idleReady 应为 true');
+        assert.strictEqual(data.idlePlaying, false, '尚未播放不应处于播放中');
+        assert.strictEqual(data.showIdleButton, false, '资源成功加载不应显示手动入口');
+        const audio = audios[audios.length - 1];
+        assert.ok(audio && audio._onPlay && audio._onEnded, '应已注册 onPlay / onEnded');
+
+        // 手势踢动：应不抛错（音频在手势栈内 play，但桩环境不触发 onPlay，故未真正绘制）。
+        idle.kick();
+        assert.strictEqual(data.idlePlaying, false, 'onPlay 未触发时不应进入播放中');
+
+        // 关键验证①：模拟音轨播放到末尾（currentTime 到达时长），手动触发 onPlay 让 draw 走一帧——
+        // draw 应在 timeMs >= durationMs 时调用 endCycle，从而停掉音频（而非「画面停、音乐空转」）。
+        audio.currentTime = meta.durationMs;
+        audio._onPlay();                 // 触发一次 draw → endCycle
+        await new Promise(function (r) { setTimeout(r, 60); }); // 让潜在的 20ms 轮询自然消亡
+        assert.ok(audio._stopCalls >= 1, '到达时长后必须调用 audio.stop() 停音');
+        assert.strictEqual(data.idlePlaying, false, '收尾后画布应隐藏（动画消失）');
+        assert.strictEqual(data.idleReady, true, '收尾后资源仍就绪');
+
+        // 关键验证②：onEnded 路径也必须停音（去掉了提前 return 跳过 stop 的旧逻辑）。
+        audio._stopCalls = 0;
+        audio.currentTime = meta.durationMs;
+        audio._onEnded();
+        assert.ok(audio._stopCalls >= 1, 'onEnded 必须调用 audio.stop() 停音');
+    } finally {
+        idle.dispose();
+        const audio = audios[audios.length - 1];
+        assert.strictEqual(audio.destroyed, true, '卸载应销毁音频上下文');
+    }
 });
 
 // ---------------------------------------------------------------- 汇总
