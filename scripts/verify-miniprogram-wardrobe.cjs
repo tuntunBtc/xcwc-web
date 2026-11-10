@@ -269,8 +269,8 @@ const profileJs = read(path.join(MP, 'pages/profile/profile.js'));
 const profileWxml = read(path.join(MP, 'pages/profile/profile.wxml'));
 check('小窝「换装」入口跳 wardrobe 页', () => {
     assert.ok(indexJs.includes('{ key: \'dress\', label: \'换装\''));
-    assert.ok(/key === 'dress'[\s\S]{0,160}navigateTo\(\{ url: '\/pages\/wardrobe\/wardrobe' \}\)/.test(indexJs),
-        'dress branch missing navigateTo');
+    assert.ok(/key === 'dress'[\s\S]{0,160}openToolPage\('\/pages\/wardrobe\/wardrobe'/.test(indexJs),
+        'dress branch missing wardrobe route');
     assert.ok(!indexJs.includes("showToast('换装暂未接入')"), 'stale toast remains');
 });
 check('「我的 → 我的衣橱」复用同一路由', () => {

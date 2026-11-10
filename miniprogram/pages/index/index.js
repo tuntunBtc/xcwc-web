@@ -32,7 +32,7 @@ Page({
     data: {
         // 静态兜底：onLoad 算出真实机型数值前，首帧也能正确布局。
         layout: {
-            pageHeight: 1279, viewportHeight: 1428, tabBarHeight: 149, dockBottom: 9, toastBottom: 340,
+            pageHeight: 1279, viewportHeight: 1428, tabBarHeight: 149, dockBottom: 9, toastBottom: 340, actorHeight: 322,
             hudTop: 198, statusTop: 304, needsTop: 406, toolsTop: 446,
             speechTop: 506, claimTop: 641, actorTop: 750,
         },
@@ -100,9 +100,17 @@ Page({
         // 改名弹框含输入框，需随键盘抬升面板；用箭头函数绑定 this 以便卸载时 off 注销（E-09）。
         this.onKeyboardHeightChange = (e) => this.handleKeyboardChange(e);
         try { wx.onKeyboardHeightChange(this.onKeyboardHeightChange); } catch (err) { /* 老基础库无此 API，忽略 */ }
+        this.updateLayout();
+        this.refresh();
+    },
+
+    onResize() {
+        this.updateLayout();
+    },
+
+    updateLayout() {
         this.setData({ layout: nestLayout.readNestLayout() });
         this.recalcSheetMask();
-        this.refresh();
     },
 
     onShow() {
@@ -405,15 +413,24 @@ Page({
         }
         if (key === 'checkin') {
             // 网页端从小窝右侧「合照打卡」直达 photo 路由；此处为同一入口。
-            wx.navigateTo({ url: '/pages/photo/photo' });
+            this.openToolPage('/pages/photo/photo', '合照打卡暂时打不开，请重试');
             return;
         }
         // 网页端小窝「换装」直达 wardrobe 路由；这里是同一个独立衣橱页。
         // 该页当前为「服装展示 · 暂未开放」，与网页端保持一致，不伪造兑换或穿戴。
         if (key === 'dress') {
-            wx.navigateTo({ url: '/pages/wardrobe/wardrobe' });
-            return;
+            this.openToolPage('/pages/wardrobe/wardrobe', '衣橱暂时打不开，请重试');
         }
+    },
+
+    openToolPage(url, errorText) {
+        if (this.toolNavigationPending) return;
+        this.toolNavigationPending = true;
+        wx.navigateTo({
+            url: url,
+            fail: () => this.showToast(errorText),
+            complete: () => { this.toolNavigationPending = false; },
+        });
     },
 
     onNeed(event) {

@@ -39,8 +39,8 @@ const BG_BASELINE = {
     wxml: '885a54d2051581d1',
     wxss: '0468443f0349b980',
     // 只锁「背景图高度计算/返回」两处，不含 hudTop 注释区，避免调整 HUD 时假阳性。
-    layoutCalc: '82f60fd7e146bce1',
-    layoutReturn: '3738c7d2ee236f85',
+    layoutCalc: 'fcd87a044d8fc8c6',
+    layoutReturn: '26beed91a9455f81',
 };
 
 check('背景图 WXML 结构逐字节未变（page-scene / nest / scene-shade）', function () {
@@ -56,14 +56,14 @@ check('背景图 WXSS 规则逐字节未变（page / .page-scene / .nest / .scen
 });
 
 check('背景图布局计算逐字节未变（tabBarHeight / pageHeight 公式）', function () {
-    const block = layoutJs.slice(layoutJs.indexOf('    var tabBarHeight ='), layoutJs.indexOf('    var dockBottom ='));
+    const block = layoutJs.slice(layoutJs.indexOf('    var tabBarHeight ='), layoutJs.indexOf('    // 短屏仍保留'));
     assert.ok(block.length > 200, '未找到布局计算块');
     assert.strictEqual(sha(block), BG_BASELINE.layoutCalc, '背景图高度计算被改动');
 });
 
-check('背景图高度返回值逐字节未变（viewportHeight / pageHeight / dockBottom）', function () {
-    const block = layoutJs.slice(layoutJs.indexOf('        viewportHeight: viewportRpx,'), layoutJs.indexOf('        // toast 是'));
-    assert.ok(block.length > 50, '未找到布局返回块');
+check('背景图高度返回值逐字节未变（viewportHeight / pageHeight）', function () {
+    const block = layoutJs.slice(layoutJs.indexOf('        viewportHeight: viewportRpx,'), layoutJs.indexOf('        dockBottom: dockBottom,'));
+    assert.ok(block.length > 40, '未找到布局返回块');
     assert.strictEqual(sha(block), BG_BASELINE.layoutReturn, '背景图高度返回值被改动');
 });
 
@@ -153,13 +153,46 @@ check('状态条与需求气泡左边缘与 HUD 统一为 12rpx', function () {
     assert.ok(/left:\s*12rpx;/.test(needs), 'needs 未对齐 12rpx');
 });
 
-check('HUD 上移贴近安全区下沿，statusTop 及以下元素不受影响', function () {
+check('HUD 和上方状态元素保持定稿位置', function () {
     assert.ok(/hudTop:\s*inset \+ 8\b/.test(layoutJs), 'hudTop 应为 inset + 8');
     assert.ok(/statusTop:\s*inset \+ 128\b/.test(layoutJs), 'statusTop 必须保持 inset + 128');
     assert.ok(/needsTop:\s*inset \+ 230\b/.test(layoutJs), 'needsTop 不应被改');
     assert.ok(/toolsTop:\s*inset \+ 270\b/.test(layoutJs), 'toolsTop 不应被改');
     assert.ok(/speechTop:\s*inset \+ 330 \+ coreShift\b/.test(layoutJs), 'speechTop 不应被改');
-    assert.ok(/actorTop:\s*inset \+ 574 \+ coreShift\b/.test(layoutJs), 'actorTop 不应被改');
+});
+
+check('短屏互动卡片整体在底栏上方，常规屏位置与立绘尺寸不变', function () {
+    const previousWx = global.wx;
+    const { readNestLayout } = require(P('utils/nest-layout.js'));
+    try {
+        for (const [width, height, statusBarHeight, bottomInset] of [
+            [320, 568, 20, 0],
+            [375, 667, 20, 0],
+            [390, 680, 47, 34],
+            [390, 844, 47, 34],
+            [402, 874, 54, 34],
+        ]) {
+            global.wx = {
+                getWindowInfo: () => ({
+                    windowWidth: width, windowHeight: height, statusBarHeight,
+                    screenHeight: height, safeArea: { bottom: height - bottomInset },
+                }),
+            };
+            const layout = readNestLayout();
+            const dockEnd = layout.pageHeight - layout.dockBottom;
+            const dockStart = dockEnd - 162;
+            assert.strictEqual(dockEnd, layout.viewportHeight - layout.tabBarHeight - 9);
+            assert.ok(layout.actorTop + layout.actorHeight <= dockStart - 20, '立绘不能遮住照料按钮');
+            if (layout.pageHeight === layout.viewportHeight - layout.tabBarHeight) {
+                assert.strictEqual(layout.dockBottom, 9);
+                assert.strictEqual(layout.actorHeight, 322);
+                assert.strictEqual(layout.actorTop, layout.inset + 574 +
+                    Math.max(0, dockStart - (layout.inset + 574 + 322) - 20));
+            }
+        }
+    } finally {
+        global.wx = previousWx;
+    }
 });
 
 // ---------------------------------------------------------------- 4. 动态实跑：真实 nest-idle 在反馈期暂停后露出海报
@@ -215,6 +248,7 @@ let dynamicIdle = checkAsync('nest-idle：反馈期暂停会让 idlePlaying=fals
 let dynamicPage = checkAsync('index.js：摸摸/喂食/添水分别触发 happy / feedFxId / waterFxId', async function () {
     // 用 vm 加载页面定义，注入最小依赖桩，驱动互动方法并检查 setData。
     const timers = [];
+    const navigation = [];
     let pageDef = null;
     const snapshot = {
         hasBird: true, nickname: '卜叽', birdCode: 'BIRD001', points: 10, todayPoints: 0,
@@ -258,7 +292,7 @@ let dynamicPage = checkAsync('index.js：摸摸/喂食/添水分别触发 happy 
             onKeyboardHeightChange: function () {}, offKeyboardHeightChange: function () {},
             getWindowInfo: function () { return { windowWidth: 375, windowHeight: 812, statusBarHeight: 44, screenHeight: 812, safeArea: { bottom: 812 } }; },
             createInnerAudioContext: function () { return { stop: function () {}, play: function () {}, destroy: function () {}, set src(v) {} }; },
-            navigateTo: function () {},
+            navigateTo: function (options) { navigation.push(options); },
         },
     };
     vm.runInNewContext(indexJs, sandbox, { filename: 'index.js' });
@@ -277,7 +311,8 @@ let dynamicPage = checkAsync('index.js：摸摸/喂食/添水分别触发 happy 
 
     // --- 摸一摸：应触发 showFeedback（happy 延时置 true）与 syncIdle 暂停 ---
     timers.length = 0; writes.length = 0;
-    ctx.pet();
+    const tap = (key) => ({ currentTarget: { dataset: { key: key } } });
+    ctx.onDock(tap('touch'));
     const happyTimers = timers.filter(function (t) { return t.ms === 30; });
     assert.ok(happyTimers.length > 0, '摸摸应安排 happy 延时置位');
     happyTimers.forEach(function (t) { t.fn(); });
@@ -286,7 +321,7 @@ let dynamicPage = checkAsync('index.js：摸摸/喂食/添水分别触发 happy 
 
     // --- 喂食：应触发谷粒动效，20ms 后 feedFxId=1 ---
     timers.length = 0; writes.length = 0;
-    ctx.onFeed();
+    ctx.onDock(tap('feed'));
     const fxTimers = timers.filter(function (t) { return t.ms === 20; });
     assert.ok(fxTimers.length > 0, '喂食应安排谷粒动效重挂载');
     fxTimers.forEach(function (t) { t.fn(); });
@@ -294,7 +329,7 @@ let dynamicPage = checkAsync('index.js：摸摸/喂食/添水分别触发 happy 
 
     // --- 添水：应触发水滴动效，20ms 后 waterFxId=1 ---
     timers.length = 0; writes.length = 0;
-    ctx.doCare('water', false);
+    ctx.onDock(tap('water'));
     const waterTimers = timers.filter(function (t) { return t.ms === 20; });
     assert.ok(waterTimers.length > 0, '添水应安排水滴动效重挂载');
     waterTimers.forEach(function (t) { t.fn(); });
@@ -308,6 +343,21 @@ let dynamicPage = checkAsync('index.js：摸摸/喂食/添水分别触发 happy 
     ctx.showFeedback('测试', 1600);
     assert.ok(syncArgs, 'showFeedback 未调用 idle.sync');
     assert.strictEqual(syncArgs[1], true, '反馈期 idle.sync 的 suspended 必须为 true，否则待机画布盖住动效');
+
+    ctx.onTool(tap('checkin'));
+    ctx.onTool(tap('checkin'));
+    assert.strictEqual(navigation.length, 1, '跳转期间连点不可重复推入页面');
+    assert.strictEqual(navigation[0].url, '/pages/photo/photo');
+    navigation[0].fail();
+    navigation[0].complete();
+    assert.match(data.toast, /合照打卡暂时打不开/);
+    ctx.onTool(tap('dress'));
+    assert.strictEqual(navigation[1].url, '/pages/wardrobe/wardrobe');
+    navigation[1].fail();
+    navigation[1].complete();
+    assert.match(data.toast, /衣橱暂时打不开/);
+    ctx.onTool(tap('dress'));
+    assert.strictEqual(navigation.length, 3, '失败后可重试');
 });
 
 // ---------------------------------------------------------------- 汇总

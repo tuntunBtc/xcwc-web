@@ -69,7 +69,7 @@
     <view wx:if="{{!hasBird}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover">如何领取小鸟</view>
 
     <!-- 小鸟立绘 -->
-    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}}" style="top:{{layout.actorTop}}rpx">
+    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}}" style="top:{{layout.actorTop}}rpx;height:{{layout.actorHeight}}rpx">
         <view class="shadow {{hasBird ? '' : 'is-hidden'}}"></view>
         <view class="grass {{hasBird ? '' : 'is-hidden'}}">
             <view class="blade b1"></view><view class="blade b2"></view>
@@ -79,9 +79,8 @@
             <!-- 待机动画播放时隐藏静态表情海报，避免动画小鸟与表情海报重叠（动画画布覆盖在立绘之上）。 -->
             <image class="bird-art {{idlePlaying ? 'is-hidden' : ''}}" src="{{birdArt}}" mode="aspectFit"></image>
         </view>
-        <!-- 待机动画画布：覆盖在立绘之上，逐帧绘制 idle 序列帧并随原声同步；
-             pointer-events:none 让点击穿透到 bird-hit 仍可摸摸。无鸟时不挂载，避免空态冗余节点。 -->
-        <canvas wx:if="{{hasBird}}" type="2d" id="idleCanvas" class="idle-canvas"></canvas>
+        <!-- 画布支持穿透时由 bird-hit 接收，画布直接命中时也触发同一个摸摸动作。 -->
+        <canvas wx:if="{{hasBird}}" type="2d" id="idleCanvas" class="idle-canvas" bindtap="onPet"></canvas>
         <!-- 首次自动播放被系统策略拦截时，给出手动入口（仅在已加载成功但被拦截时出现）。 -->
         <view wx:if="{{showIdleButton}}" class="idle-retry" catchtap="onIdleRetry">▶ 播放动画</view>
         <view wx:if="{{feedFxId > 0}}" class="feed-fx">🌾</view>

@@ -49,6 +49,21 @@ page {
     z-index: 0;
 }
 
+/* 装饰只负责渲染，点到纹理、图标和文字时统一由所在按钮接收。 */
+.scene-shade,
+.tex-bg,
+.sprite,
+.speech,
+.tool-label,
+.tool-dot,
+.dock-sheet,
+.dock-label,
+.dock-badge,
+.hearts,
+.drops {
+    pointer-events: none;
+}
+
 .clip {
     position: relative;
     overflow: hidden;
