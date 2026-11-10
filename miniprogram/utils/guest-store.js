@@ -235,11 +235,20 @@ function createGuestStore(storage, options) {
         try {
             raw = storage.getStorageSync(STORAGE_KEY);
         } catch (error) {
-            raw = null;
+            return null;
+        }
+        // wx 缺键返回空字符串。其他无效根结构或未知版本应保留以供恢复。
+        if (raw != null && raw !== '' && (typeof raw !== 'object' || Array.isArray(raw) ||
+            (raw.version != null && raw.version !== 1))) {
+            return null;
         }
         const state = normalize(raw, now);
         applyDecay(state, now, rules);
         return state;
+    }
+
+    function readFailure() {
+        return { data: { saved: false, snapshot: null }, error: 'STORAGE_UNAVAILABLE' };
     }
 
     function commit(state, now, error, extra) {
@@ -258,12 +267,15 @@ function createGuestStore(storage, options) {
 
     function snapshot(now) {
         const at = isNumber(now) ? now : Date.now();
-        return { data: { saved: true, snapshot: publicSnapshot(read(at), at, rules, debugSteps) }, error: null };
+        const state = read(at);
+        if (!state) return readFailure();
+        return { data: { saved: true, snapshot: publicSnapshot(state, at, rules, debugSteps) }, error: null };
     }
 
     function pet(now) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
+        if (!state) return readFailure();
         if (!state.bird) {
             return commit(state, at, 'NO_BIRD');
         }
@@ -282,8 +294,12 @@ function createGuestStore(storage, options) {
     function careAction(kind, now) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
+        if (!state) return readFailure();
         if (!state.bird) {
             return commit(state, at, 'NO_BIRD');
+        }
+        if ((kind === 'feed' && state.care.satiety >= 100) || (kind === 'water' && state.care.hydration >= 100)) {
+            return { data: { saved: true, snapshot: publicSnapshot(state, at, rules, debugSteps), changed: false }, error: null };
         }
         if (kind === 'feed') {
             if (state.care.food <= 0) {
@@ -307,6 +323,7 @@ function createGuestStore(storage, options) {
     function redeemSteps(steps, now) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
+        if (!state) return readFailure();
         if (!state.bird) {
             return commit(state, at, 'NO_BIRD');
         }
@@ -345,6 +362,7 @@ function createGuestStore(storage, options) {
     function applyServerReward(granted, steps, date, now, claimed) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
+        if (!state) return readFailure();
         if (!state.bird) {
             return commit(state, at, 'NO_BIRD');
         }
@@ -366,6 +384,7 @@ function createGuestStore(storage, options) {
     function adopt(code, nickname, now) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
+        if (!state) return readFailure();
         const cleanCode = text(code, 64).trim();
         if (!cleanCode) {
             return commit(state, at, 'INVALID_CODE');
@@ -384,6 +403,7 @@ function createGuestStore(storage, options) {
     function supply(now) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
+        if (!state) return readFailure();
         if (!state.bird) {
             return commit(state, at, 'NO_BIRD');
         }
@@ -400,6 +420,7 @@ function createGuestStore(storage, options) {
     function rename(nickname, now) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
+        if (!state) return readFailure();
         if (!state.bird) {
             return commit(state, at, 'NO_BIRD');
         }
@@ -417,6 +438,7 @@ function createGuestStore(storage, options) {
     function photoReward(id, hash, now) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
+        if (!state) return readFailure();
         if (!state.bird) return commit(state, at, 'NO_BIRD');
         const request = 'photo:' + String(id);
         if (Object.prototype.hasOwnProperty.call(state.photoRequests, request)) {

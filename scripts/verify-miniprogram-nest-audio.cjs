@@ -64,7 +64,7 @@ ok('onFeed 触发 chirp + idle.kick',
 
 ok('syncIdle 方法定义', /syncIdle\s*\(/.test(indexJs));
 ok('refresh 内同步待机动画', /this\.syncIdle\(false\);[\s\S]{0,40}\n\s*\},/.test(indexJs));
-ok('onShow 同步待机动画', /onShow\s*\([\s\S]{0,260}this\.syncIdle\(false\)/.test(indexJs));
+ok('onShow 刷新状态并同步待机动画', /onShow\s*\([\s\S]{0,260}this\.refresh\(\)/.test(indexJs));
 ok('onHide 同步待机动画', /onHide\s*\([\s\S]{0,160}this\.syncIdle\(true\)/.test(indexJs));
 ok('openSheet 同步待机动画', /openSheet\s*\([\s\S]{0,400}this\.syncIdle\(false\)/.test(indexJs));
 ok('onUnload 销毁 idle + chirp',
@@ -142,10 +142,14 @@ async function runDynamicIdle() {
         audios.push(a);
         return a;
     }
+    let mounted = false;
     function makeQuery() {
         const api = {
             select: function () {
-                return { fields: function () { return { exec: function (cb) { cb([{ node: makeCanvas(), width: 195, height: 161 }]); } }; } };
+                return { fields: function (fields) {
+                    assert.strictEqual(fields.size, true, '需明确查询画布宽高');
+                    return { exec: function (cb) { cb(mounted ? [{ node: makeCanvas(), width: 195, height: 161 }] : [null]); } };
+                } };
             },
         };
         api.in = function () { return api; };
@@ -167,8 +171,12 @@ async function runDynamicIdle() {
         canvasId: '#idleCanvas',
     });
     try {
-        // 已领养、未暂停 → 应加载并在首帧就绪（画布/图集同步就绪，onPlay 未触发故未进入绘制）。
         idle.sync(true, false, 'local-bird', true);
+        await new Promise(function (r) { setImmediate(r); });
+        assert.strictEqual(data.idleReady, false, 'Canvas 尚未挂载时保留静态画面');
+        assert.strictEqual(data.showIdleButton, true, 'Canvas 查找失败时提供重试入口');
+        mounted = true;
+        idle.retry();
         await new Promise(function (r) { setImmediate(r); });
         assert.strictEqual(data.idleReady, true, '资源就绪后 idleReady 应为 true');
         assert.strictEqual(data.idlePlaying, false, '尚未播放不应处于播放中');
@@ -265,11 +273,77 @@ async function runDynamicCadence() {
     }
 }
 
+function runCareLifecycle() {
+    const actualNow = Date.now;
+    const actualSetInterval = global.setInterval;
+    const actualClearInterval = global.clearInterval;
+    const actualWx = global.wx;
+    const actualPage = global.Page;
+    let now = actualNow();
+    let tick = null;
+    let page;
+    const storage = new Map();
+    global.wx = {
+        getStorageSync: key => storage.get(key),
+        setStorageSync: (key, value) => storage.set(key, value),
+    };
+    global.Page = definition => { page = definition; };
+    Date.now = () => now;
+    global.setInterval = (callback, delay) => {
+        assert.strictEqual(delay, 5000);
+        tick = callback;
+        return 1;
+    };
+    global.clearInterval = () => { tick = null; };
+    try {
+        const store = require(path.join(ROOT, 'utils/store.js'));
+        const layout = require(path.join(ROOT, 'utils/nest-layout.js'));
+        require(path.join(ROOT, 'pages/index/index.js'));
+        page.setData = patch => Object.assign(page.data, patch);
+        page.onLoad();
+        page.idle = { sync() {}, kick() {}, dispose() {} };
+        page.playChirp = () => {};
+        store.adopt('TEST-NEST-01', '小叽', now);
+        store.feed(now);
+        store.feed(now);
+        store.water(now);
+        store.water(now);
+        page.onShow();
+        assert.strictEqual(page.data.satiety, 100);
+        assert.strictEqual(page.data.hydration, 100);
+        assert.strictEqual(typeof tick, 'function');
+        assert.strictEqual(store.feed(now).data.changed, false);
+        assert.strictEqual(store.water(now).data.changed, false);
+        assert.strictEqual(store.snapshot(now).data.snapshot.food, 1);
+        assert.strictEqual(store.snapshot(now).data.snapshot.water, 1);
+        now += 60 * 1000;
+        assert.strictEqual(page.data.satiety, 100, '模拟页面还没收到下一次定时刷新');
+        page.onFeed();
+        assert.strictEqual(store.snapshot(now).data.snapshot.food, 0, '喂食使用衰减后的饱食值');
+        now += 60 * 1000;
+        tick();
+        assert.strictEqual(page.data.satiety, 92);
+        page.setData({ happy: true, feedFxId: 1, toast: '叽分 +1' });
+        page.onHide();
+        assert.strictEqual(tick, null, '页面隐藏后停止状态刷新');
+        assert.deepStrictEqual([page.data.happy, page.data.feedFxId, page.data.toast], [false, 0, '']);
+        assert.ok(layout.readNestLayout().pageHeight > 0);
+    } finally {
+        if (page) page.clearTimers();
+        global.wx = actualWx;
+        global.Page = actualPage;
+        Date.now = actualNow;
+        global.setInterval = actualSetInterval;
+        global.clearInterval = actualClearInterval;
+    }
+}
+
 // ---------------------------------------------------------------- 汇总
 (async function () {
     // 两个动态测试顺序执行（共享 global.wx 桩，不能并发），确保结果计入后再汇总。
     await checkAsync('nest-idle 在桩环境可实例化、驱动且收尾停音', runDynamicIdle);
     await checkAsync('nest-idle cadence 闸门：冷却期内 refresh 不重播、冷却后才播下一轮', runDynamicCadence);
+    check('前台刷新、满值保护及离页清理', runCareLifecycle);
     check('frameAt 取帧正确', function () {
         delete require.cache[require.resolve(path.join(ROOT, 'utils/nest-idle.js'))];
         const mod = require(path.join(ROOT, 'utils/nest-idle.js'));

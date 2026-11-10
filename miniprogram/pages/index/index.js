@@ -7,6 +7,7 @@ const tabBar = require('../../utils/tab-bar');
 const rules = require('../../utils/nest-rules');
 const nestLayout = require('../../utils/nest-layout');
 const nestIdle = require('../../utils/nest-idle');
+const STATUS_REFRESH_MS = 5000;
 
 // 与网页端 src/nest/template.html 的导航、工具、状态顺序一致。
 // 雪碧图格位对应 H5 的 .tools .p0~p3、cards-1200 三格、hud-icons 3×2。
@@ -31,11 +32,12 @@ Page({
     data: {
         // 静态兜底：onLoad 算出真实机型数值前，首帧也能正确布局。
         layout: {
-            pageHeight: 1279, tabBarHeight: 149, dockBottom: 9, toastBottom: 340,
+            pageHeight: 1279, viewportHeight: 1428, tabBarHeight: 149, dockBottom: 9, toastBottom: 340,
             hudTop: 198, statusTop: 304, needsTop: 406, toolsTop: 446,
             speechTop: 506, claimTop: 641, actorTop: 750,
         },
         hasBird: false,
+        storageUnavailable: false,
         displayName: '等待小鸟入住',
         placeText: '⌖ 我的小窝',
         birdCodeShort: '',
@@ -67,16 +69,21 @@ Page({
         keyboardHeightRpx: 0,        // 改名输入框唤起键盘时的高度（rpx），用于抬升面板
         renameValue: '',
         feedFxId: 0,                 // 喂食动效计数：每次喂食 +1，配合 wx:if 重触发谷粒动画
+        waterFxId: 0,                // 添水动效计数：每次添水 +1，配合 wx:if 重触发水滴动画
         tools: TOOLS,
         dock: DOCK,
     },
 
-        onLoad() {
+    onLoad() {
+        this.statusTimer = null;
+        this.currentBirdCode = '';
         this.toastTimer = null;
         this.happyTimer = null;
         this.feedbackTimer = null;
         this.feedFxTimer = null;
         this.feedFxHideTimer = null;
+        this.waterFxTimer = null;
+        this.waterFxHideTimer = null;
         this.feedback = null;
         // 互动鸟叫 + 待机动画原声：与网页端一致，首次用户手势后自动播放待机动画并带原声，
         // 照料 / 摸摸等互动播放短鸟叫（InnerAudioContext，小程序无 Web Audio）。
@@ -103,15 +110,18 @@ Page({
         // 面板若仍打开（例如切走再切回），动画应保持暂停，不能与遮罩状态相反。
         this.setData({ motionPaused: !!this.data.sheet });
         this.refresh();
-        // 切回前台恢复待机动画（面板仍开则 refresh 内 syncIdle 会因 motionPaused 自动暂停）。
-        this.syncIdle(false);
+        if (this.statusTimer === null) {
+            this.statusTimer = setInterval(() => this.refresh(), STATUS_REFRESH_MS);
+        }
     },
 
     onHide() {
-        // 后台暂停动画、收起面板并清理计时器，避免离页后持续占用（E-09）。
-        this.setData({ motionPaused: true, sheet: null, keyboardHeightRpx: 0 });
         this.syncIdle(true);
         this.clearTimers();
+        this.setData({
+            motionPaused: true, sheet: null, keyboardHeightRpx: 0,
+            toast: '', happy: false, feedFxId: 0, waterFxId: 0,
+        });
     },
 
     onUnload() {
@@ -125,6 +135,10 @@ Page({
     },
 
     clearTimers() {
+        if (this.statusTimer !== null) {
+            clearInterval(this.statusTimer);
+            this.statusTimer = null;
+        }
         if (this.toastTimer) {
             clearTimeout(this.toastTimer);
             this.toastTimer = null;
@@ -145,6 +159,14 @@ Page({
             clearTimeout(this.feedFxHideTimer);
             this.feedFxHideTimer = null;
         }
+        if (this.waterFxTimer) {
+            clearTimeout(this.waterFxTimer);
+            this.waterFxTimer = null;
+        }
+        if (this.waterFxHideTimer) {
+            clearTimeout(this.waterFxHideTimer);
+            this.waterFxHideTimer = null;
+        }
         this.feedback = null;
     },
 
@@ -153,7 +175,8 @@ Page({
         const result = store.snapshot();
         const s = result.data ? result.data.snapshot : null;
         if (!s) {
-            this.setData({ hasBird: false, speech: '本机记录暂时无法读取，请重试。' });
+            this.setData({ storageUnavailable: true, speech: '本机记录暂时无法读取，请重试。' });
+            this.syncIdle(true);
             return;
         }
         const state = rules.describeNestState(s, s.hasBird);
@@ -178,8 +201,10 @@ Page({
             };
         });
         const code = s.birdCode || '';
+        this.currentBirdCode = code;
         this.setData({
             hasBird: s.hasBird,
+            storageUnavailable: false,
             displayName: s.hasBird ? s.nickname : '等待小鸟入住',
             placeText: s.hasBird ? '⌖ 江南小窝' : '⌖ 我的小窝',
             birdCodeShort: code ? '编码 ···' + code.slice(-6) : '尚未领养',
@@ -221,14 +246,17 @@ Page({
         return !!(this.feedback && Date.now() < this.feedback.until);
     },
 
-    // 同步待机动画播放状态：仅在已领养且未暂停时允许自动播放。
-    // 暂停（suspended / motionPaused）对应页面隐藏或面板打开；交互反馈（1.6s 开心表情）不暂停待机动画，
-    // 以免首次手势触发的交互把刚启动的待机动画立刻掐断——待机动画在反馈期间继续播放，开心海报被画布覆盖，不冲突。
+    // 同步待机动画播放状态：已领养、页面在前台、面板未开、且「不在互动反馈期」才允许播放。
+    // 关键：互动反馈（1.6s 开心表情 / happy）期间必须暂停待机动画——否则待机画布盖住立绘、
+    // idlePlaying 又把静态开心海报隐藏，nest-happy 弹跳 / 爱心 / 谷粒 / 水滴这些互动动效全都看不见
+    // （用户反馈「浇水、喂食、摸摸的动效没了」）。暂停时 idle.stop() 会清空画布并停音，海报恢复可见；
+    // 反馈结束 refresh() 会重新 syncIdle(false) 恢复待机，且受 cadence 冷却闸门约束不会立刻重播。
     syncIdle(suspended) {
         if (!this.idle) return;
         const hasBird = this.data.hasBird;
-        const birdId = hasBird ? (store.snapshot().data ? store.snapshot().data.snapshot.birdCode : null) || 'local-bird' : null;
-        this.idle.sync(hasBird, !!(suspended || this.data.motionPaused), birdId, hasBird);
+        const birdId = hasBird ? this.currentBirdCode || 'local-bird' : null;
+        const feedbacking = this.feedbackActive() || this.data.happy;
+        this.idle.sync(hasBird, !!(suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking), birdId, hasBird);
     },
 
     // 短鸟叫：与网页端 Web Audio 合成的轻量鸟叫等价，用 InnerAudioContext 播放。
@@ -248,10 +276,14 @@ Page({
         if (this.idle) this.idle.retry();
     },
 
-    // store 的 commit 不返回 changed 字段，故以动作结果是否成功为准。
     applyResult(result, action, closeSheetOnSuccess) {
         if (result.error) {
             this.showToast(rules.ERROR_TEXT[result.error] || '操作未完成');
+            return false;
+        }
+        if (result.data && result.data.changed === false) {
+            this.refresh();
+            this.showToast(rules.careCopy(action, false).notice);
             return false;
         }
         const copy = rules.careCopy(action, true);
@@ -273,6 +305,11 @@ Page({
         if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
         if (this.happyTimer) clearTimeout(this.happyTimer);
         this.setData({ speech: speech, birdArt: '/assets/nest/emotion-happy.webp', happy: false });
+        // 互动反馈一开始就让待机动画「让位」：暂停后 idle.stop() 会清空画布、停掉原声，
+        // idlePlaying 变 false，静态开心海报重新可见——nest-happy 弹跳 / 爱心 / 谷粒 / 水滴
+        // 这些画在海报那一层的动效才能被看见（否则全被待机画布盖住，表现为「动效没了」）。
+        // 反馈到期后的 refresh() 会再次 syncIdle(false) 恢复待机，且受 cadence 冷却闸门约束不会立刻重播。
+        this.syncIdle(false);
         const page = this;
         // 下一帧再加 class，确保连续点击时动画能重新触发。
         this.happyTimer = setTimeout(function () {
@@ -287,33 +324,26 @@ Page({
         }, keep);
     },
 
-    // 面板文案承诺「满值不扣库存」，而规则层 careAction 目前仍会扣库存且不返回 changed，
-    // 故在页面层先拦截；后续规则层补 changed 字段后可改为读 result.data.changed。
-    careBlocked(action) {
-        if (action === 'feed' && this.data.satiety >= 100) {
-            return rules.careCopy('feed', false).notice;
-        }
-        if (action === 'water' && this.data.hydration >= 100) {
-            return rules.careCopy('water', false).notice;
-        }
-        return '';
-    },
-
     doCare(action, closeSheetOnSuccess) {
         if (!this.requireBird()) return;
-        const blocked = this.careBlocked(action);
-        if (blocked) {
-            this.showToast(blocked);
-            return;
-        }
         const ok = this.applyResult(action === 'feed' ? store.feed() : store.water(), action, closeSheetOnSuccess);
         if (ok) {
+            // 按动作给专属反馈动效：喂食谷粒、添水水滴；摸一摸走 showFeedback 的开心弹跳 + 爱心。
+            if (action === 'water') this.triggerWaterFx();
+            else this.triggerFeedFx();
             this.playChirp();
             this.idle.kick();
         }
     },
 
     requireBird() {
+        if (this.data.storageUnavailable) {
+            this.refresh();
+            if (this.data.storageUnavailable) {
+                this.showToast(rules.ERROR_TEXT.STORAGE_UNAVAILABLE);
+                return false;
+            }
+        }
         if (this.data.hasBird) {
             return true;
         }
@@ -362,9 +392,10 @@ Page({
         const key = event.currentTarget.dataset.key;
         if (key === 'clean') {
             if (!this.requireBird()) return;
-            this.applyResult(store.clean(), 'clean', false);
-            this.playChirp();
-            this.idle.kick();
+            if (this.applyResult(store.clean(), 'clean', false)) {
+                this.playChirp();
+                this.idle.kick();
+            }
             return;
         }
         if (key === 'supply') {
@@ -489,18 +520,9 @@ Page({
     // 直接喂食：不再弹框，扣库存 + 饱食 +20，并播放谷粒动效与小鸟开心反馈。
     onFeed() {
         if (!this.requireBird()) return;
-        const blocked = this.careBlocked('feed');
-        if (blocked) {
-            this.showToast(blocked);
-            return;
-        }
         const result = store.feed();
-        if (result.error) {
-            this.showToast(rules.ERROR_TEXT[result.error] || '喂食未完成');
-            return;
-        }
+        if (!this.applyResult(result, 'feed', false)) return;
         this.triggerFeedFx();
-        this.applyResult(result, 'feed', false);
         this.playChirp();
         this.idle.kick();
     },
@@ -521,6 +543,22 @@ Page({
         }, 20);
     },
 
+    // 水滴动效：添水时水滴从鸟身上方落下、晕开并淡出（与谷粒动效同构，配合 wx:if 重挂载重复触发）。
+    triggerWaterFx() {
+        if (this.waterFxTimer) clearTimeout(this.waterFxTimer);
+        if (this.waterFxHideTimer) clearTimeout(this.waterFxHideTimer);
+        const page = this;
+        this.setData({ waterFxId: 0 });
+        this.waterFxTimer = setTimeout(function () {
+            page.setData({ waterFxId: 1 });
+            page.waterFxHideTimer = setTimeout(function () {
+                page.setData({ waterFxId: 0 });
+                page.waterFxHideTimer = null;
+            }, 900);
+            page.waterFxTimer = null;
+        }, 20);
+    },
+
     async onRedeemSteps() {
         if (this.data.redeeming) return;
         this.setData({ redeeming: true });
@@ -535,13 +573,13 @@ Page({
                 return;
             }
             if (result.error) {
-                this.showToast(result.degraded ? '当前为离线预览，步数未真实兑换' : (rules.ERROR_TEXT[result.error] || '兑换未完成'));
+                this.showToast(rules.ERROR_TEXT[result.error] || '兑换未完成');
                 this.refresh();
                 return;
             }
             const granted = (result.data && result.data.granted) || 0;
-            if (result.degraded) {
-                this.showToast('离线预览：步数兑换 · 叽分 +' + granted);
+            if (config.USE_LOCAL_FIXTURE && granted > 0) {
+                this.showToast('调试预览：步数兑换 · 叽分 +' + granted);
             } else {
                 this.showToast(granted > 0 ? ('步数兑换 · 叽分 +' + granted) : '今日步数已兑换');
             }

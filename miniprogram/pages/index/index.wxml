@@ -1,8 +1,11 @@
 <!-- 小窝：按网页端 src/nest/template.html + nest.css 的叠层结构复刻。
      WXSS 不能可靠引用本地 background-image，故所有纹理与雪碧图改用 <image> + 裁切框。 -->
+<!-- 全屏底图：自定义 tabBar 是透明毛绒底板，背景必须铺满整个视口（含底栏区域），
+     否则内容区在底栏上沿截断，底栏附近会露出纯色空缺。整页只保留这一张图，
+     不另在 .nest 内重复拉伸一份，避免底栏上沿出现接缝。 -->
+<image class="page-scene" src="/assets/nest/background.webp" mode="scaleToFill" style="height:{{layout.viewportHeight}}rpx"></image>
 <view class="nest" style="height:{{layout.pageHeight}}rpx">
 
-    <image class="scene" src="/assets/nest/background.webp" mode="scaleToFill"></image>
     <view class="scene-shade"></view>
 
     <!-- 顶部 HUD：头像 / 名字 / 城市 / 相伴 / 切换 / 叽分钱包 -->
@@ -82,6 +85,10 @@
         <!-- 首次自动播放被系统策略拦截时，给出手动入口（仅在已加载成功但被拦截时出现）。 -->
         <view wx:if="{{showIdleButton}}" class="idle-retry" catchtap="onIdleRetry">▶ 播放动画</view>
         <view wx:if="{{feedFxId > 0}}" class="feed-fx">🌾</view>
+        <!-- 添水动效：三滴水滴错峰落下（配合 wx:if 重挂载重复触发）；与口渴状态的静态 💧 互不干扰。 -->
+        <view wx:if="{{waterFxId > 0}}" class="water-fx">
+            <view class="drop d1"></view><view class="drop d2"></view><view class="drop d3"></view>
+        </view>
         <text class="hearts">♡</text>
         <text wx:if="{{thirsty}}" class="drops">💧</text>
     </view>

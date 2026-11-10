@@ -56,10 +56,11 @@ async function loginAndGetToken() {
 async function redeemSteps(token) {
     // 隐私授权前置：仅当小程序已在 MP 后台配置《用户隐私保护指引》且用户同意后，才能调用步数接口。
     if (typeof wx.requirePrivacyAuthorize === 'function') {
-        await new Promise(function (resolve) {
-            try { wx.requirePrivacyAuthorize({ success: resolve, fail: resolve }); }
-            catch (e) { resolve(); }
-        });
+        try {
+            await promisify(wx.requirePrivacyAuthorize, {});
+        } catch (e) {
+            throw { error: 'PRIVACY_NOT_AUTHORIZED' };
+        }
     }
     const setting = await promisify(wx.getSetting, {});
     if (!setting.authSetting || !setting.authSetting['scope.werun']) {

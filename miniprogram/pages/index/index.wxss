@@ -7,29 +7,34 @@ page {
     background: #B7D68F;
 }
 
+/* 整页唯一底图：fixed 铺满视口，透明自定义底栏从同一张图上透出；
+   高度由 layout.viewportHeight 内联给出，不用 vh，避免机型差异与滚动漂移。 */
+.page-scene {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
 .nest {
     position: relative;
+    z-index: 1;
     width: 100%;
     overflow: hidden;
-    background: #B7D68F;
+    /* 透出 .page-scene；page 的苔绿底色仍作为图片未就绪时的兜底。 */
+    background: transparent;
     color: #795336;
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
 }
 
-.scene,
 .scene-shade {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-}
-
-.scene {
-    z-index: 0;
-}
-
-.scene-shade {
     z-index: 1;
     background: linear-gradient(to bottom, rgba(255, 249, 223, 0.04), rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0) 85%, rgba(228, 232, 170, 0.08));
 }
@@ -61,13 +66,18 @@ page {
     opacity: 0.9;
 }
 
-/* ---------- HUD ---------- */
+/* ---------- HUD ----------
+   顶部栏按「左上贴角 · 紧凑身份卡」重排：左右收到 12rpx（对齐网页端 12px 基线），
+   身份卡不再 flex:1 撑满整行，而是收拢贴住左上角，钱包靠右、中间让出背景树拱，
+   不再像一条横贯全屏的厚重 banner；与下方状态条拉开间距，整体更协调、不突兀。
+   仅调整 HUD 自身布局，绝不改动 .page-scene / .nest / .scene-shade 全屏底图。 */
 .hud {
     position: absolute;
-    left: 19rpx;
-    right: 19rpx;
+    left: 12rpx;
+    right: 12rpx;
     display: flex;
-    gap: 19rpx;
+    justify-content: space-between;
+    gap: 12rpx;
     align-items: center;
     z-index: 6;
 }
@@ -76,8 +86,11 @@ page {
     position: relative;
     display: flex;
     align-items: center;
-    flex: 1;
+    /* 收拢为左上角紧凑身份卡：配合 .hud 的 space-between 与钱包分居两端。
+       max-width 兜底长昵称，内部 .identity-text 的 ellipsis 仍能正常截断不溢出。 */
+    flex: 0 1 auto;
     min-width: 0;
+    max-width: 62%;
     height: 91rpx;
     padding: 9rpx 13rpx 9rpx 8rpx;
 }
@@ -247,8 +260,9 @@ page {
 /* ---------- 三条状态 ---------- */
 .status {
     position: absolute;
-    left: 19rpx;
-    right: 19rpx;
+    /* 左边缘与 .hud 统一为 12rpx，顶部两排信息对齐成一条干净的左基线。 */
+    left: 12rpx;
+    right: 12rpx;
     display: flex;
     gap: 13rpx;
     z-index: 3;
@@ -314,7 +328,7 @@ page {
     display: block;
     height: 11rpx;
     margin-top: 9rpx;
-    background: #BED3A1;
+    background: #F2E5C9;
     border: 2rpx solid #FFF7E3;
     border-radius: 16rpx;
     overflow: hidden;
@@ -324,7 +338,7 @@ page {
 .stat-fill {
     display: block;
     height: 100%;
-    background: #91B77B;
+    background: #5B7E4B;
     border-radius: 9rpx;
     transition: width 0.4s;
 }
@@ -332,7 +346,8 @@ page {
 /* ---------- 需求气泡 ---------- */
 .needs {
     position: absolute;
-    left: 19rpx;
+    /* 与 .hud / .status 同一条 12rpx 左基线，避免左侧元素参差。 */
+    left: 12rpx;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -362,7 +377,7 @@ page {
 /* ---------- 右侧工具 ---------- */
 .tools {
     position: absolute;
-    right: 19rpx;
+    right: 9rpx;
     display: flex;
     flex-direction: column;
     gap: 8rpx;
@@ -371,13 +386,18 @@ page {
 
 .tool {
     position: relative;
-    width: 84rpx;
+    width: 104rpx;
     min-height: 78rpx;
     padding: 3rpx 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+.tool .tex-bg {
+    left: 10rpx;
+    width: 84rpx;
 }
 
 .tool-hover {
@@ -428,7 +448,7 @@ page {
 
 .tool-dot {
     position: absolute;
-    right: 5rpx;
+    right: 15rpx;
     top: 5rpx;
     width: 14rpx;
     height: 14rpx;
@@ -602,6 +622,41 @@ page {
     22%  { opacity: 1; transform: translate(-50%, 2rpx) scale(1) rotate(0deg); }
     60%  { opacity: 1; transform: translate(-50%, -26rpx) scale(1) rotate(6deg); }
     100% { opacity: 0; transform: translate(-50%, -70rpx) scale(0.82) rotate(10deg); }
+}
+
+/* 添水动效：三滴水滴错峰从鸟身上方落下、晕开并淡出（配合 wx:if 重挂载重复触发）。
+   用 CSS 绘制水滴而非 emoji，避免不同机型字体渲染差异；z-index 高于待机画布，互动时可见。 */
+.water-fx {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    width: 150rpx;
+    height: 130rpx;
+    transform: translateX(-50%);
+    z-index: 4;
+    pointer-events: none;
+}
+
+.water-fx .drop {
+    position: absolute;
+    top: 0;
+    width: 24rpx;
+    height: 30rpx;
+    border-radius: 50% 50% 50% 50% / 62% 62% 40% 40%;
+    background: linear-gradient(160deg, #E3F4FD 0%, #96CDEB 48%, #4E9BC9 100%);
+    box-shadow: inset -3rpx -3rpx 5rpx rgba(255, 255, 255, 0.62), 0 2rpx 5rpx rgba(70, 120, 160, 0.28);
+    opacity: 0;
+}
+
+.water-fx .d1 { left: 14%; animation: nest-water 0.9s ease-in 0s forwards; }
+.water-fx .d2 { left: 47%; animation: nest-water 0.9s ease-in 0.11s forwards; }
+.water-fx .d3 { left: 79%; animation: nest-water 0.9s ease-in 0.22s forwards; }
+
+@keyframes nest-water {
+    0%   { opacity: 0; transform: translateY(-16rpx) scale(0.55); }
+    18%  { opacity: 1; transform: translateY(6rpx) scale(1); }
+    62%  { opacity: 1; transform: translateY(58rpx) scale(0.95); }
+    100% { opacity: 0; transform: translateY(96rpx) scale(0.6); }
 }
 
 @keyframes nest-breathe {

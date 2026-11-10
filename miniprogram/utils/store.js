@@ -25,25 +25,21 @@ function getToken() {
     catch (e) { return ''; }
 }
 
-// 无后端/调试模式下，回退到本机 mock 结算（可被篡改，仅调试用），并标记为离线预览。
-function degradedMock(at, err) {
-    const mock = g.redeemSteps(config.DEBUG_TODAY_STEPS, at);
-    mock.data.snapshot = Object.assign({}, mock.data.snapshot, { degraded: true });
-    mock.degraded = true;
-    mock.error = (err && err.error) || 'OFFLINE';
-    return mock;
+function redemptionFailure(at, error) {
+    return { error: error, data: g.snapshot(at).data };
 }
 
-// 步数兑换：调试/未配置后端 → 本机 mock；否则严格以服务端结算结果为准（前端不再重算步数）。
+// 仅在显式调试模式下模拟兑换，真实模式只镜像服务端结算。
 async function redeemSteps(now) {
     const at = (typeof now === 'number') ? now : Date.now();
-    if (config.USE_LOCAL_FIXTURE || !config.API_BASE) {
+    if (config.USE_LOCAL_FIXTURE) {
         return g.redeemSteps(config.DEBUG_TODAY_STEPS, at);
     }
+    if (!config.API_BASE) return redemptionFailure(at, 'NO_ENDPOINT');
     let token = getToken();
     if (!token) {
         try { token = await werun.loginAndGetToken(); }
-        catch (e) { return degradedMock(at, e); }
+        catch (e) { return redemptionFailure(at, (e && e.error) || 'LOGIN_FAILED'); }
     }
     let res;
     try {
@@ -51,16 +47,18 @@ async function redeemSteps(now) {
     } catch (e) {
         if (e && e.error === 'WX_LOGIN_REQUIRED') {
             try { token = await werun.loginAndGetToken(); res = await werun.redeemSteps(token); }
-            catch (e2) { return degradedMock(at, e2); }
+            catch (e2) { return redemptionFailure(at, (e2 && e2.error) || 'REDEEM_FAILED'); }
         } else {
-            return degradedMock(at, e);
+            return redemptionFailure(at, (e && e.error) || 'REDEEM_FAILED');
         }
     }
-    if (!res || res.error) {
-        return { error: (res && res.error) || 'REDEEM_FAILED', data: { snapshot: g.snapshot(at).data.snapshot } };
+    if (!res || res.error || !Number.isInteger(res.granted) || res.granted < 0 ||
+        !Number.isInteger(res.steps) || res.steps < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(res.date) ||
+        typeof res.claimed !== 'boolean') {
+        return redemptionFailure(at, (res && res.error) || 'REDEEM_FAILED');
     }
-    // 服务端结果为唯一可信来源；前端只镜像，不重算。
-    return g.applyServerReward(res.granted || 0, res.steps || 0, res.date, at, res.claimed === true);
+    if (!res.granted && !res.claimed) return redemptionFailure(at, 'NO_REWARD');
+    return g.applyServerReward(res.granted, res.steps, res.date, at, res.claimed);
 }
 
 module.exports = Object.assign({}, g, { redeemSteps: redeemSteps, getToken: getToken });

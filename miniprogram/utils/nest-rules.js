@@ -13,7 +13,9 @@ var ERROR_TEXT = Object.freeze({
     INVALID_STEPS: '步数数据不可用',
     ALREADY_CLAIMED: '今日步数已经兑换过',
     NO_REWARD: '今日暂无可兑换叽分',
-    STORAGE_UNAVAILABLE: '本机数据写入失败，请重试',
+    STORAGE_UNAVAILABLE: '本机数据暂时无法读写，请重试',
+    PRIVACY_NOT_AUTHORIZED: '请先同意小程序隐私保护指引，再兑换步数',
+    NO_ENDPOINT: '当前版本暂未开放步数兑换',
     INVALID_NICKNAME: '昵称需为 1–6 个字符',
 });
 

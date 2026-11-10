@@ -63,12 +63,18 @@ function readNestLayout() {
     return {
         inset: inset,
         tabBarHeight: tabBarHeight,
+        // 全屏底图用整个视口高度；内容区 pageHeight 仍扣掉底栏占位，
+        // 这样透明底栏背后也是同一张图，且 .nest + spacer 不会多出滚动。
+        viewportHeight: viewportRpx,
         pageHeight: pageHeight,
         dockBottom: dockBottom,
         // toast 是 position:fixed，坐标系是「视口」而非 .nest；自定义 tabBar 也是
         // fixed 且 z-index:1000，必须把整条底栏高度加回来，否则 toast 会被底栏盖住。
         toastBottom: tabBarHeight + dockBottom + DOCK_HEIGHT_RPX + 20,
-        hudTop: inset + 22,                    // top: 14px
+        // HUD 贴近安全区下沿：让左上角身份卡真正「靠左上方、贴边」，
+        // 同时把 HUD 底边（+91rpx）与 statusTop(+128) 的间距从 15rpx 拉开到 29rpx，
+        // 避免两条胶囊挤在一起显得突兀。statusTop 及以下元素一律不动。
+        hudTop: inset + 8,                     // top: 14px 基线，上收 14rpx 贴边
         statusTop: inset + 128,                // top: 82px
         needsTop: inset + 230,                 // .needs top: 147px
         toolsTop: inset + 270,                 // max(140px, 36cqw) → 36cqw
