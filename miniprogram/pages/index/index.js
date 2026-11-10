@@ -6,6 +6,7 @@ const config = require('../../utils/config');
 const tabBar = require('../../utils/tab-bar');
 const rules = require('../../utils/nest-rules');
 const nestLayout = require('../../utils/nest-layout');
+const nestIdle = require('../../utils/nest-idle');
 
 // 与网页端 src/nest/template.html 的导航、工具、状态顺序一致。
 // 雪碧图格位对应 H5 的 .tools .p0~p3、cards-1200 三格、hud-icons 3×2。
@@ -57,6 +58,9 @@ Page({
         thirsty: false,
         happy: false,
         motionPaused: false,
+        idleReady: false,
+        idlePlaying: false,
+        showIdleButton: false,
         toast: '',
         sheet: null,
         sheetMaskBottom: 149,        // 弹框遮罩底边：默认落在 tabBar 上沿（兜底值，onLoad 后精确化）
@@ -67,11 +71,25 @@ Page({
         dock: DOCK,
     },
 
-    onLoad() {
+        onLoad() {
         this.toastTimer = null;
         this.happyTimer = null;
         this.feedbackTimer = null;
+        this.feedFxTimer = null;
+        this.feedFxHideTimer = null;
         this.feedback = null;
+        // 互动鸟叫 + 待机动画原声：与网页端一致，首次用户手势后自动播放待机动画并带原声，
+        // 照料 / 摸摸等互动播放短鸟叫（InnerAudioContext，小程序无 Web Audio）。
+        this.chirpAudio = null;
+        this.idle = nestIdle.createNestIdle(this, {
+            audioSrc: '/assets/nest/idle/idle.m4a',
+            atlasSrc: '/assets/nest/idle/atlas.webp',
+            canvasId: '#idleCanvas',
+            isEligible: () => !this.feedbackActive() && !this.data.happy,
+            onCycleEnd: () => this.syncIdle(false),
+            onStarted: () => {},
+            onBlocked: () => {},
+        });
         // 改名弹框含输入框，需随键盘抬升面板；用箭头函数绑定 this 以便卸载时 off 注销（E-09）。
         this.onKeyboardHeightChange = (e) => this.handleKeyboardChange(e);
         try { wx.onKeyboardHeightChange(this.onKeyboardHeightChange); } catch (err) { /* 老基础库无此 API，忽略 */ }
@@ -85,11 +103,14 @@ Page({
         // 面板若仍打开（例如切走再切回），动画应保持暂停，不能与遮罩状态相反。
         this.setData({ motionPaused: !!this.data.sheet });
         this.refresh();
+        // 切回前台恢复待机动画（面板仍开则 refresh 内 syncIdle 会因 motionPaused 自动暂停）。
+        this.syncIdle(false);
     },
 
     onHide() {
         // 后台暂停动画、收起面板并清理计时器，避免离页后持续占用（E-09）。
         this.setData({ motionPaused: true, sheet: null, keyboardHeightRpx: 0 });
+        this.syncIdle(true);
         this.clearTimers();
     },
 
@@ -98,6 +119,9 @@ Page({
             try { wx.offKeyboardHeightChange(this.onKeyboardHeightChange); } catch (err) { /* ignore */ }
         }
         this.clearTimers();
+        // 销毁待机动画资源（音频 + 画布引用），避免离页后持续占用与内存泄漏。
+        if (this.idle) { try { this.idle.dispose(); } catch (e) { /* ignore */ } this.idle = null; }
+        if (this.chirpAudio) { try { this.chirpAudio.destroy(); } catch (e) { /* ignore */ } this.chirpAudio = null; }
     },
 
     clearTimers() {
@@ -176,6 +200,8 @@ Page({
             birdArt: feedbackActive ? '/assets/nest/emotion-happy.webp' : rules.emotionArt(state.emotion),
             thirsty: state.emotion === 'thirsty',
         });
+        // 状态刷新后同步待机动画：领养状态 / 面板开关变化都要反映到动画播放。
+        this.syncIdle(false);
     },
 
     showToast(text) {
@@ -188,6 +214,38 @@ Page({
             page.setData({ toast: '' });
             page.toastTimer = null;
         }, 2200);
+    },
+
+    // 互动反馈（摸摸 / 照料 / 改名成功）有效期内的标记，用于暂停待机动画与短反馈互斥。
+    feedbackActive() {
+        return !!(this.feedback && Date.now() < this.feedback.until);
+    },
+
+    // 同步待机动画播放状态：仅在已领养且未暂停时允许自动播放。
+    // 暂停（suspended / motionPaused）对应页面隐藏或面板打开；交互反馈（1.6s 开心表情）不暂停待机动画，
+    // 以免首次手势触发的交互把刚启动的待机动画立刻掐断——待机动画在反馈期间继续播放，开心海报被画布覆盖，不冲突。
+    syncIdle(suspended) {
+        if (!this.idle) return;
+        const hasBird = this.data.hasBird;
+        const birdId = hasBird ? (store.snapshot().data ? store.snapshot().data.snapshot.birdCode : null) || 'local-bird' : null;
+        this.idle.sync(hasBird, !!(suspended || this.data.motionPaused), birdId, hasBird);
+    },
+
+    // 短鸟叫：与网页端 Web Audio 合成的轻量鸟叫等价，用 InnerAudioContext 播放。
+    // 仅在用户手势（摸摸 / 喂食 / 添水 / 清洁 / 补给）内触发，不阻塞主流程。
+    playChirp() {
+        try {
+            if (!this.chirpAudio) {
+                this.chirpAudio = wx.createInnerAudioContext();
+                this.chirpAudio.src = '/assets/nest/chirp.mp3';
+            }
+            this.chirpAudio.stop();
+            this.chirpAudio.play();
+        } catch (error) { /* 音频不可用时主流程继续 */ }
+    },
+
+    onIdleRetry() {
+        if (this.idle) this.idle.retry();
     },
 
     // store 的 commit 不返回 changed 字段，故以动作结果是否成功为准。
@@ -248,7 +306,11 @@ Page({
             this.showToast(blocked);
             return;
         }
-        this.applyResult(action === 'feed' ? store.feed() : store.water(), action, closeSheetOnSuccess);
+        const ok = this.applyResult(action === 'feed' ? store.feed() : store.water(), action, closeSheetOnSuccess);
+        if (ok) {
+            this.playChirp();
+            this.idle.kick();
+        }
     },
 
     requireBird() {
@@ -286,6 +348,8 @@ Page({
         if (result.data && result.data.granted > 0) {
             this.showToast('叽分 +' + result.data.granted);
         }
+        this.playChirp();
+        this.idle.kick();
         this.refresh();
     },
 
@@ -299,6 +363,8 @@ Page({
         if (key === 'clean') {
             if (!this.requireBird()) return;
             this.applyResult(store.clean(), 'clean', false);
+            this.playChirp();
+            this.idle.kick();
             return;
         }
         if (key === 'supply') {
@@ -333,6 +399,8 @@ Page({
     openSheet(sheet) {
         this.setData({ sheet: sheet, motionPaused: true });
         this.recalcSheetMask(sheet);
+        // 面板打开时暂停待机动画与音效（框架层 tabBar 在下，面板在上，动画不应穿透遮罩）。
+        this.syncIdle(false);
     },
 
     // 弹框遮罩要停靠在自定义 tabBar 上沿：框架层 tabBar 的 z-index:1000 盖不住，
@@ -433,6 +501,8 @@ Page({
         }
         this.triggerFeedFx();
         this.applyResult(result, 'feed', false);
+        this.playChirp();
+        this.idle.kick();
     },
 
     // 谷粒动效：先归零再置位，确保连续点击也能重新触发 CSS 动画（与 showFeedback 的 happy 重触发同构）。

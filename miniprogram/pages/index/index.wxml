@@ -75,6 +75,11 @@
         <view class="bird-hit" bindtap="onPet" hover-class="none">
             <image class="bird-art" src="{{birdArt}}" mode="aspectFit"></image>
         </view>
+        <!-- 待机动画画布：覆盖在立绘之上，逐帧绘制 idle 序列帧并随原声同步；
+             pointer-events:none 让点击穿透到 bird-hit 仍可摸摸。无鸟时不挂载，避免空态冗余节点。 -->
+        <canvas wx:if="{{hasBird}}" type="2d" id="idleCanvas" class="idle-canvas"></canvas>
+        <!-- 首次自动播放被系统策略拦截时，给出手动入口（仅在已加载成功但被拦截时出现）。 -->
+        <view wx:if="{{showIdleButton}}" class="idle-retry" catchtap="onIdleRetry">▶ 播放动画</view>
         <view wx:if="{{feedFxId > 0}}" class="feed-fx">🌾</view>
         <text class="hearts">♡</text>
         <text wx:if="{{thirsty}}" class="drops">💧</text>
