@@ -137,13 +137,14 @@ check('动效计时器在 clearTimers / onHide 中被清理（E-09）', function
 });
 
 // ---------------------------------------------------------------- 3. 顶部 HUD 布局
-check('HUD 左右贴边 12rpx、两端分布、身份卡收拢贴左上', function () {
+check('HUD 左右基线 12rpx、两端分布、身份卡收拢且长昵称不截断', function () {
     const hud = indexWxss.slice(indexWxss.indexOf('.hud {'), indexWxss.indexOf('.identity {'));
-    assert.ok(/left:\s*12rpx;/.test(hud) && /right:\s*12rpx;/.test(hud), 'HUD 左右应为 12rpx');
+    assert.ok(/left:\s*12rpx;/.test(hud) && /right:\s*12rpx;/.test(hud), 'HUD 兜底左右应为 12rpx');
     assert.ok(/justify-content:\s*space-between;/.test(hud), 'HUD 应两端分布');
     const identity = indexWxss.slice(indexWxss.indexOf('.identity {'), indexWxss.indexOf('.avatar {'));
     assert.ok(/flex:\s*0 1 auto;/.test(identity), '身份卡应收拢而非 flex:1 撑满');
-    assert.ok(/max-width:\s*62%;/.test(identity), '身份卡应有 max-width 兜底长昵称');
+    // HUD 收窄到胶囊左侧后需放宽上限，否则「西湖小黄莺」会被过早 ellipsis 截断。
+    assert.ok(/max-width:\s*68%;/.test(identity), '身份卡上限应为 68% 以适配收窄后的 HUD');
 });
 
 check('状态条与需求气泡左边缘与 HUD 统一为 12rpx', function () {
@@ -153,12 +154,106 @@ check('状态条与需求气泡左边缘与 HUD 统一为 12rpx', function () {
     assert.ok(/left:\s*12rpx;/.test(needs), 'needs 未对齐 12rpx');
 });
 
-check('HUD 和上方状态元素保持定稿位置', function () {
-    assert.ok(/hudTop:\s*inset \+ 8\b/.test(layoutJs), 'hudTop 应为 inset + 8');
-    assert.ok(/statusTop:\s*inset \+ 128\b/.test(layoutJs), 'statusTop 必须保持 inset + 128');
-    assert.ok(/needsTop:\s*inset \+ 230\b/.test(layoutJs), 'needsTop 不应被改');
-    assert.ok(/toolsTop:\s*inset \+ 270\b/.test(layoutJs), 'toolsTop 不应被改');
+check('WXML 把胶囊避让量接到 HUD 的 right 上', function () {
+    assert.ok(/class="hud" style="top:\{\{layout\.hudTop\}\}rpx;right:\{\{layout\.hudRight\}\}rpx"/.test(indexWxml),
+        'HUD 未内联 layout.hudRight，钱包无法避开系统胶囊');
+});
+
+check('首帧兜底 layout 含 hudRight', function () {
+    const dataBlock = indexJs.slice(indexJs.indexOf('layout: {'), indexJs.indexOf('hasBird: false'));
+    assert.ok(/hudRight:\s*\d+/.test(dataBlock), '首页 data 缺 hudRight，首帧会退回全宽 HUD');
+});
+
+check('布局模块按胶囊矩形抬升 HUD，顶部组锚定同一定位基准', function () {
+    assert.ok(/function readMenuRect\(\)/.test(layoutJs), '缺胶囊矩形读取');
+    assert.ok(/getMenuButtonBoundingClientRect/.test(layoutJs), '未读系统胶囊矩形');
+    assert.ok(/hudTop:\s*hudTop\b/.test(layoutJs) && /hudRight:\s*hudRight\b/.test(layoutJs), '返回值未使用计算出的 HUD 定位');
+    assert.ok(/statusTop:\s*hudTop \+ 120\b/.test(layoutJs), 'statusTop 应锚定 hudTop + 120');
+    assert.ok(/needsTop:\s*hudTop \+ 222\b/.test(layoutJs), 'needsTop 应锚定 hudTop + 222');
+    assert.ok(/toolsTop:\s*hudTop \+ 262\b/.test(layoutJs), 'toolsTop 应锚定 hudTop + 262');
+    // 场景主体（气泡 / 领取入口 / 立绘 / dock）仍按 inset，不随 HUD 上移。
     assert.ok(/speechTop:\s*inset \+ 330 \+ coreShift\b/.test(layoutJs), 'speechTop 不应被改');
+    assert.ok(/claimTop:\s*inset \+ 465 \+ coreShift\b/.test(layoutJs), 'claimTop 不应被改');
+});
+
+check('多机型：HUD 与胶囊同排、不压状态栏/胶囊，顶部组间距恒定', function () {
+    const previousWx = global.wx;
+    const mod = require(P('utils/nest-layout.js'));
+    const HUD_H = mod.HUD_HEIGHT_RPX;
+    const MIN_W = mod.HUD_MIN_WIDTH_RPX;
+    // [width, height, statusBar, menuTop, menuHeight, menuLeft, bottomInset]
+    const devices = [
+        [320, 568, 20, 26, 32, 246, 0],   // 小屏 / 无刘海
+        [375, 667, 20, 26, 32, 289, 0],
+        [375, 812, 44, 67, 36, 289, 34],  // 灵动岛
+        [390, 844, 47, 70, 36, 302, 34],
+        [402, 874, 54, 72, 36, 312, 34],
+        [430, 932, 54, 74, 36, 340, 34],
+    ];
+    try {
+        for (const [width, height, statusBar, menuTop, menuHeight, menuLeft, bottomInset] of devices) {
+            const tag = width + 'x' + height;
+            global.wx = {
+                getWindowInfo: () => ({
+                    windowWidth: width, windowHeight: height, statusBarHeight: statusBar,
+                    screenHeight: height, safeArea: { bottom: height - bottomInset },
+                }),
+                getMenuButtonBoundingClientRect: () => ({
+                    top: menuTop, height: menuHeight, left: menuLeft,
+                    width: width - menuLeft - 12, right: width - 12, bottom: menuTop + menuHeight,
+                }),
+            };
+            const L = mod.readNestLayout();
+            const scale = 750 / width;
+            const statusBarRpx = Math.round(statusBar * scale);
+            const menuTopRpx = Math.round(menuTop * scale);
+            const menuBottomRpx = Math.round((menuTop + menuHeight) * scale);
+            const menuLeftRpx = Math.round(menuLeft * scale);
+            const hudBottom = L.hudTop + HUD_H;
+            const hudRightEdge = 750 - L.hudRight;
+            // 1. 不侵入状态栏，且与状态栏保持足够留白（小屏胶囊靠上时尤其重要）
+            assert.ok(L.hudTop >= statusBarRpx + mod.STATUS_BAR_GAP_RPX, tag + ' HUD 侵入状态栏');
+            // 2. 与胶囊处于同一水平带（垂直区间有交集）
+            assert.ok(L.hudTop <= menuBottomRpx && hudBottom >= menuTopRpx, tag + ' HUD 未与胶囊同排');
+            // 3. 叽分卡与胶囊拉开呼吸间隙，不贴边、不被系统胶囊挡住
+            const capsuleGap = menuLeftRpx - hudRightEdge;
+            assert.ok(capsuleGap >= 24, tag + ' 叽分卡离胶囊太近（间隙 ' + capsuleGap + 'rpx）');
+            // 4. 两枚卡片仍有足够宽度
+            assert.ok(hudRightEdge - 12 >= MIN_W, tag + ' HUD 宽度不足，昵称会被挤压');
+            // 5. 顶部组作为整体移动，彼此间距与旧版完全一致
+            assert.strictEqual(L.statusTop - L.hudTop, 120, tag + ' statusTop 间距变化');
+            assert.strictEqual(L.needsTop - L.hudTop, 222, tag + ' needsTop 间距变化');
+            assert.strictEqual(L.toolsTop - L.hudTop, 262, tag + ' toolsTop 间距变化');
+            // 6. 确实比旧的「inset + 8」上移了
+            assert.ok(L.hudTop < L.inset + mod.HUD_FALLBACK_TOP, tag + ' HUD 没有上移');
+            // 7. 背景 / 立绘 / dock 不变量不受影响
+            const dockEnd = L.pageHeight - L.dockBottom;
+            assert.strictEqual(dockEnd, L.viewportHeight - L.tabBarHeight - 9, tag + ' dock 位置被改');
+            assert.ok(L.actorTop + L.actorHeight <= dockEnd - 162 - 20, tag + ' 立绘压住照料按钮');
+        }
+    } finally {
+        global.wx = previousWx;
+    }
+});
+
+check('读不到胶囊矩形时完整回退到旧布局，不改变老基础库表现', function () {
+    const previousWx = global.wx;
+    try {
+        global.wx = {
+            getWindowInfo: () => ({
+                windowWidth: 375, windowHeight: 667, statusBarHeight: 20,
+                screenHeight: 667, safeArea: { bottom: 667 },
+            }),
+        };
+        const L = require(P('utils/nest-layout.js')).readNestLayout();
+        assert.strictEqual(L.hudTop, L.inset + 8, '回退 hudTop 应为 inset + 8');
+        assert.strictEqual(L.hudRight, 12, '回退 hudRight 应为 12rpx');
+        assert.strictEqual(L.statusTop, L.inset + 128, '回退 statusTop 应为 inset + 128');
+        assert.strictEqual(L.needsTop, L.inset + 230, '回退 needsTop 应为 inset + 230');
+        assert.strictEqual(L.toolsTop, L.inset + 270, '回退 toolsTop 应为 inset + 270');
+    } finally {
+        global.wx = previousWx;
+    }
 });
 
 check('短屏互动卡片整体在底栏上方，常规屏位置与立绘尺寸不变', function () {
@@ -274,7 +369,7 @@ let dynamicPage = checkAsync('index.js：摸摸/喂食/添水分别触发 happy 
             emotionArt: function () { return '/assets/nest/poster.webp'; },
             ERROR_TEXT: {},
         },
-        '../../utils/nest-layout': { readNestLayout: function () { return { pageHeight: 1279, viewportHeight: 1428, tabBarHeight: 149, dockBottom: 9, toastBottom: 340, hudTop: 198, statusTop: 304, needsTop: 406, toolsTop: 446, speechTop: 506, claimTop: 641, actorTop: 750 }; } },
+        '../../utils/nest-layout': { readNestLayout: function () { return { pageHeight: 1279, viewportHeight: 1428, tabBarHeight: 149, dockBottom: 9, toastBottom: 340, hudTop: 124, hudRight: 184, statusTop: 244, needsTop: 346, toolsTop: 386, speechTop: 506, claimTop: 641, actorTop: 750 }; } },
         '../../utils/nest-idle': {
             createNestIdle: function () {
                 return { sync: function () {}, kick: function () {}, retry: function () {}, dispose: function () {} };

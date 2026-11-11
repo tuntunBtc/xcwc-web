@@ -12,6 +12,13 @@ var TAB_BAR_ART_RPX = 149;     // custom-tab-bar 的 960×195 毛绒底板等比
 var DOCK_GAP_RPX = 9;
 var DOCK_HEIGHT_RPX = 162;     // .dock button clamp(72px,21.6cqw,104px) → 162rpx
 var BIRD_HEIGHT_RPX = 322;     // --bird-size clamp(140px,43cqw,214px) → 43cqw
+// 顶部 HUD 抬到与右上角胶囊同一水平带时需要的几何常量。
+var HUD_HEIGHT_RPX = 91;       // .identity height，与 index.wxss 保持一致
+var MENU_GAP_RPX = 32;         // HUD 右边界与胶囊左边缘的呼吸间隙；叽分卡不贴胶囊、略靠中间
+var STATUS_BAR_GAP_RPX = 24;   // HUD 顶与状态栏底的最小间隙（小屏胶囊靠上时不贴时间/信号）
+var HUD_MIN_WIDTH_RPX = 390;   // 身份卡 + 钱包 + gap 所需最小宽度，避免窄屏挤压到文字
+var HUD_FALLBACK_TOP = 8;      // 读不到胶囊时沿用旧的 inset + 8
+var HUD_FALLBACK_RIGHT = 12;   // 读不到胶囊时沿用旧的左右贴边
 
 function readTopInset() {
     try {
@@ -37,8 +44,52 @@ function readBottomInset(info, width) {
     }
 }
 
+// 自定义导航（navigationStyle: custom）下右上角胶囊由系统渲染在页面之上。
+// 把 HUD 抬到胶囊同排时，必须按真实胶囊矩形留出右侧空白，否则钱包会被胶囊盖住；
+// 不同机型（刘海 / 灵动岛 / 安卓）胶囊 top 与 left 差异很大，不能写死数值。
+// 读不到就返回 null，让 readNestLayout 完整回退到旧的 inset + 8 布局。
+function readMenuRect() {
+    try {
+        var info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+        var width = info.windowWidth || 375;
+        if (!width || !wx.getMenuButtonBoundingClientRect) return null;
+        var menu = wx.getMenuButtonBoundingClientRect();
+        if (!menu) return null;
+        var top = menu.top;
+        var height = menu.height;
+        var left = menu.left;
+        if (typeof top !== 'number' || typeof height !== 'number' || typeof left !== 'number' ||
+            height <= 0 || top < 0 || left <= 0 || left >= width) return null;
+        var scale = 750 / width;
+        return {
+            statusBarRpx: Math.round((info.statusBarHeight || 20) * scale),
+            topRpx: Math.round(top * scale),
+            heightRpx: Math.round(height * scale),
+            leftRpx: Math.round(left * scale),
+        };
+    } catch (error) {
+        return null;
+    }
+}
+
 function readNestLayout() {
     var inset = readTopInset();
+    // HUD 定位：有胶囊矩形时抬到胶囊同排并避让；无胶囊信息时保持旧位置。
+    var menu = readMenuRect();
+    var hudTop;
+    var hudRight;
+    if (menu) {
+        // 与胶囊垂直居中；下限不侵入状态栏（时间 / 信号）区域。
+        var centered = menu.topRpx - Math.round((HUD_HEIGHT_RPX - menu.heightRpx) / 2);
+        hudTop = Math.max(menu.statusBarRpx + STATUS_BAR_GAP_RPX, centered);
+        // 右边界取「胶囊左边缘 - 间隙」，并保证两枚卡片仍有最小可用宽度。
+        var avoidRight = 750 - menu.leftRpx + MENU_GAP_RPX;
+        hudRight = Math.max(HUD_FALLBACK_RIGHT,
+            Math.min(avoidRight, 750 - HUD_FALLBACK_RIGHT - HUD_MIN_WIDTH_RPX));
+    } else {
+        hudTop = inset + HUD_FALLBACK_TOP;
+        hudRight = HUD_FALLBACK_RIGHT;
+    }
     var viewportRpx = DESIGN_HEIGHT_RPX;
     var bottomInset = 0;
     try {
@@ -75,13 +126,15 @@ function readNestLayout() {
         // fixed 且 z-index:1000，必须把整条底栏高度加回来，否则 toast 会被底栏盖住。
         toastBottom: tabBarHeight + DOCK_GAP_RPX + DOCK_HEIGHT_RPX + 20,
         actorHeight: actorHeight,
-        // HUD 贴近安全区下沿：让左上角身份卡真正「靠左上方、贴边」，
-        // 同时把 HUD 底边（+91rpx）与 statusTop(+128) 的间距从 15rpx 拉开到 29rpx，
-        // 避免两条胶囊挤在一起，保持上方状态条的位置。
-        hudTop: inset + 8,                     // top: 14px 基线，上收 14rpx 贴边
-        statusTop: inset + 128,                // top: 82px
-        needsTop: inset + 230,                 // .needs top: 147px
-        toolsTop: inset + 270,                 // max(140px, 36cqw) → 36cqw
+        // 顶部信息组（HUD / 状态条 / 需求气泡 / 工具列）作为一整组上移：
+        // 全部锚定 hudTop，彼此间距与旧版（inset+8 / +128 / +230 / +270）完全一致，
+        // 所以 HUD 抬到胶囊同排后不会出现「上面贴顶、下面脱节」的大空档。
+        // 对话气泡、领取入口、立绘与 dock 属场景主体，仍按 inset 定位保持不动。
+        hudTop: hudTop,
+        hudRight: hudRight,                    // 胶囊左边缘避让，内联覆盖 WXSS 的 right:12rpx
+        statusTop: hudTop + 120,               // HUD 底(+91) 后再留 29rpx
+        needsTop: hudTop + 222,
+        toolsTop: hudTop + 262,
         speechTop: inset + 330 + coreShift,    // 44cqw + core-shift
         claimTop: inset + 465 + coreShift,     // 62cqw + core-shift
         actorTop: actorTop,
@@ -91,5 +144,11 @@ function readNestLayout() {
 module.exports = {
     DESIGN_HEIGHT_RPX: DESIGN_HEIGHT_RPX,
     TAB_BAR_ART_RPX: TAB_BAR_ART_RPX,
+    HUD_HEIGHT_RPX: HUD_HEIGHT_RPX,
+    HUD_MIN_WIDTH_RPX: HUD_MIN_WIDTH_RPX,
+    MENU_GAP_RPX: MENU_GAP_RPX,
+    STATUS_BAR_GAP_RPX: STATUS_BAR_GAP_RPX,
+    HUD_FALLBACK_TOP: HUD_FALLBACK_TOP,
+    HUD_FALLBACK_RIGHT: HUD_FALLBACK_RIGHT,
     readNestLayout: readNestLayout,
 };

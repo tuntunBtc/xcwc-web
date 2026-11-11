@@ -20,9 +20,65 @@ NAV_ASSETS = os.path.join(MP, 'assets/navigation/plush')
 OUT_DIR = os.path.join(ROOT, 'output', 'miniprogram-shop-preview')
 CATALOG = '/Users/beluga/Code/xcwc/xcwc-api/src/main/resources/shop/catalog.json'
 # 可选参数：模拟机型宽度（默认 390）。750rpx 恒等于整屏宽，故 1rpx = WIDTH / 750 px。
+# 第二个参数为 before 时输出改前版（品牌条在流内 + 旧的分段渐变），用于并排对比。
 WIDTH = int(sys.argv[1]) if len(sys.argv) > 1 else 390
+MODE = sys.argv[2] if len(sys.argv) > 2 else 'after'
 SCALE = WIDTH / 750.0
-OUT = os.path.join(OUT_DIR, 'index.html' if WIDTH == 390 else 'index-%d.html' % WIDTH)
+OUT = os.path.join(OUT_DIR,
+                   ('index.html' if WIDTH == 390 else 'index-%d.html' % WIDTH) if MODE == 'after'
+                   else ('before.html' if WIDTH == 390 else 'before-%d.html' % WIDTH))
+
+# 与 miniprogram/utils/shop-layout.js 的 computeShopLayout 完全同式的预览几何。
+# 真机由 wx.getMenuButtonBoundingClientRect 提供胶囊矩形；预览按常见机型模拟。
+# (视口高, 状态栏高, 胶囊 left, 胶囊 top, 胶囊高, 胶囊宽) —— 单位均为该机型 CSS px。
+# 导引胶囊与 computeShopLayout 必须用同一组数值，否则避让间隙会被量错。
+DEVICES = {
+    320: (568, 20, 246, 26, 32, 68),
+    375: (812, 44, 289, 53, 27, 78),
+    390: (844, 47, 302, 70, 36, 87),
+    430: (932, 54, 340, 74, 36, 87),
+}
+
+
+def device_spec(width):
+    if width in DEVICES:
+        return DEVICES[width]
+    h, sb, ml, mt, mh, mw = DEVICES[375]
+    k = width / 375.0
+    return round(h * k), sb * k, ml * k, mt * k, mh * k, mw * k
+
+
+def preview_layout():
+    height, status_bar, menu_left, menu_top, menu_height, menu_width = device_spec(WIDTH)
+    unit = 750.0 / WIDTH
+    viewport_height = round(height * unit)
+    status_bar_rpx = round(status_bar * unit)
+    menu_left_rpx, menu_top_rpx, menu_height_rpx = (round(menu_left * unit),
+                                                     round(menu_top * unit),
+                                                     round(menu_height * unit))
+    safe_px = min(max(max(status_bar + 44, menu_top + menu_height) + 8, 44), 160)
+    top_inset = round(safe_px * unit)
+    available = menu_left_rpx - 12 - 24
+    scale = max(0.5, min(1.0, available / 726.0))
+    scale = round(scale * 1000) / 1000.0
+    scaled_w, scaled_h = 726 * scale, 128 * scale
+    masthead_left = max(0, round(menu_left_rpx - 24 - scaled_w))
+    centered = menu_top_rpx - (scaled_h - menu_height_rpx) / 2
+    masthead_top = max(status_bar_rpx + 24, round(centered))
+    header_space = max(top_inset, int(masthead_top + scaled_h + 12 + 0.999))
+    return {
+        'viewportHeight': viewport_height,
+        'headerSpace': header_space,
+        'topInset': top_inset,
+        'mastheadLeft': masthead_left,
+        'mastheadTop': masthead_top,
+        'mastheadScale': scale,
+        'menuLeftRpx': menu_left_rpx,
+        'menuTopRpx': menu_top_rpx,
+        'menuHeightRpx': menu_height_rpx,
+        'statusBarRpx': status_bar_rpx,
+        'deviceHeight': height,
+    }
 
 
 def data_uri(path):
@@ -58,18 +114,20 @@ def main():
     bird, cart, cart_white, happy = (icon('bird.png'), icon('cart.png'),
                                      icon('cart-white.png'), icon('happy.webp'))
     banner = data_uri(os.path.join(SHOP_ASSETS, 'banners', 'banner-1.webp'))
+    page_bg = data_uri(os.path.join(SHOP_ASSETS, 'felt', 'page-background.webp'))
+    layout = preview_layout()
     nav = lambda n: data_uri(os.path.join(NAV_ASSETS, n))
     nav_bg, nav_home, nav_city, nav_shop, nav_profile = (
         nav('nav-background.webp'), nav('nav-home-default.webp'), nav('nav-city-default.webp'),
         nav('nav-shop-active.webp'), nav('nav-profile-default.webp'))
 
     css = css_from_wxss()
+    g = WIDTH / 375.0  # 导引框按真机截图（375 CSS px 宽）等比换算
     extra = u"""
 body { margin: 0; background: #e8ebe0; font-family: -apple-system, "PingFang SC", sans-serif; }
 .preview-note { max-width: @@WIDTH@@px; margin: 0 auto; padding: 10px 14px 6px; color: #5d6b4d; font-size: 11px; line-height: 1.6; }
-.phone { position: relative; width: @@WIDTH@@px; margin: 0 auto 24px; overflow: hidden; background: #edf0d7; box-shadow: 0 10px 40px rgba(45,60,35,.18); }
+.phone { position: relative; width: @@WIDTH@@px; margin: 0 auto 24px; overflow: hidden; background: #dfedce; box-shadow: 0 10px 40px rgba(45,60,35,.18); }
 .shop-page { min-height: auto; }
-.status-space { height: 44px; }
 img { border: 0; }
 .hidden { display: none !important; }
 .panel-content { overflow-y: auto; }
@@ -84,32 +142,73 @@ select.city-select { position: absolute; inset: 0; width: 100%; height: 100%; op
 .filter-bg.is-green, .button-bg { background-image: url('@@GREEN@@'); }
 .intro-texture, .stamp-bg { background-image: url('@@CREAM@@'); background-size: 100% 100%; }
 .card-bg { background-image: url('@@CARD@@'); background-size: 100% 100%; }
+/* .page-scene 在真机是 fixed 铺满视口；静态长图预览改成绝对定位铺满整页，
+   便于一眼看出「整页没有纯色断层」。几何仍由内联 viewportHeight 校验。 */
+.page-scene { position: absolute; height: 100% !important; background-image: url('@@PAGE_BG@@'); background-size: 100% 100%; }
 #test-out { position: fixed; left: 8px; top: 8px; z-index: 9999; max-width: 370px; padding: 8px; background: #fff; color: #222; font: 11px/1.5 monospace; white-space: pre-wrap; }
+/* 改前态：品牌条留在流内、状态栏与内容区各画一段渐变（用于 before/after 对比）。 */
+body.is-before .page-scene { display: none; }
+body.is-before .shop-page { background: #edf0d7; }
+body.is-before .status-space { background: linear-gradient(180deg, #dfedce 0%, #e6edcf 100%); }
+body.is-before .app { padding-top: @@OLD_PAD@@px; background: linear-gradient(180deg, #dfedce 0%, #f5f0dc 41%, #f3f0d9 100%); }
+body.is-before .masthead { position: relative; z-index: 1; top: auto !important; left: auto !important; transform: none !important; transform-origin: 50% 50%; width: auto; height: @@MAST_H@@px; margin: 0 @@MAST_MARGIN@@px; padding: 0 @@MAST_PAD@@px; }
+/* 真机状态栏 / 胶囊 / 红黄框导引，只在 ?guides=1 时叠上。 */
+.phone-chrome { display: none; position: absolute; inset: 0; z-index: 30; pointer-events: none; font-size: @@CHROME_FONT@@px; color: #222; }
+body.show-guides .phone-chrome { display: block; }
+.status-time { position: absolute; left: @@TIME_LEFT@@px; top: @@TIME_TOP@@px; font-weight: 600; }
+.status-right { position: absolute; right: @@RIGHT_RIGHT@@px; top: @@TIME_TOP@@px; font-weight: 600; }
+.island { position: absolute; left: 50%; transform: translateX(-50%); top: @@ISLAND_TOP@@px; width: @@ISLAND_W@@px; height: @@ISLAND_H@@px; border-radius: 999px; background: #101010; }
+.capsule { position: absolute; left: @@MENU_LEFT@@px; top: @@MENU_TOP@@px; width: @@MENU_W@@px; height: @@MENU_H@@px; border-radius: 999px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); display: flex; align-items: center; justify-content: space-around; font-size: @@CAP_FONT@@px; letter-spacing: -1px; }
+.guide { position: absolute; border: @@GUIDE_BORDER@@px solid; border-radius: 2px; }
+.guide-red { left: @@RED_LEFT@@px; top: @@RED_TOP@@px; width: @@RED_W@@px; height: @@RED_H@@px; border-color: #fa5151; }
+.guide-yellow { left: @@YELLOW_LEFT@@px; top: @@YELLOW_TOP@@px; width: @@YELLOW_W@@px; height: @@YELLOW_H@@px; border-color: #ffc300; }
+.guide::after { position: absolute; left: 0; top: -1.4em; font-size: 9px; font-weight: 600; }
+.guide-red::after { content: '目标区（红框）'; color: #fa5151; }
+.guide-yellow::after { content: '原位置（黄框）'; color: #c99400; }
 """
+    _, _, menu_left, menu_top, menu_height, menu_width = device_spec(WIDTH)
+    geo = {
+        '@@OLD_PAD@@': 10 * SCALE, '@@MAST_H@@': 128 * SCALE,
+        '@@MAST_MARGIN@@': 12 * SCALE, '@@MAST_PAD@@': 38 * SCALE,
+        '@@CHROME_FONT@@': 14 * g, '@@TIME_LEFT@@': 22 * g, '@@TIME_TOP@@': 39 * g,
+        '@@RIGHT_RIGHT@@': 20 * g, '@@ISLAND_TOP@@': 12 * g,
+        '@@ISLAND_W@@': 118 * g, '@@ISLAND_H@@': 30 * g,
+        # 胶囊位置与布局计算同源（不是按 375 截图缩放），否则宽屏会量出假的遮挡。
+        '@@MENU_LEFT@@': menu_left, '@@MENU_TOP@@': menu_top,
+        '@@MENU_W@@': menu_width, '@@MENU_H@@': menu_height, '@@CAP_FONT@@': 15 * g,
+        '@@GUIDE_BORDER@@': 3 * g,
+        '@@RED_LEFT@@': 3 * g, '@@RED_TOP@@': 42 * g,
+        '@@RED_W@@': 286 * g, '@@RED_H@@': 54 * g,
+        '@@YELLOW_LEFT@@': 11 * g, '@@YELLOW_TOP@@': 109 * g,
+        '@@YELLOW_W@@': 355 * g, '@@YELLOW_H@@': 58 * g,
+    }
     for key, value in (('@@PINK@@', pink), ('@@GREEN@@', green), ('@@CREAM@@', cream),
-                       ('@@CARD@@', card), ('@@WIDTH@@', str(WIDTH))):
+                       ('@@CARD@@', card), ('@@PAGE_BG@@', page_bg), ('@@WIDTH@@', str(WIDTH))):
         extra = extra.replace(key, value)
+    for key, value in geo.items():
+        extra = extra.replace(key, '%g' % value)
 
     tpl = u"""<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>小程序商城页 · 网页端对照预览 390px</title>
 <style>@@CSS@@
 @@EXTRA@@
-</style></head><body>
+</style></head><body data-mode="@@MODE@@">
 <div class="preview-note">静态对照预览：WXML/WXSS 自动换算（750rpx → @@WIDTH@@px），商品/素材为真实数据。底部毛绒导航为全站自定义 tabBar 示意，非本页代码。</div>
 <pre id="test-out" class="hidden"></pre>
 <div class="phone">
 <div class="shop-page">
-    <div class="status-space"></div>
-    <div class="app">
-        <div class="masthead">
-            <div class="masthead-bg"></div>
-            <div class="brand">
-                <div class="brand-mark"><img class="brand-icon" src="@@BIRD@@"></div>
-                <div class="brand-text"><span class="brand-name">小鸟商城</span><span class="brand-en">BIRD CITY DIARY</span></div>
-            </div>
-            <div class="cart-icon" id="cartBtn"><img class="cart-img" src="@@CART@@"><span id="cartCount" class="cart-count hidden">0</span></div>
+    <div class="page-scene" style="height:@@VIEWPORT_PX@@px"></div>
+    <div class="masthead" style="top:@@MAST_TOP_PX@@px;left:@@MAST_LEFT_PX@@px;transform:scale(@@MAST_SCALE@@)">
+        <div class="masthead-bg"></div>
+        <div class="brand">
+            <div class="brand-mark"><img class="brand-icon" src="@@BIRD@@"></div>
+            <div class="brand-text"><span class="brand-name">小鸟商城</span><span class="brand-en">BIRD CITY DIARY</span></div>
         </div>
+        <div class="cart-icon" id="cartBtn"><img class="cart-img" src="@@CART@@"><span id="cartCount" class="cart-count hidden">0</span><div class="cart-hit"></div></div>
+    </div>
+    <div class="status-space" style="height:@@HEADER_PX@@px"></div>
+    <div class="app">
         <div class="hero">
             <div class="hero-swiper"><img class="hero-image" src="@@BANNER@@"></div>
         </div>
@@ -149,6 +248,14 @@ select.city-select { position: absolute; inset: 0; width: 100%; height: 100%; op
         </div>
     </div>
     <div id="toast" class="toast hidden"><span id="toastText"></span></div>
+</div>
+<div class="phone-chrome">
+    <div class="status-time">14:30</div>
+    <div class="island"></div>
+    <div class="status-right">4G ▮</div>
+    <div class="capsule"><span>•••</span><span>◉</span></div>
+    <div class="guide guide-red"></div>
+    <div class="guide guide-yellow"></div>
 </div>
 <div class="preview-tabbar">
     <img class="preview-tabbar-bg" src="@@NAV_BG@@">
@@ -283,6 +390,14 @@ $('clearCity').addEventListener('click', () => {
 render();
 
 const params = new URLSearchParams(location.search);
+// ?before=1 或 data-mode=before：把品牌条放回 .app 流内并恢复旧分段渐变，做改前对照。
+if (params.get('before') === '1' || document.body.dataset.mode === 'before') {
+    document.body.classList.add('is-before');
+    const mast = document.querySelector('.masthead');
+    document.querySelector('.app').insertBefore(mast, document.querySelector('.app').firstChild);
+    document.querySelector('.status-space').style.height = '@@INSET_PX@@px';
+}
+if (params.get('guides') === '1') document.body.classList.add('show-guides');
 const preset = parseInt(params.get('cart'), 10);
 if (preset > 0) { cart = PRODUCTS.slice(0, Math.min(preset, 17)).map(p => p.id); render(); }
 const panel = params.get('panel');
@@ -390,7 +505,13 @@ if (params.get('measure') === '1') {
         ('@@CART_WHITE@@', cart_white), ('@@BANNER@@', banner), ('@@NAV_BG@@', nav_bg),
         ('@@NAV_HOME@@', nav_home), ('@@NAV_CITY@@', nav_city), ('@@NAV_SHOP@@', nav_shop),
         ('@@NAV_PROFILE@@', nav_profile), ('@@PRODUCTS@@', json.dumps(products, ensure_ascii=False)),
-        ('@@WIDTH@@', str(WIDTH)),
+        ('@@WIDTH@@', str(WIDTH)), ('@@MODE@@', MODE),
+        ('@@VIEWPORT_PX@@', '%g' % (layout['viewportHeight'] * SCALE)),
+        ('@@HEADER_PX@@', '%g' % (layout['headerSpace'] * SCALE)),
+        ('@@INSET_PX@@', '%g' % (layout['topInset'] * SCALE)),
+        ('@@MAST_TOP_PX@@', '%g' % (layout['mastheadTop'] * SCALE)),
+        ('@@MAST_LEFT_PX@@', '%g' % (layout['mastheadLeft'] * SCALE)),
+        ('@@MAST_SCALE@@', '%g' % layout['mastheadScale']),
     ):
         html = html.replace(key, value)
     with io.open(OUT, 'w', encoding='utf-8', newline='\n') as f:

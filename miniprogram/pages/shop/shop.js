@@ -2,6 +2,7 @@
 
 const catalog = require('../../utils/catalog');
 const safeArea = require('../../utils/safe-area');
+const shopLayout = require('../../utils/shop-layout');
 const tabBar = require('../../utils/tab-bar');
 const cartStorage = require('../../utils/cart-storage');
 
@@ -59,7 +60,14 @@ function normalizeCart(raw) {
 
 Page({
     data: {
+        // 顶部安全区与品牌条几何由 utils/shop-layout.js 按真实胶囊矩形计算。
+        // 兜底值对应 375×812：读不到系统信息时也能保持「与胶囊同排、等比缩放」。
         topInset: 176,
+        headerSpace: 176,
+        viewportHeight: 1428,
+        mastheadLeft: 12,
+        mastheadTop: 108,
+        mastheadScale: 0.75,
         banners: BANNERS,
         bannerIndex: 0,
         bannerAutoplay: BANNERS.length > 1,
@@ -87,8 +95,14 @@ Page({
 
     onLoad() {
         this.cartIds = [];
+        const layout = shopLayout.readShopLayout();
         this.setData({
             topInset: safeArea.readTopInsetRpx(),
+            headerSpace: layout.headerSpace,
+            viewportHeight: layout.viewportHeight,
+            mastheadLeft: layout.mastheadLeft,
+            mastheadTop: layout.mastheadTop,
+            mastheadScale: layout.mastheadScale,
         });
         this.syncCart();
         this.applyFilter();

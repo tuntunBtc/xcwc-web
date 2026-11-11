@@ -33,7 +33,9 @@ Page({
         // 静态兜底：onLoad 算出真实机型数值前，首帧也能正确布局。
         layout: {
             pageHeight: 1279, viewportHeight: 1428, tabBarHeight: 149, dockBottom: 9, toastBottom: 340, actorHeight: 322,
-            hudTop: 198, statusTop: 304, needsTop: 406, toolsTop: 446,
+            // 顶部组首帧按「胶囊同排」典型机型（375px / 灵动岛）给值，onLoad 立刻用真机矩形覆盖；
+            // hudRight 是胶囊左侧避让量，场景主体仍沿用上面的既有兜底。
+            hudTop: 124, hudRight: 184, statusTop: 244, needsTop: 346, toolsTop: 386,
             speechTop: 506, claimTop: 641, actorTop: 750,
         },
         hasBird: false,

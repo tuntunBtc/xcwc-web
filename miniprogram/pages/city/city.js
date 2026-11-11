@@ -20,6 +20,10 @@ const CITIES = Object.freeze([
 // 本端尚未实现的奖励，也不宣称云端钱包或跨设备同步。
 const POINTS_RULES = '摸摸小鸟每次 +1 叽分，30 秒冷却；每日叽分上限 10。微信步数每 1000 步可兑换 1 叽分，每日最多 5（调试期为模拟数据，正式版由服务端结算）。叽分只保存在本机，不充值、不提现、不跨设备同步。网页端的问候、合照、装扮等规则在小程序端尚未接入，不会据此发放叽分。叽分不设到期，也不能兑换食物、饮水、孵化或城市基础权益。';
 
+// 与 city.wxss 的 .hero-stage 高度保持一致：底图层 = 状态栏安全区 + 主视觉区。
+// 两者用同一个数，插入画与下方卡片区之间才不会出现缝隙或重叠。
+const HERO_STAGE_RPX = 519;
+
 const HANGZHOU_EMPTY = '尚未领取杭州小鸟。碰一碰已建档的实体小黄莺并打开链接，即可领取。';
 const OTHER_CITY_EMPTY = '这座城的小鸟暂未开放，敬请期待。';
 
@@ -33,6 +37,8 @@ function unlockedCityCodes(snapshot) {
 Page({
     data: {
         topInset: 176,
+        // 上半部分底图层总高度：安全区 + 主视觉区，onLoad 按真实 inset 重算。
+        heroSceneHeight: 176 + HERO_STAGE_RPX,
         // 弹层顶部：H5 的 dialog 距顶 24px（≈40rpx）；自定义导航下再下移状态栏安全区，
         // 避免被右上角系统胶囊压住。
         sheetTop: 40,
@@ -73,6 +79,7 @@ Page({
         const sheetTop = inset + 40;
         this.setData({
             topInset: inset,
+            heroSceneHeight: inset + HERO_STAGE_RPX,
             sheetTop: sheetTop,
             sheetMaxHeight: Math.max(600, viewport - sheetTop - 200),
         });

@@ -9,7 +9,8 @@
 """
 import json
 import os
-from PIL import Image, ImageDraw
+import random
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
 DIST = os.path.join(ROOT, 'dist')
@@ -26,6 +27,66 @@ def derive(src, dst, width, quality):
         im = im.convert('RGBA' if 'A' in im.getbands() else 'RGB')
     im.save(dst, 'WEBP', quality=quality, method=6)
     return im.size, os.path.getsize(dst)
+
+
+def build_page_background():
+    """商城整页底图：与小窝 .page-scene 同一张 fixed 全屏图，不再让状态栏 /
+    内容区 / 底栏各画一段渐变。颜色沿用网页端 src/shop/shop.css 的 .app
+    渐变与两处柔光，做成不透明 RGB WebP（scaleToFill 拉伸到整屏）。
+    只做极轻的毛毡颗粒，避免大面积纯色出现色带，也不引入额外 UI 元素。"""
+    width, height = 750, 1600
+    stops = [(0.0, (223, 237, 206)), (0.30, (235, 241, 213)),
+             (0.58, (245, 240, 220)), (1.0, (243, 240, 217))]
+    base = Image.new('RGB', (width, height))
+    px = base.load()
+    for y in range(height):
+        t = y / (height - 1)
+        for a, b in zip(stops, stops[1:]):
+            if a[0] <= t <= b[0]:
+                k = (t - a[0]) / (b[0] - a[0])
+                color = tuple(round(a[1][i] + (b[1][i] - a[1][i]) * k) for i in range(3))
+                break
+        else:
+            color = stops[-1][1]
+        for x in range(width):
+            px[x, y] = color
+
+    # 两处柔光（H5 .app 的 radial-gradient）：按 alpha 蒙版把淡绿/淡黄叠到渐变上，
+    # 低分辨率生成再放大，避免逐像素全尺寸计算，也不会把底色加到过曝。
+    small = (width // 4, height // 4)
+    spots = [(0.07 * small[0], 0.48 * small[1], 0.50 * small[0], (213, 233, 199), 0.42),
+             (0.96 * small[0], 0.72 * small[1], 0.55 * small[0], (219, 227, 180), 0.34)]
+    canvas = base.convert('RGBA')
+    for cx, cy, radius, tint, alpha in spots:
+        mask = Image.new('L', small, 0)
+        mp = mask.load()
+        for y in range(small[1]):
+            for x in range(small[0]):
+                d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5 / radius
+                if d < 1:
+                    mp[x, y] = round(((1 - d) ** 2) * alpha * 255)
+        mask = mask.resize((width, height), Image.BICUBIC)
+        layer = Image.new('RGBA', (width, height), tint + (0,))
+        layer.putalpha(mask)
+        canvas = Image.alpha_composite(canvas, layer)
+    base = canvas.convert('RGB')
+
+    # 极轻颗粒：以 128 为中心的对称 ±4 噪声（加/减各一次），防止渐变色带，
+    # 不会把整体色调拉灰，也不撑大 WebP 体积。
+    from PIL import ImageChops
+    rnd = random.Random(20261110)
+    grain = Image.new('L', (width // 8, height // 8))
+    grain.putdata([rnd.randint(124, 132) for _ in range(grain.width * grain.height)])
+    grain = grain.resize((width, height), Image.BICUBIC).filter(ImageFilter.GaussianBlur(0.6))
+    neutral = Image.new('L', grain.size, 128)
+    pos = Image.merge('RGB', (ImageChops.subtract(grain, neutral),) * 3)
+    neg = Image.merge('RGB', (ImageChops.subtract(neutral, grain),) * 3)
+    base = ImageChops.subtract(ImageChops.add(base, pos), neg)
+
+    dst = os.path.join(MP, 'felt', 'page-background.webp')
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    base.save(dst, 'WEBP', quality=84, method=6)
+    return 'felt/page-background.webp', base.size, os.path.getsize(dst)
 
 
 def main():
@@ -115,6 +176,10 @@ def main():
     happy.save(happy_dst, 'WEBP', quality=80, method=6)
     report.append(('icons/happy.webp', 'assets/optimized/nest/felt/emotions/happy-192.531def933d70.webp',
                    happy.size, os.path.getsize(happy_dst)))
+
+    # 整页底图（fixed 全屏，与小窝 .page-scene 同一处理方式）；纯程序生成，可复现。
+    bg_name, bg_size, bg_bytes = build_page_background()
+    report.append((bg_name, 'generated: shop page gradient', bg_size, bg_bytes))
 
     for name, src, size, n in report:
         print('%-32s %-10s %8d B  %s' % (name, '%dx%d' % size, n, src))

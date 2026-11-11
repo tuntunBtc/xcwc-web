@@ -16,9 +16,41 @@ page {
 }
 
 .city-page {
+    position: relative;
     box-sizing: border-box;
     min-height: 100vh;
     background: linear-gradient(180deg, #a9d3bf 0%, #cfdfb5 45%, #d4e3ad 85%, #c0d28e 100%);
+}
+
+/* 上半部分唯一底图层：从屏幕 y=0 起，覆盖「状态栏/胶囊安全区 + 主视觉区」。
+   内容层 .hero 背景透明并叠在其上，主视觉不会被拉伸或裁切，
+   底栏与下方卡片区仍由 .city-page 的渐变承接。 */
+.page-hero-scene {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* 顶边延展条由 scripts/build-miniprogram-city-bg.py 从主视觉派生（已垂直翻转），
+   底边逐列对齐主视觉 y=0；高度按 topInset 动态给出，不同机型都贴满顶部。 */
+.hero-scene-top {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+}
+
+/* 960x722 主视觉按 750rpx 宽等比：750 x (722/960) = 564rpx。
+   下方 45rpx 由 .page-hero-scene 的 overflow:hidden 裁掉，与网页端 cover 一致。 */
+.hero-scene-art {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 564rpx;
 }
 
 .felt-pill,
@@ -39,12 +71,15 @@ page {
     opacity: 0.88;
 }
 
-/* 自定义导航：顶部用主视觉天空色延展状态栏与胶囊安全区，
-   下方 hero-stage 保持网页端完整坐标系，所有叠层整体下移不错位。 */
+/* 自定义导航：padding-top 仍负责把内容整体下移，避开状态栏与胶囊；
+   背景改由 .page-hero-scene 从 y=0 连续铺满，这里保持透明，
+   不再用纯色渐变填安全区（那会在插画上沿留下明显分界线）。 */
 .hero {
+    position: relative;
+    z-index: 1;
     box-sizing: border-box;
     width: 100%;
-    background: linear-gradient(180deg, #9ec8b6 0%, #a8d4c1 100%);
+    background: transparent;
 }
 
 .hero-stage {
@@ -52,14 +87,6 @@ page {
     width: 100%;
     height: 519rpx;
     overflow: hidden;
-}
-
-.hero-art {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 564rpx;
 }
 
 .hero-fade {

@@ -82,9 +82,11 @@ page {
 }
 
 /* ---------- HUD ----------
-   顶部栏按「左上贴角 · 紧凑身份卡」重排：左右收到 12rpx（对齐网页端 12px 基线），
-   身份卡不再 flex:1 撑满整行，而是收拢贴住左上角，钱包靠右、中间让出背景树拱，
-   不再像一条横贯全屏的厚重 banner；与下方状态条拉开间距，整体更协调、不突兀。
+   顶部栏上移到与右上角系统胶囊同一水平带：两枚卡片并排收拢在胶囊左侧，
+   身份卡贴左上、钱包紧跟其右，让出中间背景树拱，整体更紧凑协调。
+   top / right 由 layout.hudTop / layout.hudRight 内联给出（按真实胶囊矩形换算），
+   WXSS 的 right:12rpx 只是「读不到胶囊矩形」时的兜底；left / gap 保持 12rpx。
+   下方状态条、需求气泡、工具列由 nest-layout.js 锚定同一 hudTop 一起上移，间距不变。
    仅调整 HUD 自身布局，绝不改动 .page-scene / .nest / .scene-shade 全屏底图。 */
 .hud {
     position: absolute;
@@ -102,12 +104,14 @@ page {
     display: flex;
     align-items: center;
     /* 收拢为左上角紧凑身份卡：配合 .hud 的 space-between 与钱包分居两端。
-       max-width 兜底长昵称，内部 .identity-text 的 ellipsis 仍能正常截断不溢出。 */
+       HUD 收窄到胶囊左侧后可用宽度变小，上限放到 68% 由 flex 自然收缩，
+       避免「西湖小黄莺」这类 5 字昵称被过早截断；极端长昵称仍由 ellipsis 兜底。 */
     flex: 0 1 auto;
     min-width: 0;
-    max-width: 62%;
+    max-width: 68%;
     height: 91rpx;
-    padding: 9rpx 13rpx 9rpx 8rpx;
+    /* HUD 收窄后靠收紧卡片内边距腾出宽度，名字区（flex:1）可视宽度不变，昵称不会被截断。 */
+    padding: 9rpx 9rpx 9rpx 8rpx;
 }
 
 .avatar {
@@ -133,7 +137,7 @@ page {
     position: relative;
     min-width: 0;
     flex: 1;
-    margin-left: 13rpx;
+    margin-left: 9rpx;
     z-index: 1;
 }
 
@@ -216,8 +220,9 @@ page {
     flex: none;
     display: flex;
     align-items: center;
-    gap: 5rpx;
-    padding: 9rpx 16rpx 9rpx 9rpx;
+    /* 与身份卡一起收窄 20rpx，换来叽分卡整体向中间移动、与胶囊拉开呼吸间隙。 */
+    gap: 3rpx;
+    padding: 9rpx 8rpx 9rpx 9rpx;
 }
 
 .feather-clip {

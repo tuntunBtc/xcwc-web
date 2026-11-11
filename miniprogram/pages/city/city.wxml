@@ -4,9 +4,17 @@
      dialog 改为遮罩 + 浮层，六城顺序、文案、状态与网页端一致。 -->
 <view class="city-page">
 
+    <!-- 上半部分背景从屏幕 y=0 连续铺满（对齐小窝页「底图独立成层、内容层透明」的做法）。
+         自定义导航下状态栏/胶囊安全区随机型变化，这部分用主视觉顶边延展条填充；
+         主视觉是 960x722 横构图，保持原比例贴在安全区下方，不整屏拉伸也不裁切主体。
+         整张图只在这里渲染一次，.hero-stage 不再重复放图，避免出现接缝。 -->
+    <view class="page-hero-scene" style="height:{{heroSceneHeight}}rpx">
+        <image class="hero-scene-top" src="/assets/city/felt/hero-top-extend.webp" mode="scaleToFill" style="height:{{topInset}}rpx"></image>
+        <image class="hero-scene-art" src="/assets/city/felt/hero.webp" mode="scaleToFill" style="top:{{topInset}}rpx"></image>
+    </view>
+
     <view class="hero" style="padding-top:{{topInset}}rpx">
         <view class="hero-stage">
-            <image class="hero-art" src="/assets/city/felt/hero.webp" mode="scaleToFill"></image>
             <view class="hero-fade"></view>
 
             <view class="topbar">

@@ -1,22 +1,43 @@
-/* 按网页端 src/adopt/v1/template.html + adopt.css 的一屏叠图版式换算为 rpx。
-   WXSS 不支持 cqw / aspect-ratio / ::before 噪声层，改用百分比定位与固定 4:3 高度。 */
+/* 主视觉与文字共用 4:3 坐标系；安全区和草地单独铺满。 */
 .adopt-page {
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     background: #c8df83;
 }
 
-/* 自定义导航栏后页面从屏幕顶端渲染。这里用主视觉顶色（scene.webp y=0 平均 #98b89b）
-   做一段天空延展，占位状态栏与右上角胶囊：插画从安全区下方完整铺开，百分比叠层不错位，
-   也不会被灵动岛或胶囊压住标题、灯笼与卷轴。高度由 readTopInsetRpx() 按机型动态给出。 */
+/* 主图上缘可伸入安全区 42rpx；标题自带约 62rpx 的图内顶距。 */
 .immersive-top {
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: #98b89b;
+}
+
+.immersive-top-art {
+    position: absolute;
+    top: 100%;
+    left: 0;
     width: 100%;
-    background: linear-gradient(180deg, #a9c8ae 0%, #98b89b 100%);
+    height: 562.5rpx;
+    transform: scaleY(-3);
+    transform-origin: center top;
+    pointer-events: none;
+}
+
+.immersive-top::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #a1c0ac 0%, rgba(161, 192, 172, 0.94) 32%, rgba(161, 192, 172, 0.48) 66%, transparent 100%);
+    pointer-events: none;
 }
 
 .scene {
     position: relative;
     width: 100%;
-    height: 562rpx;
+    height: 562.5rpx;
+    flex-shrink: 0;
     overflow: hidden;
 }
 
@@ -135,7 +156,9 @@
 .pill-2 { left: 72.5%; }
 
 .notice {
-    margin: 0 20rpx;
+    position: relative;
+    z-index: 2;
+    margin: 12rpx 20rpx 0;
     padding: 18rpx 24rpx;
     border-radius: 18rpx;
     background: #fff6e7;
@@ -162,7 +185,9 @@
 
 .details {
     position: relative;
-    min-height: 620rpx;
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     background: #c8df83;
 }
@@ -172,7 +197,8 @@
     left: 0;
     top: 0;
     width: 100%;
-    height: 560rpx;
+    height: 100%;
+    pointer-events: none;
 }
 
 .details-bottom {
@@ -180,16 +206,19 @@
     left: 0;
     bottom: 0;
     width: 100%;
-    height: 200rpx;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 44%);
 }
 
 .form {
     position: relative;
     z-index: 2;
+    flex: 1 0 auto;
     display: flex;
     flex-direction: column;
+    justify-content: center;
     box-sizing: border-box;
-    padding: 296rpx 40rpx 40rpx;
+    padding: 88rpx 40rpx 42rpx;
 }
 
 .name-heading {
@@ -294,9 +323,18 @@
     line-height: 1.5;
 }
 
-/* 顶部不放返回按钮；仅从站内页面跳入时，在页尾保留一个不显眼的退出口。 */
+.footer {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 22rpx;
+}
+
+/* 只在站内跳转时显示，背景照常铺进底部手势区。 */
 .back-link {
-    padding: 24rpx 0 48rpx;
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
     text-align: center;
     color: #6b7c4a;
     font-size: 24rpx;

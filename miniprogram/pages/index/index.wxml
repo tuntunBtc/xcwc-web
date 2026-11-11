@@ -9,7 +9,7 @@
     <view class="scene-shade"></view>
 
     <!-- 顶部 HUD：头像 / 名字 / 城市 / 相伴 / 切换 / 叽分钱包 -->
-    <view class="hud" style="top:{{layout.hudTop}}rpx">
+    <view class="hud" style="top:{{layout.hudTop}}rpx;right:{{layout.hudRight}}rpx">
         <view class="identity" bindtap="onSwitch" hover-class="ui-hover">
             <image class="tex-bg" src="/assets/nest/pill.webp" mode="scaleToFill"></image>
             <view class="avatar"><image src="/assets/nest/avatar.webp" mode="aspectFill"></image></view>

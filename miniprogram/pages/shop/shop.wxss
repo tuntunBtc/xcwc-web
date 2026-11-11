@@ -4,23 +4,62 @@
    WXSS 不支持本地 background-image / cqw / :has() / mix-blend-mode / ::before，
    毛毡纹理一律用绝对定位 image 铺底，渐变圆钮与印章叶片用真实 view 绘制。 */
 .shop-page {
+    position: relative;
     min-height: 100vh;
-    background: #edf0d7;
+    /* 只在底图未就绪时兜底，取底图顶部同色，避免下拉回弹出现另一块绿。 */
+    background: #dfedce;
     color: #79502d;
     font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
     font-size: 28rpx;
 }
 
-.status-space {
+/* 页面底图贴住视口，在橱窗下方的内容和透明底栏背后露出。 */
+.page-scene {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-    background: linear-gradient(180deg, #dfedce 0%, #e6edcf 100%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.status-space {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    overflow: hidden;
+    background: transparent;
+}
+
+/* 只显示橱窗的最上缘。与下方 359rpx 的轮播使用同一裁切，接缝位置一致。 */
+.hero-top-art {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 359rpx;
+    transform: scaleY(-4);
+    transform-origin: center top;
+    pointer-events: none;
+}
+
+.hero-top-shade {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(180deg, rgba(186, 218, 208, 0.92), rgba(186, 218, 208, 0.82) 48%, rgba(186, 218, 208, 0.34) 82%, transparent);
+    pointer-events: none;
 }
 
 .app {
+    position: relative;
+    z-index: 1;
     width: 100%;
-    /* 底部留白兼容全站 custom-tab-bar（毛绒底栏约 187rpx + Home Indicator）。 */
-    padding: 20rpx 0 230rpx;
-    background: linear-gradient(180deg, #dfedce 0%, #f5f0dc 41%, #f3f0d9 100%);
+    /* 品牌条已移出文档流，顶部不再留 20rpx；底部留白兼容全站 custom-tab-bar。 */
+    padding: 0 0 230rpx;
+    background: transparent;
 }
 
 .masthead-bg,
@@ -39,17 +78,21 @@
     z-index: 0;
 }
 
-/* 品牌条 66px */
+/* 品牌条 66px：脱离文档流锚定到胶囊同排。
+   基准尺寸 726×128rpx 保持不变，只用 transform:scale 的一个系数整体等比缩放，
+   宽 / 高 / 文字 / 图标同比例变化，绝不单独改 width 把粉色毛毡压扁。
+   top / left / scale 由 utils/shop-layout.js 按真实胶囊矩形内联注入。 */
 .masthead {
-    position: relative;
-    z-index: 1;
+    position: absolute;
+    z-index: 6;
+    width: 726rpx;
     height: 128rpx;
-    margin: 0 12rpx;
     padding: 0 38rpx;
     display: flex;
     align-items: center;
     justify-content: space-between;
     box-sizing: border-box;
+    transform-origin: 0 0;
 }
 
 .brand {
@@ -113,6 +156,18 @@
     height: 56rpx;
 }
 
+/* 等比缩放后按钮视觉变小，用透明热区把点按范围补回 44px 量级；
+   随父级一起 scale，不单独改变宽度，也不越过品牌条右边界。 */
+.cart-hit {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 132rpx;
+    height: 132rpx;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+}
+
 .cart-count {
     position: absolute;
     right: 2rpx;
@@ -135,7 +190,6 @@
     position: relative;
     width: 100%;
     height: 359rpx;
-    margin-top: 2rpx;
     background: #e6edcf;
     overflow: hidden;
 }

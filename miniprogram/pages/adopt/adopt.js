@@ -43,9 +43,20 @@ function chars(value) {
     return Array.from(String(value || ''));
 }
 
+function readBottomInsetPx() {
+    try {
+        const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+        const inset = info.safeArea ? info.screenHeight - info.safeArea.bottom : 0;
+        return Number.isFinite(inset) ? Math.max(0, inset) : 0;
+    } catch (error) {
+        return 0;
+    }
+}
+
 Page({
     data: {
         topInset: 176,
+        bottomInset: 0,
         showBackLink: false,
         birdCode: '',
         ready: false,
@@ -70,10 +81,18 @@ Page({
         // NFC 直达领养页时页面栈只有 1 层，不需要任何返回入口；
         // 仅当从站内页面跳入时，在页面底部保留一个不显眼的退出口（顶部保持纯净）。
         this.setData({
-            topInset: safeArea.readTopInsetRpx(),
             showBackLink: getCurrentPages().length > 1,
         });
+        this.updateInsets();
         this.load();
+    },
+
+    onResize() {
+        this.updateInsets();
+    },
+
+    updateInsets() {
+        this.setData({ topInset: safeArea.readTopInsetRpx(), bottomInset: readBottomInsetPx() });
     },
 
     load() {

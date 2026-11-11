@@ -1,24 +1,37 @@
 <view class="shop-page">
-    <view class="status-space" style="height: {{topInset}}rpx;"></view>
+    <!-- 商城内容区与透明底栏背后的底图。 -->
+    <image class="page-scene" src="/assets/shop/felt/page-background.webp" mode="scaleToFill" style="height:{{viewportHeight}}rpx"></image>
 
-    <view class="app">
-        <view class="masthead">
-            <image class="masthead-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
-            <view class="brand">
-                <view class="brand-mark">
-                    <image class="brand-icon" src="/assets/shop/icons/bird.png" mode="aspectFit"></image>
-                </view>
-                <view class="brand-text">
-                    <text class="brand-name">小鸟商城</text>
-                    <text class="brand-en">BIRD CITY DIARY</text>
-                </view>
+    <!-- 品牌条移到胶囊同排：整块按一个系数等比缩放，不单独压缩宽度；
+         右边界由 shop-layout.js 按真实胶囊左缘留出间隙，不遮挡右上角圆圈。 -->
+    <view class="masthead" style="top:{{mastheadTop}}rpx;left:{{mastheadLeft}}rpx;transform:scale({{mastheadScale}})">
+        <image class="masthead-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
+        <view class="brand">
+            <view class="brand-mark">
+                <image class="brand-icon" src="/assets/shop/icons/bird.png" mode="aspectFit"></image>
             </view>
-            <view class="cart-icon" bindtap="handleOpenCart">
-                <image class="cart-img" src="/assets/shop/icons/cart.png" mode="aspectFit"></image>
-                <view wx:if="{{cartCount}}" class="cart-count">{{cartCount}}</view>
+            <view class="brand-text">
+                <text class="brand-name">小鸟商城</text>
+                <text class="brand-en">BIRD CITY DIARY</text>
             </view>
         </view>
+        <view class="cart-icon" bindtap="handleOpenCart">
+            <image class="cart-img" src="/assets/shop/icons/cart.png" mode="aspectFit"></image>
+            <view wx:if="{{cartCount}}" class="cart-count">{{cartCount}}</view>
+            <!-- 透明热区：品牌条整体等比缩小后仍保留 ≥44px 的可点范围，不改变任何可见元素。 -->
+            <view class="cart-hit"></view>
+        </view>
+    </view>
 
+    <!-- 用当前橱窗图的上沿铺进品牌条与系统状态栏。 -->
+    <view class="status-space" style="height: {{headerSpace}}rpx;" aria-hidden="true">
+        <block wx:if="{{banners.length}}">
+            <image class="hero-top-art" src="{{banners[bannerIndex].image}}" mode="aspectFill"></image>
+            <view class="hero-top-shade"></view>
+        </block>
+    </view>
+
+    <view class="app">
         <view class="hero">
             <swiper class="hero-swiper" autoplay="{{bannerAutoplay}}" interval="5000" circular="{{true}}" current="{{bannerIndex}}" bindchange="handleSlide">
                 <swiper-item wx:for="{{banners}}" wx:key="id">
