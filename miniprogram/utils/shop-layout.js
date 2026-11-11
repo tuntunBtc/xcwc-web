@@ -15,8 +15,8 @@ var HEADER_BOTTOM_GAP_RPX = 12; // 品牌条底与轮播之间的留白
 var MIN_SCALE = 0.5;            // 极端窄屏兜底，正常机型不会触发
 var MAX_SCALE = 1;
 
-// 读不到胶囊矩形（老基础库 / 部分安卓）时按 375px 参考机型的胶囊位置换算。
-var REF_MENU_LEFT_PX = 289;
+// 读不到胶囊矩形时，按参考机型从窗口右侧预留 86px。
+var REF_MENU_RIGHT_INSET_PX = 86;
 var REF_MENU_TOP_PX = 53;
 var REF_MENU_HEIGHT_PX = 27;
 
@@ -48,7 +48,7 @@ function computeShopLayout(input) {
         menuTopRpx = Math.round(menu.top * unit);
         menuHeightRpx = Math.round(menu.height * unit);
     } else {
-        menuLeftRpx = Math.round(REF_MENU_LEFT_PX * unit);
+        menuLeftRpx = Math.round(Math.max(0, width - REF_MENU_RIGHT_INSET_PX) * unit);
         menuTopRpx = Math.round(REF_MENU_TOP_PX * unit);
         menuHeightRpx = Math.round(REF_MENU_HEIGHT_PX * unit);
     }

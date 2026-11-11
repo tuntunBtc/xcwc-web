@@ -30,8 +30,6 @@ function frameAt(timeMs) {
 }
 
 function createNestIdle(page, opts) {
-    var audioSrc = opts.audioSrc;
-    var atlasSrc = opts.atlasSrc;
     var canvasId = opts.canvasId;
     var onStarted = opts.onStarted || function () {};
     var onCycleEnd = opts.onCycleEnd || function () {};
@@ -53,10 +51,10 @@ function createNestIdle(page, opts) {
     var frame = 0;
     var playGen = 0;
     var playPending = false;
+    var playHandlers = null;
     var blocked = false;
     var restart = true;
     var loadGen = 0;
-    var gestureArmed = false;
     var currentBird = null;
     var cadenceNextAt = 0;
     var canvasHidden = true;
@@ -71,6 +69,14 @@ function createNestIdle(page, opts) {
 
     function clearTimer() {
         if (timer) { clearTimeout(timer); timer = null; }
+    }
+
+    function clearPlayHandlers() {
+        if (!playHandlers) return;
+        audio.offPlay(playHandlers.play);
+        audio.offError(playHandlers.error);
+        audio.offEnded(playHandlers.ended);
+        playHandlers = null;
     }
 
     // 一段原声播完（约 6.08s）后，保持 30s 冷却再自驱播放下一段，
@@ -91,6 +97,7 @@ function createNestIdle(page, opts) {
     function stop() {
         playGen += 1;
         playPending = false;
+        clearPlayHandlers();
         clearTimer();
         // 清空画布，避免停在下一段的残帧盖住静态海报（与网页端动画结束后恢复 poster 一致）。
         if (ctx && canvas) { try { ctx.clearRect(0, 0, canvas.width, canvas.height); } catch (e) { /* ignore */ } }
@@ -171,17 +178,16 @@ function createNestIdle(page, opts) {
             scheduleAutoplay();
             return setUi();
         }
+        clearTimer();
+        clearPlayHandlers();
         if (audio.error) { try { audio.stop(); } catch (e) { /* ignore */ } }
         audio.loop = false;
         if (restart) { try { audio.seek(0); } catch (e) { /* ignore */ } restart = false; }
         playPending = true;
         blocked = false;
         var ticket = ++playGen;
-        try { audio.play(); } catch (e) {
-            playPending = false; blocked = true; stop(); onBlocked(); return;
-        }
-        audio.onPlay(function () {
-            if (disposed || ticket !== playGen) return;
+        function started() {
+            if (disposed || ticket !== playGen || !playPending) return;
             playPending = false;
             if (!enabled || paused) { stop(); return; }
             // 一轮真正开始：锁定冷却到下一段允许起点（对齐网页端 started(durationMs)），
@@ -189,28 +195,45 @@ function createNestIdle(page, opts) {
             cadenceNextAt = Date.now() + META.durationMs + GAP_MS;
             draw();
             onStarted();
-        });
-        audio.onError(function () {
+        }
+        function errored() {
             if (disposed || ticket !== playGen) return;
             playPending = false; blocked = true; stop(); onBlocked();
-        });
+        }
+        function ended() {
+            if (disposed || ticket !== playGen || playPending) return;
+            endCycle();
+        }
+        playHandlers = { play: started, error: errored, ended: ended };
+        audio.onPlay(started);
+        audio.onError(errored);
+        audio.onEnded(ended);
+        try { audio.play(); } catch (e) { errored(); }
     }
 
-    function ensure() {
-        if (disposed || !canPrepare || paused || ready || loading || (failed && !gestureArmed)) return;
+    async function ensure() {
+        if (disposed || !canPrepare || paused || ready || loading || failed) return;
         loading = true;
-        failed = false;
         var ticket = ++loadGen;
         setUi();
+        function canFinishLoad() {
+            if (disposed || ticket !== loadGen) return false;
+            if (!paused) return true;
+            loading = false;
+            return false;
+        }
         function failLoad() {
             if (disposed || ticket !== loadGen) return;
             failed = true;
             loading = false;
             setUi();
         }
-        initCanvas().then(function (item) {
-            if (disposed || ticket !== loadGen) return;
+        try {
+            var item = await initCanvas();
+            if (!canFinishLoad()) return;
             if (!item || !item.node) { failLoad(); return; }
+            var files = await opts.loadFiles();
+            if (!canFinishLoad()) return;
             canvas = item.node;
             canvas.width = Math.max(1, Math.round(item.width || FRAME_W));
             canvas.height = Math.max(1, Math.round(item.height || FRAME_H));
@@ -218,21 +241,25 @@ function createNestIdle(page, opts) {
             if (!ctx) { failLoad(); return; }
             var img = canvas.createImage();
             img.onload = function () {
-                if (disposed || ticket !== loadGen) return;
-                atlas = img;
-                if (!audio) {
-                    audio = wx.createInnerAudioContext();
-                    audio.src = audioSrc;
-                    audio.onEnded(endCycle);
+                if (!canFinishLoad()) return;
+                try {
+                    if (!audio) audio = wx.createInnerAudioContext();
+                    audio.src = files.audioSrc;
+                } catch (error) {
+                    failLoad();
+                    return;
                 }
+                atlas = img;
                 ready = true;
                 loading = false;
                 setUi();
                 apply();
             };
             img.onerror = failLoad;
-            img.src = atlasSrc;
-        }).catch(failLoad);
+            img.src = files.atlasSrc;
+        } catch (error) {
+            failLoad();
+        }
     }
 
     function initCanvas() {
@@ -252,7 +279,7 @@ function createNestIdle(page, opts) {
 
     // 网页端 sync：切换小鸟先停、记录当前鸟；再按 eligible / suspended / prepareEligible 决定播放。
     function sync(eligible, suspended, birdId, prepareEligible) {
-        if (currentBird !== birdId) { stop(); currentBird = birdId; frame = 0; blocked = false; gestureArmed = false; }
+        if (currentBird !== birdId) { stop(); currentBird = birdId; frame = 0; blocked = false; }
         if (canPrepare && !prepareEligible) {
             loadGen += 1;
             loading = false;
@@ -270,18 +297,11 @@ function createNestIdle(page, opts) {
         setUi();
     }
 
-    // 用户手势：网页端在点击栈里 load() 解锁音频权限；小程序在手势内 play() 即可，
-    // 这里确保资源已发起加载，并立即在手势栈内 play()，避免被自动播放策略拦截。
+    // 资源就绪后在手势栈内播放；分包未就绪时先加载，若自动播放受限则保留手动入口。
     function kick() {
         if (disposed || paused || !enabled || !canPrepare) return;
-        gestureArmed = true;
         blocked = false;
         if (failed) failed = false;
-        if (!audio) {
-            audio = wx.createInnerAudioContext();
-            audio.src = audioSrc;
-            audio.onEnded(endCycle);
-        }
         if (!ready) { ensure(); }
         // 已在冷却期内（上一段播完不足 30s）时不重播，避免照料后立刻又播。
         if (Date.now() < cadenceNextAt) return;
@@ -290,7 +310,6 @@ function createNestIdle(page, opts) {
 
     function retry() {
         if (disposed || paused || !canPrepare) return;
-        gestureArmed = true;
         blocked = false;
         if (failed) failed = false;
         if (!ready) { ensure(); return; }
@@ -299,6 +318,7 @@ function createNestIdle(page, opts) {
 
     function dispose() {
         disposed = true;
+        clearPlayHandlers();
         clearTimer();
         if (audio) { try { audio.destroy(); } catch (e) { /* ignore */ } audio = null; }
         atlas = null;

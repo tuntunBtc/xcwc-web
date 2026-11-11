@@ -3,6 +3,8 @@
 const store = require('../../utils/store');
 const safeArea = require('../../utils/safe-area');
 const tabBar = require('../../utils/tab-bar');
+const collectionMedia = require('../../utils/collection-media');
+const { ERROR_TEXT } = require('../../utils/nest-rules');
 
 // 六城顺序、英文名、简介与雪碧图格位对齐网页端 src/city/city.js 的 cityCollectionCities，
 // 也对应需求基线「城市页毛绒视觉与六城列表」：杭州/苏州/南京/上海/西安/武汉，三列两行，
@@ -16,27 +18,40 @@ const CITIES = Object.freeze([
     { id: 'wh', code: 'wuhan', name: '武汉', en: 'WUHAN', line: '江城花开，等你而来', artLeft: '-200%', artTop: '-100%' },
 ]);
 
-// 调试期规则文案按本小程序 guest-store 的实际能力写，不沿用网页端「问候 / 合照」等
-// 本端尚未实现的奖励，也不宣称云端钱包或跨设备同步。
-const POINTS_RULES = '摸摸小鸟每次 +1 叽分，30 秒冷却；每日叽分上限 10。微信步数每 1000 步可兑换 1 叽分，每日最多 5（调试期为模拟数据，正式版由服务端结算）。叽分只保存在本机，不充值、不提现、不跨设备同步。网页端的问候、合照、装扮等规则在小程序端尚未接入，不会据此发放叽分。叽分不设到期，也不能兑换食物、饮水、孵化或城市基础权益。';
+const POINTS_RULES = '有效抚摸每次 +1 叽分，间隔 30 秒。每天前 3 张不同原图的合照各可获得 1 叽分，重复原图不计分。本机互动奖励共用每日额度，按北京时间结算。';
 
 // 与 city.wxss 的 .hero-stage 高度保持一致：底图层 = 状态栏安全区 + 主视觉区。
 // 两者用同一个数，插入画与下方卡片区之间才不会出现缝隙或重叠。
 const HERO_STAGE_RPX = 519;
 
 const HANGZHOU_EMPTY = '尚未领取杭州小鸟。碰一碰已建档的实体小黄莺并打开链接，即可领取。';
-const OTHER_CITY_EMPTY = '这座城的小鸟暂未开放，敬请期待。';
+const OTHER_CITY_EMPTY = '本机还没有领取这座城的小鸟。';
 
-// 调试期本机模型只有一只已领取并孵化的小黄莺（杭州）。
-// 不根据编码前缀推断城市，不凭打开页面解锁、发鸟蛋或发放叽分；
-// 正式版应由服务端按账号绑定关系返回可解锁城市。
+// 本机模型保存一只小鸟及其已核验的城市。不凭编码前缀推断城市。
 function unlockedCityCodes(snapshot) {
-    return snapshot && snapshot.hasBird ? ['hangzhou'] : [];
+    return snapshot && snapshot.hasBird && CITIES.some(function (city) { return city.code === snapshot.cityCode; })
+        ? [snapshot.cityCode] : [];
+}
+
+function readStatusBarHeight() {
+    try {
+        const info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
+        if (info && Number.isFinite(info.statusBarHeight) && info.statusBarHeight >= 0) return info.statusBarHeight;
+    } catch (error) {
+        // 旧基础库取不到高度时保留常见的状态栏高度。
+    }
+    return 20;
 }
 
 Page({
     data: {
         topInset: 176,
+        statusBarHeight: 20,
+        statusBarCovered: false,
+        citySprite: '',
+        artworkLoading: false,
+        artworkFailed: false,
+        storageUnavailable: false,
         // 上半部分底图层总高度：安全区 + 主视觉区，onLoad 按真实 inset 重算。
         heroSceneHeight: 176 + HERO_STAGE_RPX,
         // 弹层顶部：H5 的 dialog 距顶 24px（≈40rpx）；自定义导航下再下移状态栏安全区，
@@ -74,33 +89,76 @@ Page({
     },
 
     onLoad() {
+        this.updateLayout();
+    },
+
+    onResize() {
+        this.updateLayout();
+    },
+
+    onPageScroll(event) {
+        const statusBarCovered = event.scrollTop > 0;
+        if (statusBarCovered !== this.data.statusBarCovered) this.setData({ statusBarCovered });
+    },
+
+    updateLayout() {
         const inset = safeArea.readTopInsetRpx();
         const viewport = safeArea.readViewportRpx();
         const sheetTop = inset + 40;
         this.setData({
             topInset: inset,
+            statusBarHeight: readStatusBarHeight(),
             heroSceneHeight: inset + HERO_STAGE_RPX,
             sheetTop: sheetTop,
-            sheetMaxHeight: Math.max(600, viewport - sheetTop - 200),
+            sheetMaxHeight: Math.max(0, viewport - sheetTop - 200),
         });
-        this.render();
     },
 
     onShow() {
+        this.pageVisible = true;
         tabBar.syncSelected(this, 1);
+        this.loadCityArtwork();
         // 切回城市 tab 时重新读取本机记录；全程只读，不发叽分、不领取小鸟。
         this.render();
+    },
+
+    onHide() {
+        this.pageVisible = false;
+        this.handleCloseSheet();
+    },
+
+    onUnload() {
+        this.unloaded = true;
+    },
+
+    loadCityArtwork() {
+        if (this.unloaded || this.data.citySprite) return;
+        if (this.artworkPending) return this.artworkPending;
+        this.setData({ artworkLoading: true });
+        this.artworkPending = Promise.resolve().then(() => collectionMedia.load()).catch(() => null).then(media => {
+            this.artworkPending = null;
+            if (this.unloaded) return;
+            const citySprite = media && media.citySprite || '';
+            this.setData({ citySprite, artworkLoading: false, artworkFailed: !citySprite });
+        });
+        return this.artworkPending;
     },
 
     // 筛选值显式传入，不依赖 setData 更新 this.data 的时序。
     render(requestedFilter) {
         const result = store.snapshot();
         const snapshot = result.data ? result.data.snapshot : null;
+        const filter = requestedFilter || this.pendingCityFilter || this.data.filter;
+        if (!snapshot) {
+            this.pendingCityFilter = filter;
+            this.setData({ storageUnavailable: true });
+            return false;
+        }
+        this.pendingCityFilter = null;
         this.snapshot = snapshot;
         const unlocked = unlockedCityCodes(snapshot);
         const unlockedCount = unlocked.length;
         const lockedCount = CITIES.length - unlockedCount;
-        const filter = requestedFilter || this.data.filter;
         const filtered = CITIES.filter(function (city) {
             if (filter === 'unlocked') return unlocked.indexOf(city.code) !== -1;
             if (filter === 'locked') return unlocked.indexOf(city.code) === -1;
@@ -118,9 +176,10 @@ Page({
         });
         const complete = filter === 'locked' && unlockedCount === CITIES.length;
         this.setData({
+            storageUnavailable: false,
             filter: filter,
-            birdName: snapshot && snapshot.hasBird ? snapshot.nickname : '我的小鸟',
-            points: snapshot ? snapshot.points : 0,
+            birdName: snapshot.hasBird ? snapshot.nickname : '我的小鸟',
+            points: snapshot.points,
             visibleCities: visible,
             unlockedCount: unlockedCount,
             lockedCount: lockedCount,
@@ -132,6 +191,7 @@ Page({
                 ? '六座城市都已收进手账，去看看陪你走过这些城市的小鸟吧。'
                 : '碰一碰实体小鸟并领取后，回来收集这座城。',
         });
+        return true;
     },
 
     handleFilter(event) {
@@ -145,13 +205,21 @@ Page({
         this.render('all');
     },
 
+    retryCityData() {
+        this.render();
+    },
+
     handleCity(event) {
         const dataset = event && event.currentTarget ? event.currentTarget.dataset : null;
         const id = dataset ? dataset.id : '';
         const city = CITIES.filter(function (item) { return item.id === id; })[0];
         if (!city) return;
+        if (!this.render()) {
+            wx.showToast({ title: ERROR_TEXT.STORAGE_UNAVAILABLE, icon: 'none' });
+            return;
+        }
         const snapshot = this.snapshot;
-        const hasBird = city.code === 'hangzhou' && !!(snapshot && snapshot.hasBird);
+        const hasBird = unlockedCityCodes(snapshot).indexOf(city.code) !== -1;
         this.setData({
             sheetVisible: true,
             sheetKind: 'birds',
@@ -171,7 +239,11 @@ Page({
     },
 
     openWallet(rulesFirst) {
-        const snapshot = this.snapshot || (store.snapshot().data || {}).snapshot || {};
+        if (!this.render()) {
+            wx.showToast({ title: ERROR_TEXT.STORAGE_UNAVAILABLE, icon: 'none' });
+            return;
+        }
+        const snapshot = this.snapshot;
         this.setData({
             sheetVisible: true,
             sheetKind: 'wallet',
@@ -179,9 +251,10 @@ Page({
             walletRulesFirst: rulesFirst,
             walletRulesOpen: rulesFirst,
             walletLocalNoteOpen: false,
-            todayPoints: snapshot.todayPoints || 0,
-            dailyLimit: snapshot.dailyLimit || 10,
-            ledger: snapshot.ledger || [],
+            points: snapshot.points,
+            todayPoints: snapshot.todayPoints,
+            dailyLimit: snapshot.dailyLimit,
+            ledger: snapshot.ledger,
         });
     },
 
@@ -193,26 +266,34 @@ Page({
         this.setData({ walletLocalNoteOpen: !this.data.walletLocalNoteOpen });
     },
 
-    // 调试期没有公开目录接口（等备案域名 + request 合法域名）。
-    // 保留网页端同款「重新读取目录」入口，但明确提示未接入，不伪造读取成功或生成小鸟。
-    handleRetryCatalog() {
-        wx.showToast({ title: '公开目录待接入，本机伙伴仍可查看', icon: 'none' });
-    },
-
     handleCloseSheet() {
         this.setData({ sheetVisible: false, sheetKind: '' });
     },
 
-    // 网页端顶部入口进入「我的小鸟」列表（flock）；小程序暂无该页，
-    // 先落到「我的」，保留真实昵称与叽分入口，不新增虚构页面。
     handleProfile() {
-        wx.switchTab({ url: '/pages/profile/profile' });
+        this.switchShortcut('/pages/profile/profile', '我的页面暂时打不开，请重试', tabBar.requestProfileBirds);
     },
 
     // 对应网页端详情弹层里的「去小窝」。
     handleVisitBird() {
-        this.setData({ sheetVisible: false, sheetKind: '' });
-        wx.switchTab({ url: '/pages/index/index' });
+        this.switchShortcut('/pages/index/index', '小窝暂时打不开，请重试');
+    },
+
+    switchShortcut(url, failureText, prepareHandoff) {
+        if (this.shortcutPending || this.unloaded) return;
+        this.shortcutPending = true;
+        const cancelHandoff = prepareHandoff && prepareHandoff();
+        const fail = () => {
+            if (cancelHandoff) cancelHandoff();
+            if (this.pageVisible && !this.unloaded) wx.showToast({ title: failureText, icon: 'none' });
+        };
+        const complete = () => { this.shortcutPending = false; };
+        try {
+            wx.switchTab({ url, fail, complete });
+        } catch (error) {
+            complete();
+            fail();
+        }
     },
 
     noop() {},

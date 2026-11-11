@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw, ImageFilter
 ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
 DIST = os.path.join(ROOT, 'dist')
 MP = os.path.join(ROOT, 'miniprogram', 'assets', 'shop')
+COVERS = os.path.join(ROOT, 'miniprogram', 'media', 'collection', 'shop-covers')
 CATALOG = '/Users/beluga/Code/xcwc/xcwc-api/src/main/resources/shop/catalog.json'
 
 
@@ -115,12 +116,12 @@ def main():
         size, n = derive(src, dst, 750, 78)
         report.append((os.path.relpath(dst, MP), banner['imageUrl'].lstrip('/'), size, n))
 
-    os.makedirs(os.path.join(MP, 'covers'), exist_ok=True)
+    os.makedirs(COVERS, exist_ok=True)
     for p in catalog['products']:
         if not p.get('enabled', True):
             continue
         src = os.path.join(DIST, p['coverImageUrl'].lstrip('/'))
-        dst = os.path.join(MP, 'covers', p['id'] + '.webp')
+        dst = os.path.join(COVERS, p['id'] + '.webp')
         size, n = derive(src, dst, 480, 72)
         report.append((os.path.relpath(dst, MP), p['coverImageUrl'].lstrip('/'), size, n))
 

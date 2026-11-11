@@ -16,6 +16,7 @@ import sys
 ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
 MP = os.path.join(ROOT, 'miniprogram')
 SHOP_ASSETS = os.path.join(MP, 'assets/shop')
+SHOP_COVERS = os.path.join(MP, 'media/collection/shop-covers')
 NAV_ASSETS = os.path.join(MP, 'assets/navigation/plush')
 OUT_DIR = os.path.join(ROOT, 'output', 'miniprogram-shop-preview')
 CATALOG = '/Users/beluga/Code/xcwc/xcwc-api/src/main/resources/shop/catalog.json'
@@ -103,7 +104,7 @@ def main():
             'id': p['id'], 'title': p['title'], 'city': p['cityName'],
             'cityCode': p['cityCode'], 'remark': p.get('remark', ''),
             'price': p['price'], 'priceText': '¥%g' % p['price'],
-            'cover': data_uri(os.path.join(SHOP_ASSETS, 'covers', p['id'] + '.webp')),
+            'cover': data_uri(os.path.join(SHOP_COVERS, p['id'] + '.webp')),
             'sortOrder': p['sortOrder'],
             'description': p['cityName'] + '城市系列 · ' + p.get('remark', '') + '。当前小程序仅供浏览，暂未开通购买。',
         })

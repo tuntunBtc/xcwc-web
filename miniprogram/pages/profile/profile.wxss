@@ -191,6 +191,21 @@ page {
 }
 
 /* ---- 分组与菜单 ---- */
+.artwork-retry {
+    width: 100%;
+    min-height: 44px;
+    margin: 0 0 18rpx;
+    padding: 0 18rpx;
+    border-radius: 22rpx;
+    background: #fff7e8;
+    color: #765f40;
+    font-size: 24rpx;
+    line-height: 44px;
+}
+
+.artwork-retry::after { border: 0; }
+.artwork-retry[disabled] { opacity: 0.65; }
+
 .section {
     margin: 33rpx 29rpx 0;
 }
@@ -400,6 +415,8 @@ page {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+    min-height: 44px;
     margin-top: 25rpx;
     padding: 16rpx 40rpx;
     border: 2rpx solid #ddcfac;
@@ -422,17 +439,31 @@ page {
     right: 0;
     bottom: 0;
     z-index: 2000;
+    box-sizing: border-box;
+    padding-bottom: 149rpx;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(66, 83, 62, 0.5);
 }
 
+.overlay-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
 .sheet {
     position: relative;
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box;
     width: 724rpx;
+    max-height: 100%;
     padding: 100rpx 42rpx 46rpx;
+    padding-top: max(100rpx, 54px);
     border: 6rpx solid #efe0bd;
     border-radius: 46rpx;
     background: #fff8e9;
@@ -441,6 +472,8 @@ page {
 }
 
 .sheet-body {
+    flex: 0 1 auto;
+    min-height: 0;
     max-height: 70vh;
 }
 
@@ -454,6 +487,8 @@ page {
     justify-content: center;
     width: 85rpx;
     height: 85rpx;
+    min-width: 44px;
+    min-height: 44px;
     border-radius: 50%;
     background: #e8edce;
 }
@@ -515,7 +550,10 @@ page {
 }
 
 .fold-title {
-    display: block;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 44px;
     padding: 19rpx 0;
     font-size: 25rpx;
     line-height: 44rpx;
@@ -594,8 +632,20 @@ page {
     color: #684c30;
 }
 
-.reset-body {
-    max-height: 70vh;
+@media (max-height: 520px) {
+    .sheet {
+        padding-top: 56px;
+        padding-bottom: 14px;
+    }
+
+    .sheet-close {
+        width: 44px;
+        height: 44px;
+    }
+
+    .reset-sheet {
+        padding-top: 14px;
+    }
 }
 
 .reset-h2 {
@@ -635,6 +685,7 @@ page {
     align-items: center;
     justify-content: center;
     min-height: 88rpx;
+    min-height: max(88rpx, 44px);
     border-radius: 29rpx;
     font-size: 27rpx;
 }
@@ -727,6 +778,7 @@ page {
     align-items: center;
     justify-content: center;
     min-height: 88rpx;
+    min-height: max(88rpx, 44px);
     margin-top: 31rpx;
     border-radius: 29rpx;
     background: #e4ebcf;

@@ -3,6 +3,7 @@
 module.exports = {
     API_BASE: '',
     USE_LOCAL_FIXTURE: true,
+    ENABLE_WERUN_SUPPLIES: false,
 
     // 调试期步数入口：模拟 wx.getWeRunData 解密后的「当日步数」。
     // 正式实现必须由服务端用 session_key 解密 encryptedData，

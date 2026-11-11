@@ -48,11 +48,11 @@ function runPage(rel, override) {
         wx: wx,
         getCurrentPages: () => [{ route: 'pages/index/index' }, { route: 'pages/wardrobe/wardrobe' }],
         require: (p) => {
-            if (p.includes('wardrobe-catalog')) return require(path.join(MP, 'utils/wardrobe-catalog'));
+            if (p.includes('wardrobe-catalog')) return require(path.join(MP, 'pages/wardrobe/wardrobe-catalog'));
             if (p.includes('safe-area')) return require(path.join(MP, 'utils/safe-area'));
             if (p.includes('store')) return { snapshot: () => ({ data: { snapshot: { hasBird: true, points: 0, food: 3, ledger: [] } } }) };
             if (p.includes('tab-bar')) return { syncSelected: () => {} };
-            if (p.includes('nest-rules')) return { describeNestState: () => ({ needs: [], speech: '', emotion: 'idle' }), emotionArt: () => '' };
+            if (p.includes('nest-rules')) return require(path.join(MP, 'utils/nest-rules'));
             if (p.includes('nest-layout')) return { readNestLayout: () => ({ tabBarHeight: 149 }) };
             if (p.includes('entry')) return { buildAdoptUrl: () => '/pages/adopt/adopt' };
             if (p.includes('config')) return { DEBUG_DEMO_BIRD_CODE: 'TEST' };
@@ -106,20 +106,40 @@ function entryTests() {
         assert.deepEqual(calls, [['showToast', '换装功能本期暂未开放', 'none']]);
         assert.equal(JSON.stringify(page.data), before);
     });
-    t('底栏在衣橱页高亮小窝（与 H5 一致）', () => {
+    t('衣橱底栏跟随来源，直接启动默认小窝', () => {
         const src = fs.readFileSync(path.join(MP, 'custom-tab-bar/index.js'), 'utf8');
-        let def = null;
+        const wardrobe = 'pages/wardrobe/wardrobe';
+        const wxml = fs.readFileSync(path.join(MP, wardrobe + '.wxml'), 'utf8');
+        assert.match(wxml, /<tab-bar\b[^>]*\bfollow-page-stack="\{\{true\}\}"/);
+        let definition;
+        let routes;
         const sb = {
-            Component: (d) => { def = d; },
+            Component: (d) => { definition = d; },
             wx: { getWindowInfo: () => ({ windowWidth: 390 }) },
-            getCurrentPages: () => [{ route: 'pages/wardrobe/wardrobe' }],
+            getCurrentPages: () => routes.map((route) => ({ route })),
             module: { exports: {} }, exports: {},
         };
         vm.runInNewContext(src, sb, { filename: 'custom-tab-bar/index.js' });
-        const tabs = def.data.list.map(x => x.pagePath);
-        assert.equal(tabs.includes('/pages/wardrobe/wardrobe'), false);
-        assert.equal(tabs.indexOf('/pages/wardrobe/wardrobe'), -1);
-        assert.equal(def.data.selected, 0);
+        const home = 'pages/index/index';
+        const profile = 'pages/profile/profile';
+        assert.equal(definition.data.list.some((tab) => tab.pagePath === '/' + wardrobe), false);
+        for (const [stack, followPageStack, expected] of [
+            [[profile, wardrobe], true, profile],
+            [[home, wardrobe], true, home],
+            [[wardrobe], true, home],
+            [[profile, 'pages/photo/photo'], false, home],
+        ]) {
+            routes = stack;
+            const instance = {
+                data: { ...definition.data, followPageStack },
+                setData(data) { Object.assign(this.data, data); },
+            };
+            definition.lifetimes.attached.call(instance);
+            assert.equal(instance.data.list[instance.data.selected].pagePath, '/' + expected);
+            if (followPageStack) instance.data.selected = -1;
+            definition.pageLifetimes.show.call(instance);
+            assert.equal(instance.data.list[instance.data.selected].pagePath, '/' + expected);
+        }
     });
 }
 

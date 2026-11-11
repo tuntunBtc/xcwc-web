@@ -20,7 +20,7 @@ from PIL import Image, ImageEnhance
 
 ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
 DIST = os.path.join(ROOT, 'dist', 'assets')
-OUT = os.path.join(ROOT, 'miniprogram', 'assets', 'wardrobe')
+OUT = os.path.join(ROOT, 'miniprogram', 'pages', 'wardrobe', 'assets')
 FELT = os.path.join(OUT, 'felt')
 SKINS = os.path.join(OUT, 'huangying')
 

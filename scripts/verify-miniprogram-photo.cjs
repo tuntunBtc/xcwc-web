@@ -33,7 +33,10 @@ pageFiles.forEach(function (name) {
     ok('页面文件存在 ' + name, fs.existsSync(path.join(PAGE, name)));
 });
 const app = JSON.parse(fs.readFileSync(path.join(ROOT, 'app.json'), 'utf8'));
-ok('app.json 注册 photo 页', app.pages.indexOf('pages/photo/photo') >= 0);
+ok('app.json 以原路径注册 photo 普通分包', !app.pages.includes('pages/photo/photo') &&
+    (app.subpackages || []).some(function (pkg) {
+        return pkg.root === 'pages/photo' && !pkg.independent && pkg.pages.includes('photo');
+    }));
 const pageJson = JSON.parse(fs.readFileSync(path.join(PAGE, 'photo.json'), 'utf8'));
 ok('自定义导航', pageJson.navigationStyle === 'custom');
 ok('复用公共底栏组件', !!(pageJson.usingComponents && pageJson.usingComponents['photo-tab-bar']));
@@ -78,10 +81,37 @@ const missing = Array.from(handlers).filter(function (name) {
 });
 ok('事件处理器全部定义 (' + handlers.size + ')', missing.length === 0, missing.join(','));
 ok('画布直接接收本地触点', /<canvas\b[^>]*\bbindtouchstart="onTouchStart"[^>]*>/.test(wxml));
+check('小鸟横向滑动区的内边距包含在面板宽度内', function () {
+    assert.match(wxml, /<scroll-view\b[^\r\n]*class="bird-scroller"[^\r\n]*scroll-x="true"/);
+    const scroller = wxss.match(/\.bird-scroller\s*\{([^}]+)\}/);
+    assert.ok(scroller, '缺少小鸟横向滑动区样式');
+    assert.match(scroller[1], /width:\s*100%;/);
+    assert.match(scroller[1], /box-sizing:\s*border-box;/);
+});
+check('窄屏返回及大小调节按钮保留至少 44×44px 热区', function () {
+    for (const [name, actions] of [['back', ['onBack']], ['adjust-btn', ['onSmaller', 'onLarger']]]) {
+        const style = wxss.match(new RegExp(`\\.${name}\\s*\\{([^}]+)\\}`));
+        assert.ok(style, `缺少 .${name} 样式`);
+        assert.match(style[1], /min-width:\s*44px;/);
+        assert.match(style[1], /min-height:\s*44px;/);
+        for (const action of actions) {
+            assert.match(wxml, new RegExp(`class="${name}"\\s+bindtap="${action}"`));
+        }
+    }
+});
+check('窄屏合照编辑区的操作保留至少 44px 高度', function () {
+    const controls = ['editor-summary', 'framing-picker', 'bird-picker', 'position-slider',
+        'size-slider', 'reset-btn', 'download-btn', 'error-btn'];
+    for (const name of controls) {
+        const style = wxss.match(new RegExp(`\\.${name}(?:\\s*,\\s*\\.[\\w-]+)*\\s*\\{([^}]+)\\}`));
+        assert.ok(style, `缺少 .${name} 样式`);
+        assert.match(style[1], /min-height:\s*(?:44px|max\(\d+rpx,\s*44px\));/, `.${name} 高度不足`);
+    }
+});
 
 // 素材引用
 const refs = new Set();
-const refRe = /(?:\/assets\/[\w\-./]+)/g;
+const refRe = /\/(?:pages\/photo\/)?assets\/[\w\-./]+/g;
 while ((match = refRe.exec(wxml + js + wxss))) {
     if (/\.(png|webp|jpg|jpeg|mp3)$/.test(match[0])) refs.add(match[0].slice(1));
 }
@@ -156,6 +186,8 @@ check('generateState 文案状态机', (function () {
     assert.strictEqual(model.generateState(Object.assign({}, base, { selectedCount: 0, hasBird: false })).text, '先选一只小鸟');
     assert.strictEqual(model.generateState(Object.assign({}, base, { dirty: false })).text, '已收藏，调整后再合照');
     assert.strictEqual(model.generateState(Object.assign({}, base, { albumTotal: 30 })).text, '相册已满，先管理合照');
+    assert.strictEqual(model.generateState(Object.assign({}, base, { albumTotal: 30 })).canManageAlbum, true);
+    assert.strictEqual(model.generateState(Object.assign({}, base, { albumTotal: 30, albumLoading: true })).canManageAlbum, false);
     assert.strictEqual(model.generateState(Object.assign({}, base, { busy: true })).text, '正在收藏回忆…');
     assert.strictEqual(model.generateState(Object.assign({}, base, { canvasReady: false, canvasLoading: true })).text, '正在准备合照素材…');
 }));
@@ -209,6 +241,7 @@ const filesOnDisk = {};
 const failedImages = new Set();
 const calls = { share: 0, preview: 0, saveAlbum: 0, drawImage: 0, filterReads: 0, shutter: 0, navigateBack: 0, selector: 0 };
 const previewSize = { width: 277, height: 280 };
+let previewTop = 600;
 let canvasAvailable = true;
 let holdNextSelector = false;
 let finishSelector;
@@ -260,12 +293,13 @@ const wxMock = {
             in: function () { return this; },
             select: function () { return this; },
             fields: function (options) { fields = options; return this; },
+            boundingClientRect: function () { fields = { size: true, rect: true }; return this; },
             exec: function (cb) {
                 calls.selector += 1;
                 const item = {};
                 if (fields.node) item.node = fakeCanvas;
                 if (fields.size) Object.assign(item, previewSize);
-                if (fields.rect) Object.assign(item, { left: 0, top: 600 });
+                if (fields.rect) Object.assign(item, { left: 0, top: previewTop });
                 const result = canvasAvailable ? [item] : [];
                 if (holdNextSelector) {
                     holdNextSelector = false;
@@ -323,6 +357,321 @@ function makePage() {
     return page;
 }
 
+check('合照查看器在窄屏和矮屏避开胶囊与手势区，操作至少 44px', function () {
+    function style(name) {
+        const rule = wxss.match(new RegExp('\\.' + name + '\\s*\\{([^}]+)\\}'));
+        assert.ok(rule, '缺少 .' + name + ' 样式');
+        return rule[1];
+    }
+    const mask = style('viewer-mask');
+    assert.match(mask, /position:\s*fixed;\s*left:\s*0;\s*right:\s*0;\s*top:\s*0;\s*bottom:\s*0;/);
+    assert.match(wxml, /class="viewer-mask"\s+style="padding-top:\{\{topInset\}\}rpx;padding-bottom:\{\{viewerBottomInset\}\}rpx"/);
+    const viewer = style('viewer');
+    assert.match(viewer, /overflow-y:\s*auto;/);
+    const header = style('viewer-header');
+    assert.match(header, /position:\s*sticky;/);
+    assert.match(header, /top:\s*0;/);
+    assert.match(header, /z-index:\s*[1-9]\d*;/);
+    assert.match(header, /background:\s*#f7f9ef;/i);
+    const heightLimit = Number(viewer.match(/max-height:\s*(\d+)%/)[1]) / 100;
+    const imageHeightRpx = Number(style('viewer-image').match(/height:\s*(\d+)rpx/)[1]);
+    const close = style('viewer-close');
+    assert.match(close, /min-width:\s*44px;/);
+    assert.match(close, /flex-shrink:\s*0;/);
+    [close, style('viewer-save'), style('other-summary'), style('other-btn')].forEach(function (rule) {
+        assert.match(rule, /min-height:\s*44px;/);
+    });
+
+    const getWindowInfo = wxMock.getWindowInfo;
+    const getMenuButtonBoundingClientRect = wxMock.getMenuButtonBoundingClientRect;
+    const page = makePage();
+    try {
+        wxMock.getMenuButtonBoundingClientRect = () => ({ top: 28, height: 32 });
+        for (const [width, height, bottomInset] of [[320, 568, 12], [360, 480, 0], [390, 360, 24]]) {
+            wxMock.getWindowInfo = () => ({ windowWidth: width, windowHeight: height, screenHeight: height,
+                statusBarHeight: 24, safeArea: { bottom: height - bottomInset } });
+            page.onResize();
+            const scale = width / 750;
+            const top = page.data.topInset * scale;
+            const bottom = page.data.viewerBottomInset * scale;
+            const available = height - top - bottom;
+            const viewerHeight = available * heightLimit;
+            const viewerTop = top + (available - viewerHeight) / 2;
+            assert.ok(viewerTop > 60, `${width}×${height} 查看器进入胶囊区`);
+            assert.ok(viewerTop + viewerHeight <= height - bottomInset, `${width}×${height} 查看器进入手势区`);
+            assert.ok(viewerHeight >= 88, `${width}×${height} 查看器可滚动区域过矮`);
+            if (height <= 480) assert.ok(viewerHeight < imageHeightRpx * scale + 88);
+        }
+    } finally {
+        wxMock.getWindowInfo = getWindowInfo;
+        wxMock.getMenuButtonBoundingClientRect = getMenuButtonBoundingClientRect;
+    }
+});
+
+check('微信隐私禁用与拒绝提示区分，取消和小程序相册权限保持原流程', function () {
+    const page = makePage();
+    const originalApis = {
+        chooseMedia: wxMock.chooseMedia,
+        saveImageToPhotosAlbum: wxMock.saveImageToPhotosAlbum,
+        showShareImageMenu: wxMock.showShareImageMenu,
+        showModal: wxMock.showModal,
+    };
+    const messages = [];
+    const modals = [];
+    let failure;
+    page.showToast = function (message) { messages.push(message); };
+    page.photoPath = '/tmp/original.jpg';
+    wxMock.chooseMedia = function (options) { options.fail(failure); options.complete(); };
+    wxMock.saveImageToPhotosAlbum = function (options) { options.fail(failure); };
+    wxMock.showShareImageMenu = undefined;
+    wxMock.showModal = function (options) { modals.push(options); };
+    page.openViewer('/tmp/composite.jpg');
+    try {
+        for (const [method, invoke] of [['chooseMedia', () => page.onChoosePhoto()], ['saveImageToPhotosAlbum', () => page.onSavePhoto()]]) {
+            for (const [message, errno, expected] of [
+                ['appid privacy api banned', undefined, /联系运营人员/],
+                ['api scope is not declared in the privacy agreement', 112, /联系运营人员/],
+                ['user deny', 103, /稍后重试.*隐私保护指引/],
+                ['user denied', 104, /稍后重试.*隐私保护指引/],
+                ['cancel', undefined, null],
+            ]) {
+                failure = { errMsg: method + ':fail ' + message, errno };
+                invoke();
+                if (expected) assert.match(messages.pop(), expected);
+                assert.deepStrictEqual(messages, []);
+                assert.strictEqual(modals.length, 0);
+            }
+        }
+        failure = { errMsg: 'saveImageToPhotosAlbum:fail auth deny', errno: 103 };
+        page.onSavePhoto();
+        assert.strictEqual(modals.length, 1);
+        assert.match(modals[0].content, /小程序设置/);
+        assert.strictEqual(page.photoPath, '/tmp/original.jpg');
+        assert.strictEqual(page.data.viewer.image, '/tmp/composite.jpg');
+    } finally {
+        Object.assign(wxMock, originalApis);
+    }
+});
+
+check('选图异常或空结果后能重试，迟到的旧回调不会影响新选图', function () {
+    const page = makePage();
+    const chooseMedia = wxMock.chooseMedia;
+    const pickers = [];
+    const messages = [];
+    const files = [];
+    page.photoPath = '/tmp/original.jpg';
+    page.showToast = message => messages.push(message);
+    page.readPhoto = file => files.push(file);
+    try {
+        wxMock.chooseMedia = () => { throw new Error('native chooser unavailable'); };
+        assert.doesNotThrow(() => page.onChoosePhoto());
+        assert.match(messages.pop(), /再试一次/);
+
+        wxMock.chooseMedia = options => pickers.push(options);
+        page.onChoosePhoto();
+        pickers[0].success({ tempFiles: [] });
+        assert.match(messages.pop(), /再试一次/);
+        assert.strictEqual(files.length, 0);
+        assert.strictEqual(page.photoPath, '/tmp/original.jpg');
+
+        page.onChoosePhoto();
+        pickers[0].complete();
+        pickers[0].success({ tempFiles: [{ tempFilePath: '/tmp/old.jpg' }] });
+        page.onChoosePhoto();
+        assert.strictEqual(pickers.length, 2);
+        assert.strictEqual(files.length, 0);
+        pickers[1].fail({ errMsg: 'chooseMedia:fail cancel' });
+        assert.deepStrictEqual(messages, []);
+
+        page.onChoosePhoto();
+        const latest = { tempFilePath: '/tmp/latest.jpg' };
+        pickers[2].success({ tempFiles: [latest] });
+        assert.deepStrictEqual(files, [latest]);
+    } finally {
+        wxMock.chooseMedia = chooseMedia;
+    }
+});
+
+check('相册设置只在确认对应权限后更新提示，回到当前查看器仍需手动保存', function () {
+    const page = makePage();
+    const originalApis = {
+        showShareImageMenu: wxMock.showShareImageMenu,
+        saveImageToPhotosAlbum: wxMock.saveImageToPhotosAlbum,
+        showModal: wxMock.showModal,
+        openSetting: wxMock.openSetting,
+        openAppAuthorizeSetting: wxMock.openAppAuthorizeSetting,
+        getAppAuthorizeSetting: wxMock.getAppAuthorizeSetting,
+    };
+    const saves = [];
+    const modals = [];
+    const settings = [];
+    const toasts = [];
+    let systemPermission = 'authorized';
+    wxMock.showShareImageMenu = undefined;
+    wxMock.saveImageToPhotosAlbum = options => saves.push(options);
+    wxMock.showModal = options => modals.push(options);
+    wxMock.openSetting = options => settings.push({ options, kind: 'mini' });
+    wxMock.openAppAuthorizeSetting = options => settings.push({ options, kind: 'system' });
+    wxMock.getAppAuthorizeSetting = () => ({ albumAuthorized: systemPermission });
+    page.showToast = message => toasts.push(message);
+    function denySave() {
+        page.onSavePhoto();
+        saves[saves.length - 1].fail({ errMsg: 'saveImageToPhotosAlbum:fail auth deny' });
+        modals[modals.length - 1].success({ confirm: true });
+        return settings[settings.length - 1];
+    }
+    try {
+        page.openViewer('/tmp/composite.jpg');
+        const defaultHint = page.data.viewer.hint;
+        const unrelatedScope = denySave();
+        unrelatedScope.options.success({ authSetting: { 'scope.camera': true } });
+        assert.match(page.data.viewer.hint, /小程序设置中允许保存到相册/);
+        const mini = denySave();
+        assert.strictEqual(mini.kind, 'mini');
+        mini.options.success({ authSetting: { 'scope.writePhotosAlbum': true } });
+        assert.match(page.data.viewer.hint, /权限已开启.*重新点击保存/);
+        assert.strictEqual(saves.length, 2);
+        assert.deepStrictEqual(toasts, []);
+        page.onSavePhoto();
+        saves[2].success();
+        assert.strictEqual(page.data.viewer.hint, defaultHint);
+        assert.deepStrictEqual(toasts, ['已保存到手机相册']);
+
+        systemPermission = 'denied';
+        const system = denySave();
+        assert.strictEqual(system.kind, 'system');
+        system.options.success({});
+        assert.match(page.data.viewer.hint, /手机设置中允许微信访问相册/);
+        assert.strictEqual(saves.length, 4);
+
+        const granted = denySave();
+        systemPermission = 'authorized';
+        granted.options.success({});
+        assert.match(page.data.viewer.hint, /权限已开启.*重新点击保存/);
+        assert.strictEqual(saves.length, 5);
+
+        const afterSave = denySave();
+        page.onSavePhoto();
+        saves[6].success();
+        afterSave.options.success({ authSetting: { 'scope.writePhotosAlbum': true } });
+        assert.strictEqual(page.data.viewer.hint, defaultHint);
+        assert.strictEqual(saves.length, 7);
+
+        systemPermission = 'denied';
+        const stale = denySave();
+        page.onCloseViewer();
+        page.openViewer('/tmp/composite.jpg');
+        systemPermission = 'authorized';
+        stale.options.success({});
+        assert.strictEqual(page.data.viewer.hint, defaultHint);
+        assert.strictEqual(saves.length, 8);
+    } finally {
+        Object.assign(wxMock, originalApis);
+    }
+});
+
+check('保存菜单和直接保存分别拦截连点，取消或失败后可以主动重试', function () {
+    const page = makePage();
+    const originalMenu = wxMock.showShareImageMenu;
+    const originalSave = wxMock.saveImageToPhotosAlbum;
+    const menus = [];
+    const saves = [];
+    const messages = [];
+    page.showToast = message => messages.push(message);
+    wxMock.showShareImageMenu = options => { menus.push(options); };
+    wxMock.saveImageToPhotosAlbum = options => { saves.push(options); };
+    try {
+        page.openViewer('/tmp/composite.jpg');
+        page.onSavePhoto();
+        page.onSavePhoto();
+        assert.strictEqual(menus.length, 1);
+        assert.strictEqual(page.data.viewerSavePending, 'menu');
+        menus[0].fail({ errMsg: 'showShareImageMenu:fail cancel' });
+        assert.strictEqual(page.data.viewerSavePending, '');
+        assert.strictEqual(page.data.viewer.shareMenuFailed, false);
+
+        page.onSavePhoto();
+        assert.strictEqual(menus.length, 2);
+        menus[1].fail({ errMsg: 'showShareImageMenu:fail unavailable' });
+        assert.strictEqual(page.data.viewer.shareMenuFailed, true);
+        assert.match(page.data.viewer.hint, /再点一次直接保存/);
+        assert.strictEqual(saves.length, 0);
+
+        page.onSavePhoto();
+        page.onSavePhoto();
+        assert.strictEqual(page.data.viewerSavePending, 'album');
+        assert.strictEqual(saves.length, 1);
+        assert.strictEqual(saves[0].filePath, '/tmp/composite.jpg');
+        menus[1].complete();
+        assert.strictEqual(page.data.viewerSavePending, 'album');
+        saves[0].fail({ errMsg: 'saveImageToPhotosAlbum:fail cancel' });
+        assert.deepStrictEqual(messages, []);
+        assert.strictEqual(page.data.viewerSavePending, '');
+
+        page.onSavePhoto();
+        saves[1].fail({ errMsg: 'saveImageToPhotosAlbum:fail unavailable' });
+        assert.match(messages.pop(), /保存未完成/);
+        page.onSavePhoto();
+        assert.strictEqual(saves.length, 3);
+        saves[2].success();
+        assert.deepStrictEqual(messages, ['已保存到手机相册']);
+        assert.strictEqual(page.data.viewerSavePending, '');
+    } finally {
+        wxMock.showShareImageMenu = originalMenu;
+        wxMock.saveImageToPhotosAlbum = originalSave;
+    }
+});
+
+check('关闭后重开同一张合照，旧保存回调不会修改新查看器', function () {
+    const page = makePage();
+    const originalMenu = wxMock.showShareImageMenu;
+    const originalSave = wxMock.saveImageToPhotosAlbum;
+    const menus = [];
+    const saves = [];
+    const messages = [];
+    const photo = '/tmp/composite.jpg';
+    page.showToast = message => messages.push(message);
+    wxMock.showShareImageMenu = options => { menus.push(options); };
+    wxMock.saveImageToPhotosAlbum = options => { saves.push(options); };
+    try {
+        page.openViewer(photo);
+        page.onSavePhoto();
+        page.onCloseViewer();
+        page.openViewer(photo);
+        page.onSavePhoto();
+        assert.strictEqual(menus.length, 1);
+        menus[0].fail({ errMsg: 'showShareImageMenu:fail unavailable' });
+        assert.strictEqual(page.data.viewerSavePending, '');
+        assert.strictEqual(page.data.viewer.shareMenuFailed, false);
+
+        page.onSavePhoto();
+        menus[0].complete();
+        assert.strictEqual(page.data.viewerSavePending, 'menu');
+        menus[1].complete();
+        assert.strictEqual(page.data.viewerSavePending, '');
+
+        wxMock.showShareImageMenu = undefined;
+        page.onSavePhoto();
+        page.onCloseViewer();
+        page.openViewer(photo);
+        page.onSavePhoto();
+        assert.strictEqual(saves.length, 1);
+        saves[0].success();
+        assert.strictEqual(page.data.viewerSavePending, '');
+        assert.deepStrictEqual(messages, []);
+
+        page.onSavePhoto();
+        assert.strictEqual(saves.length, 2);
+        saves[0].complete();
+        assert.strictEqual(page.data.viewerSavePending, 'album');
+        saves[1].success();
+        assert.deepStrictEqual(messages, ['已保存到手机相册']);
+    } finally {
+        wxMock.showShareImageMenu = originalMenu;
+        wxMock.saveImageToPhotosAlbum = originalSave;
+    }
+});
+
 (async function run() {
     const store = require(path.join(ROOT, 'utils/store.js'));
     store.adopt('HZ-HY-TEST-0001', '小黄');
@@ -346,8 +695,68 @@ function makePage() {
         assert.strictEqual(page.data.selectedCount, 1); // 未领取不可选
         page.onBirdTap({ currentTarget: { dataset: { id: page.selected[0] } } });
         assert.strictEqual(page.data.selectedCount, 0);
+        page.onHide();
+        page.onShow();
+        assert.strictEqual(page.data.selectedCount, 0);
+        assert.strictEqual(page.data.generateText, '先选一只小鸟');
         page.onBirdTap({ currentTarget: { dataset: { id: 'HZ-HY-TEST-0001' } } });
         assert.strictEqual(page.data.selectedCount, 1);
+    });
+
+    await checkAsync('空选择草稿等本机记录读通后恢复，更换领养小鸟时重新默认选中', async function () {
+        await settle();
+        const photoAlbum = require(path.join(ROOT, 'utils/photo-album.js'));
+        const { STORAGE_KEY } = require(path.join(ROOT, 'utils/guest-store.js'));
+        const read = wxMock.getStorageSync;
+        const savedOwner = read(STORAGE_KEY);
+        const savedDraft = photoAlbum.readDraft();
+        const source = makePage();
+        const abandoned = makePage();
+        const recovered = makePage();
+        try {
+            photoAlbum.clearDraft();
+            source.onLoad();
+            source.onReady();
+            source.onChoosePhoto();
+            await settle(100);
+            assert.strictEqual(source.data.uploaded, true);
+            source.onBirdTap({ currentTarget: { dataset: { id: source.selected[0] } } });
+            source.onUnload();
+            const emptyDraft = photoAlbum.readDraft();
+            assert.deepStrictEqual(emptyDraft.selected, []);
+
+            wxMock.getStorageSync = function (key) {
+                if (key === STORAGE_KEY) throw new Error('模拟本机养成缓存读取故障');
+                return read(key);
+            };
+            abandoned.onLoad();
+            abandoned.onUnload();
+            assert.strictEqual(photoAlbum.readDraft(), emptyDraft);
+
+            recovered.onLoad();
+            recovered.onReady();
+            assert.match(recovered.data.dataError, /暂时无法读取/);
+            wxMock.getStorageSync = read;
+            recovered.onRetryData();
+            await settle(100);
+            assert.strictEqual(recovered.data.dataError, '');
+            assert.strictEqual(recovered.data.selectedCount, 0);
+            assert.strictEqual(recovered.data.uploaded, true);
+            assert.strictEqual(recovered.canvasReady, true);
+            assert.strictEqual(recovered.data.generateText, '先选一只小鸟');
+            recovered.onShow();
+            assert.strictEqual(recovered.data.selectedCount, 0);
+
+            assert.strictEqual(store.reset().error, null);
+            assert.strictEqual(store.adopt('HZ-HY-TEST-NEW-BIRD', '新伙伴').error, null);
+            recovered.onShow();
+            assert.deepStrictEqual(recovered.selected, ['HZ-HY-TEST-NEW-BIRD']);
+        } finally {
+            wxMock.getStorageSync = read;
+            if (recovered.birds && !recovered.unloaded) recovered.onUnload();
+            wxMock.setStorageSync(STORAGE_KEY, savedOwner);
+            photoAlbum.saveDraft(savedDraft);
+        }
     });
 
     await checkAsync('首次画布节点缺失，原地重试会重新查询', async function () {
@@ -404,6 +813,25 @@ function makePage() {
         assert.strictEqual(page.data.size, 34);
     });
 
+    await checkAsync('离开再回来时提示消失，并显示离开前的最后一次尺寸修改', function () {
+        try {
+            const drawn = calls.drawImage;
+            page.showToast('编辑提示');
+            page.onSizeChange({ detail: { value: 45 } });
+            assert.strictEqual(page.data.size, 34);
+            page.onHide();
+            assert.strictEqual(calls.drawImage, drawn);
+            page.onShow();
+            assert.deepStrictEqual({
+                toast: page.data.toast,
+                size: page.data.size,
+                redrawn: calls.drawImage > drawn,
+            }, { toast: '', size: 45, redrawn: true });
+        } finally {
+            page.onResetBird();
+        }
+    });
+
     await checkAsync('滚动后仍能拖动和双指缩放，取消后不残留手势', function () {
         const pose = page.poses[page.active];
         const start = { cx: pose.cx, cy: pose.cy, size: pose.size };
@@ -428,15 +856,118 @@ function makePage() {
         page.onResetBird();
     });
 
-    await checkAsync('选图后画布就绪、按钮可点', async function () {
-        page.onChoosePhoto();
-        await settle(120);
-        assert.strictEqual(page.data.uploaded, true);
-        assert.strictEqual(page.data.editorOpen, true);
-        assert.strictEqual(page.canvasReady, true);
-        assert.strictEqual(page.data.generateText, '生成并收藏');
-        assert.strictEqual(page.data.generateDisabled, false);
-        assert.strictEqual(page.data.previewBadge, '编辑中');
+    await checkAsync('视口触点按当前画布位置转换，测量期间保留最新移动', function () {
+        const pose = page.poses[page.active];
+        const start = { cx: pose.cx, cy: pose.cy, size: pose.size };
+        function touch(identifier, x, y) {
+            return {
+                identifier,
+                clientX: x * previewSize.width / model.CANVAS_W,
+                clientY: previewTop + y * previewSize.height / model.CANVAS_H,
+            };
+        }
+        try {
+            previewTop = 140;
+            holdNextSelector = true;
+            page.onTouchStart({ touches: [touch(1, start.cx, start.cy)] });
+            page.onTouchMove({ touches: [touch(1, start.cx - 10, start.cy - 10)] });
+            page.onTouchMove({ touches: [touch(1, start.cx - 30, start.cy - 25)] });
+            assert.strictEqual(pose.cx, start.cx);
+            finishSelector();
+            assert.ok(Math.abs(pose.cx - (start.cx - 30)) < 0.01);
+            assert.ok(Math.abs(pose.cy - (start.cy - 25)) < 0.01);
+            page.onTouchEnd({ touches: [], changedTouches: [touch(1, pose.cx, pose.cy)] });
+
+            previewTop = 70;
+            const { cx, cy } = pose;
+            page.onTouchStart({ touches: [touch(1, cx - 30, cy), touch(2, cx + 30, cy)] });
+            page.onTouchMove({ touches: [touch(1, cx - 36, cy), touch(2, cx + 36, cy)] });
+            assert.ok(Math.abs(pose.size - start.size * 1.2) < 0.01);
+            page.onTouchEnd({ touches: [], changedTouches: [touch(1, cx, cy), touch(2, cx, cy)] });
+            assert.deepStrictEqual(page.pointers, {});
+            assert.strictEqual(page.gesture, null);
+        } finally {
+            previewTop = 600;
+            page.onTouchCancel();
+            page.onResetBird();
+        }
+    });
+
+    await checkAsync('视口测量返回前松手或取消，不会启动旧手势', function () {
+        const pose = page.poses[page.active];
+        const touch = {
+            identifier: 1,
+            clientX: pose.cx * previewSize.width / model.CANVAS_W,
+            clientY: previewTop + pose.cy * previewSize.height / model.CANVAS_H,
+        };
+        for (const end of [
+            () => page.onTouchEnd({ touches: [], changedTouches: [touch] }),
+            () => page.onTouchCancel(),
+        ]) {
+            holdNextSelector = true;
+            page.onTouchStart({ touches: [touch] });
+            page.onTouchMove({ touches: [{ ...touch, clientX: touch.clientX - 20 }] });
+            const start = { ...pose };
+            end();
+            finishSelector();
+            assert.deepStrictEqual(pose, start);
+            assert.deepStrictEqual(page.pointers, {});
+            assert.strictEqual(page.gesture, null);
+        }
+    });
+
+    const primaryAction = wxml.match(/<view\s+class="generate\s[^"]*"[^>]*\bbindtap="(\w+)"/)?.[1];
+    const tapPrimaryAction = () => page[primaryAction]();
+    await checkAsync('合照主按钮打开选图，连点只打开一次，取消后能重试', async function () {
+        const chooseMedia = wxMock.chooseMedia;
+        const choices = [];
+        wxMock.chooseMedia = options => choices.push(options);
+        try {
+            assert.strictEqual(page.data.generateText, '选择照片，开启合照');
+            tapPrimaryAction();
+            tapPrimaryAction();
+            assert.strictEqual(choices.length, 1);
+            choices[0].fail({ errMsg: 'chooseMedia:fail cancel' });
+            choices[0].complete();
+            assert.strictEqual(page.data.uploaded, false);
+            assert.strictEqual(page.data.albumTotal, 0);
+            assert.strictEqual(page.data.generateText, '选择照片，开启合照');
+            tapPrimaryAction();
+            assert.strictEqual(choices.length, 2);
+            choices[1].success({ tempFiles: [{ tempFilePath: '/tmp/valid.jpg', size: 100 }] });
+            choices[1].complete();
+            await settle(120);
+            assert.strictEqual(page.data.uploaded, true);
+            assert.strictEqual(page.data.editorOpen, true);
+            assert.strictEqual(page.canvasReady, true);
+            assert.strictEqual(page.data.generateText, '生成并收藏');
+            assert.strictEqual(page.data.generateDisabled, false);
+            assert.strictEqual(page.data.previewBadge, '编辑中');
+        } finally {
+            wxMock.chooseMedia = chooseMedia;
+        }
+    });
+
+    await checkAsync('原生选图标为图片时允许无后缀临时路径，视频和超限图片保留原草稿', async function () {
+        const photoAlbum = require(path.join(ROOT, 'utils/photo-album.js'));
+        const draft = photoAlbum.readDraft();
+        const next = makePage();
+        next.onLoad();
+        try {
+            await next.readPhoto({ tempFilePath: 'wxfile://tmp_native_photo', fileType: 'image', size: 100 });
+            assert.strictEqual(next.photoPath, 'wxfile://tmp_native_photo');
+            assert.strictEqual(next.data.uploaded, true);
+            await next.readPhoto({ tempFilePath: '/tmp/video.jpg', fileType: 'video', size: 100 });
+            assert.strictEqual(next.photoPath, 'wxfile://tmp_native_photo');
+            assert.match(next.data.toast, /请选择.*照片/);
+            await next.readPhoto({ tempFilePath: 'wxfile://tmp_large_photo', fileType: 'image', size: 16 * 1024 * 1024 });
+            assert.strictEqual(next.photoPath, 'wxfile://tmp_native_photo');
+            assert.match(next.data.toast, /超过 15 MB/);
+        } finally {
+            next.onUnload();
+            if (draft) photoAlbum.saveDraft(draft);
+            else photoAlbum.clearDraft();
+        }
     });
 
     await checkAsync('损坏替换图保留上一张照片、构图和待重试草稿', async function () {
@@ -468,7 +999,7 @@ function makePage() {
     });
 
     await checkAsync('生成并收藏：+1 叽分、打开查看器', async function () {
-        await page.onGenerate();
+        await tapPrimaryAction();
         await settle(60);
         assert.strictEqual(calls.shutter, 1);
         assert.strictEqual(page.data.albumTotal, 1);
@@ -508,10 +1039,51 @@ function makePage() {
         const id = page.data.albumEntries[0].id;
         page.onDeleteTap({ currentTarget: { dataset: { id: id } } });
         assert.strictEqual(page.data.deleteConfirm, true);
+        page.onCancelDelete();
+        assert.strictEqual(page.data.deleteConfirm, false);
+        assert.strictEqual(page.data.albumTotal, 2);
+        page.onDeleteTap({ currentTarget: { dataset: { id: id } } });
         page.onConfirmDelete();
         assert.strictEqual(page.data.deleteConfirm, false);
         assert.strictEqual(page.data.albumTotal, 1);
         assert.strictEqual(page.data.points, 1);
+    });
+
+    await checkAsync('满额主按钮进入相册管理，并滚到胶囊和固定页头下方', function () {
+        const previousTotal = page.albumTotal;
+        const nativeScroll = wx.pageScrollTo;
+        const nativeQuery = wx.createSelectorQuery;
+        const selectors = [];
+        let scroll;
+        wx.pageScrollTo = options => { scroll = options; };
+        wx.createSelectorQuery = () => {
+            const query = {
+                in: () => query,
+                select: selector => { selectors.push(selector); return query; },
+                selectViewport: () => query,
+                boundingClientRect: () => query,
+                scrollOffset: () => query,
+                exec: callback => callback([{ top: 240 }, { height: 72 }, { scrollTop: 600 }]),
+            };
+            return query;
+        };
+        try {
+            page.albumTotal = 30;
+            page.syncGenerate();
+            assert.strictEqual(page.data.generateCanManageAlbum, true);
+            page.onPrimaryAction();
+            assert.strictEqual(page.data.albumManaging, true);
+            assert.strictEqual(page.data.albumExpanded, true);
+            assert.deepStrictEqual(selectors, ['.album-section', '.immersive-top']);
+            assert.deepStrictEqual(scroll, { scrollTop: 760, duration: 200 });
+        } finally {
+            wx.pageScrollTo = nativeScroll;
+            wx.createSelectorQuery = nativeQuery;
+            page.albumTotal = previousTotal;
+            page.setData({ albumManaging: false, albumExpanded: false });
+            page.renderGallery();
+            page.syncGenerate();
+        }
     });
 
     await checkAsync('相册展开/管理/满额文案', function () {
@@ -532,6 +1104,37 @@ function makePage() {
         assert.ok(draft && draft.uploaded === true);
         page.onBack();
         assert.strictEqual(calls.navigateBack, 1);
+    });
+
+    await checkAsync('返回连点只执行一次，回小窝也失败时提示并允许重试', function () {
+        const next = makePage();
+        const navigateBack = wxMock.navigateBack;
+        const switchTab = wxMock.switchTab;
+        const backs = [];
+        const tabs = [];
+        const messages = [];
+        wxMock.navigateBack = (options) => backs.push(options);
+        wxMock.switchTab = (options) => tabs.push(options);
+        next.showToast = (message) => messages.push(message);
+        try {
+            next.onBack();
+            next.onBack();
+            assert.strictEqual(backs.length, 1);
+            backs[0].fail();
+            assert.strictEqual(tabs[0].url, '/pages/index/index');
+            next.onBack();
+            assert.strictEqual(backs.length, 1);
+            tabs[0].fail();
+            assert.deepStrictEqual(messages, ['返回失败，请重试']);
+            next.onBack();
+            assert.strictEqual(backs.length, 2);
+            next.unloaded = true;
+            backs[1].fail();
+            assert.strictEqual(tabs.length, 1);
+        } finally {
+            wxMock.navigateBack = navigateBack;
+            wxMock.switchTab = switchTab;
+        }
     });
 
     await checkAsync('重进页面恢复草稿与相册', async function () {
@@ -568,7 +1171,7 @@ function makePage() {
         photoAlbum.clearDraft();
         const fresh = makePage();
         fresh.onLoad();
-        failedImages.add('/assets/photo/bird.webp');
+        failedImages.add('/pages/photo/assets/bird.webp');
         try {
             await fresh.readPhoto({ tempFilePath: '/tmp/valid.jpg', size: 100 });
             assert.strictEqual(fresh.canvasReady, false);
@@ -576,7 +1179,7 @@ function makePage() {
             assert.strictEqual(fresh.photoPath, '/tmp/valid.jpg');
             assert.match(fresh.data.toast, /素材暂时无法加载/);
         } finally {
-            failedImages.delete('/assets/photo/bird.webp');
+            failedImages.delete('/pages/photo/assets/bird.webp');
         }
         assert.strictEqual(await fresh.onRetryAssets(), true);
         assert.strictEqual(fresh.data.generateDisabled, false);

@@ -20,7 +20,7 @@ import sys
 ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
 MP = os.path.join(ROOT, 'miniprogram')
 PAGE = os.path.join(MP, 'pages/wardrobe')
-WARDROBE = os.path.join(MP, 'assets/wardrobe')
+WARDROBE = os.path.join(PAGE, 'assets')
 NAV = os.path.join(MP, 'assets/navigation/plush')
 OUT_DIR = os.path.join(ROOT, 'output', 'miniprogram-wardrobe-preview')
 
@@ -61,8 +61,9 @@ def main():
     panel_card = uri('felt/panel-card.webp')
     nav = lambda n: data_uri(os.path.join(NAV, n))
 
-    # H5 下段用 repeat-y 无限平铺；这里按长页最大高度给足张数（同一文件会命中缓存）
-    tiles = ''.join('<img class="scene-lower-tile" src="%s">' % scene_lower for _ in range(8))
+    # 与小程序一致，隔张翻转让同一边缘相接。
+    tiles = ''.join('<img class="scene-lower-tile%s" src="%s">' %
+                    (' is-reversed' if i % 2 else '', scene_lower) for i in range(8))
     cards = []
     for i, (sid, name, slug) in enumerate(SKINS):
         cards.append(

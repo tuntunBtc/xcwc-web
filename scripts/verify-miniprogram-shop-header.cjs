@@ -76,9 +76,12 @@ check('品牌条有内联定位', /top:\{\{mastheadTop\}\}rpx/.test(mastheadTag)
 check('品牌条只有一个等比 scale', /transform:scale\(\{\{mastheadScale\}\}\)/.test(mastheadTag));
 check('品牌条没有单独改宽度', !/width:\{\{/.test(mastheadTag));
 check('品牌条已移出 .app', wxml.indexOf('class="masthead"') < wxml.indexOf('<view class="app">'));
-check('占位高度使用 headerSpace', /class="status-space"[^>]*height:\s*\{\{headerSpace\}\}rpx/.test(wxml));
+check('状态栏背景和轮播重叠 1px，占位高度仍使用 headerSpace',
+    /class="status-space"[^>]*height:\s*calc\(\{\{headerSpace\}\}rpx \+ 1px\)/.test(wxml) &&
+    /\.status-space\s*\{[^}]*margin-bottom:\s*-1px/.test(wxss));
 check('购物车入口保留', /class="cart-icon"[^>]*bindtap="handleOpenCart"/.test(wxml));
-check('购物车透明热区存在', /class="cart-hit"/.test(wxml) && /\.cart-hit\s*\{[^}]*width:\s*132rpx[^}]*height:\s*132rpx/s.test(wxss));
+const cartHitRpx = 154;
+check('购物车透明热区存在', /class="cart-hit"/.test(wxml) && new RegExp(`\\.cart-hit\\s*\\{[^}]*width:\\s*${cartHitRpx}rpx[^}]*height:\\s*${cartHitRpx}rpx`).test(wxss));
 const mastRule = (wxss.match(/\.masthead\s*\{([^}]*)\}/) || ['', ''])[1];
 check('品牌条绝对定位', /position:\s*absolute/.test(mastRule));
 check('品牌条基准尺寸不变', /width:\s*726rpx/.test(mastRule) && /height:\s*128rpx/.test(mastRule));
@@ -100,10 +103,12 @@ unsupported.forEach(([re, label]) => check('WXSS 不含 ' + label, !re.test(wxss
 // ---- 4. 几何矩阵（真机同一份 computeShopLayout） -----------------------
 const devices = [
     { name: '320×568', w: 320, h: 568, sb: 20, menu: { left: 246, top: 26, height: 32 } },
+    { name: '320×568 宽胶囊', w: 320, h: 568, sb: 20, menu: { left: 226, top: 26, height: 32 } },
     { name: '375×812', w: 375, h: 812, sb: 44, menu: { left: 289, top: 53, height: 27 } },
     { name: '390×844', w: 390, h: 844, sb: 47, menu: { left: 302, top: 70, height: 36 } },
     { name: '402×874', w: 402, h: 874, sb: 47, menu: { left: 310, top: 72, height: 36 } },
     { name: '430×932', w: 430, h: 932, sb: 54, menu: { left: 340, top: 74, height: 36 } },
+    { name: '320×568 无胶囊回退', w: 320, h: 568, sb: 20, menu: null },
     { name: '无胶囊回退', w: 375, h: 812, sb: 44, menu: null },
     { name: '异常胶囊回退', w: 375, h: 812, sb: 44, menu: { left: 0, top: -1, height: 0 } },
 ];
@@ -130,12 +135,14 @@ for (const d of devices) {
         'headerSpace=' + r.headerSpace + ' pillBottom=' + bottomOfPill.toFixed(1));
     check(d.name + ' 占位覆盖系统安全区', r.headerSpace >= topInset, r.headerSpace + ' vs ' + topInset);
     check(d.name + ' 底图高度=视口', r.viewportHeight === Math.round(d.h * 750 / d.w), String(r.viewportHeight));
-    // 132rpx 透明热区随整块一起 scale，换算成设备 px 后仍够点按。
-    const hitPx = 132 * r.mastheadScale * (d.w / 750);
-    check(d.name + ' 购物车热区 ≥40px', hitPx >= 40, hitPx.toFixed(1) + 'px');
-    const hitRight = r.mastheadLeft + 710 * r.mastheadScale;
+    const hitPx = cartHitRpx * r.mastheadScale * (d.w / 750);
+    check(d.name + ' 购物车热区 ≥44px', hitPx >= 44, hitPx.toFixed(1) + 'px');
+    const hitRight = r.mastheadLeft + (644 + cartHitRpx / 2) * r.mastheadScale;
     check(d.name + ' 购物车热区不越过胶囊', hitRight <= r.menuLeftRpx - layout.MENU_GAP_RPX + 1,
         'hitRight=' + hitRight.toFixed(1));
+    if (d.w === 320 && !d.menu) {
+        check(d.name + ' 避让从右侧占 94px 的胶囊', right * d.w / 750 <= d.w - 94);
+    }
     check(d.name + ' 胶囊不可用自动回退', d.menu && d.menu.left > 0 ? r.hasMenu === true : r.hasMenu === false);
     geometries.push({ device: d.name, layout: r, right: +right.toFixed(1), pillBottom: +bottomOfPill.toFixed(1) });
 }

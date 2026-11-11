@@ -4,7 +4,7 @@
 // 当前网页端版本为「服装展示 · 暂未开放」，需求基线 2026-11-05 明确
 // 「衣橱只显示当前角色和可见缩略，全部服装继续暂未开放」。
 // 本页严格对齐该效果：不兑换、不穿戴、不扣叽分、不写任何装扮状态。
-const catalog = require('../../utils/wardrobe-catalog');
+const catalog = require('./wardrobe-catalog');
 const safeArea = require('../../utils/safe-area');
 
 // H5 .account-wardrobe-felt::after 用 repeat-y 铺下段草地；
@@ -33,19 +33,29 @@ Page({
     },
 
     onLoad() {
+        this.onResize();
+    },
+
+    onResize() {
         // 自定义导航下页面从屏幕顶端渲染，状态栏 + 胶囊区由共享模块换算。
         this.setData({ topInset: safeArea.readTopInsetRpx() });
     },
 
     // 网页端 .account-back 的 data-go="back"：回到来源页（小窝或「我的」）。
     onBack() {
+        if (this.backPending) return;
+        this.backPending = true;
+        const callbacks = {
+            fail: () => wx.showToast({ title: '返回失败，请重试', icon: 'none' }),
+            complete: () => { this.backPending = false; },
+        };
         const pages = getCurrentPages();
         if (pages.length > 1) {
-            wx.navigateBack();
+            wx.navigateBack(callbacks);
             return;
         }
         // 直接以本页为启动页（预览卡 / 编译条件）时没有上一页，回到小窝。
-        wx.switchTab({ url: '/pages/index/index' });
+        wx.switchTab({ url: '/pages/index/index', ...callbacks });
     },
 
     // 网页端当前卡片按钮为 disabled 且无状态变更；这里保留同样的禁用视觉，

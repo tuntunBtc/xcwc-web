@@ -4,7 +4,7 @@
 Sources are the *running* H5 derivatives under assets/optimized/checkin/ and
 dist/assets/checkin/ (not the historical mini-program project). Originals are
 never modified. All output is written as UTF-8/ASCII-named files under
-miniprogram/assets/photo/. Requires Pillow (same as the other mini-program
+miniprogram/pages/photo/assets/. Requires Pillow (same as the other mini-program
 asset scripts).
 
 Usage:  python3 scripts/build-miniprogram-photo-assets.py
@@ -21,7 +21,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "miniprogram" / "assets" / "photo"
+OUT = ROOT / "miniprogram" / "pages" / "photo" / "assets"
 REPORT = ROOT / "output" / "miniprogram-photo-baseline" / "asset-manifest.json"
 
 HERO = ROOT / "assets/optimized/checkin/felt-hero-v1.9094f1d77796.webp"
@@ -40,7 +40,7 @@ def record(name: str, data: bytes, source: Path, note: str) -> None:
     target.write_bytes(data)
     manifest.append(
         {
-            "file": "assets/photo/" + name,
+            "file": str(target.relative_to(ROOT / "miniprogram")),
             "bytes": len(data),
             "kib": round(len(data) / 1024, 1),
             "source": str(source.relative_to(ROOT)),

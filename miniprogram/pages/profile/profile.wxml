@@ -2,7 +2,7 @@
      WXSS 不能可靠引用本地 background-image / 伪元素 / dialog，
      毛毡纹理用 image 铺底，雪碧图用 clip + sprite 取格，弹层用 view + 遮罩。 -->
 <view class="profile-page">
-    <image class="bg" src="/assets/profile/felt/background.webp" mode="widthFix"></image>
+    <image wx:if="{{profileBackground}}" class="bg" src="{{profileBackground}}" mode="widthFix"></image>
     <view class="status-space" style="height: {{topInset}}rpx;"></view>
 
     <view class="flow">
@@ -22,17 +22,19 @@
                 <view class="card-copy">
                     <text class="card-small">今天也有小鸟陪你</text>
                     <text class="card-name">{{displayName}}</text>
-                    <text class="card-sub">{{birdSubtitle}}</text>
+                    <text class="card-sub">{{storageUnavailable ? '本机记录暂时无法读取' : birdSubtitle}}</text>
                 </view>
                 <view class="points" bindtap="onWallet" hover-class="ui-hover">
                     <view class="clip feather-clip">
                         <image class="sprite hud-sprite icon-feather" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image>
                     </view>
-                    <text class="points-num">{{points}}</text>
+                    <text class="points-num">{{storageUnavailable ? '—' : points}}</text>
                     <text class="points-label">我的叽分 ›</text>
                 </view>
             </view>
         </view>
+
+        <button wx:if="{{artworkFailed}}" class="artwork-retry" disabled="{{artworkLoading}}" bindtap="loadProfileArtwork">{{artworkLoading ? '正在加载背景…' : '背景加载失败，点此重试'}}</button>
 
         <view class="section">
             <view class="section-head">
@@ -49,7 +51,7 @@
                         <text class="item-text">我的小鸟</text>
                     </view>
                     <view class="item-meta">
-                        <text class="meta-text">{{birdCount}} 只伙伴</text>
+                        <text class="meta-text">{{storageUnavailable ? '点此重试' : birdCount + ' 只伙伴'}}</text>
                         <text class="arrow">›</text>
                     </view>
                 </view>
@@ -102,6 +104,16 @@
                         <text class="meta-text">删除小鸟与相册 ›</text>
                     </view>
                 </view>
+                <view class="menu-item" bindtap="onWechatAccount" hover-class="{{wechatLoginReady && !wechatLoginBusy ? 'ui-hover' : 'none'}}" aria-disabled="{{!wechatLoginReady || wechatLoginBusy}}">
+                    <image class="item-tex" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                    <view class="item-label">
+                        <text class="item-text">{{wechatSignedIn ? '退出微信登录' : '微信登录'}}</text>
+                    </view>
+                    <view class="item-meta">
+                        <text class="meta-text">{{wechatLoginBusy ? '请稍候…' : wechatLoginStatus}}</text>
+                        <text wx:if="{{wechatLoginReady}}" class="arrow">›</text>
+                    </view>
+                </view>
             </view>
         </view>
 
@@ -118,8 +130,9 @@
     </view>
 
     <!-- 叽分钱包：对齐 H5 .account-wallet-dialog -->
-    <view class="overlay" wx:if="{{walletVisible}}" bindtap="closeSheets" catchtouchmove="noop">
-        <view class="sheet" catchtap="noop">
+    <view class="overlay" wx:if="{{walletVisible}}" style="padding-top:{{topInset}}rpx">
+        <view class="overlay-backdrop" bindtap="closeSheets" catchtouchmove="noop"></view>
+        <view class="sheet">
             <view class="sheet-close" catchtap="closeSheets"><text>×</text></view>
             <scroll-view class="sheet-body" scroll-y="true">
                 <text class="sheet-h2">本机叽分</text>
@@ -128,9 +141,9 @@
                     <text class="fold-title">{{localNoteOpen ? '▾' : '▸'}} 本机保存 · 查看说明</text>
                     <text wx:if="{{localNoteOpen}}" class="fold-body">{{localNoteText}}</text>
                 </view>
-                <text class="wallet-today">今日抚摸奖励 {{todayPoints}} / {{dailyLimit}} 次</text>
+                <text class="wallet-today">今日计入本机额度 {{todayPoints}} / {{dailyLimit}} 叽分</text>
                 <text class="sheet-h3">最近流水</text>
-                <text class="sheet-muted">按北京时间显示，最多 50 条。</text>
+                <text class="sheet-muted">按北京时间显示，最近 8 条。</text>
                 <view wx:if="{{ledger.length}}" class="ledger">
                     <view class="ledger-row" wx:for="{{ledger}}" wx:key="id">
                         <text class="ledger-time">{{item.dayText}}</text>
@@ -151,8 +164,9 @@
     </view>
 
     <!-- 重置本机数据：对齐 H5 .account-cache-dialog -->
-    <view class="overlay" wx:if="{{resetVisible}}" bindtap="closeSheets" catchtouchmove="noop">
-        <view class="sheet reset-sheet" catchtap="noop">
+    <view class="overlay" wx:if="{{resetVisible}}" style="padding-top:{{topInset}}rpx">
+        <view class="overlay-backdrop" bindtap="closeSheets" catchtouchmove="noop"></view>
+        <view class="sheet reset-sheet">
             <scroll-view class="sheet-body reset-body" scroll-y="true">
                 <text class="reset-h2">重置全部本机体验数据？</text>
                 <text class="reset-desc">{{resetDesc}}</text>
@@ -166,8 +180,9 @@
     </view>
 
     <!-- 我的小鸟：H5 为 flock 路由，小程序调试期是单鸟本机模型，用同风格浮层展示 -->
-    <view class="overlay" wx:if="{{birdsVisible}}" bindtap="closeSheets" catchtouchmove="noop">
-        <view class="sheet" catchtap="noop">
+    <view class="overlay" wx:if="{{birdsVisible}}" style="padding-top:{{topInset}}rpx">
+        <view class="overlay-backdrop" bindtap="closeSheets" catchtouchmove="noop"></view>
+        <view class="sheet">
             <view class="sheet-close" catchtap="closeSheets"><text>×</text></view>
             <scroll-view class="sheet-body" scroll-y="true">
                 <text class="sheet-h2">我的小伙伴</text>
@@ -180,8 +195,8 @@
                     <text class="bird-current">当前陪伴</text>
                 </view>
                 <text wx:else class="birds-empty">还没有领养小鸟。用实体标签上的链接领养第一只吧。</text>
-                <text class="sheet-muted">调试期本机只保存一只小鸟，暂不支持多只切换。</text>
-                <view wx:if="{{!hasBird}}" class="sheet-action debug-action" bindtap="goAdopt"><text>预览 NFC 领养页（调试）</text></view>
+                <text class="sheet-muted">本机只保存一只小鸟，暂不支持多只切换。</text>
+                <view wx:if="{{showDemoAdopt && !hasBird}}" class="sheet-action debug-action" bindtap="goAdopt"><text>预览 NFC 领养页（调试）</text></view>
                 <view class="sheet-action" bindtap="goHome"><text>回小窝看看</text></view>
             </scroll-view>
         </view>

@@ -294,7 +294,7 @@ def build(state, name, title):
     parser = WxmlParser()
     parser.feed(io.open(WXML, encoding='utf-8').read())
     body = render_children(parser.root, state)
-    css = css_from_wxss() + EXTRA_CSS.replace('@@BG@@', asset_uri('/assets/profile/felt/background.webp'))
+    css = css_from_wxss() + EXTRA_CSS.replace('@@BG@@', asset_uri('/media/collection/profile.webp'))
     html = u"""<!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=390,initial-scale=1">
 <title>%s</title><style>%s</style></head><body>

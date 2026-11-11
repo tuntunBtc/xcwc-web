@@ -10,6 +10,7 @@
 .immersive-top {
     position: relative;
     flex-shrink: 0;
+    margin-bottom: -1px;
     overflow: hidden;
     background: #98b89b;
 }
@@ -92,6 +93,10 @@
 }
 
 .scroll-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-family: "Kaiti SC", "STKaiti", "Songti SC", serif;
     font-size: 32rpx;
     font-weight: 700;
@@ -173,7 +178,10 @@
 }
 
 .retry {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    min-height: 44px;
     margin-top: 12rpx;
     padding: 12rpx 22rpx;
     border: 1rpx solid #d4dfb8;
@@ -234,6 +242,8 @@
     align-items: center;
     box-sizing: border-box;
     height: 88rpx;
+    /* 给两侧边框留出余量，让取名按钮的内部热区至少 44px。 */
+    min-height: 46px;
     border: 1rpx solid #fff9f1;
     border-radius: 999rpx;
     background: #fffaf4;
@@ -254,17 +264,27 @@
 }
 
 .random-btn {
+    position: relative;
     display: flex;
+    align-self: stretch;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
     width: 36%;
-    height: 76%;
-    border-left: 1rpx dashed #c3946f;
     color: #785234;
     font-size: 26rpx;
     font-weight: 600;
     white-space: nowrap;
+}
+
+.random-btn::before {
+    content: '';
+    position: absolute;
+    top: 12%;
+    bottom: 12%;
+    left: 0;
+    border-left: 1rpx dashed #c3946f;
+    pointer-events: none;
 }
 
 .validation {
@@ -279,6 +299,7 @@
 .adopt-button {
     position: relative;
     height: 96rpx;
+    min-height: 44px;
     margin-top: 20rpx;
     border-radius: 999rpx;
     background: #8eab30;

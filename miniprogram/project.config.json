@@ -9,6 +9,14 @@
       {
         "value": "小程序项目档案.md",
         "type": "file"
+      },
+      {
+        "value": "assets/nest/pill.webp",
+        "type": "file"
+      },
+      {
+        "value": "assets/bird/happy.webp",
+        "type": "file"
       }
     ],
     "include": []

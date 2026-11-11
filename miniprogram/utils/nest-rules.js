@@ -14,7 +14,10 @@ var ERROR_TEXT = Object.freeze({
     ALREADY_CLAIMED: '今日步数已经兑换过',
     NO_REWARD: '今日暂无可兑换叽分',
     STORAGE_UNAVAILABLE: '本机数据暂时无法读写，请重试',
+    STEP_CONTEXT_CHANGED: '本机体验数据已更新，请重新操作',
+    WX_SESSION_CHANGED: '微信登录状态已更新，请重新操作',
     PRIVACY_NOT_AUTHORIZED: '请先同意小程序隐私保护指引，再兑换步数',
+    PRIVACY_UNAVAILABLE: '小程序暂时无法读取微信步数，请联系运营人员。',
     NO_ENDPOINT: '当前版本暂未开放步数兑换',
     INVALID_NICKNAME: '昵称需为 1–6 个字符',
 });

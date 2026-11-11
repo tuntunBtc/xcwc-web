@@ -26,15 +26,17 @@ function ensureDir() {
     }
 }
 
-function readRows() {
-    var raw;
-    try { raw = wx.getStorageSync(KEY); } catch (error) { return null; }
+function parseRows(raw) {
     if (raw === undefined || raw === null || raw === '') return [];
     if (!Array.isArray(raw) || !raw.every(function (row) {
         return row && typeof row === 'object' && typeof row.id === 'string' && ID_RE.test(row.id) &&
-            (!row.stage || row.stage === 'files-pending' || row.stage === 'reward-pending');
+            (!row.stage || row.stage === 'files-pending' || row.stage === 'reward-pending' || row.stage === 'delete-pending');
     })) return null;
     return raw;
+}
+
+function readRows() {
+    try { return parseRows(wx.getStorageSync(KEY)); } catch (error) { return null; }
 }
 
 function writeRows(rows) {
@@ -58,11 +60,21 @@ function view(row) {
         original: row.original || '',
         birdIds: row.birdIds || [],
         styleId: row.styleId || 'natural',
+        pendingDeletion: row.stage === 'delete-pending',
     };
 }
 
 function fileMissing(error) {
     return error && (error.code === 'ENOENT' || /\bENOENT\b|no such file or directory/i.test(String(error.errMsg || error.message || error)));
+}
+
+function visibleInAlbum(row) {
+    if (row.stage === 'files-pending') return false;
+    if (row.stage !== 'delete-pending') return true;
+    // 原图未能删除时，保留仍可查看的合照。合照文件已移除则不显示失效卡片。
+    try { fs().accessSync(row.image); }
+    catch (error) { return !fileMissing(error); }
+    return true;
 }
 
 function removeFile(path) {
@@ -72,9 +84,8 @@ function removeFile(path) {
 }
 
 function removeFiles(row) {
-    var workRemoved = removeFile(row.image);
-    var originalRemoved = removeFile(row.original);
-    return workRemoved && originalRemoved;
+    // 原图删除失败时保留仍在相册里展示的作品，用户可以继续查看和重试。
+    return removeFile(row.original) && removeFile(row.image);
 }
 
 function copyIntoAlbum(tempPath, target) {
@@ -90,8 +101,7 @@ function requestId() {
     return (stamp + random).replace(/[^a-zA-Z0-9_-]/g, '0').slice(0, 32);
 }
 
-// sha1 优先；低版本基础库降级为「前 64KB 的 FNV + 文件长度」，
-// 仍可区分不同原图，但不会把不同文件误判成同一张。
+// SHA-1 优先，旧基础库沿用前 64KB 的指纹。读取失败时返回空值，不能按新原图发分。
 function digestOf(path) {
     return new Promise(function (resolve) {
         var fallback = function () {
@@ -109,16 +119,19 @@ function digestOf(path) {
                     hash ^= bytes[i];
                     hash = (hash * 0x01000193) >>> 0;
                 }
-                resolve('fnv:' + hash.toString(16) + ':' + bytes.length);
+                resolve(bytes.length ? 'fnv:' + hash.toString(16) + ':' + bytes.length : '');
             } catch (error) {
-                resolve('unknown:' + Date.now() + ':' + Math.random());
+                resolve('');
             }
         };
         if (typeof wx.getFileInfo === 'function') {
             wx.getFileInfo({
                 filePath: path,
                 digestAlgorithm: 'sha1',
-                success: function (res) { resolve('sha1:' + res.digest); },
+                success: function (res) {
+                    if (res && typeof res.digest === 'string' && res.digest) resolve('sha1:' + res.digest);
+                    else fallback();
+                },
                 fail: fallback,
             });
         } else {
@@ -130,14 +143,14 @@ function digestOf(path) {
 function history() {
     var rows = readRows();
     if (!rows) return { items: [], total: 0, error: 'STORAGE_UNAVAILABLE' };
-    var visible = rows.filter(function (row) { return row.stage !== 'files-pending'; });
+    var visible = rows.filter(visibleInAlbum);
     return { items: sorted(visible).map(view), total: visible.length, error: null };
 }
 
 function detail(id) {
     var rows = readRows() || [];
     for (var i = 0; i < rows.length; i += 1) {
-        if (rows[i].id === id && rows[i].stage !== 'files-pending') return view(rows[i]);
+        if (rows[i].id === id && visibleInAlbum(rows[i])) return view(rows[i]);
     }
     return null;
 }
@@ -170,13 +183,14 @@ function recoverPending(store) {
     if (!rows) return storageError('本机相册读取失败，请重试');
     var draftId = draft && draft.pendingSubmission && draft.pendingSubmission.id;
     var pending = rows.filter(function (row) {
-        return row.stage === 'reward-pending' || (row.stage === 'files-pending' && row.id !== draftId);
+        return row.stage === 'reward-pending' || row.stage === 'delete-pending' ||
+            (row.stage === 'files-pending' && row.id !== draftId);
     });
     var firstError = null;
     for (var i = 0; i < pending.length; i += 1) {
         var row = pending[i];
         // 文件阶段的请求仅能由原编辑草稿重试。草稿已丢弃时清理未提交的作品。
-        var result = row.stage === 'files-pending' ? remove(row.id) : finishReward(rows, row, store, true);
+        var result = row.stage === 'reward-pending' ? finishReward(rows, row, store, true) : remove(row.id);
         if (result.error && !firstError) firstError = result;
         rows = readRows();
         if (!rows) return storageError('本机相册读取失败，请重试');
@@ -192,6 +206,9 @@ function create(payload, store) {
     if (!rows) return Promise.resolve(storageError('本机相册读取失败，请原样重试'));
     var existing = rows.find(function (row) { return row.id === id; });
     if (existing) {
+        if (existing.stage === 'delete-pending') {
+            return Promise.resolve({ error: 'DELETE_PENDING', message: '这张合照正在删除，请先重试读取相册' });
+        }
         if (existing.digest !== payload.digest || (existing.outputHash || '') !== (payload.outputHash || '')) {
             return Promise.resolve({ error: 'IDEMPOTENCY_CONFLICT', message: '同一请求编号不能保存不同的作品' });
         }
@@ -252,28 +269,48 @@ function remove(id) {
         else next.push(rows[i]);
     }
     if (!target) return { error: 'NOT_FOUND', message: '没有找到本机合照' };
-    if (!removeFiles(target)) return storageError('本机照片未完全删除，请重试');
-    if (!writeRows(next)) return { error: 'STORAGE_UNAVAILABLE', message: '本机相册资料更新失败，请重试' };
+    if (target.stage !== 'delete-pending') {
+        var pending = Object.assign({}, target, { stage: 'delete-pending' });
+        if (!writeRows(replaceRow(rows, pending))) return storageError('本机相册无法记录删除操作，请重试');
+    }
+    // 删除已记录，旧草稿不再重放这条收藏请求。
+    if (draft && draft.pendingSubmission && draft.pendingSubmission.id === id) {
+        draft = Object.assign({}, draft, { pendingSubmission: null });
+    }
+    if (!removeFiles(target)) {
+        return Object.assign(storageError('本机照片未完全删除，请重试'), { pendingDeletion: true });
+    }
+    if (!writeRows(next)) {
+        return Object.assign(storageError('本机相册资料更新失败，请重试'), { pendingDeletion: true, workDeleted: true });
+    }
     return { error: null, deleted: true };
 }
 
 function clear() {
-    draft = null;
     try {
+        // 读取失败和索引损坏分开处理。前者无法安全记录删除，后者仍可用相册目录清理。
+        var rows = parseRows(wx.getStorageSync(KEY));
         var fileSystem = fs();
-        if (typeof fileSystem.rmdirSync === 'function') {
+        var recursive = typeof fileSystem.rmdirSync === 'function';
+        if (!rows && !recursive) return false;
+        if (rows && rows.some(function (row) { return row.stage !== 'delete-pending'; })) {
+            // 递归删除也可能只完成一部分。先登记状态，保留剩余文件的索引供重试。
+            var pending = rows.map(function (row) { return Object.assign({}, row, { stage: 'delete-pending' }); });
+            if (!writeRows(pending)) return false;
+        }
+        if (rows && rows.length) draft = null;
+        if (recursive) {
             // 仅删除相册自有目录，覆盖旧版本遗留的无索引文件。
             try { fileSystem.rmdirSync(dir(), true); }
             catch (error) { if (!fileMissing(error)) return false; }
         } else {
-            var rows = readRows();
-            if (!rows) return false;
             var removed = true;
             for (var i = 0; i < rows.length; i += 1) {
                 if (!removeFiles(rows[i])) removed = false;
             }
             if (!removed) return false;
         }
+        draft = null;
         wx.removeStorageSync(KEY);
         return true;
     } catch (error) {

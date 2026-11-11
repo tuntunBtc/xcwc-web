@@ -42,6 +42,15 @@ function indexOfRoute(route) {
     return -1;
 }
 
+function readSelectedTab(followPageStack) {
+    const pages = getCurrentPages();
+    for (let i = pages.length - 1; i >= 0; i -= 1) {
+        const selected = indexOfRoute('/' + pages[i].route);
+        if (selected >= 0 || !followPageStack) return selected;
+    }
+    return followPageStack ? 0 : -1;
+}
+
 function readBottomInsetRpx() {
     const FALLBACK = 0;
     try {
@@ -63,6 +72,10 @@ Component({
         styleIsolation: 'isolated',
     },
 
+    properties: {
+        followPageStack: Boolean,
+    },
+
     data: {
         selected: 0,
         list: TABS,
@@ -75,9 +88,7 @@ Component({
     lifetimes: {
         attached: function () {
             const safeBottom = readBottomInsetRpx();
-            const pages = getCurrentPages();
-            const route = pages.length ? '/' + pages[pages.length - 1].route : '';
-            const selected = indexOfRoute(route);
+            const selected = readSelectedTab(this.data.followPageStack);
             // 只增加占位高度，视觉层（底板 + 四入口）仍是原比例的 149rpx。
             this.setData({
                 barHeight: ART_HEIGHT_RPX + safeBottom,
@@ -90,10 +101,7 @@ Component({
     // 页面显示时也能按当前路由自校正选中态，避免切换 tab 后高亮滞后。
     pageLifetimes: {
         show: function () {
-            const pages = getCurrentPages();
-            if (!pages.length) return;
-            const route = '/' + pages[pages.length - 1].route;
-            const selected = indexOfRoute(route);
+            const selected = readSelectedTab(this.data.followPageStack);
             if (selected >= 0 && selected !== this.data.selected) {
                 this.setData({ selected: selected });
             }
@@ -104,10 +112,15 @@ Component({
         switchTab: function (event) {
             const dataset = event.currentTarget.dataset;
             const url = dataset.path;
-            const index = Number(dataset.index);
-            if (!url) return;
-            this.setData({ selected: index });
-            wx.switchTab({ url: url });
+            if (indexOfRoute(url) < 0 || this.switching) return;
+            const pages = getCurrentPages();
+            if (pages.length && '/' + pages[pages.length - 1].route === url) return;
+            this.switching = true;
+            wx.switchTab({
+                url: url,
+                fail: function () { wx.showToast({ title: '切换失败，请重试', icon: 'none' }); },
+                complete: () => { this.switching = false; },
+            });
         },
     },
 });

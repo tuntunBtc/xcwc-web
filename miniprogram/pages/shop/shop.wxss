@@ -27,6 +27,7 @@
     position: relative;
     z-index: 1;
     width: 100%;
+    margin-bottom: -1px;
     overflow: hidden;
     background: transparent;
 }
@@ -162,8 +163,8 @@
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 132rpx;
-    height: 132rpx;
+    width: 154rpx;
+    height: 154rpx;
     transform: translate(-50%, -50%);
     z-index: 2;
 }
@@ -208,17 +209,25 @@
 .hero-dots {
     position: absolute;
     z-index: 2;
-    left: 0;
-    right: 0;
+    left: 50%;
     bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    max-width: 100%;
+    height: 88rpx;
+    min-height: 44px;
+    transform: translateX(-50%);
+}
+
+.hero-dot-list {
+    display: inline-flex;
+    vertical-align: top;
 }
 
 .hero-dot-hit {
     width: 88rpx;
     height: 88rpx;
+    min-width: 44px;
+    min-height: 44px;
+    flex: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -243,7 +252,12 @@
     right: 16rpx;
     top: 16rpx;
     min-height: 88rpx;
+    min-height: max(88rpx, calc(44px - 32rpx));
+    min-width: calc(44px - 48rpx);
     padding: 16rpx 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 44rpx;
     background: rgba(255, 248, 233, 0.93);
     color: #755331;
@@ -371,7 +385,7 @@
 .benefit-action {
     position: relative;
     z-index: 1;
-    min-height: 80rpx;
+    min-height: 44px;
     display: flex;
     align-items: center;
     padding-left: 8rpx;
@@ -437,6 +451,7 @@
     position: relative;
     flex: 1;
     height: 90rpx;
+    min-height: 44px;
     margin: 0 8rpx;
     display: flex;
     align-items: center;
@@ -469,9 +484,21 @@
     font-size: 24rpx;
 }
 
-/* 与网页端 .filters>.city-filter{padding:0} 对齐：城市 picker 由 filter-inner 承载内容。 */
 .city-filter {
     padding: 0;
+}
+
+/* 原生 picker 的内层会收缩到文字宽度，底图放在外层，picker 铺满点按区。 */
+.city-picker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .filter-inner {
@@ -507,6 +534,15 @@
     border-radius: 44rpx;
     background: #fff6e8;
 }
+
+.cover-retry {
+    min-height: 44px;
+    padding: 0 50rpx;
+    line-height: 44px;
+}
+
+.cover-retry::after { border: 0; }
+.cover-retry[disabled] { opacity: 0.65; }
 
 .products {
     display: flex;
@@ -585,6 +621,8 @@
     position: relative;
     width: 84rpx;
     height: 84rpx;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -641,15 +679,28 @@
     right: 0;
     bottom: 0;
     padding: 28rpx;
+    /* 固定底栏艺术层为 149rpx，面板底边与其留 12rpx 间距。 */
+    padding-bottom: 161rpx;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(55, 56, 44, 0.46);
 }
 
+.overlay-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    touch-action: none;
+}
+
 .panel {
+    position: relative;
     width: 100%;
-    max-height: 1180rpx;
+    max-height: 100%;
     border-radius: 50rpx;
     background: #fff4e1;
     box-shadow: 0 40rpx 160rpx rgba(48, 48, 32, 0.31), 0 0 0 6rpx rgba(255, 249, 233, 0.7);
@@ -684,6 +735,8 @@
     z-index: 1;
     width: 84rpx;
     height: 84rpx;
+    min-width: 44px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -699,12 +752,17 @@
 .panel-content {
     height: 1000rpx;
     max-height: 76vh;
+    min-height: 0;
     background: #fff4e1;
 }
 
 .panel-content.is-short {
     height: 480rpx;
     max-height: 62vh;
+}
+
+.panel-start {
+    height: 1px;
 }
 
 .detail-cover {
@@ -765,7 +823,7 @@
 }
 
 .detail-text-head {
-    min-height: 88rpx;
+    min-height: max(88rpx, 44px);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -784,6 +842,7 @@
 }
 
 .detail-text-line {
+    display: block;
     color: #79502d;
     font-size: 26rpx;
     line-height: 1.9;
@@ -857,6 +916,10 @@
 }
 
 .cart-buy {
+    min-height: 44px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
     padding: 14rpx 20rpx;
     border-radius: 36rpx;
     background: #d8d2bd;
@@ -865,11 +928,15 @@
 }
 
 .cart-remove {
-    min-height: 76rpx;
+    min-width: 44px;
+    min-height: 44px;
+    box-sizing: border-box;
     padding: 0 20rpx;
-    color: #a58766;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #79502d;
     font-size: 24rpx;
-    line-height: 76rpx;
 }
 
 .cart-empty {
@@ -918,6 +985,7 @@
 .primary-btn {
     position: relative;
     height: 96rpx;
+    min-height: 44px;
     margin-top: 24rpx;
     display: flex;
     align-items: center;
@@ -935,6 +1003,7 @@
 
 .ghost-btn {
     height: 88rpx;
+    min-height: 44px;
     margin-top: 16rpx;
     display: flex;
     align-items: center;

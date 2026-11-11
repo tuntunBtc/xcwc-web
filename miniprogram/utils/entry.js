@@ -14,9 +14,8 @@ var ADOPT_PAGE = 'pages/adopt/adopt';
 var MAX_CODE_LENGTH = 64;
 
 function normalize(value) {
-    return String(value === null || value === undefined ? '' : value)
-        .trim()
-        .slice(0, MAX_CODE_LENGTH);
+    var code = typeof value === 'string' ? value.trim() : '';
+    return code.length <= MAX_CODE_LENGTH && /^[A-Za-z0-9_-]+$/.test(code) ? code : '';
 }
 
 function decodeMaybe(value) {
@@ -27,39 +26,48 @@ function decodeMaybe(value) {
     }
 }
 
-// 兼容三种写法：
-//   "birdCode=HZ-HY-xxx"、"a=1&birdCode=HZ-HY-xxx"、
-//   完整 URL 的 query（options.q）、以及 scene 里只有纯编码的 "HZ-HY-xxx"。
-function pickCode(text) {
-    var raw = decodeMaybe(text);
-    var qIndex = raw.indexOf('?');
-    var query = qIndex >= 0 ? raw.slice(qIndex + 1) : raw;
+function pickQueryCode(query) {
     var pairs = query.split('&');
-    var bare = '';
+    var codes = [];
     for (var i = 0; i < pairs.length; i += 1) {
         var pair = pairs[i];
         if (!pair) continue;
         var eq = pair.indexOf('=');
-        var key = eq === -1 ? '' : pair.slice(0, eq);
-        var value = eq === -1 ? pair : pair.slice(eq + 1);
-        if (key === 'birdCode' || key === 'bird') return normalize(value);
-        if (eq === -1 && !bare) bare = normalize(value);
+        if (eq < 0) continue;
+        var key = decodeMaybe(pair.slice(0, eq));
+        if (key === 'birdCode' || key === 'bird') codes.push(decodeMaybe(pair.slice(eq + 1)));
     }
-    return bare;
+    return codes.length === 1 ? normalize(codes[0]) : '';
+}
+
+// scene 是独立参数，支持纯编码和旧 query 写法，不使用 URL 的片段分隔规则。
+function readSceneCode(scene) {
+    var raw = scene.indexOf('=') >= 0 ? scene : decodeMaybe(scene);
+    if (raw.indexOf('=') >= 0) return pickQueryCode(raw);
+    return /^\d+$/.test(raw) ? '' : normalize(raw);
+}
+
+// 普通二维码的 q 参数承载完整 URL。兼容未编码 URL 和原有 query 写法。
+function readQrCode(value) {
+    var raw = String(value).split('#')[0];
+    if (raw.indexOf('?') === -1 && raw.indexOf('=') === -1) raw = decodeMaybe(raw).split('#')[0];
+    var qIndex = raw.indexOf('?');
+    return pickQueryCode(qIndex >= 0 ? raw.slice(qIndex + 1) : raw);
 }
 
 // 页面级入口：URL Link / URL Scheme / 自定义编译条件 / 站内跳转 / 小程序码 / 普通二维码。
 function readBirdCode(options) {
     var o = options || {};
-    var direct = normalize(o.birdCode || o.bird);
-    if (direct) return direct;
-    if (o.scene !== undefined && o.scene !== null && o.scene !== '') {
-        var fromScene = pickCode(o.scene);
+    if (o.birdCode !== undefined || o.bird !== undefined) {
+        if (o.birdCode !== undefined && o.bird !== undefined) return '';
+        return normalize(o.birdCode !== undefined ? o.birdCode : o.bird);
+    }
+    if (typeof o.scene === 'string' && o.scene) {
+        var fromScene = readSceneCode(o.scene);
         if (fromScene) return fromScene;
     }
     if (o.q) {
-        var fromQ = pickCode(o.q);
-        if (fromQ) return fromQ;
+        return readQrCode(o.q);
     }
     return '';
 }
@@ -72,6 +80,7 @@ function readBirdCodeFromLaunch(options) {
     return readBirdCode({
         birdCode: query.birdCode,
         bird: query.bird,
+        scene: query.scene,
         q: query.q,
     });
 }
@@ -80,10 +89,17 @@ function buildAdoptUrl(code) {
     return '/' + ADOPT_PAGE + '?birdCode=' + encodeURIComponent(normalize(code));
 }
 
+function isManufacturingCode(code) {
+    if (typeof code !== 'string' || code.length > 32 || !/^[A-Z]{2}-[A-Z][A-Z0-9]{1,7}-[1-9][0-9]{0,18}$/.test(code)) return false;
+    var id = code.slice(code.lastIndexOf('-') + 1);
+    return id.length < 19 || id <= '9223372036854775807';
+}
+
 module.exports = {
     ADOPT_PAGE: ADOPT_PAGE,
     normalizeBirdCode: normalize,
     readBirdCode: readBirdCode,
     readBirdCodeFromLaunch: readBirdCodeFromLaunch,
     buildAdoptUrl: buildAdoptUrl,
+    isManufacturingCode: isManufacturingCode,
 };

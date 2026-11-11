@@ -32,29 +32,36 @@ page {
        背景平铺的多余部分由 .scene-lower 自身的 overflow:hidden 负责。 */
 }
 
-/* ---------- 场景：上段 63cqw，下段 repeat-y ---------- */
+/* ---------- 场景 ---------- */
 .scene-top {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     height: 472rpx;
-    z-index: 0;
+    z-index: 1;
+    -webkit-mask-image: linear-gradient(#000 75%, transparent);
+    pointer-events: none;
 }
 
 .scene-lower {
     position: absolute;
     left: 0;
     right: 0;
-    top: 472rpx;
+    top: 354rpx;
     bottom: 0;
     z-index: 0;
     overflow: hidden;
+    pointer-events: none;
 }
 
 .scene-lower-tile {
     display: block;
     width: 100%;
+}
+
+.scene-lower-tile.is-reversed {
+    transform: scaleY(-1);
 }
 
 /* 状态栏 + 胶囊安全区；微信系统胶囊无法隐藏，属平台必需留白 */
@@ -81,7 +88,8 @@ page {
     align-items: center;
     justify-content: center;
     min-width: 162rpx;
-    min-height: 85rpx;
+    min-height: 44px;
+    min-height: max(85rpx, 44px);
     margin: 0 0 20rpx;
     padding: 15rpx 29rpx;
     border-radius: 39rpx;

@@ -12,6 +12,8 @@ var TAB_BAR_ART_RPX = 149;     // custom-tab-bar 的 960×195 毛绒底板等比
 var DOCK_GAP_RPX = 9;
 var DOCK_HEIGHT_RPX = 162;     // .dock button clamp(72px,21.6cqw,104px) → 162rpx
 var BIRD_HEIGHT_RPX = 322;     // --bird-size clamp(140px,43cqw,214px) → 43cqw
+var TOOL_HEIGHT_RPX = 84;      // .tool 的原有视觉高度，热区另有 44px 下限
+var TOOL_GAP_RPX = 8;          // .tools 的相邻按钮间距
 // 顶部 HUD 抬到与右上角胶囊同一水平带时需要的几何常量。
 var HUD_HEIGHT_RPX = 91;       // .identity height，与 index.wxss 保持一致
 var MENU_GAP_RPX = 32;         // HUD 右边界与胶囊左边缘的呼吸间隙；叽分卡不贴胶囊、略靠中间
@@ -92,9 +94,10 @@ function readNestLayout() {
     }
     var viewportRpx = DESIGN_HEIGHT_RPX;
     var bottomInset = 0;
+    var width = 375;
     try {
         var info = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
-        var width = info.windowWidth || 375;
+        width = info.windowWidth || 375;
         var height = info.windowHeight || 667;
         viewportRpx = Math.round((height * 750) / width);
         bottomInset = readBottomInset(info, width);
@@ -114,6 +117,15 @@ function readNestLayout() {
     var actorBottom = dockTop - 20;
     var actorTop = Math.min(inset + 574 + coreShift, Math.max(inset + 450, actorBottom - BIRD_HEIGHT_RPX), actorBottom - 1);
     var actorHeight = Math.min(BIRD_HEIGHT_RPX, actorBottom - actorTop);
+    var speechTop = inset + 330 + coreShift;
+    var toolHeight = Math.max(TOOL_HEIGHT_RPX, Math.ceil(44 * 750 / width));
+    var toolsTop = hudTop + 262;
+    var toolsCompact = toolsTop + 4 * toolHeight + 3 * TOOL_GAP_RPX > dockTop;
+    // 短屏改用两行，尽量放在对话气泡和照料按钮之前。
+    if (toolsCompact) {
+        var toolsBottom = Math.min(speechTop, dockTop);
+        toolsTop = Math.max(hudTop + 222, Math.min(toolsTop, toolsBottom - 2 * toolHeight - TOOL_GAP_RPX));
+    }
     return {
         inset: inset,
         tabBarHeight: tabBarHeight,
@@ -134,8 +146,9 @@ function readNestLayout() {
         hudRight: hudRight,                    // 胶囊左边缘避让，内联覆盖 WXSS 的 right:12rpx
         statusTop: hudTop + 120,               // HUD 底(+91) 后再留 29rpx
         needsTop: hudTop + 222,
-        toolsTop: hudTop + 262,
-        speechTop: inset + 330 + coreShift,    // 44cqw + core-shift
+        toolsTop: toolsTop,
+        toolsCompact: toolsCompact,
+        speechTop: speechTop,                  // 44cqw + core-shift
         claimTop: inset + 465 + coreShift,     // 62cqw + core-shift
         actorTop: actorTop,
     };

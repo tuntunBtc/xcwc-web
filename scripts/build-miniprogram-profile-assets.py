@@ -14,8 +14,8 @@ from PIL import Image
 
 ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
 SRC = os.path.join(ROOT, 'assets/profile/felt/background-v1.png')
-OUT_DIR = os.path.join(ROOT, 'miniprogram/assets/profile/felt')
-OUT = os.path.join(OUT_DIR, 'background.webp')
+OUT_DIR = os.path.join(ROOT, 'miniprogram/media/collection')
+OUT = os.path.join(OUT_DIR, 'profile.webp')
 
 # 主视觉/背景预算 100–250 KB；q90/method6 在 852×1846 下约 248 KB，
 # 保留毛绒质感与中文以外的插画细节，不再做有损二次压缩。

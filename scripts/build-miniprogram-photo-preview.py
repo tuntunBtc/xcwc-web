@@ -37,8 +37,8 @@ def data_uri(path: Path) -> str:
 
 def build_assets() -> dict:
     assets = {}
-    for path in sorted((MP / "assets/photo").iterdir()):
-        assets["/assets/photo/" + path.name] = data_uri(path)
+    for path in sorted((MP / "pages/photo/assets").iterdir()):
+        assets["/pages/photo/assets/" + path.name] = data_uri(path)
     for name in (
         "nav-background.webp", "nav-home-active.webp", "nav-home-default.webp",
         "nav-city-default.webp", "nav-shop-default.webp", "nav-profile-default.webp",
@@ -70,10 +70,10 @@ def normalise_wxml(wxml: str) -> str:
 
 
 def states(assets: dict) -> dict:
-    thumb = assets["/assets/photo/example.webp"]
-    bird = assets["/assets/photo/bird.webp"]
+    thumb = assets["/pages/photo/assets/example.webp"]
+    bird = assets["/pages/photo/assets/bird.webp"]
     styles = [
-        {"name": name, "thumb": assets["/assets/photo/style-%d.webp" % i], "selected": i == 0}
+        {"name": name, "thumb": assets["/pages/photo/assets/style-%d.webp" % i], "selected": i == 0}
         for i, name in enumerate(("清新自然", "暖阳胶片", "柔和风景", "黑白记忆"))
     ]
     birds = [
@@ -342,9 +342,9 @@ function paintCanvas(){
       ctx.textAlign='right'; ctx.fillText('OUR TRAVEL DIARY',944,962);
       ctx.textAlign='left';
     };
-    bird.src = ASSETS['/assets/photo/bird.webp'];
+    bird.src = ASSETS['/pages/photo/assets/bird.webp'];
   };
-  bg.src = ASSETS['/assets/photo/example.webp'];
+  bg.src = ASSETS['/pages/photo/assets/example.webp'];
 }
 paintCanvas();
 
@@ -369,8 +369,8 @@ if(params.get('measure')==='1'){
     if(el.scrollWidth>el.clientWidth+1) overflow.push(el.className+':'+el.scrollWidth+'>'+el.clientWidth);
   });
   document.title='@@MEASURE@@'+JSON.stringify({rects:rects,overflow:overflow,width:innerWidth,
-    assetKeys:Object.keys(ASSETS).length, heroType:typeof ASSETS['/assets/photo/hero.webp'],
-    heroMapped:assetSrc('/assets/photo/hero.webp').slice(0,30),
+    assetKeys:Object.keys(ASSETS).length, heroType:typeof ASSETS['/pages/photo/assets/hero.webp'],
+    heroMapped:assetSrc('/pages/photo/assets/hero.webp').slice(0,30),
     birdPortrait:(function(){const el=document.querySelector('.bird-portrait img');
       if(!el)return null;const r=el.getBoundingClientRect();
       return [Math.round(r.width),Math.round(r.height),getComputedStyle(el).width,getComputedStyle(el).height,el.getAttribute('src').slice(0,30)];})()})+'@@END@@';
@@ -392,7 +392,8 @@ def main() -> None:
         ("@@WXML@@", json.dumps(wxml, ensure_ascii=False)),
     ):
         html = html.replace(key, value)
-    OUT.write_text(html, encoding="utf-8", newline="\n")
+    with OUT.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(html)
     print("written %s %.1f KB" % (OUT, len(html.encode("utf-8")) / 1024))
 
 

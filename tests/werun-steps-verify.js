@@ -7,6 +7,7 @@ const assert = require('assert');
 const guestStore = require('../miniprogram/utils/guest-store');
 const store = require('../miniprogram/utils/store');
 const config = require('../miniprogram/utils/config');
+const werun = require('../miniprogram/utils/werun');
 
 let passed = 0, failed = 0;
 function check(name, fn) {
@@ -27,6 +28,15 @@ function memoryStorage(initial) {
         setStorageSync: function (k, v) { map[k] = v; },
         removeStorageSync: function (k) { delete map[k]; },
     };
+}
+
+function authorizedStepsWx(initial, request) {
+    return Object.assign(memoryStorage(initial), {
+        checkSession: options => options.success(),
+        getSetting: options => options.success({ authSetting: { 'scope.werun': true } }),
+        getWeRunData: options => options.success({ encryptedData: 'test', iv: 'test' }),
+        request,
+    });
 }
 
 const NOW = Date.now();
@@ -92,6 +102,15 @@ check('guest-store: 跨日可再次兑换（不同 target 日期）', function (
     assert.strictEqual(r.data.snapshot.points, 8, '两日积分应累加');
 });
 
+check('guest-store: 服务端日期决定流水及当日累计', function () {
+    const g = guestStore.createGuestStore(memoryStorage(), {});
+    const at = Date.parse('2026-11-10T16:00:01Z');
+    g.adopt('TEST-WERUN-DATE', '小叽', at);
+    const r = g.applyServerReward(5, 6800, '2026-11-10', at, true);
+    assert.strictEqual(r.data.snapshot.todayPoints, 0);
+    assert.strictEqual(r.data.snapshot.ledger[0].day, '2026-11-10');
+});
+
 check('store: 导出 redeemSteps 且为函数', function () {
     assert.strictEqual(typeof store.redeemSteps, 'function');
 });
@@ -142,6 +161,165 @@ async function runBridgeChecks() {
                 statusCode: 200, data: { granted: 0, steps: 700, date: DAY, claimed: false },
             });
             await assertFailure('NO_REWARD');
+        });
+
+        await checkAsync('store: 会话解密过期后只重登一次，重取密文，随后可退出', async function () {
+            config.USE_LOCAL_FIXTURE = false;
+            config.API_BASE = 'https://example.invalid';
+            const calls = [];
+            let reads = 0;
+            global.wx = Object.assign(memoryStorage({ auth_token: 'old-token' }), {
+                checkSession: options => options.success(),
+                login: options => { calls.push('wx.login'); options.success({ code: 'test-code' }); },
+                getSetting: options => options.success({ authSetting: { 'scope.werun': true } }),
+                getWeRunData: options => options.success({ encryptedData: 'test-' + (++reads), iv: 'test' }),
+                request: options => {
+                    if (options.url.endsWith('/wx-login')) {
+                        assert.deepStrictEqual(options.data, { code: 'test-code' });
+                        calls.push('login');
+                        return options.success({ statusCode: 200, data: { token: 'new-token' } });
+                    }
+                    if (options.url.endsWith('/logout')) {
+                        assert.strictEqual(options.header.Authorization, 'Bearer new-token');
+                        calls.push('logout');
+                        return options.success({ statusCode: 204 });
+                    }
+                    calls.push([options.header.Authorization, options.data.encryptedData]);
+                    if (reads === 1) return options.success({ statusCode: 400, data: { code: 'WERUN_DECRYPT_FAILED' } });
+                    return options.success({ statusCode: 200, data: { granted: 5, steps: 6800, date: DAY, claimed: true } });
+                },
+            });
+            assert.strictEqual((await store.redeemSteps(NOW)).error, 'NO_BIRD');
+            assert.deepStrictEqual(calls, []);
+            store.adopt('TEST-WERUN-03', '小叽', NOW);
+            assert.strictEqual((await store.redeemSteps(NOW)).error, null);
+            assert.strictEqual(store.snapshot(NOW).data.snapshot.points, 5);
+            assert.strictEqual((await store.redeemSteps(NOW)).error, 'ALREADY_CLAIMED');
+            assert.deepStrictEqual(await store.logoutWechat(), { error: null });
+            assert.strictEqual(store.getToken(), '');
+            assert.deepStrictEqual(calls, [['Bearer old-token', 'test-1'], 'wx.login', 'login', ['Bearer new-token', 'test-2'], 'logout']);
+        });
+
+        await checkAsync('store: 退出阻止旧请求重登，之后主动读取补给可正常登录', async function () {
+            config.USE_LOCAL_FIXTURE = false;
+            config.API_BASE = 'https://example.invalid';
+            let redeemRequest;
+            let logoutRequest;
+            let loginCalls = 0;
+            global.wx = authorizedStepsWx({ auth_token: 'old-token' }, options => {
+                if (options.url.endsWith('/steps/redeem')) redeemRequest = options;
+                else if (options.url.endsWith('/auth/logout')) logoutRequest = options;
+                else if (options.url.endsWith('/auth/wx-login')) options.success({ statusCode: 200, data: { token: 'fresh-token' } });
+                else if (options.url.endsWith('/supplies/preview')) {
+                    assert.strictEqual(options.header.Authorization, 'Bearer fresh-token');
+                    options.success({ statusCode: 200, data: { steps: 2340 } });
+                } else throw Error('未预期的请求');
+            });
+            global.wx.login = options => {
+                loginCalls += 1;
+                options.success({ code: 'fresh-code' });
+            };
+            store.adopt('TEST-WERUN-LOGOUT', '小叽', NOW);
+            const pending = store.redeemSteps(NOW);
+            await new Promise(setImmediate);
+            assert.ok(redeemRequest);
+            const logout = store.logoutWechat();
+            await new Promise(setImmediate);
+            assert.ok(logoutRequest);
+            assert.strictEqual((await store.loginWithWechat()).error, 'WX_SESSION_CHANGED');
+            logoutRequest.success({ statusCode: 204 });
+            assert.deepStrictEqual(await logout, { error: null });
+
+            redeemRequest.success({ statusCode: 401 });
+            assert.strictEqual((await pending).error, 'WX_SESSION_CHANGED');
+            assert.strictEqual(loginCalls, 0);
+            assert.strictEqual(store.getToken(), '');
+            assert.strictEqual(store.snapshot(NOW).data.snapshot.points, 0);
+            const preview = await werun.withSession(store.getToken(), token => werun.previewSupplies(token, {}));
+            assert.deepStrictEqual(preview, { steps: 2340 });
+            assert.strictEqual(loginCalls, 1);
+            assert.strictEqual(store.getToken(), 'fresh-token');
+        });
+
+        await checkAsync('store: 迟到的 wx.login 回调不登录，且不清除更新的登录请求', async function () {
+            const callbacks = [];
+            const submitted = [];
+            global.wx = Object.assign(memoryStorage(), {
+                login: options => callbacks.push(options),
+                request: options => {
+                    submitted.push(options.data.code);
+                    options.success({ statusCode: 200, data: { token: 'fresh-token' } });
+                },
+            });
+            const stale = store.loginWithWechat();
+            assert.strictEqual(callbacks.length, 1);
+            assert.deepStrictEqual(await store.logoutWechat(), { error: null });
+            const fresh = store.loginWithWechat();
+            assert.strictEqual(callbacks.length, 2);
+            callbacks[0].success({ code: 'stale-code' });
+            assert.strictEqual((await stale).error, 'WX_SESSION_CHANGED');
+            assert.deepStrictEqual(submitted, []);
+            assert.strictEqual(store.getToken(), '');
+
+            const shared = store.loginWithWechat();
+            assert.strictEqual(callbacks.length, 2);
+            callbacks[1].success({ code: 'fresh-code' });
+            assert.deepStrictEqual((await Promise.all([fresh, shared])).map(result => result.error), [null, null]);
+            assert.deepStrictEqual(submitted, ['fresh-code']);
+            assert.strictEqual(store.getToken(), 'fresh-token');
+        });
+
+        await checkAsync('store: 退出后迟到的后端登录响应不会保存令牌', async function () {
+            let loginRequest;
+            global.wx = Object.assign(memoryStorage(), {
+                login: options => options.success({ code: 'old-code' }),
+                request: options => { loginRequest = options; },
+            });
+            const stale = store.loginWithWechat();
+            await new Promise(setImmediate);
+            assert.ok(loginRequest);
+            assert.deepStrictEqual(await store.logoutWechat(), { error: null });
+            loginRequest.success({ statusCode: 200, data: { token: 'late-token' } });
+            assert.strictEqual((await stale).error, 'WX_SESSION_CHANGED');
+            assert.strictEqual(store.getToken(), '');
+        });
+
+        await checkAsync('store: 退出后不发送迟到的微信步数密文', async function () {
+            let stepCallback;
+            const requests = [];
+            global.wx = authorizedStepsWx({ auth_token: 'old-token' }, options => {
+                requests.push(new URL(options.url).pathname);
+                options.success({ statusCode: 204 });
+            });
+            global.wx.getWeRunData = options => { stepCallback = options; };
+            store.adopt('TEST-WERUN-DATA', '小叽', NOW);
+            const pending = store.redeemSteps(NOW);
+            await new Promise(setImmediate);
+            assert.ok(stepCallback);
+            assert.deepStrictEqual(await store.logoutWechat(), { error: null });
+            stepCallback.success({ encryptedData: 'late-test', iv: 'test' });
+            assert.strictEqual((await pending).error, 'WX_SESSION_CHANGED');
+            assert.deepStrictEqual(requests, ['/api/auth/logout']);
+            assert.strictEqual(store.getToken(), '');
+        });
+
+        await checkAsync('store: 重置后重新领养时，旧步数结果不会写入本机', async function () {
+            for (const code of ['TEST-WERUN-OLD', 'TEST-WERUN-NEW']) {
+                let held;
+                global.wx = authorizedStepsWx({ auth_token: 'test-token' }, options => { held = options; });
+                store.adopt('TEST-WERUN-OLD', '小叽', NOW);
+                const pending = store.redeemSteps(NOW);
+                await new Promise(setImmediate);
+                assert.ok(held);
+                assert.strictEqual(store.reset(NOW + 1).error, null);
+                assert.strictEqual(store.adopt(code, '新小叽', NOW + 2).error, null);
+                held.success({ statusCode: 200, data: { granted: 2, steps: 2300, date: DAY, claimed: true } });
+                assert.strictEqual((await pending).error, 'STEP_CONTEXT_CHANGED');
+                const snapshot = store.snapshot(NOW + 2).data.snapshot;
+                assert.strictEqual(snapshot.birdCode, code);
+                assert.strictEqual(snapshot.points, 0);
+                assert.strictEqual(snapshot.todayStepClaimed, false);
+            }
         });
     } finally {
         Object.assign(config, originalConfig);

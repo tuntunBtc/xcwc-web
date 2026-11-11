@@ -135,7 +135,11 @@ page {
 
 .identity-text {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     min-width: 0;
+    min-height: 44px;
     flex: 1;
     margin-left: 9rpx;
     z-index: 1;
@@ -404,10 +408,19 @@ page {
     z-index: 5;
 }
 
+.tools.is-compact {
+    flex-flow: row wrap;
+    justify-content: flex-end;
+    width: max(218rpx, calc(88px + 10rpx));
+}
+
 .tool {
     position: relative;
+    box-sizing: border-box;
     width: 104rpx;
-    min-height: 78rpx;
+    min-width: 44px;
+    min-height: 44px;
+    min-height: max(84rpx, 44px);
     padding: 3rpx 0;
     display: flex;
     flex-direction: column;
@@ -416,8 +429,11 @@ page {
 }
 
 .tool .tex-bg {
-    left: 10rpx;
+    top: 50%;
+    left: 50%;
     width: 84rpx;
+    height: 84rpx;
+    transform: translate(-50%, -50%);
 }
 
 .tool-hover {
@@ -469,7 +485,7 @@ page {
 .tool-dot {
     position: absolute;
     right: 15rpx;
-    top: 5rpx;
+    top: calc(50% - 37rpx);
     width: 14rpx;
     height: 14rpx;
     border-radius: 50%;
@@ -807,7 +823,8 @@ page {
     font-size: 19rpx;
     line-height: 1.6;
     text-align: center;
-    z-index: 10;
+    z-index: 21;
+    pointer-events: none;
 }
 
 /* ---------- 底部面板（替代 <dialog>） ---------- */
@@ -817,6 +834,7 @@ page {
     left: 0;
     right: 0;
     bottom: 0;
+    box-sizing: border-box;
     background: rgba(39, 45, 34, 0.35);
     z-index: 20;
     display: flex;
@@ -827,8 +845,8 @@ page {
 .sheet {
     position: relative;
     width: 100%;
-    /* 相对遮罩高度（已上移 tabBarHeight）的 92%，既保证长内容可滚动，
-       又在大屏上给顶部留出背景空间，避免面板顶到状态栏。 */
+    box-sizing: border-box;
+    /* 遮罩内容区已避开胶囊与底栏，长面板在可用高度内滚动。 */
     max-height: 92%;
     padding: 45rpx 38rpx 60rpx;
     border-radius: 39rpx 39rpx 0 0;
@@ -852,9 +870,9 @@ page {
     position: absolute;
     top: 19rpx;
     right: 19rpx;
-    width: 69rpx;
-    height: 69rpx;
-    line-height: 69rpx;
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
     text-align: center;
     color: #8B866E;
     font-size: 38rpx;
@@ -932,13 +950,66 @@ page {
     color: #FFFBEA;
 }
 
-.sheet-primary.is-disabled {
+.sheet-primary.is-disabled,
+.sheet-secondary.is-disabled {
     opacity: 0.55;
 }
 
 .sheet-secondary {
     background: #F1EFDF;
     color: #66794A;
+}
+
+.step-supply-copy {
+    display: block;
+    margin-top: 16rpx;
+    color: #725F43;
+    font-size: 25rpx;
+    line-height: 1.55;
+}
+
+.step-supply-meter {
+    margin-top: 18rpx;
+    padding: 16rpx 20rpx;
+    border-radius: 20rpx;
+    background: #EEF1DF;
+}
+
+.step-supply-value {
+    color: #465935;
+    font-size: 27rpx;
+    font-weight: 600;
+}
+
+.step-supply-track {
+    height: 8rpx;
+    margin-top: 10rpx;
+    overflow: hidden;
+    border-radius: 8rpx;
+    background: #D7DEC2;
+}
+
+.step-supply-fill {
+    height: 100%;
+    border-radius: 8rpx;
+    background: #6A8650;
+}
+
+.step-supply-notice {
+    color: #744F33;
+}
+
+.step-supply-action {
+    box-sizing: border-box;
+    min-height: 44px;
+    margin-top: 16rpx;
+    padding: 14rpx 20rpx;
+    font-size: 27rpx;
+    line-height: 1.4;
+}
+
+.step-supply-action::after {
+    border: 0;
 }
 
 .bird-choice {

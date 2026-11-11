@@ -8,12 +8,14 @@ const album = require('../../utils/photo-album');
 const model = require('../../utils/photo-model');
 const safeArea = require('../../utils/safe-area');
 
-const ASSET = '/assets/photo/';
+const ASSET = '/pages/photo/assets/';
 const PHOTO_FIT = ['cover', 'contain'];
 const PHOTO_FIT_NAMES = ['铺满画面', '完整显示'];
 const LOCATION_DEFAULT = '山野之间';
 const CANVAS_ERROR = '合照画布暂时不可用，请重新加载。当前编辑会保留。';
 const ASSET_ERROR = '合照素材暂时无法加载。照片会保留，请重新加载后继续。';
+const LONG_PRESS_SAVE = '请长按合照，选择「存储图像」或「保存图片」。';
+const ALBUM_SAVE_HINT = '点击保存后会写入系统相册，也可以长按合照保存。';
 
 // 调试期无公开小鸟目录；H5 由 /api/checkin-catalog 提供未领取款式，这里用
 // 固定的「未领取」占位，明确不可选，不按编码前缀伪造实体。
@@ -44,10 +46,42 @@ function dims(image) {
     };
 }
 
+function mediaErrorMessage(error) {
+    return String((error && error.errMsg) || '').toLowerCase();
+}
+
+function privacyErrorHint(error, message) {
+    const errno = Number(error && error.errno);
+    if (errno === 112 || /privacy.*(?:not declared|not configured|api banned)|scope is not declared/.test(message)) {
+        return '小程序暂时无法使用这项隐私权限，请联系运营人员。';
+    }
+    // 103 也可能和相册、相机等权限的拒绝信息一起返回，优先保留该权限的恢复路径。
+    if (errno === 104 || message.includes('privacy') || (errno === 103 && !isMediaPermissionError(message))) {
+        return '如需继续，请稍后重试，并按微信提示同意隐私保护指引。';
+    }
+    return '';
+}
+
+function isMediaPermissionError(message) {
+    return /\b(?:auth(?:orize|orization)?|system|permission)[ :]*(?:deny|denied|fail)|\bnot authorized\b/.test(message);
+}
+
+function systemAlbumAuthorization() {
+    if (typeof wx.getAppAuthorizeSetting !== 'function') return '';
+    try {
+        const settings = wx.getAppAuthorizeSetting();
+        return settings && settings.albumAuthorized;
+    } catch (error) {
+        return '';
+    }
+}
+
 Page({
     data: {
         topInset: 176,
+        viewportHeight: 1334,
         toastBottom: 240,
+        viewerBottomInset: 24,
         canvasHeightRpx: 560,
         points: 0,
         birds: [],
@@ -80,6 +114,8 @@ Page({
         selectionBox: { left: 0, top: 0, width: 0, height: 0 },
         generateText: '生成并收藏',
         generateDisabled: true,
+        generateCanChoosePhoto: false,
+        generateCanManageAlbum: false,
         downloadDisabled: true,
         draftNote: '切换页面会保留当前编辑内容；关闭小程序后不保留。',
         albumTotal: 0,
@@ -96,7 +132,9 @@ Page({
         deleteConfirm: false,
         deleteTitle: '删除这张合照？',
         deleteStatus: '',
+        deletePending: false,
         viewer: null,
+        viewerSavePending: '',
         toast: '',
     },
 
@@ -105,12 +143,14 @@ Page({
         this.frameTimer = null;
         this.audio = null;
         this.canvasVersion = 0;
+        this.pageReady = false;
         this.unloaded = false;
         this.resetCanvas();
         this.photoPath = '';
         this.uploaded = false;
         this.birds = [];
         this.selected = [];
+        this.selectionOwner = null;
         this.poses = {};
         this.active = null;
         this.style = 0;
@@ -130,22 +170,19 @@ Page({
         this.deleteEntry = null;
         this.deleteBusy = false;
 
-        const inset = bottomInsetRpx();
+        this.updateViewport();
         this.setData({
-            topInset: safeArea.readTopInsetRpx(),
-            toastBottom: 149 + inset + 48,
-            canvasHeightRpx: 560,
             styles: model.STYLES.map(function (item, index) {
                 return { name: item.name, thumb: ASSET + 'style-' + index + '.webp', selected: index === 0 };
             }),
         });
         this.loadBirds();
         this.loadAlbum();
-        this.restoreDraft();
         this.syncGenerate();
     },
 
     onReady() {
+        this.pageReady = true;
         if (this.data.editorOpen) {
             this.prepareCanvasImages();
         }
@@ -154,10 +191,16 @@ Page({
     onShow() {
         this.refreshPoints();
         this.loadBirds();
-        this.syncGenerate();
+        if (this.resumeDraw) {
+            this.resumeDraw = false;
+            this.update(false);
+        } else {
+            this.syncGenerate();
+        }
     },
 
     onResize() {
+        this.updateViewport();
         if (!this.canvas) return;
         this.clearGesture();
         const version = this.canvasVersion;
@@ -169,10 +212,22 @@ Page({
         });
     },
 
+    updateViewport() {
+        const bottomInset = bottomInsetRpx();
+        this.setData({
+            topInset: safeArea.readTopInsetRpx(),
+            viewportHeight: safeArea.readViewportRpx(),
+            toastBottom: 149 + bottomInset + 48,
+            viewerBottomInset: Math.max(24, bottomInset),
+        });
+    },
+
     onHide() {
         this.clearGesture();
+        if (this.frameTimer) this.resumeDraw = true;
         this.saveDraft();
         this.clearTimers();
+        if (this.data.toast) this.setData({ toast: '' });
         if (this.audio) {
             try { this.audio.stop(); } catch (error) { /* ignore */ }
         }
@@ -198,8 +253,20 @@ Page({
 
     // ---------- 顶部与提示 ----------
     onBack() {
+        if (this.unloaded || this.backPending) return;
+        this.backPending = true;
         wx.navigateBack({
-            fail: function () { wx.switchTab({ url: '/pages/index/index' }); },
+            fail: () => {
+                if (this.unloaded) return;
+                wx.switchTab({
+                    url: '/pages/index/index',
+                    fail: () => {
+                        if (this.unloaded) return;
+                        this.backPending = false;
+                        this.showToast('返回失败，请重试');
+                    },
+                });
+            },
         });
     },
 
@@ -243,10 +310,15 @@ Page({
         for (let i = 0; i < LOCKED_BIRDS.length; i += 1) birds.push(LOCKED_BIRDS[i]);
         this.birds = birds;
         const owned = birds.filter(function (bird) { return bird.adopted; });
+        const ownerId = owned.length ? owned[0].id : '';
+        const firstLoad = this.selectionOwner === null;
+        const ownerChanged = this.selectionOwner !== ownerId;
         const previous = this.selected.filter(function (id) {
             return owned.some(function (bird) { return bird.id === id; });
         });
-        this.selected = previous.length ? previous : (owned.length ? [owned[0].id] : []);
+        // 同一只小鸟保持手动取消的空选择。只有首次读到或更换领养记录时默认选中。
+        this.selected = ownerChanged && ownerId && !previous.length ? [ownerId] : previous;
+        this.selectionOwner = ownerId;
         this.poses = model.reconcilePoses(this.selected, this.poses);
         this.active = this.selected.indexOf(this.active) >= 0 ? this.active : (this.selected[0] || null);
         this.ready = true;
@@ -258,6 +330,8 @@ Page({
             points: snap.points,
             dataError: '',
         });
+        if (firstLoad) this.restoreDraft();
+        else if (ownerChanged) this.update();
     },
 
     birdCards() {
@@ -305,27 +379,54 @@ Page({
 
     // ---------- 选图 ----------
     onChoosePhoto() {
-        if (this.busy || this.choosingPhoto || this.readingPhoto) return;
-        this.choosingPhoto = true;
-        const page = this;
-        wx.chooseMedia({
-            count: 1,
-            mediaType: ['image'],
-            sourceType: ['album', 'camera'],
-            sizeType: ['original'],
-            success: function (res) { page.readPhoto(res.tempFiles && res.tempFiles[0]); },
-            fail: function (error) {
-                const message = String((error && error.errMsg) || '');
-                if (!page.unloaded && message.indexOf('cancel') < 0) page.showToast('没有打开照片，请再试一次');
-            },
-            complete: function () { page.choosingPhoto = false; },
+        if (this.unloaded || this.busy || this.choosingPhoto || this.readingPhoto) return;
+        if (typeof wx.chooseMedia !== 'function') {
+            this.showToast('当前微信版本不支持选图，请更新微信后重试');
+            return;
+        }
+        const request = {};
+        this.choosingPhoto = request;
+        const finish = handler => result => {
+            if (this.choosingPhoto !== request) return;
+            this.choosingPhoto = false;
+            if (!this.unloaded) handler(result);
+        };
+        const fail = finish(error => {
+            const message = mediaErrorMessage(error);
+            if (message.includes('cancel')) return;
+            const privacyHint = privacyErrorHint(error, message);
+            if (privacyHint) {
+                this.showToast(privacyHint);
+            } else if (isMediaPermissionError(message)) {
+                this.showToast('请检查手机和小程序设置中的相册、相机权限，再试一次');
+            } else {
+                this.showToast('没有打开照片，请再试一次');
+            }
         });
+        try {
+            wx.chooseMedia({
+                count: 1,
+                mediaType: ['image'],
+                sourceType: ['album', 'camera'],
+                sizeType: ['original'],
+                success: finish(res => {
+                    const file = res && res.tempFiles && res.tempFiles[0];
+                    if (file && file.tempFilePath) this.readPhoto(file);
+                    else this.showToast('没有打开照片，请再试一次');
+                }),
+                fail,
+                complete: fail,
+            });
+        } catch (error) {
+            fail(error);
+        }
     },
 
     async readPhoto(file) {
         if (this.unloaded || this.busy || this.readingPhoto || !file || !file.tempFilePath) return;
         const name = String(file.tempFilePath).toLowerCase();
-        if (!/\.(jpe?g|png|webp|heic|heif)$/.test(name)) {
+        const isImage = file.fileType ? file.fileType === 'image' : /\.(jpe?g|png|webp|heic|heif)$/.test(name);
+        if (!isImage) {
             this.showToast('请选择手机拍摄的照片或 JPG、PNG、WEBP 图片');
             return;
         }
@@ -649,12 +750,27 @@ Page({
         this.setData({
             generateText: state.text,
             generateDisabled: state.disabled,
+            generateCanManageAlbum: state.canManageAlbum,
+            generateCanChoosePhoto: this.ready && hasBird && this.selected.length > 0 &&
+                !this.uploaded && !this.busy && !this.readingPhoto,
             downloadDisabled: !(this.ready && this.canvasReady && this.uploaded && !this.busy && !this.readingPhoto),
             points: this.pointsNow(),
         });
     },
 
     // ---------- 控件 ----------
+    onPrimaryAction() {
+        if (this.data.generateCanChoosePhoto) {
+            this.onChoosePhoto();
+            return;
+        }
+        if (this.data.generateCanManageAlbum) {
+            this.onManageFull();
+            return;
+        }
+        return this.onGenerate();
+    },
+
     toggleEditor() {
         if (this.busy || this.readingPhoto) return;
         const open = !this.data.editorOpen;
@@ -732,9 +848,16 @@ Page({
     },
 
     // ---------- 触摸：拖动 / 双指缩放 ----------
-    point(touch) {
+    point(touch, viewport) {
         // CanvasTouch 的 x/y 相对画布本身，不受页面滚动影响；显示尺寸与导出像素分开。
-        if (!this.canvasSize || !Number.isFinite(touch.x) || !Number.isFinite(touch.y)) return null;
+        if (!this.canvasSize) return null;
+        if (!Number.isFinite(touch.x) || !Number.isFinite(touch.y)) {
+            if (!viewport || !Number.isFinite(touch.clientX) || !Number.isFinite(touch.clientY)) return null;
+            return {
+                x: (touch.clientX - viewport.left) * model.CANVAS_W / viewport.width,
+                y: (touch.clientY - viewport.top) * model.CANVAS_H / viewport.height,
+            };
+        }
         return {
             x: touch.x * model.CANVAS_W / this.canvasSize.width,
             y: touch.y * model.CANVAS_H / this.canvasSize.height,
@@ -744,6 +867,8 @@ Page({
     clearGesture() {
         this.pointers = {};
         this.gesture = null;
+        this.gestureViewport = null;
+        this.pendingGestureViewport = null;
     },
 
     hit(point) {
@@ -781,12 +906,38 @@ Page({
         if (this.busy || this.readingPhoto || !this.canvasReady) return;
         const touches = event.touches || [];
         if (!touches.length) return;
-        const first = this.point(touches[0]);
+        if (this.point(touches[0])) {
+            this.beginTouch(touches);
+            return;
+        }
+        if (!Number.isFinite(touches[0].clientX) || !Number.isFinite(touches[0].clientY)) return;
+
+        // 只提供视口坐标时，按本次触摸时画布的位置转换，避免页面滚动后沿用旧位置。
+        const pending = {};
+        this.pendingGestureViewport = pending;
+        wx.createSelectorQuery().in(this).select('#preview').boundingClientRect().exec((res) => {
+            if (this.pendingGestureViewport !== pending) return;
+            this.pendingGestureViewport = null;
+            if (this.busy || this.readingPhoto || !this.canvasReady) return;
+            const viewport = res && res[0];
+            if (!viewport || !Number.isFinite(viewport.left) || !Number.isFinite(viewport.top) ||
+                !(viewport.width > 0) || !(viewport.height > 0)) {
+                this.clearGesture();
+                return;
+            }
+            this.beginTouch(touches, viewport);
+            if (pending.move) this.onTouchMove({ touches: pending.move });
+        });
+    },
+
+    beginTouch(touches, viewport) {
+        const first = this.point(touches[0], viewport);
         if (!first) return;
         const hitId = Object.keys(this.pointers).length ? null : this.hit(first);
         this.clearGesture();
+        this.gestureViewport = viewport;
         for (let i = 0; i < touches.length && i < 2; i += 1) {
-            const point = this.point(touches[i]);
+            const point = this.point(touches[i], viewport);
             if (point) this.pointers[touches[i].identifier] = point;
         }
         if (hitId) this.active = hitId;
@@ -796,10 +947,15 @@ Page({
 
     onTouchMove(event) {
         const touches = event.touches || [];
-        if (this.busy || this.readingPhoto || !this.canvasReady || !Object.keys(this.pointers).length) return;
+        if (this.busy || this.readingPhoto || !this.canvasReady) return;
+        if (this.pendingGestureViewport) {
+            this.pendingGestureViewport.move = touches;
+            return;
+        }
+        if (!Object.keys(this.pointers).length) return;
         for (let i = 0; i < touches.length && i < 2; i += 1) {
             const key = touches[i].identifier;
-            const point = this.point(touches[i]);
+            const point = this.point(touches[i], this.gestureViewport);
             if (point && Object.prototype.hasOwnProperty.call(this.pointers, key)) this.pointers[key] = point;
         }
         const gesture = this.gesture;
@@ -827,8 +983,18 @@ Page({
 
     onTouchEnd(event) {
         this.flushUpdate();
+        const pending = this.pendingGestureViewport;
+        this.pendingGestureViewport = null;
+        if (event.touches && !event.touches.length) {
+            this.clearGesture();
+            return;
+        }
         const changed = event.changedTouches || [];
         for (let i = 0; i < changed.length; i += 1) delete this.pointers[changed[i].identifier];
+        if (pending && event.touches && event.touches.length) {
+            this.onTouchStart(event);
+            return;
+        }
         this.startGesture();
     },
 
@@ -945,7 +1111,7 @@ Page({
             });
             this.showToast(result.reward === 1
                 ? '合照已收藏，叽分 +1 ✨'
-                : '合照已收藏；本次未发叽分（原图重复或今日奖励已满）。');
+                : (submission.digest ? '合照已收藏；本次未发叽分（原图重复或今日奖励已满）。' : '合照已收藏，原图暂无法核验，本次未发叽分。'));
             this.update(false);
         } catch (error) {
             if (!this.unloaded) this.showToast('合照还没收藏成功，请原样重试，不会重复发分');
@@ -961,8 +1127,10 @@ Page({
     // ---------- 合照查看器 ----------
     openViewer(path, details) {
         const canShare = typeof wx.showShareImageMenu === 'function';
+        const canSave = typeof wx.saveImageToPhotosAlbum === 'function';
         const label = (details && details.label) || '';
         const time = details && details.createdAt ? model.formatDateTime(details.createdAt) : '';
+        this.viewerSession = {};
         this.setData({
             viewer: {
                 image: path,
@@ -971,13 +1139,15 @@ Page({
                 buttonText: '保存到手机相册',
                 hint: canShare
                     ? '在系统菜单中选择「存储图像」，也可以长按合照保存。'
-                    : '点击保存后会写入系统相册，也可以长按合照保存。',
+                    : (canSave ? ALBUM_SAVE_HINT : LONG_PRESS_SAVE),
+                shareMenuFailed: false,
                 otherOpen: false,
             },
         });
     },
 
     onCloseViewer() {
+        this.viewerSession = null;
         this.setData({ viewer: null });
     },
 
@@ -987,14 +1157,20 @@ Page({
     },
 
     onSavePhoto() {
-        const path = this.data.viewer && this.data.viewer.image;
-        if (!path) return;
-        if (typeof wx.showShareImageMenu === 'function') {
-            const page = this;
-            wx.showShareImageMenu({
+        const viewer = this.data.viewer;
+        const path = viewer && viewer.image;
+        if (!path || this.viewerSaveRequest || this.unloaded) return;
+        if (!viewer.shareMenuFailed && typeof wx.showShareImageMenu === 'function') {
+            this.requestViewerSave('menu', wx.showShareImageMenu, {
                 path: path,
-                fail: function () {
-                    page.setData({ 'viewer.hint': '系统菜单暂时无法打开，请长按上方合照，选择「存储图像」或「保存图片」。' });
+                fail: (error) => {
+                    if (mediaErrorMessage(error).includes('cancel')) return;
+                    this.setData({
+                        'viewer.shareMenuFailed': true,
+                        'viewer.hint': typeof wx.saveImageToPhotosAlbum === 'function'
+                            ? '系统菜单暂时无法打开。可再点一次直接保存，或长按合照保存。'
+                            : LONG_PRESS_SAVE,
+                    });
                 },
             });
             return;
@@ -1002,23 +1178,82 @@ Page({
         this.saveToAlbum(path);
     },
 
+    isViewing(session) {
+        return !!session && !this.unloaded && this.viewerSession === session;
+    },
+
+    requestViewerSave(kind, api, options) {
+        const request = { session: this.viewerSession };
+        this.viewerSaveRequest = request;
+        this.setData({ viewerSavePending: kind });
+        const finish = handler => result => {
+            if (this.viewerSaveRequest !== request) return;
+            this.viewerSaveRequest = null;
+            if (this.unloaded) return;
+            this.setData({ viewerSavePending: '' });
+            if (handler && this.isViewing(request.session)) handler(result);
+        };
+        const fail = finish(options.fail);
+        try {
+            api.call(wx, Object.assign({}, options, { success: finish(options.success), fail, complete: finish() }));
+        } catch (error) {
+            fail(error);
+        }
+    },
+
     saveToAlbum(path) {
-        const page = this;
-        wx.saveImageToPhotosAlbum({
+        if (typeof wx.saveImageToPhotosAlbum !== 'function') {
+            this.showToast(LONG_PRESS_SAVE);
+            return;
+        }
+        this.requestViewerSave('album', wx.saveImageToPhotosAlbum, {
             filePath: path,
-            success: function () { page.showToast('已保存到手机相册'); },
-            fail: function (error) {
-                const message = String((error && error.errMsg) || '');
-                if (message.indexOf('auth deny') >= 0 || message.indexOf('authorize') >= 0) {
-                    wx.showModal({
-                        title: '需要相册权限',
-                        content: '请在设置中允许保存图片到相册，也可以长按合照保存。',
-                        confirmText: '去设置',
-                        success: function (res) { if (res.confirm) wx.openSetting(); },
-                    });
+            success: () => {
+                this.setData({ 'viewer.hint': ALBUM_SAVE_HINT });
+                this.showToast('已保存到手机相册');
+            },
+            fail: (error) => {
+                const message = mediaErrorMessage(error);
+                if (message.includes('cancel')) return;
+                const privacyHint = privacyErrorHint(error, message);
+                if (privacyHint) {
+                    this.showToast(privacyHint);
+                } else if (isMediaPermissionError(message)) {
+                    this.offerAlbumSettings(message);
                 } else {
-                    page.showToast('保存未完成，可以长按合照保存或稍后重试');
+                    this.showToast('保存未完成，可以长按合照保存或稍后重试');
                 }
+            },
+        });
+    },
+
+    offerAlbumSettings(message) {
+        const systemDenied = message.includes('system') || systemAlbumAuthorization() === 'denied';
+        const openSettings = systemDenied ? wx.openAppAuthorizeSetting : wx.openSetting;
+        const hint = systemDenied
+            ? '请在手机设置中允许微信访问相册，然后重新保存。'
+            : '请在小程序设置中允许保存到相册，然后重新保存。';
+        const permissionHint = hint + '也可长按合照保存。';
+        this.setData({ 'viewer.hint': permissionHint });
+        if (typeof openSettings !== 'function' || typeof wx.showModal !== 'function') return;
+        const page = this;
+        const session = this.viewerSession;
+        const stillNeedsPermission = () => page.isViewing(session) && page.data.viewer.hint === permissionHint;
+        wx.showModal({
+            title: '需要相册权限',
+            content: hint,
+            confirmText: '去设置',
+            success: function (res) {
+                if (!res.confirm || !stillNeedsPermission()) return;
+                openSettings.call(wx, {
+                    success: function (result) {
+                        if (!stillNeedsPermission()) return;
+                        const granted = systemDenied ? systemAlbumAuthorization() === 'authorized'
+                            : result && result.authSetting && result.authSetting['scope.writePhotosAlbum'] === true;
+                        if (granted) page.setData({ 'viewer.hint': '相册权限已开启，请重新点击保存。也可长按合照保存。' });
+                    },
+                    fail: function () { if (stillNeedsPermission()) page.showToast(hint); },
+                });
             },
         });
     },
@@ -1026,7 +1261,20 @@ Page({
     onPreviewImage() {
         const path = this.data.viewer && this.data.viewer.image;
         if (!path) return;
-        wx.previewImage({ urls: [path], current: path });
+        if (typeof wx.previewImage !== 'function') {
+            this.showToast(LONG_PRESS_SAVE);
+            return;
+        }
+        const page = this;
+        const session = this.viewerSession;
+        wx.previewImage({
+            urls: [path],
+            current: path,
+            showmenu: true,
+            fail: function (error) {
+                if (page.isViewing(session) && !mediaErrorMessage(error).includes('cancel')) page.showToast(LONG_PRESS_SAVE);
+            },
+        });
     },
 
     // ---------- 本机相册 ----------
@@ -1097,7 +1345,20 @@ Page({
     },
 
     onManageFull() {
-        this.setData({ albumManaging: true, albumExpanded: true }, () => this.renderGallery());
+        this.setData({ albumManaging: true, albumExpanded: true }, () => {
+            this.renderGallery();
+            if (this.unloaded || typeof wx.pageScrollTo !== 'function') return;
+            const query = wx.createSelectorQuery().in(this);
+            query.select('.album-section').boundingClientRect();
+            query.select('.immersive-top').boundingClientRect();
+            query.selectViewport().scrollOffset();
+            query.exec(results => {
+                const [albumBounds, header, viewport] = results || [];
+                if (this.unloaded || !albumBounds || !header || !viewport) return;
+                const scrollTop = Math.max(0, viewport.scrollTop + albumBounds.top - header.height - 8);
+                wx.pageScrollTo({ scrollTop, duration: 200 });
+            });
+        });
         this.showToast('请在下方合照卡片上选择「删除合照」腾出空间');
     },
 
@@ -1122,13 +1383,16 @@ Page({
         const item = album.detail(id);
         if (!item) return;
         this.deleteEntry = item;
-        this.setData({ deleteConfirm: true, deleteTitle: '删除“' + item.label + '”这张合照？', deleteStatus: '' });
+        this.setData({
+            deleteConfirm: true, deleteTitle: '删除“' + item.label + '”这张合照？',
+            deleteStatus: '', deletePending: item.pendingDeletion,
+        });
     },
 
     onCancelDelete() {
         if (this.deleteBusy) return;
         this.deleteEntry = null;
-        this.setData({ deleteConfirm: false });
+        this.setData({ deleteConfirm: false, deletePending: false });
     },
 
     onConfirmDelete() {
@@ -1137,15 +1401,24 @@ Page({
         this.setData({ deleteStatus: '正在删除…' });
         const id = this.deleteEntry.id;
         const result = album.remove(id);
-        if (result.error) {
-            this.setData({ deleteStatus: (result.message || '删除失败') + '，可以重试。' });
-        } else {
+        if ((result.deleted || result.pendingDeletion) && this.pendingSubmission && this.pendingSubmission.id === id) {
+            this.pendingSubmission = null;
+            this.saveDraft();
+        }
+        if (result.deleted || result.workDeleted) {
+            const previousCount = this.entries.length;
             this.entries = this.entries.filter(function (entry) { return entry.id !== id; });
-            this.albumTotal = Math.max(0, this.albumTotal - 1);
+            this.albumTotal = Math.max(0, this.albumTotal - (previousCount - this.entries.length));
             if (!this.albumTotal) this.setData({ albumManaging: false, albumExpanded: false });
-            this.deleteEntry = null;
-            this.setData({ deleteConfirm: false, deleteStatus: '' });
             this.renderGallery();
+        }
+        if (result.error) {
+            const message = result.message || '删除失败，可以重试。';
+            this.setData({ deleteStatus: message });
+            if (result.pendingDeletion) this.setData({ albumError: message, deletePending: true });
+        } else {
+            this.deleteEntry = null;
+            this.setData({ deleteConfirm: false, deleteStatus: '', deletePending: false });
             this.loadAlbum();
             this.showToast('这张合照已删除，小鸟和叽分保持不变');
         }
@@ -1155,10 +1428,13 @@ Page({
 
     // ---------- 编辑草稿（仅内存，路由往返恢复） ----------
     saveDraft() {
+        // 首次读取领养记录失败时先保留上次草稿，等记录可用再恢复。
+        if (this.selectionOwner === null) return;
         album.saveDraft({
             photoPath: this.photoPath,
             uploaded: this.uploaded,
             selected: this.selected.slice(),
+            selectionOwner: this.selectionOwner,
             active: this.active,
             poses: this.poses,
             style: this.style,
@@ -1176,17 +1452,21 @@ Page({
         const draft = album.readDraft();
         if (!draft) return;
         const owned = this.birds.filter(function (bird) { return bird.adopted; });
-        this.selected = (draft.selected || []).filter(function (id) {
+        const selected = (draft.selected || []).filter(function (id) {
             return owned.some(function (bird) { return bird.id === id; });
         });
-        this.poses = model.reconcilePoses(this.selected, draft.poses || {});
-        this.active = this.selected.indexOf(draft.active) >= 0 ? draft.active : (this.selected[0] || null);
+        const sameOwner = draft.selectionOwner === this.selectionOwner || (draft.selectionOwner === undefined && selected.length > 0);
+        if (sameOwner) {
+            this.selected = selected;
+            this.poses = model.reconcilePoses(this.selected, draft.poses || {});
+            this.active = this.selected.indexOf(draft.active) >= 0 ? draft.active : (this.selected[0] || null);
+            this.dirty = !!draft.dirty;
+            this.pendingSubmission = draft.pendingSubmission || null;
+        }
         this.style = Math.max(0, Math.min(model.STYLES.length - 1, Number(draft.style) || 0));
         this.photoFit = draft.photoFit === 'contain' ? 'contain' : 'cover';
         this.photoX = Number.isFinite(Number(draft.photoX)) ? Number(draft.photoX) : 50;
         this.photoY = Number.isFinite(Number(draft.photoY)) ? Number(draft.photoY) : 50;
-        this.dirty = !!draft.dirty;
-        this.pendingSubmission = draft.pendingSubmission || null;
         if (draft.uploaded && draft.photoPath) {
             this.uploaded = true;
             this.photoPath = draft.photoPath;
@@ -1204,6 +1484,8 @@ Page({
             birds: this.birdCards(),
             selectedCount: this.selected.length,
             selectedSummary: this.selectionSummary(),
+        }, () => {
+            if (this.pageReady && this.data.editorOpen) this.prepareCanvasImages();
         });
     },
 });

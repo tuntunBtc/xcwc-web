@@ -130,6 +130,7 @@ function generateState(s) {
         s.uploaded && s.dirty && s.albumAvailable && s.albumTotal < ALBUM_LIMIT &&
         !s.busy && !s.readingPhoto);
     var text = '生成并收藏';
+    var canManageAlbum = false;
     if (s.busy) text = '正在收藏回忆…';
     else if (s.readingPhoto) text = '正在处理照片…';
     else if (!s.ready) text = '小鸟资料尚未准备好';
@@ -138,9 +139,12 @@ function generateState(s) {
     else if (!s.canvasReady) text = s.canvasLoading ? '正在准备合照素材…' : '合照素材未就绪，请重试';
     else if (s.albumLoading) text = '正在读取相册…';
     else if (!s.albumAvailable) text = '相册暂不可用，请重试';
-    else if (s.albumTotal >= ALBUM_LIMIT) text = '相册已满，先管理合照';
+    else if (s.albumTotal >= ALBUM_LIMIT) {
+        text = '相册已满，先管理合照';
+        canManageAlbum = true;
+    }
     else if (!s.dirty) text = '已收藏，调整后再合照';
-    return { disabled: disabled, text: text };
+    return { disabled: disabled, text: text, canManageAlbum: canManageAlbum };
 }
 
 function clamp(value, min, max) {

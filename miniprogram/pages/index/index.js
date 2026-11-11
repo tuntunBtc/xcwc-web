@@ -7,7 +7,52 @@ const tabBar = require('../../utils/tab-bar');
 const rules = require('../../utils/nest-rules');
 const nestLayout = require('../../utils/nest-layout');
 const nestIdle = require('../../utils/nest-idle');
+const { dayKey } = require('../../utils/guest-store');
 const STATUS_REFRESH_MS = 5000;
+
+const STEP_SUPPLY_ERROR_TEXT = Object.freeze({
+    NO_ENDPOINT: '微信步数补给暂未开放。',
+    NO_BIRD: '请先领养一只小鸟。',
+    STOCK_FULL: '食物和水的库存已满，消耗后可以再领。',
+    STORAGE_UNAVAILABLE: '本机记录暂时无法读写，请重试。',
+    WERUN_DENIED: '微信运动权限未开启，开启后可重新读取步数。',
+    PRIVACY_NOT_AUTHORIZED: '同意小程序隐私保护指引后，才能读取步数。',
+    PRIVACY_UNAVAILABLE: rules.ERROR_TEXT.PRIVACY_UNAVAILABLE,
+    WX_LOGIN_REQUIRED: '微信登录已失效，请重试。',
+    WX_LOGIN_FAILED: '暂时无法完成微信登录，请重试。',
+    LOGIN_FAILED: '暂时无法完成微信登录，请重试。',
+    LOGIN_CODE_MISSING: '暂时无法完成微信登录，请重试。',
+    RATE_LIMITED: '请求太频繁，请稍后再试。',
+    SUPPLY_DAY_CHANGED: '已进入新的一天，请重新读取微信步数。',
+    SUPPLY_CONTEXT_CHANGED: '本机领养记录已变化，请重新读取微信步数。',
+    WX_SESSION_CHANGED: '微信登录状态已变化，请重新读取步数。',
+    SUPPLY_BIRD_MISMATCH: '本机小鸟已变化，请重新读取微信步数。',
+    BIRD_NOT_FOUND: '暂未找到这只小鸟的领养记录。',
+    BIRD_INACTIVE: '这只小鸟的领养资料已停用。',
+    INVALID_SUPPLY_RECEIPT: '补给记录暂时无法核对，请重试。',
+});
+function describeStepSupply(data) {
+    const localClaimed = data.localClaimed === true;
+    const restore = data.claimed && (data.restoreAvailable === true || !!data.receipt) && !localClaimed;
+    const shortfall = Math.max(0, data.requiredSteps - data.steps);
+    let note = '还差 ' + shortfall + ' 步。';
+    if (localClaimed) note = '今日补给已入库。';
+    else if (restore) note = '已有领取记录，可以恢复到本机。';
+    else if (data.claimed) note = '这个微信账号今日已领取。';
+    else if (data.claimable) note = '已达到领取目标。';
+    return {
+        date: data.date,
+        displayedOn: dayKey(Date.now()),
+        steps: data.steps,
+        requiredSteps: data.requiredSteps,
+        cached: data.cached === true,
+        progress: Math.min(100, Math.round(data.steps / data.requiredSteps * 100)),
+        note: note,
+        claimed: data.claimed || localClaimed,
+        restore: restore,
+        canClaim: !localClaimed && (data.claimable || restore),
+    };
+}
 
 // 与网页端 src/nest/template.html 的导航、工具、状态顺序一致。
 // 雪碧图格位对应 H5 的 .tools .p0~p3、cards-1200 三格、hud-icons 3×2。
@@ -52,8 +97,15 @@ Page({
         hydration: 0,
         mood: 0,
         supplyClaimed: false,
+        stepSupplyEnabled: false,
+        stepSupplyStatus: null,
+        stepSupplyBusy: '',
+        stepSupplyNotice: '',
+        stepSupplyNeedsSetting: false,
+        fixtureMode: config.USE_LOCAL_FIXTURE,
         todayStepClaimed: false,
         redeeming: false,
+        werunNeedsSetting: false,
         ledger: [],
         stats: [],
         needs: [],
@@ -91,8 +143,7 @@ Page({
         // 照料 / 摸摸等互动播放短鸟叫（InnerAudioContext，小程序无 Web Audio）。
         this.chirpAudio = null;
         this.idle = nestIdle.createNestIdle(this, {
-            audioSrc: '/assets/nest/idle/idle.m4a',
-            atlasSrc: '/assets/nest/idle/atlas.webp',
+            loadFiles: () => require.async('../../media/nest-idle/files.js'),
             canvasId: '#idleCanvas',
             isEligible: () => !this.feedbackActive() && !this.data.happy,
             onCycleEnd: () => this.syncIdle(false),
@@ -128,13 +179,17 @@ Page({
     onHide() {
         this.syncIdle(true);
         this.clearTimers();
+        if (this.chirpAudio) { try { this.chirpAudio.stop(); } catch (e) { /* ignore */ } }
+        const request = this.stepSupplyRequest;
+        const keepSupplySheet = request && request.action === 'settings' && this.isCurrentStepSupply(request);
         this.setData({
-            motionPaused: true, sheet: null, keyboardHeightRpx: 0,
+            motionPaused: true, sheet: keepSupplySheet ? this.data.sheet : null, keyboardHeightRpx: 0,
             toast: '', happy: false, feedFxId: 0, waterFxId: 0,
         });
     },
 
     onUnload() {
+        this.stepSupplyRequest = null;
         if (this.onKeyboardHeightChange) {
             try { wx.offKeyboardHeightChange(this.onKeyboardHeightChange); } catch (err) { /* ignore */ }
         }
@@ -182,6 +237,7 @@ Page({
 
     // 单次 setData 只提交展示字段，不把整个状态对象塞进视图层（E-02）。
     refresh() {
+        this.clearExpiredStepSupply();
         const result = store.snapshot();
         const s = result.data ? result.data.snapshot : null;
         if (!s) {
@@ -409,8 +465,7 @@ Page({
             return;
         }
         if (key === 'supply') {
-            if (!this.requireBird()) return;
-            this.openSheet({ type: 'supply', title: '问候与补给' });
+            this.onOpenSupply();
             return;
         }
         if (key === 'checkin') {
@@ -455,11 +510,11 @@ Page({
 
     // 弹框遮罩要停靠在自定义 tabBar 上沿：框架层 tabBar 的 z-index:1000 盖不住，
     // 只能把面板整体从屏幕底部上移到 tabBarHeight 之上（与 toast/dock 规避同构）。
-    // 改名弹框含输入框，需额外叠加键盘高度，避免被软键盘盖住。
+    // 改名时键盘覆盖底栏，面板只需要避开较高的一项。
     recalcSheetMask(sheet) {
         const target = sheet || this.data.sheet;
-        const extra = (target && target.type === 'rename') ? (this.data.keyboardHeightRpx || 0) : 0;
-        const bottom = (this.data.layout.tabBarHeight || 149) + extra;
+        const keyboard = (target && target.type === 'rename') ? (this.data.keyboardHeightRpx || 0) : 0;
+        const bottom = Math.max(this.data.layout.tabBarHeight || 149, keyboard);
         if (bottom !== this.data.sheetMaskBottom) {
             this.setData({ sheetMaskBottom: bottom });
         }
@@ -503,16 +558,23 @@ Page({
             return;
         }
         this.showToast('昵称已保存');
-        this.setData({ sheet: null, motionPaused: false });
+        this.setData({ sheet: null, motionPaused: false, keyboardHeightRpx: 0 });
+        this.recalcSheetMask();
         this.showFeedback('新名字真好听呀～', 1600);
         this.refresh();
     },
 
     onWallet() {
+        this.refresh();
+        if (this.data.storageUnavailable) {
+            this.showToast(rules.ERROR_TEXT.STORAGE_UNAVAILABLE);
+            return;
+        }
         this.openSheet({ type: 'wallet', title: '叽分钱包' });
     },
 
     onSwitch() {
+        if (!this.requireBird()) return;
         this.openSheet({ type: 'switch', title: '今天，想陪谁？' });
     },
 
@@ -520,17 +582,148 @@ Page({
         this.openSheet({ type: 'claim', title: '把伙伴带回小窝' });
     },
 
+    onOpenSupply() {
+        if (!this.requireBird()) return;
+        const bridge = require('../../utils/step-supply');
+        const enabled = bridge.enabled();
+        const cached = enabled ? bridge.cachedPreview() : null;
+        this.stepSupplyRevision = (this.stepSupplyRevision || 0) + 1;
+        this.setData({
+            stepSupplyEnabled: enabled,
+            stepSupplyStatus: cached ? describeStepSupply(cached) : null,
+            stepSupplyBusy: this.stepSupplyRequest ? this.stepSupplyRequest.action : '',
+            stepSupplyNotice: '',
+            stepSupplyNeedsSetting: false,
+        });
+        this.openSheet({ type: 'supply', title: enabled ? '微信步数补给' : '补给' });
+    },
+
+    isStepSupplySheet() {
+        return this.data.stepSupplyEnabled && this.data.sheet && this.data.sheet.type === 'supply';
+    },
+
+    clearExpiredStepSupply() {
+        const status = this.data.stepSupplyStatus;
+        if (this.isStepSupplySheet() && status && status.displayedOn !== dayKey(Date.now())) {
+            this.setData({ stepSupplyStatus: null, stepSupplyNotice: STEP_SUPPLY_ERROR_TEXT.SUPPLY_DAY_CHANGED });
+        }
+    },
+
+    isCurrentStepSupply(request) {
+        return this.isStepSupplySheet() && this.stepSupplyRequest === request && this.stepSupplyRevision === request.revision;
+    },
+
+    finishStepSupply(request) {
+        if (this.stepSupplyRequest !== request) return;
+        this.stepSupplyRequest = null;
+        if (this.isStepSupplySheet()) this.setData({ stepSupplyBusy: '' });
+    },
+
+    onReadSupplySteps() {
+        return this.requestStepSupply('read');
+    },
+
+    onClaimStepSupply() {
+        return this.requestStepSupply('claim');
+    },
+
+    async requestStepSupply(action) {
+        if (!this.isStepSupplySheet() || this.stepSupplyRequest || !this.requireBird()) return;
+        this.clearExpiredStepSupply();
+        const previous = this.data.stepSupplyStatus;
+        if (action === 'claim' && (this.data.stepSupplyNeedsSetting || !previous || !previous.canClaim)) return;
+        const startedOn = dayKey(Date.now());
+        const experienceGeneration = store.getExperienceGeneration();
+        const request = { action: action, revision: this.stepSupplyRevision };
+        this.stepSupplyRequest = request;
+        this.setData({ stepSupplyBusy: action, stepSupplyNotice: '' });
+        try {
+            const bridge = require('../../utils/step-supply');
+            const claimToken = action === 'claim' ? store.getToken() : null;
+            const result = action === 'claim' ? await bridge.claim(previous.date) : await bridge.preview();
+            const today = dayKey(Date.now());
+            const reread = bridge.needsNewPreview(result.error);
+            const sameClaimContext = !!claimToken && claimToken === store.getToken() && startedOn === today &&
+                experienceGeneration === store.getExperienceGeneration();
+            const notice = STEP_SUPPLY_ERROR_TEXT[result.error] ||
+                (action === 'claim' ? '补给结果暂未确认，请重试。' : '步数读取失败，请重试。');
+            if (!this.isCurrentStepSupply(request)) {
+                // 重新打开的面板只接收通过当前日期与身份校验的快照。
+                if (this.isStepSupplySheet() && this.stepSupplyRequest === request) {
+                    if (action === 'claim') this.refresh();
+                    if (!result.error || reread || action === 'claim') {
+                        const cached = bridge.cachedPreview();
+                        const update = { stepSupplyStatus: cached ? describeStepSupply(cached) : null };
+                        if (result.error === 'WERUN_DENIED' && experienceGeneration === store.getExperienceGeneration()) {
+                            update.stepSupplyNeedsSetting = true;
+                            update.stepSupplyNotice = notice;
+                        } else if (result.error && !reread && sameClaimContext && cached && !cached.localClaimed) {
+                            update.stepSupplyNotice = notice;
+                        }
+                        this.setData(update);
+                    }
+                }
+                return;
+            }
+            if (startedOn !== today && (!result.data || result.data.date !== today)) {
+                if (action === 'claim') this.refresh();
+                this.setData({ stepSupplyStatus: null, stepSupplyNotice: STEP_SUPPLY_ERROR_TEXT.SUPPLY_DAY_CHANGED });
+                return;
+            }
+            if (result.error) {
+                if (!reread && claimToken && !sameClaimContext) {
+                    const cached = bridge.cachedPreview();
+                    this.setData({ stepSupplyStatus: cached ? describeStepSupply(cached) : null });
+                    return;
+                }
+                if (result.error === 'ALREADY_CLAIMED' && result.data && result.data.localClaimed && previous) {
+                    this.refresh();
+                    this.setData({ stepSupplyStatus: Object.assign({}, previous, {
+                        note: '今日补给已入库。', claimed: true, restore: false, canClaim: false,
+                    }) });
+                    return;
+                }
+                const cached = sameClaimContext && !reread ? bridge.cachedPreview() : null;
+                this.setData({
+                    stepSupplyStatus: reread ? null : (cached && cached.restoreAvailable ? describeStepSupply(cached) : previous),
+                    stepSupplyNeedsSetting: this.data.stepSupplyNeedsSetting || result.error === 'WERUN_DENIED',
+                    stepSupplyNotice: notice,
+                });
+                return;
+            }
+            const status = describeStepSupply(result.data);
+            if (action === 'claim') this.refresh();
+            this.setData({ stepSupplyStatus: status, stepSupplyNeedsSetting: false });
+        } catch (error) {
+            if (this.isCurrentStepSupply(request)) {
+                this.setData({ stepSupplyNotice: action === 'claim' ? '补给结果暂未确认，请重试。' : '步数读取失败，请重试。' });
+            }
+        } finally {
+            this.finishStepSupply(request);
+        }
+    },
+
     onSupply() {
+        if (this.isStepSupplySheet() || !config.USE_LOCAL_FIXTURE || !this.requireBird()) return;
         if (this.data.supplyClaimed) {
             this.showToast('今日已补给');
             return;
         }
         const result = store.supply();
         if (result.error) {
-            this.showToast(rules.ERROR_TEXT[result.error] || '补给未完成');
+            if (result.error === 'ALREADY_CLAIMED') this.refresh();
+            this.showToast(result.error === 'ALREADY_CLAIMED' ? '今日已补给' : (rules.ERROR_TEXT[result.error] || '补给未完成'));
             return;
         }
-        this.showToast('食物 +1、水 +1');
+        const { foodAdded, waterAdded } = result.data;
+        if (!foodAdded && !waterAdded) {
+            this.showToast('食物和水库存已满，消耗后可再领');
+            return;
+        }
+        const additions = [];
+        if (foodAdded) additions.push('食物 +1');
+        if (waterAdded) additions.push('水 +1');
+        this.showToast(additions.join('、'));
         this.setData({ sheet: null, motionPaused: false });
         this.showFeedback('这下可以安心玩啦～', 1600);
         this.refresh();
@@ -579,12 +772,12 @@ Page({
     },
 
     async onRedeemSteps() {
-        if (this.data.redeeming) return;
-        this.setData({ redeeming: true });
+        if (this.data.redeeming || this.data.todayStepClaimed || !this.requireBird()) return;
+        this.setData({ redeeming: true, werunNeedsSetting: false });
         try {
             const result = await store.redeemSteps();
             if (result.error === 'WERUN_DENIED') {
-                this.showToast('请在「设置」中开启微信运动后重试');
+                this.setData({ werunNeedsSetting: true });
                 return;
             }
             if (result.error === 'WX_LOGIN_REQUIRED') {
@@ -608,7 +801,57 @@ Page({
         }
     },
 
+    onOpenWeRunSettings() {
+        if (this.isStepSupplySheet()) {
+            this.onOpenSupplySettings();
+            return;
+        }
+        if (!this.data.werunNeedsSetting) return;
+        if (typeof wx.openSetting !== 'function') {
+            this.showToast('请从右上角菜单进入设置，开启微信运动权限');
+            return;
+        }
+        wx.openSetting({
+            success: (result) => {
+                if (result.authSetting && result.authSetting['scope.werun']) {
+                    this.setData({ werunNeedsSetting: false });
+                    this.showToast('权限已开启，请再次点击兑换');
+                }
+            },
+            fail: () => this.showToast('未能打开设置，请从右上角菜单进入'),
+        });
+    },
+
+    onOpenSupplySettings() {
+        if (!this.data.stepSupplyNeedsSetting || this.stepSupplyRequest) return;
+        if (typeof wx.openSetting !== 'function') {
+            this.setData({ stepSupplyNotice: '请从右上角菜单进入设置，开启微信运动权限。' });
+            return;
+        }
+        const request = { action: 'settings', revision: this.stepSupplyRevision };
+        this.stepSupplyRequest = request;
+        this.setData({ stepSupplyBusy: request.action });
+        const fail = () => {
+            if (this.isCurrentStepSupply(request)) this.setData({ stepSupplyNotice: '未能打开设置，请从右上角菜单进入。' });
+            this.finishStepSupply(request);
+        };
+        try {
+            wx.openSetting({
+                success: (result) => {
+                    if (this.isCurrentStepSupply(request) && result.authSetting && result.authSetting['scope.werun']) {
+                        this.setData({ stepSupplyNeedsSetting: false, stepSupplyStatus: null, stepSupplyNotice: '权限已开启，请重新读取微信步数。' });
+                    }
+                    this.finishStepSupply(request);
+                },
+                fail: fail,
+            });
+        } catch (error) {
+            fail();
+        }
+    },
+
     goAdopt() {
+        if (!config.USE_LOCAL_FIXTURE) return;
         this.setData({ sheet: null, motionPaused: false });
         wx.navigateTo({ url: entry.buildAdoptUrl(config.DEBUG_DEMO_BIRD_CODE) });
     },

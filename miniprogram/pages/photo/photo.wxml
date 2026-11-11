@@ -2,16 +2,20 @@
      1px = 2rpx（H5 CSS px 与 375px 视口设备 px 1:1）。WXSS 不支持本地
      background-image / 伪元素 / <details> / 内联 SVG，故纹理用 <image> 铺底，
      折叠区与弹层用 view + 数据绑定，图标用烘焙 PNG。 -->
+<page-meta page-style="{{viewer || deleteConfirm ? 'overflow: hidden;' : ''}}"></page-meta>
 <view class="photo-page">
-    <image class="page-meadow" src="/assets/photo/meadow.webp" mode="aspectFill"></image>
+    <image class="page-meadow" src="/pages/photo/assets/meadow.webp" mode="scaleToFill" style="height:{{viewportHeight}}rpx" aria-hidden="true"></image>
 
-    <!-- 自定义导航：状态栏与右上角胶囊留白 -->
-    <view class="immersive-top" style="height:{{topInset}}rpx"></view>
+    <!-- 把场景上沿延伸到状态栏，标题和按钮继续避开微信胶囊。 -->
+    <view class="immersive-top" style="height:calc({{topInset}}rpx + 1px)" aria-hidden="true">
+        <image class="hero-top-art" src="/pages/photo/assets/hero.webp" mode="scaleToFill"></image>
+        <view class="hero-top-shade"></view>
+    </view>
 
     <view class="app-shell">
         <!-- 主视觉 -->
         <view class="hero">
-            <image class="hero-bg" src="/assets/photo/hero.webp" mode="scaleToFill"></image>
+            <image class="hero-bg" src="/pages/photo/assets/hero.webp" mode="scaleToFill"></image>
             <view class="topbar">
                 <view class="back" bindtap="onBack" hover-class="ui-hover">‹</view>
                 <view class="brand">
@@ -19,7 +23,7 @@
                     <text class="brand-en">TRAVEL DIARY</text>
                 </view>
                 <view class="points-pill" bindtap="onPoints" hover-class="ui-hover">
-                    <image class="pill-icon" src="/assets/photo/icon-spark.png" mode="aspectFit"></image>
+                    <image class="pill-icon" src="/pages/photo/assets/icon-spark.png" mode="aspectFit"></image>
                     <text class="pill-num">{{points}}</text>
                     <text class="pill-unit">叽分</text>
                 </view>
@@ -27,7 +31,7 @@
             <view class="wood-title">
                 <view class="hero-kicker">
                     <text>把美好，留在这一刻</text>
-                    <image src="/assets/photo/icon-camera.png" mode="aspectFit"></image>
+                    <image src="/pages/photo/assets/icon-camera.png" mode="aspectFit"></image>
                 </view>
                 <view class="hero-title">打卡合照</view>
                 <view class="hero-sub">记录我和小鸟的旅行日记</view>
@@ -38,11 +42,11 @@
         <view class="main">
             <!-- 1. 选择出镜小鸟 -->
             <view class="panel birds-panel">
-                <image class="tex-bg" src="/assets/photo/cream.webp" mode="scaleToFill"></image>
+                <image class="tex-bg" src="/pages/photo/assets/cream.webp" mode="scaleToFill"></image>
                 <view class="panel-body">
                     <view class="section-title">
                         <view class="section-h2">
-                            <image class="leaf-icon" src="/assets/photo/icon-leaf.png" mode="aspectFit"></image>
+                            <image class="leaf-icon" src="/pages/photo/assets/icon-leaf.png" mode="aspectFit"></image>
                             <text>选择出镜小鸟</text>
                         </view>
                         <view class="count-pill"><text class="count-num">{{selectedCount}}</text> / 3</view>
@@ -59,9 +63,9 @@
                         <view wx:for="{{birds}}" wx:key="id" class="bird-card {{item.selected ? 'selected' : ''}} {{item.adopted ? '' : 'locked'}}"
                               data-id="{{item.id}}" bindtap="onBirdTap" hover-class="ui-hover">
                             <view class="bird-portrait">
-                                <image src="/assets/photo/bird.webp" mode="aspectFit"></image>
+                                <image src="/pages/photo/assets/bird.webp" mode="aspectFit"></image>
                                 <view class="bird-badge">
-                                    <image src="{{item.adopted ? '/assets/photo/icon-check.png' : '/assets/photo/icon-lock.png'}}" mode="aspectFit"></image>
+                                    <image src="{{item.adopted ? '/pages/photo/assets/icon-check.png' : '/pages/photo/assets/icon-lock.png'}}" mode="aspectFit"></image>
                                 </view>
                             </view>
                             <text class="bird-name">{{item.name}}</text>
@@ -69,7 +73,7 @@
                         </view>
                     </scroll-view>
                     <view wx:else class="bird-empty">
-                        <image class="bird-empty-art" src="/assets/photo/bird.webp" mode="aspectFit"></image>
+                        <image class="bird-empty-art" src="/pages/photo/assets/bird.webp" mode="aspectFit"></image>
                         <view class="bird-empty-copy"><text>还没有领取小鸟</text><text>领取后，带它一起合照吧</text></view>
                     </view>
 
@@ -82,8 +86,8 @@
 
             <!-- 2. 选照片、风格、地点、编辑、生成 -->
             <view class="panel compose-panel">
-                <image class="tex-bg" src="/assets/photo/cream.webp" mode="scaleToFill"></image>
-                <image class="compose-flower" src="/assets/photo/flower.png" mode="aspectFit"></image>
+                <image class="tex-bg" src="/pages/photo/assets/cream.webp" mode="scaleToFill"></image>
+                <image class="compose-flower" src="/pages/photo/assets/flower.png" mode="aspectFit"></image>
                 <view class="panel-body">
                     <view class="composer-grid">
                         <view class="upload-section">
@@ -92,7 +96,7 @@
                                 <image wx:if="{{uploaded}}" class="upload-thumb" src="{{uploadThumb}}" mode="aspectFill"></image>
                                 <view wx:else class="upload-prompt">
                                     <view class="upload-icon">
-                                        <image src="/assets/photo/icon-image.png" mode="aspectFit"></image>
+                                        <image src="/pages/photo/assets/icon-image.png" mode="aspectFit"></image>
                                         <text class="upload-plus">＋</text>
                                     </view>
                                     <text class="upload-strong">点击选择照片</text>
@@ -117,7 +121,7 @@
                     </view>
 
                     <view class="location">
-                        <image class="location-icon" src="/assets/photo/icon-leaf.png" mode="aspectFit"></image>
+                        <image class="location-icon" src="/pages/photo/assets/icon-leaf.png" mode="aspectFit"></image>
                         <text class="location-label">这一站</text>
                         <input class="location-input" value="{{location}}" maxlength="20" placeholder="为回忆写下一个地点"
                                bindinput="onLocationInput" confirm-type="done" />
@@ -127,7 +131,7 @@
                     <view class="editor">
                         <view class="editor-summary" bindtap="toggleEditor" hover-class="ui-hover">
                             <view class="editor-summary-left">
-                                <image class="editor-icon" src="/assets/photo/icon-camera.png" mode="aspectFit"></image>
+                                <image class="editor-icon" src="/pages/photo/assets/icon-camera.png" mode="aspectFit"></image>
                                 <text class="editor-title">{{previewTitle}}</text>
                                 <text class="editor-badge">{{previewBadge}}</text>
                             </view>
@@ -184,7 +188,7 @@
                             <view class="preview-bottom">
                                 <text class="preview-hint">双指缩放 · 单指移动</text>
                                 <view class="download-btn {{downloadDisabled ? 'is-disabled' : ''}}" bindtap="onDownload" hover-class="ui-hover">
-                                    <image src="/assets/photo/icon-download.png" mode="aspectFit"></image>
+                                    <image src="/pages/photo/assets/icon-download.png" mode="aspectFit"></image>
                                     <text>查看大图</text>
                                 </view>
                             </view>
@@ -193,14 +197,16 @@
 
                     <view class="draft-note">{{draftNote}}</view>
                     <view class="create-area">
-                        <image class="generate-flower" src="/assets/photo/flower.png" mode="aspectFit"></image>
-                        <view class="generate {{generateDisabled ? 'is-disabled' : ''}}" bindtap="onGenerate" hover-class="ui-hover">
-                            <image class="generate-camera" src="/assets/photo/icon-camera.png" mode="aspectFit"></image>
+                        <image class="generate-flower" src="/pages/photo/assets/flower.png" mode="aspectFit"></image>
+                        <view class="generate {{generateDisabled && !generateCanChoosePhoto && !generateCanManageAlbum ? 'is-disabled' : ''}}"
+                              role="button" aria-disabled="{{generateDisabled && !generateCanChoosePhoto && !generateCanManageAlbum}}"
+                              bindtap="onPrimaryAction" hover-class="ui-hover">
+                            <image class="generate-camera" src="/pages/photo/assets/icon-camera.png" mode="aspectFit"></image>
                             <text class="generate-text">{{generateText}}</text>
-                            <image class="generate-arrow" src="/assets/photo/icon-arrow.png" mode="aspectFit"></image>
+                            <image class="generate-arrow" src="/pages/photo/assets/icon-arrow.png" mode="aspectFit"></image>
                         </view>
                         <view class="reward-line">
-                            <image src="/assets/photo/icon-spark.png" mode="aspectFit"></image>
+                            <image src="/pages/photo/assets/icon-spark.png" mode="aspectFit"></image>
                             <text>新原图合照 <text class="reward-strong">+1 叽分</text> · 每日最多 3 次 <text class="reward-spark">✧</text></text>
                         </view>
                     </view>
@@ -227,15 +233,6 @@
                 <view wx:if="{{albumFullVisible}}" class="checkin-error">
                     <text class="error-text">相册已满。请先保存重要照片，再删除不需要的合照腾出空间。</text>
                     <view class="error-btn" bindtap="onManageFull">去管理合照</view>
-                </view>
-                <view wx:if="{{deleteConfirm}}" class="checkin-error">
-                    <view class="delete-title">{{deleteTitle}}</view>
-                    <text class="error-text">将同时删除当前手机中的这张合照和原照片，无法恢复。请先保存重要照片。小鸟、叽分和已得奖励保持不变。</text>
-                    <view class="confirm-actions">
-                        <view class="confirm-btn" bindtap="onCancelDelete">保留合照</view>
-                        <view class="confirm-btn is-danger" bindtap="onConfirmDelete">确认删除</view>
-                    </view>
-                    <view wx:if="{{deleteStatus}}" class="delete-status">{{deleteStatus}}</view>
                 </view>
                 <view class="gallery">
                     <view wx:for="{{albumEntries}}" wx:key="id" class="memory-card">
@@ -266,8 +263,21 @@
 
     <view wx:if="{{toast}}" class="toast" style="bottom:{{toastBottom}}rpx">{{toast}}</view>
 
+    <view wx:if="{{deleteConfirm}}" class="viewer-mask" style="padding-top:{{topInset}}rpx;padding-bottom:{{viewerBottomInset}}rpx">
+        <view class="album-delete-backdrop" catchtap="onCancelDelete" catchtouchmove="noop"></view>
+        <view class="viewer album-delete-dialog" role="dialog">
+            <view class="delete-title">{{deleteTitle}}</view>
+            <text class="error-text">将同时删除当前手机中的这张合照和原照片，无法恢复。请先保存重要照片。小鸟、叽分和已得奖励保持不变。</text>
+            <view class="confirm-actions">
+                <view class="confirm-btn" bindtap="onCancelDelete">{{deletePending ? '关闭' : '保留合照'}}</view>
+                <view class="confirm-btn is-danger" bindtap="onConfirmDelete">确认删除</view>
+            </view>
+            <view wx:if="{{deleteStatus}}" class="delete-status">{{deleteStatus}}</view>
+        </view>
+    </view>
+
     <!-- 合照查看器：预览、生成完成、相册查看共用 -->
-    <view wx:if="{{viewer}}" class="viewer-mask" bindtap="onCloseViewer">
+    <view wx:if="{{viewer}}" class="viewer-mask" style="padding-top:{{topInset}}rpx;padding-bottom:{{viewerBottomInset}}rpx" bindtap="onCloseViewer">
         <view class="viewer" catchtap="noop">
             <view class="viewer-header">
                 <text class="viewer-title">打卡合照</text>
@@ -276,7 +286,7 @@
             <image class="viewer-image" src="{{viewer.image}}" mode="aspectFit" show-menu-by-longpress="{{true}}"></image>
             <view wx:if="{{viewer.meta}}" class="viewer-meta">{{viewer.meta}}</view>
             <view wx:if="{{viewer.note}}" class="viewer-note">{{viewer.note}}</view>
-            <view class="viewer-save" catchtap="onSavePhoto">{{viewer.buttonText}}</view>
+            <view class="viewer-save {{viewerSavePending ? 'is-pending' : ''}}" catchtap="onSavePhoto">{{viewerSavePending === 'menu' ? '正在打开保存菜单…' : (viewerSavePending === 'album' ? '正在保存…' : viewer.buttonText)}}</view>
             <view class="viewer-hint">{{viewer.hint}}</view>
             <view class="viewer-other">
                 <view class="other-summary" catchtap="onOtherWays">{{viewer.otherOpen ? '▾' : '▸'}} 其他保存方式</view>

@@ -1,3 +1,4 @@
+<page-meta page-style="{{panelVisible ? 'overflow: hidden;' : ''}}"></page-meta>
 <view class="shop-page">
     <!-- 商城内容区与透明底栏背后的底图。 -->
     <image class="page-scene" src="/assets/shop/felt/page-background.webp" mode="scaleToFill" style="height:{{viewportHeight}}rpx"></image>
@@ -17,14 +18,14 @@
         </view>
         <view class="cart-icon" bindtap="handleOpenCart">
             <image class="cart-img" src="/assets/shop/icons/cart.png" mode="aspectFit"></image>
-            <view wx:if="{{cartCount}}" class="cart-count">{{cartCount}}</view>
-            <!-- 透明热区：品牌条整体等比缩小后仍保留 ≥44px 的可点范围，不改变任何可见元素。 -->
+            <view wx:if="{{cartCount && !cartReadFailed}}" class="cart-count">{{cartCount}}</view>
+            <!-- 品牌条等比缩小后仍有更大的透明点按范围。 -->
             <view class="cart-hit"></view>
         </view>
     </view>
 
     <!-- 用当前橱窗图的上沿铺进品牌条与系统状态栏。 -->
-    <view class="status-space" style="height: {{headerSpace}}rpx;" aria-hidden="true">
+    <view class="status-space" style="height: calc({{headerSpace}}rpx + 1px);" aria-hidden="true">
         <block wx:if="{{banners.length}}">
             <image class="hero-top-art" src="{{banners[bannerIndex].image}}" mode="aspectFill"></image>
             <view class="hero-top-shade"></view>
@@ -33,17 +34,22 @@
 
     <view class="app">
         <view class="hero">
-            <swiper class="hero-swiper" autoplay="{{bannerAutoplay}}" interval="5000" circular="{{true}}" current="{{bannerIndex}}" bindchange="handleSlide">
+            <swiper class="hero-swiper" autoplay="{{bannerAutoplay && !panelVisible}}" interval="5000" circular="{{true}}" current="{{bannerIndex}}" bindchange="handleSlide">
                 <swiper-item wx:for="{{banners}}" wx:key="id">
                     <image class="hero-image" src="{{item.image}}" mode="aspectFill"></image>
                 </swiper-item>
             </swiper>
-            <view wx:if="{{bannerDots}}" class="hero-dots">
-                <view wx:for="{{banners}}" wx:key="id" class="hero-dot-hit" data-index="{{index}}" bindtap="handleDot">
-                    <view class="hero-dot {{index === bannerIndex ? 'is-active' : ''}}"></view>
+            <scroll-view wx:if="{{bannerDots}}" class="hero-dots" scroll-x
+                scroll-into-view="{{'shop-banner-dot-' + bannerIndex}}"
+                style="width: max({{banners.length * 88}}rpx, {{banners.length * 44}}px);">
+                <view class="hero-dot-list">
+                    <view wx:for="{{banners}}" wx:key="id" id="shop-banner-dot-{{index}}" class="hero-dot-hit"
+                        data-index="{{index}}" role="button" aria-label="{{'切换到第 ' + (index + 1) + ' 张轮播图'}}" bindtap="handleDot">
+                        <view class="hero-dot {{index === bannerIndex ? 'is-active' : ''}}" aria-hidden="true"></view>
+                    </view>
                 </view>
-            </view>
-            <view wx:if="{{bannerDots}}" class="carousel-pause" bindtap="handleCarouselPause">{{carouselPaused ? '继续轮播' : '暂停轮播'}}</view>
+            </scroll-view>
+            <view wx:if="{{bannerDots}}" class="carousel-pause" role="button" bindtap="handleCarouselPause">{{carouselPaused ? '继续轮播' : '暂停轮播'}}</view>
         </view>
 
         <view class="intro">
@@ -89,23 +95,30 @@
                     <image wx:if="{{sort !== 'default'}}" class="filter-bg" src="/assets/shop/felt/green-button.webp" mode="scaleToFill"></image>
                     <text class="filter-label">{{sortLabel}}</text>
                 </view>
-                <picker class="filter city-filter" mode="selector" range="{{cityNames}}" value="{{cityIndex}}" bindchange="handleCityChange">
-                    <view class="filter-inner">
-                        <image class="filter-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
-                        <text class="filter-label">{{cityLabel}}</text>
-                        <text class="filter-arrow">▾</text>
-                    </view>
-                </picker>
+                <view class="filter city-filter">
+                    <image class="filter-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
+                    <picker class="city-picker" mode="selector" range="{{cityNames}}" value="{{cityIndex}}" bindchange="handleCityChange">
+                        <view class="filter-inner">
+                            <text class="filter-label">{{cityLabel}}</text>
+                            <text class="filter-arrow">▾</text>
+                        </view>
+                    </picker>
+                </view>
             </view>
         </view>
 
         <view wx:if="{{emptyVisible}}" class="shop-status">该城市暂无商品，去看看其他城市的小鸟吧。</view>
         <view wx:if="{{emptyVisible}}" class="shop-retry" bindtap="handleClearCity"><text class="retry-text">查看全部城市</text></view>
+        <view wx:if="{{coversFailed}}" class="shop-retry">
+            <view class="shop-status" role="status">部分商品图片暂时无法加载，可继续浏览。</view>
+            <button class="retry-text cover-retry" disabled="{{coversLoading}}" bindtap="loadProductCovers">{{coversLoading ? '正在重试…' : '重试商品图片'}}</button>
+        </view>
 
         <view class="products">
             <view class="card {{item.isLeft ? 'card-left' : ''}}" wx:for="{{visibleProducts}}" wx:key="id" data-id="{{item.id}}" bindtap="handleOpen">
                 <image class="card-bg" src="/assets/shop/felt/card.webp" mode="scaleToFill"></image>
-                <image class="photo" src="{{item.cover}}" mode="aspectFill" lazy-load="{{true}}"></image>
+                <image class="photo" src="{{readyCovers[item.id] ? item.cover : '/assets/shop/felt/cream-panel.webp'}}" mode="aspectFill" lazy-load="{{true}}"
+                    data-cover-id="{{item.id}}" data-cover-attempt="{{readyCovers[item.id] ? (coverAttempts[item.id] || 0) : -1}}" binderror="handleProductCoverError"></image>
                 <view class="card-body">
                     <text class="product-name">{{item.title}}</text>
                     <text class="product-remark">{{item.remark}}</text>
@@ -124,16 +137,19 @@
         <view class="end">一鸟一城 · 旅途未完待续</view>
     </view>
 
-    <view wx:if="{{panelVisible}}" class="overlay" bindtap="handleClose">
+    <view wx:if="{{panelVisible}}" class="overlay" style="padding-top:{{topInset}}rpx">
+        <view class="overlay-backdrop" bindtap="handleClose" catchtouchmove="noop"></view>
         <view class="panel" catchtap="noop">
             <view class="panel-head">
                 <image class="panel-head-bg" src="/assets/shop/felt/pink-pill.webp" mode="scaleToFill"></image>
                 <text class="panel-title">{{panelTitle}}</text>
                 <view class="panel-close" bindtap="handleClose"><text class="close-mark">×</text></view>
             </view>
-            <scroll-view scroll-y class="panel-content {{panelKind === 'rules' || panelKind === 'added' ? 'is-short' : ''}}">
+            <scroll-view scroll-y scroll-into-view="{{'shop-panel-start-' + panelKind}}" class="panel-content {{panelKind === 'rules' || panelKind === 'added' ? 'is-short' : ''}}">
+                <view id="{{'shop-panel-start-' + panelKind}}" class="panel-start" aria-hidden="true"></view>
                 <block wx:if="{{panelKind === 'detail'}}">
-                    <image class="detail-cover" src="{{detail.cover}}" mode="aspectFill"></image>
+                    <image class="detail-cover" src="{{readyCovers[detail.id] ? detail.cover : '/assets/shop/felt/cream-panel.webp'}}" mode="aspectFill"
+                        data-cover-id="{{detail.id}}" data-cover-attempt="{{readyCovers[detail.id] ? (coverAttempts[detail.id] || 0) : -1}}" binderror="handleProductCoverError"></image>
                     <view class="detail-body">
                         <text class="detail-title">{{detail.title}}</text>
                         <text class="detail-remark">{{detail.city}} · {{detail.remark}}</text>
@@ -158,11 +174,19 @@
                 </block>
 
                 <block wx:elif="{{panelKind === 'cart'}}">
-                    <view class="detail-body">
+                    <view wx:if="{{cartReadFailed}}" class="detail-body">
+                        <view class="cart-empty">暂时无法读取本机购物车，请重试。</view>
+                        <view class="primary-btn" bindtap="handleOpenCart">
+                            <image class="button-bg" src="/assets/shop/felt/green-button.webp" mode="scaleToFill"></image>
+                            <text class="primary-label">重新读取</text>
+                        </view>
+                    </view>
+                    <view wx:else class="detail-body">
                         <text class="cart-panel-status">我的购物车 · {{cartCount}} 只小鸟</text>
                         <view wx:if="{{cartCount === 0}}" class="cart-empty">还没有小鸟来做客，把喜欢的小鸟加入购物车吧。</view>
                         <view wx:for="{{cartItems}}" wx:key="id" class="cart-row">
-                            <image class="cart-cover" src="{{item.cover}}" mode="aspectFill"></image>
+                            <image class="cart-cover" src="{{readyCovers[item.id] ? item.cover : '/assets/shop/felt/cream-panel.webp'}}" mode="aspectFill"
+                                data-cover-id="{{item.id}}" data-cover-attempt="{{readyCovers[item.id] ? (coverAttempts[item.id] || 0) : -1}}" binderror="handleProductCoverError"></image>
                             <view class="cart-copy">
                                 <text class="cart-name">{{item.title}}</text>
                                 <text class="cart-price">{{item.priceText}}</text>
@@ -182,7 +206,8 @@
 
                 <block wx:elif="{{panelKind === 'added'}}">
                     <view class="detail-body">
-                        <image class="added-cover" src="{{detail.cover}}" mode="aspectFill"></image>
+                        <image class="added-cover" src="{{readyCovers[detail.id] ? detail.cover : '/assets/shop/felt/cream-panel.webp'}}" mode="aspectFill"
+                            data-cover-id="{{detail.id}}" data-cover-attempt="{{readyCovers[detail.id] ? (coverAttempts[detail.id] || 0) : -1}}" binderror="handleProductCoverError"></image>
                         <text class="added-title">{{detail.title}}</text>
                         <text class="added-note">{{addedAlready ? '这只小鸟已在购物车中' : '已加入购物车'}}，可前往购物车查看。</text>
                         <view class="primary-btn" bindtap="handleOpenCart">

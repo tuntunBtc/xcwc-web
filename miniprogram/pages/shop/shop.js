@@ -5,6 +5,7 @@ const safeArea = require('../../utils/safe-area');
 const shopLayout = require('../../utils/shop-layout');
 const tabBar = require('../../utils/tab-bar');
 const cartStorage = require('../../utils/cart-storage');
+const collectionMedia = require('../../utils/collection-media');
 
 // 与网页端 src/shop/shop.js 的状态机对齐：品牌条角标、加购/已加购、购物车、
 // 排序与城市筛选、详情浮层与文字信息、规则说明、轮播暂停/圆点、toast。
@@ -69,6 +70,11 @@ Page({
         mastheadTop: 108,
         mastheadScale: 0.75,
         banners: BANNERS,
+        coversReady: false,
+        readyCovers: {},
+        coverAttempts: {},
+        coversLoading: false,
+        coversFailed: false,
         bannerIndex: 0,
         bannerAutoplay: BANNERS.length > 1,
         bannerDots: BANNERS.length > 1,
@@ -83,6 +89,7 @@ Page({
         emptyVisible: false,
         cartCount: 0,
         cartItems: [],
+        cartReadFailed: false,
         panelVisible: false,
         panelKind: '',
         panelTitle: '',
@@ -95,6 +102,13 @@ Page({
 
     onLoad() {
         this.cartIds = [];
+        this.listScrollTop = 0;
+        this.onResize();
+        this.syncCart();
+        this.applyFilter();
+    },
+
+    onResize() {
         const layout = shopLayout.readShopLayout();
         this.setData({
             topInset: safeArea.readTopInsetRpx(),
@@ -104,22 +118,76 @@ Page({
             mastheadTop: layout.mastheadTop,
             mastheadScale: layout.mastheadScale,
         });
-        this.syncCart();
-        this.applyFilter();
+    },
+
+    onPageScroll(event) {
+        if (!this.data.panelVisible) {
+            this.listScrollTop = event.scrollTop;
+            return;
+        }
+        if (!Number.isFinite(this.listScrollTop) || Math.abs(event.scrollTop - this.listScrollTop) < 1 ||
+            this.restoringListScroll || typeof wx.pageScrollTo !== 'function') return;
+        this.restoringListScroll = true;
+        const finish = () => { this.restoringListScroll = false; };
+        try { wx.pageScrollTo({ scrollTop: this.listScrollTop, duration: 0, complete: finish }); }
+        catch (error) { finish(); }
     },
 
     onShow() {
+        this.shopVisible = true;
         // 自定义 tabBar 选中态由全站组件自校正，这里只做轻量同步（E-07）。
         tabBar.syncSelected(this, 2);
+        this.loadProductCovers();
         this.syncCart();
     },
 
     onHide() {
+        this.shopVisible = false;
+        if (this.data.panelVisible) this.handleClose();
         this.clearToast();
     },
 
     onUnload() {
+        this.shopVisible = false;
+        this.shopUnloaded = true;
         this.clearToast();
+    },
+
+    prepareProductCovers(products) {
+        return collectionMedia.load().then(media => media ? products.map(item => item.id) : []);
+    },
+
+    loadProductCovers() {
+        if (!this.shopVisible || this.shopCoversPending || this.data.coversReady) return;
+        const missing = PRODUCTS.filter(item => item.cover && !this.data.readyCovers[item.id]);
+        if (!missing.length) return;
+        this.setData({ coversLoading: true });
+        this.shopCoversPending = Promise.resolve().then(() => this.prepareProductCovers(missing)).catch(() => []).then(loaded => {
+            this.shopCoversPending = null;
+            if (this.shopUnloaded) return;
+            if (!loaded) {
+                this.setData({ coversLoading: false });
+                // 等轮播期间离页而跳过的任务，在再次可见时继续加载。
+                return this.shopVisible ? this.loadProductCovers() : undefined;
+            }
+            const readyCovers = Object.assign({}, this.data.readyCovers);
+            loaded.forEach(id => { readyCovers[id] = true; });
+            const coversReady = PRODUCTS.every(item => !item.cover || readyCovers[item.id]);
+            this.setData({ readyCovers, coversReady, coversFailed: !coversReady, coversLoading: false });
+        });
+        return this.shopCoversPending;
+    },
+
+    handleProductCoverError(event) {
+        if (this.shopUnloaded) return;
+        const { coverId, coverAttempt } = event.currentTarget.dataset;
+        const attempt = this.data.coverAttempts[coverId] || 0;
+        if (!this.data.readyCovers[coverId] || Number(coverAttempt) !== attempt) return;
+
+        const readyCovers = { ...this.data.readyCovers };
+        delete readyCovers[coverId];
+        const coverAttempts = { ...this.data.coverAttempts, [coverId]: attempt + 1 };
+        this.setData({ readyCovers, coverAttempts, coversReady: false, coversFailed: true });
     },
 
     // ---- 列表与筛选 ----------------------------------------------------
@@ -155,7 +223,7 @@ Page({
 
     handleCityChange(event) {
         const value = Number(event.detail.value);
-        const index = isNaN(value) ? 0 : value;
+        const index = Number.isInteger(value) && value >= 0 && value < CITY_NAMES.length ? value : 0;
         this.setData({ cityIndex: index, cityLabel: CITY_NAMES[index] });
         this.applyFilter();
     },
@@ -190,11 +258,11 @@ Page({
         let next;
         try {
             next = normalizeCart(cartStorage.read());
-            this.cartStorageUnavailable = false;
         } catch (error) {
-            this.cartStorageUnavailable = true;
+            if (!this.data.cartReadFailed) this.setData({ cartReadFailed: true });
             return false;
         }
+        if (this.data.cartReadFailed) this.setData({ cartReadFailed: false });
         const previous = this.cartIds || [];
         if (previous.length === next.length && previous.every(function (id, index) { return id === next[index]; })) return true;
         this.cartIds = next;
@@ -236,7 +304,7 @@ Page({
     addToCart(id) {
         const product = findProduct(id);
         if (!product) return;
-        if (this.cartStorageUnavailable && !this.syncCart()) {
+        if (this.data.cartReadFailed && !this.syncCart()) {
             this.toast('本机存储不可用，加购未保存');
             return;
         }
@@ -279,6 +347,7 @@ Page({
     },
 
     handleOpenCart() {
+        this.syncCart();
         this.setData({
             panelVisible: true,
             panelKind: 'cart',
@@ -290,7 +359,7 @@ Page({
     },
 
     handleCartRemove(event) {
-        if (this.cartStorageUnavailable && !this.syncCart()) {
+        if (this.data.cartReadFailed && !this.syncCart()) {
             this.toast('本机存储不可用，移除未保存');
             return;
         }
@@ -329,7 +398,12 @@ Page({
     // ---- 轮播 ----------------------------------------------------------
     handleSlide(event) {
         const current = Number(event.detail.current);
-        this.setData({ bannerIndex: isNaN(current) ? 0 : current });
+        const patch = { bannerIndex: isNaN(current) ? 0 : current };
+        if (event.detail.source === 'touch') {
+            patch.carouselPaused = true;
+            patch.bannerAutoplay = false;
+        }
+        this.setData(patch);
     },
 
     handleDot(event) {

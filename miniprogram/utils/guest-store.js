@@ -4,6 +4,7 @@
 // 调试期数据只落本机；正式版应把 award/redeemSteps 的结算移到服务端，前端只展示结果。
 const STORAGE_KEY = 'xcwc.mp.guest.v1';
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+const SUPPLY_CAP = 99;
 
 const DEFAULT_RULES = {
     petCooldownMs: 30 * 1000,
@@ -31,6 +32,30 @@ function text(value, maxLength) {
     return typeof value === 'string' ? value.slice(0, maxLength) : '';
 }
 
+function recentDayKeys(records) {
+    return Object.keys(records).filter(function (key) {
+        return /^\d{4}-\d{2}-\d{2}$/.test(key);
+    }).sort().slice(-60);
+}
+
+function isSupplyDay(date) {
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+    const at = Date.parse(date + 'T00:00:00Z');
+    return Number.isFinite(at) && new Date(at).toISOString().slice(0, 10) === date;
+}
+
+function isSupplyReceiptId(id) {
+    return typeof id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(id);
+}
+
+function isSupplyInstallationId(id) {
+    return typeof id === 'string' && /^[a-f0-9]{32}$/.test(id);
+}
+
+function claimedSupplyOn(state, date) {
+    return !!(state.supplyDays[date] || state.supplyReceipts[date]);
+}
+
 function defaultState(now) {
     return {
         version: 1,
@@ -40,6 +65,8 @@ function defaultState(now) {
         dayPoints: {},
         stepClaims: {},
         supplyDays: {},
+        supplyReceipts: {},
+        supplyInstallationId: '',
         // 合照打卡：原图去重、每日最多 3 张新原图、请求编号幂等。
         // 与 H5 guest-store.mjs 的 photoHashes / daily.photos / requests 对应。
         photoHashes: [],
@@ -68,6 +95,7 @@ function normalize(raw, now) {
             state.bird = {
                 code: code,
                 nickname: text(raw.bird.nickname, 12) || '小鸟',
+                cityCode: raw.bird.cityCode === undefined ? 'hangzhou' : text(raw.bird.cityCode, 32),
                 adoptedAt: isNumber(raw.bird.adoptedAt) ? raw.bird.adoptedAt : now,
             };
         }
@@ -91,26 +119,36 @@ function normalize(raw, now) {
         });
     }
     if (raw.supplyDays && typeof raw.supplyDays === 'object') {
-        Object.keys(raw.supplyDays).slice(0, 60).forEach(function (key) {
+        recentDayKeys(raw.supplyDays).forEach(function (key) {
             if (raw.supplyDays[key] === true) {
                 state.supplyDays[key] = true;
             }
         });
     }
+    if (raw.supplyReceipts && typeof raw.supplyReceipts === 'object') {
+        Object.keys(raw.supplyReceipts).forEach(function (date) {
+            if (isSupplyDay(date) && isSupplyReceiptId(raw.supplyReceipts[date])) {
+                state.supplyReceipts[date] = raw.supplyReceipts[date];
+            }
+        });
+    }
+    if (isSupplyInstallationId(raw.supplyInstallationId)) {
+        state.supplyInstallationId = raw.supplyInstallationId;
+    }
     if (raw.photoHashes && Array.isArray(raw.photoHashes)) {
         state.photoHashes = raw.photoHashes.filter(function (value) {
             return typeof value === 'string' && value.length > 0 && value.length <= 128;
-        }).slice(0, 400);
+        });
     }
     if (raw.photoDays && typeof raw.photoDays === 'object') {
-        Object.keys(raw.photoDays).slice(0, 60).forEach(function (key) {
+        recentDayKeys(raw.photoDays).forEach(function (key) {
             if (isNumber(raw.photoDays[key])) {
                 state.photoDays[key] = clamp(Math.floor(raw.photoDays[key]), 0, 3);
             }
         });
     }
     if (raw.photoRequests && typeof raw.photoRequests === 'object') {
-        Object.keys(raw.photoRequests).slice(0, 400).forEach(function (key) {
+        Object.keys(raw.photoRequests).forEach(function (key) {
             const prior = raw.photoRequests[key];
             if (prior && isNumber(prior.reward)) {
                 state.photoRequests[key] = { reward: clamp(Math.floor(prior.reward), 0, 1) };
@@ -124,8 +162,8 @@ function normalize(raw, now) {
     }
     const care = raw.care && typeof raw.care === 'object' ? raw.care : {};
     state.care = {
-        food: isNumber(care.food) ? clamp(Math.floor(care.food), 0, 99) : 3,
-        water: isNumber(care.water) ? clamp(Math.floor(care.water), 0, 99) : 3,
+        food: isNumber(care.food) ? clamp(Math.floor(care.food), 0, SUPPLY_CAP) : 3,
+        water: isNumber(care.water) ? clamp(Math.floor(care.water), 0, SUPPLY_CAP) : 3,
         satiety: isNumber(care.satiety) ? clamp(care.satiety, 0, 100) : 70,
         hydration: isNumber(care.hydration) ? clamp(care.hydration, 0, 100) : 70,
         mood: isNumber(care.mood) ? clamp(care.mood, 0, 100) : 70,
@@ -189,6 +227,7 @@ function publicSnapshot(state, now, rules, debugSteps) {
         hasBird: hasBird,
         nickname: hasBird ? state.bird.nickname : '',
         birdCode: hasBird ? state.bird.code : '',
+        cityCode: hasBird ? state.bird.cityCode : '',
         points: state.points,
         todayPoints: todayPoints,
         dailyLimit: rules.pointsDailyLimit,
@@ -201,7 +240,7 @@ function publicSnapshot(state, now, rules, debugSteps) {
         petWaitSeconds: petWaitSeconds,
         todayStepClaim: claim,
         todayStepClaimed: !!claim,
-        supplyClaimed: !!state.supplyDays[day],
+        supplyClaimed: claimedSupplyOn(state, day),
         todayPhotos: state.photoDays[day] || 0,
         debugSteps: debugSteps,
         stepEarnable: claim ? 0 : stepReward(debugSteps, state, now, rules),
@@ -251,13 +290,17 @@ function createGuestStore(storage, options) {
         return { data: { saved: false, snapshot: null }, error: 'STORAGE_UNAVAILABLE' };
     }
 
-    function commit(state, now, error, extra) {
-        let saved = true;
+    function write(state) {
         try {
             storage.setStorageSync(STORAGE_KEY, state);
+            return true;
         } catch (storageError) {
-            saved = false;
+            return false;
         }
+    }
+
+    function commit(state, now, error, extra) {
+        const saved = write(state);
         const data = Object.assign(
             { saved: saved, snapshot: publicSnapshot(state, now, rules, debugSteps) },
             extra || {}
@@ -343,8 +386,7 @@ function createGuestStore(storage, options) {
     }
 
     // 服务端已结算后的本地镜像：严格按服务端下发的 granted 记录，前端不再用步数重算（防篡改）。
-    function recordExact(state, amount, note, now) {
-        const day = dayKey(now);
+    function recordExact(state, amount, note, now, day) {
         state.dayPoints[day] = (state.dayPoints[day] || 0) + amount;
         state.points += amount;
         state.ledger.unshift({
@@ -372,16 +414,16 @@ function createGuestStore(storage, options) {
         }
         let given = 0;
         if (granted > 0) {
-            given = recordExact(state, granted, '微信步数兑换', at);
+            given = recordExact(state, granted, '微信步数兑换', at, day);
         }
-        state.stepClaims[day] = { steps: steps || 0, points: given };
         if (given <= 0 && !claimed) {
             return commit(state, at, 'NO_REWARD');
         }
+        state.stepClaims[day] = { steps: steps || 0, points: given };
         return commit(state, at, null, { granted: given });
     }
 
-    function adopt(code, nickname, now) {
+    function adopt(code, nickname, now, cityCode) {
         const at = isNumber(now) ? now : Date.now();
         const state = read(at);
         if (!state) return readFailure();
@@ -389,13 +431,20 @@ function createGuestStore(storage, options) {
         if (!cleanCode) {
             return commit(state, at, 'INVALID_CODE');
         }
+        if (state.bird) {
+            const sameBird = state.bird.code === cleanCode;
+            return {
+                data: { saved: true, snapshot: publicSnapshot(state, at, rules, debugSteps), replayed: sameBird },
+                error: sameBird ? null : 'BIRD_ALREADY_PRESENT',
+            };
+        }
         const cleanName = text(nickname, 12).trim();
         const nameLength = Array.from(cleanName).length;
         if (nameLength < 1 || nameLength > 6) {
             return commit(state, at, 'INVALID_NICKNAME');
         }
         // 调试期为单鸟本机模型；正式版由服务端按账号与实体编码做幂等绑定。
-        state.bird = { code: cleanCode, nickname: cleanName, adoptedAt: at };
+        state.bird = { code: cleanCode, nickname: cleanName, cityCode: cityCode === undefined ? 'hangzhou' : text(cityCode, 32), adoptedAt: at };
         return commit(state, at, null, { birdCode: cleanCode });
     }
 
@@ -408,13 +457,81 @@ function createGuestStore(storage, options) {
             return commit(state, at, 'NO_BIRD');
         }
         const day = dayKey(at);
-        if (state.supplyDays[day]) {
+        if (claimedSupplyOn(state, day)) {
             return commit(state, at, 'ALREADY_CLAIMED');
         }
-        state.care.food = clamp(state.care.food + 1, 0, 99);
-        state.care.water = clamp(state.care.water + 1, 0, 99);
+        const foodAdded = state.care.food < SUPPLY_CAP ? 1 : 0;
+        const waterAdded = state.care.water < SUPPLY_CAP ? 1 : 0;
+        if (!foodAdded && !waterAdded) {
+            return { data: { saved: true, snapshot: publicSnapshot(state, at, rules, debugSteps), foodAdded, waterAdded }, error: null };
+        }
+        state.care.food += foodAdded;
+        state.care.water += waterAdded;
         state.supplyDays[day] = true;
-        return commit(state, at, null, { granted: 0 });
+        return commit(state, at, null, { granted: 0, foodAdded, waterAdded });
+    }
+
+    function supplyInstallationId(candidate, now) {
+        const at = isNumber(now) ? now : Date.now();
+        const state = read(at);
+        if (!state) return { data: { id: '' }, error: 'STORAGE_UNAVAILABLE' };
+        if (state.supplyInstallationId || candidate === undefined) {
+            return { data: { id: state.supplyInstallationId }, error: null };
+        }
+        if (!state.bird) return { data: { id: '' }, error: 'NO_BIRD' };
+        if (!isSupplyInstallationId(candidate)) {
+            return { data: { id: '' }, error: 'INVALID_INSTALLATION_ID' };
+        }
+        state.supplyInstallationId = candidate;
+        if (!write(state)) {
+            // 写入异常后回读确认，避免把未保存的安装 ID 交给服务端。
+            const stored = read(at);
+            if (!stored || !stored.supplyInstallationId) {
+                return { data: { id: '' }, error: 'STORAGE_UNAVAILABLE' };
+            }
+            return { data: { id: stored.supplyInstallationId }, error: null };
+        }
+        return { data: { id: candidate }, error: null };
+    }
+
+    function supplyClaimedOn(date, now) {
+        if (!isSupplyDay(date)) return { data: { claimed: false }, error: 'INVALID_SUPPLY_DATE' };
+        const state = read(isNumber(now) ? now : Date.now());
+        if (!state) return { data: { claimed: false }, error: 'STORAGE_UNAVAILABLE' };
+        return { data: { claimed: claimedSupplyOn(state, date) }, error: null };
+    }
+
+    function applySupplyReceipt(receipt, now) {
+        const at = isNumber(now) ? now : Date.now();
+        const state = read(at);
+        if (!state) return readFailure();
+        const before = publicSnapshot(state, at, rules, debugSteps);
+        const unchanged = { saved: true, snapshot: before, foodAdded: 0, waterAdded: 0 };
+        if (!receipt || !isSupplyReceiptId(receipt.id) || !isSupplyDay(receipt.date) ||
+            typeof receipt.birdCode !== 'string' || !receipt.birdCode || receipt.food !== 1 || receipt.water !== 1) {
+            return { data: unchanged, error: 'INVALID_SUPPLY_RECEIPT' };
+        }
+        if (!state.bird) return { data: unchanged, error: 'NO_BIRD' };
+        if (state.bird.code !== receipt.birdCode) return { data: unchanged, error: 'SUPPLY_BIRD_MISMATCH' };
+        if (claimedSupplyOn(state, receipt.date) || Object.values(state.supplyReceipts).includes(receipt.id)) {
+            return { data: unchanged, error: 'ALREADY_CLAIMED' };
+        }
+        const foodAdded = state.care.food < SUPPLY_CAP ? receipt.food : 0;
+        const waterAdded = state.care.water < SUPPLY_CAP ? receipt.water : 0;
+        if (!foodAdded && !waterAdded) return { data: unchanged, error: 'STOCK_FULL' };
+
+        // 库存和服务端自然日的回执标记必须在同一个缓存写入中落盘。
+        state.care.food += foodAdded;
+        state.care.water += waterAdded;
+        state.supplyReceipts[receipt.date] = receipt.id;
+        const stored = write(state) ? state : read(at);
+        if (!stored || stored.supplyReceipts[receipt.date] !== receipt.id) {
+            return { data: Object.assign({}, unchanged, { saved: false }), error: 'STORAGE_UNAVAILABLE' };
+        }
+        return {
+            data: { saved: true, snapshot: publicSnapshot(stored, at, rules, debugSteps), foodAdded, waterAdded },
+            error: null,
+        };
     }
 
     function rename(nickname, now) {
@@ -483,6 +600,9 @@ function createGuestStore(storage, options) {
         redeemSteps: redeemSteps,
         applyServerReward: applyServerReward,
         supply: supply,
+        supplyInstallationId: supplyInstallationId,
+        supplyClaimedOn: supplyClaimedOn,
+        applySupplyReceipt: applySupplyReceipt,
         rename: rename,
         adopt: adopt,
         photoReward: photoReward,
@@ -493,6 +613,7 @@ function createGuestStore(storage, options) {
 module.exports = {
     STORAGE_KEY: STORAGE_KEY,
     DEFAULT_RULES: DEFAULT_RULES,
+    SUPPLY_CAP: SUPPLY_CAP,
     dayKey: dayKey,
     normalize: normalize,
     createGuestStore: createGuestStore,

@@ -154,6 +154,14 @@ check('状态条与需求气泡左边缘与 HUD 统一为 12rpx', function () {
     assert.ok(/left:\s*12rpx;/.test(needs), 'needs 未对齐 12rpx');
 });
 
+check('昵称与地点共用改名热区，切换入口仍在外层卡片', function () {
+    assert.match(indexWxml, /class="identity" bindtap="onSwitch"/);
+    assert.match(indexWxml, /class="identity-text" catchtap="onRename">\s*<view class="name">[^\n]*<\/view>\s*<text class="place"/);
+    const hitArea = indexWxss.match(/\.identity-text\s*\{([^}]+)\}/);
+    assert.ok(hitArea, '缺少身份卡文字区');
+    assert.match(hitArea[1], /min-height:\s*44px;/);
+});
+
 check('WXML 把胶囊避让量接到 HUD 的 right 上', function () {
     assert.ok(/class="hud" style="top:\{\{layout\.hudTop\}\}rpx;right:\{\{layout\.hudRight\}\}rpx"/.test(indexWxml),
         'HUD 未内联 layout.hudRight，钱包无法避开系统胶囊');
@@ -170,9 +178,9 @@ check('布局模块按胶囊矩形抬升 HUD，顶部组锚定同一定位基准
     assert.ok(/hudTop:\s*hudTop\b/.test(layoutJs) && /hudRight:\s*hudRight\b/.test(layoutJs), '返回值未使用计算出的 HUD 定位');
     assert.ok(/statusTop:\s*hudTop \+ 120\b/.test(layoutJs), 'statusTop 应锚定 hudTop + 120');
     assert.ok(/needsTop:\s*hudTop \+ 222\b/.test(layoutJs), 'needsTop 应锚定 hudTop + 222');
-    assert.ok(/toolsTop:\s*hudTop \+ 262\b/.test(layoutJs), 'toolsTop 应锚定 hudTop + 262');
+    assert.ok(/var toolsTop = hudTop \+ 262;/.test(layoutJs), '常规屏的 toolsTop 应锚定 hudTop + 262');
     // 场景主体（气泡 / 领取入口 / 立绘 / dock）仍按 inset，不随 HUD 上移。
-    assert.ok(/speechTop:\s*inset \+ 330 \+ coreShift\b/.test(layoutJs), 'speechTop 不应被改');
+    assert.ok(/var speechTop = inset \+ 330 \+ coreShift;/.test(layoutJs), 'speechTop 不应被改');
     assert.ok(/claimTop:\s*inset \+ 465 \+ coreShift\b/.test(layoutJs), 'claimTop 不应被改');
 });
 
@@ -290,6 +298,48 @@ check('短屏互动卡片整体在底栏上方，常规屏位置与立绘尺寸�
     }
 });
 
+check('小窝四个工具热区至少 44px，只有单列挤到照料按钮时才改用两列', function () {
+    const tool = indexWxss.match(/\.tool\s*\{([^}]+)\}/)[1];
+    assert.match(tool, /box-sizing:\s*border-box;/);
+    assert.match(tool, /min-width:\s*44px;/);
+    assert.match(tool, /min-height:\s*max\(84rpx,\s*44px\);/);
+    assert.match(indexWxml, /class="tools \{\{layout\.toolsCompact \? 'is-compact' : ''\}\}"/);
+    assert.match(indexWxss, /\.tools\.is-compact\s*\{[^}]*flex-flow:\s*row wrap;/);
+
+    const previousWx = global.wx;
+    const { readNestLayout } = require(P('utils/nest-layout.js'));
+    try {
+        for (const [width, height, statusBarHeight, menuTop, menuLeft, safeBottom, compact] of [
+            [320, 568, 20, 28, 226, 0, false],
+            [360, 480, 24, 31, 265, 0, true],
+            [402, 874, 54, 58, 312, 34, false],
+        ]) {
+            const scale = width / 750;
+            const toolHeight = Math.max(84, 44 / scale);
+            global.wx = {
+                getWindowInfo: () => ({
+                    windowWidth: width, windowHeight: height, statusBarHeight,
+                    screenHeight: height, safeArea: { bottom: height - safeBottom },
+                }),
+                getMenuButtonBoundingClientRect: () => ({ left: menuLeft, top: menuTop, height: 32 }),
+            };
+            const layout = readNestLayout();
+            assert.strictEqual(layout.toolsCompact, compact);
+            const rows = compact ? 2 : 4;
+            const bottom = layout.toolsTop + rows * toolHeight + (rows - 1) * 8;
+            assert.ok(bottom < layout.pageHeight - layout.dockBottom - 162, '工具不遮住底部照料按钮');
+            if (compact) {
+                assert.ok(layout.toolsTop > layout.statusTop + 93, '两行工具位于状态条下方');
+                assert.ok(bottom < layout.speechTop && bottom < layout.actorTop, '两行工具不遮住对话或立绘');
+            } else {
+                assert.strictEqual(layout.toolsTop, layout.hudTop + 262);
+            }
+        }
+    } finally {
+        global.wx = previousWx;
+    }
+});
+
 // ---------------------------------------------------------------- 4. 动态实跑：真实 nest-idle 在反馈期暂停后露出海报
 let dynamicIdle = checkAsync('nest-idle：反馈期暂停会让 idlePlaying=false（开心海报可见）', async function () {
     function makeCtx() { return { clearRect: function () {}, drawImage: function () {} }; }
@@ -311,6 +361,7 @@ let dynamicIdle = checkAsync('nest-idle：反馈期暂停会让 idlePlaying=fals
         stop: function () { this.paused = true; },
         destroy: function () { this.destroyed = true; }, seek: function () {},
         onPlay: function () {}, onError: function () {}, onEnded: function () {},
+        offPlay: function () {}, offError: function () {}, offEnded: function () {},
     };
     const query = { select: function () { return { fields: function () { return { exec: function (cb) { cb([{ node: makeCanvas(), width: 195, height: 161 }]); } }; } }; } };
     query.in = function () { return query; };
@@ -322,7 +373,7 @@ let dynamicIdle = checkAsync('nest-idle：反馈期暂停会让 idlePlaying=fals
     const mod = require(P('utils/nest-idle.js'));
     const data = {};
     const page = { setData: function (p) { Object.assign(data, p); } };
-    const idle = mod.createNestIdle(page, { audioSrc: '/x.m4a', atlasSrc: '/x.webp', canvasId: '#idleCanvas' });
+    const idle = mod.createNestIdle(page, { loadFiles: () => Promise.resolve({ audioSrc: '/x.m4a', atlasSrc: '/x.webp' }), canvasId: '#idleCanvas' });
     idle.sync(true, false, 'bird-1', true);
     await new Promise(function (r) { setImmediate(r); });
     // 反馈期：sync(eligible=true, suspended=true) 必须 stop → 清画布 → idlePlaying=false
@@ -362,6 +413,7 @@ let dynamicPage = checkAsync('index.js：摸摸/喂食/添水分别触发 happy 
         },
         '../../utils/entry': { buildAdoptUrl: function () { return '/pages/adopt/adopt'; } },
         '../../utils/config': { USE_LOCAL_FIXTURE: false, DEBUG_DEMO_BIRD_CODE: 'DEBUG' },
+        '../../utils/guest-store': require('../miniprogram/utils/guest-store'),
         '../../utils/tab-bar': { syncSelected: function () {} },
         '../../utils/nest-rules': {
             describeNestState: function () { return { needs: [], need: null, speech: '今天也很开心～', emotion: 'calm' }; },

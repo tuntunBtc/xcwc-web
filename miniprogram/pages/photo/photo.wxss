@@ -23,15 +23,38 @@
     left: 0;
     bottom: 0;
     width: 100%;
-    height: 900rpx;
+    height: 100vh;
     z-index: 0;
     pointer-events: none;
 }
 
 .immersive-top {
-    position: relative;
+    /* 保留胶囊背后的背景，编辑区滚过顶部时也不会压到系统控件。 */
+    position: sticky;
+    top: 0;
+    margin-bottom: -1px;
+    -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 1px), transparent);
     z-index: 2;
-    background: linear-gradient(#a9c8ae, #98b89b);
+    overflow: hidden;
+    background: #a9c8ae;
+}
+
+.hero-top-art {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: 594rpx;
+    transform: scaleY(-3);
+    transform-origin: center top;
+    pointer-events: none;
+}
+
+.hero-top-shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(181, 211, 177, 0.94), rgba(181, 211, 177, 0.7) 52%, transparent);
+    pointer-events: none;
 }
 
 .app-shell { position: relative; z-index: 1; width: 100%; }
@@ -58,6 +81,7 @@
 }
 .back {
     width: 88rpx; height: 88rpx; flex: none;
+    min-width: 44px; min-height: 44px;
     border-radius: 46% 54% 52% 48%;
     font: 76rpx/1 Georgia; text-align: center;
     display: flex; align-items: center; justify-content: center;
@@ -126,7 +150,7 @@
 .section-desc { font-size: 24rpx; color: #775c3b; line-height: 1.65; margin: 18rpx 30rpx 24rpx; }
 
 .bird-scroller {
-    display: flex; flex-direction: row; width: 100%;
+    display: flex; flex-direction: row; width: 100%; box-sizing: border-box;
     padding: 6rpx 28rpx 16rpx; min-height: 288rpx; white-space: nowrap;
 }
 .bird-card {
@@ -235,7 +259,7 @@
 .location-input { flex: 1; min-width: 0; font-size: 32rpx; min-height: 64rpx; color: #946a37; }
 
 .editor { margin-top: 30rpx; border: 4rpx solid #fff6e2; border-radius: 44rpx; background: #fff0db; overflow: hidden; }
-.editor-summary { display: flex; justify-content: space-between; align-items: center; min-height: 96rpx; padding: 24rpx 26rpx; font-size: 26rpx; color: #986d35; }
+.editor-summary { display: flex; justify-content: space-between; align-items: center; min-height: max(96rpx, 44px); padding: 24rpx 26rpx; font-size: 26rpx; color: #986d35; }
 .editor-summary-left { display: flex; align-items: center; gap: 14rpx; min-width: 0; }
 .editor-icon { width: 42rpx; height: 42rpx; }
 .editor-title { font-size: 26rpx; }
@@ -246,10 +270,10 @@
 
 .photo-framing { display: flex; flex-wrap: wrap; align-items: center; gap: 16rpx; margin: 20rpx 0 28rpx; font-size: 26rpx; }
 .control-label { font-size: 26rpx; color: #775c3b; }
-.framing-picker, .bird-picker { background: #fff8e8; border: 2rpx solid #d2bc8d; border-radius: 20rpx; padding: 16rpx 20rpx; min-height: 88rpx; min-width: 200rpx; }
+.framing-picker, .bird-picker { background: #fff8e8; border: 2rpx solid #d2bc8d; border-radius: 20rpx; padding: 16rpx 20rpx; min-height: max(88rpx, 44px); min-width: 200rpx; }
 .picker-value { font-size: 32rpx; color: #77542e; }
 .photo-position { width: 100%; display: flex; align-items: center; gap: 12rpx; font-size: 26rpx; color: #775c3b; }
-.position-slider { flex: 1; min-width: 0; height: 88rpx; }
+.position-slider { flex: 1; min-width: 0; height: 88rpx; min-height: 44px; }
 .editor-tip { font-size: 26rpx; color: #775c3b; line-height: 1.6; margin: 0 0 22rpx; }
 .photo-stack { padding: 10rpx; background: #fff8e8; border-radius: 24rpx; border: 2rpx solid #eee1c0; box-shadow: 0 6rpx 20rpx rgba(128,109,51,.13); }
 .canvas-stage { position: relative; width: 100%; }
@@ -261,13 +285,19 @@
 .bird-picker { flex: 1; min-width: 0; }
 .adjust { display: flex; flex-wrap: wrap; align-items: center; gap: 16rpx; margin: 30rpx 0 20rpx; }
 .adjust-label { width: 100%; font-size: 26rpx; color: #775c3b; }
-.adjust-btn { width: 88rpx; height: 88rpx; flex: none; border-radius: 50%; border: 2rpx solid #e3d7aa; background: #f7f0d5; color: #89973d; font-size: 40rpx; display: flex; align-items: center; justify-content: center; }
-.size-slider { flex: 1; min-width: 60rpx; height: 88rpx; }
+.adjust-btn {
+    width: 88rpx; height: 88rpx; flex: none;
+    min-width: 44px; min-height: 44px;
+    border-radius: 50%; border: 2rpx solid #e3d7aa; background: #f7f0d5;
+    color: #89973d; font-size: 40rpx;
+    display: flex; align-items: center; justify-content: center;
+}
+.size-slider { flex: 1; min-width: 60rpx; height: 88rpx; min-height: 44px; }
 .size-value { font-size: 26rpx; min-width: 68rpx; text-align: right; }
-.reset-btn { width: 100%; min-height: 88rpx; background: #f5ebcd; border-radius: 20rpx; color: #775c3b; font-size: 26rpx; display: flex; align-items: center; justify-content: flex-end; padding: 12rpx 20rpx; }
+.reset-btn { width: 100%; min-height: max(88rpx, 44px); background: #f5ebcd; border-radius: 20rpx; color: #775c3b; font-size: 26rpx; display: flex; align-items: center; justify-content: flex-end; padding: 12rpx 20rpx; }
 .preview-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8rpx; color: #775c3b; font-size: 26rpx; }
 .preview-hint { font-size: 26rpx; }
-.download-btn { display: flex; align-items: center; gap: 8rpx; min-height: 88rpx; font-size: 26rpx; color: #8b9144; padding: 16rpx; }
+.download-btn { display: flex; align-items: center; gap: 8rpx; min-height: max(88rpx, 44px); font-size: 26rpx; color: #8b9144; padding: 16rpx; }
 .download-btn image { width: 28rpx; height: 28rpx; }
 .download-btn.is-disabled { opacity: .45; }
 
@@ -300,15 +330,22 @@
 .album-count { font: 700 30rpx/1 Georgia; color: #849531; background: #ebefb2; border: 4rpx solid #f8f4cd; padding: 10rpx 16rpx; border-radius: 50%; }
 .album-desc { font-size: 24rpx; color: #775c3b; margin-top: 16rpx; }
 .album-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6rpx; min-width: 0; }
-.album-action { min-height: 88rpx; font-size: 26rpx; color: #735631; padding: 16rpx 0 16rpx 12rpx; }
+.album-action {
+    min-width: 44px;
+    min-height: max(88rpx, 44px);
+    padding: 16rpx 0 16rpx 12rpx;
+    color: #735631;
+    font-size: 26rpx;
+    text-align: right;
+}
 .album-capacity { font-size: 26rpx; line-height: 1.7; color: #755d3f; margin: 24rpx 30rpx; }
 .checkin-help { font-size: 26rpx; line-height: 1.7; color: #755d3f; margin: 24rpx 30rpx; }
 .checkin-error { padding: 28rpx; margin: 24rpx 28rpx; border: 2rpx solid #c8b17d; border-radius: 28rpx; background: #fff8e9; color: #725530; font-size: 28rpx; line-height: 1.7; }
 .error-text { display: block; font-size: 28rpx; line-height: 1.7; color: inherit; }
-.error-btn { display: inline-block; min-height: 88rpx; padding: 16rpx 24rpx; margin-top: 16rpx; border: 2rpx solid #b8aa74; border-radius: 20rpx; background: #f1efd2; color: #536e32; font-size: 26rpx; }
+.error-btn { display: inline-flex; align-items: center; min-height: max(88rpx, 44px); padding: 16rpx 24rpx; margin-top: 16rpx; border: 2rpx solid #b8aa74; border-radius: 20rpx; background: #f1efd2; color: #536e32; font-size: 26rpx; }
 .delete-title { font-size: 32rpx; margin-bottom: 16rpx; color: inherit; }
 .confirm-actions { display: flex; gap: 20rpx; margin-top: 16rpx; }
-.confirm-btn { flex: 1; min-height: 88rpx; display: flex; align-items: center; justify-content: center; border: 2rpx solid #b8aa74; border-radius: 20rpx; background: #f1efd2; color: #536e32; font-size: 26rpx; }
+.confirm-btn { flex: 1; min-height: max(88rpx, 44px); display: flex; align-items: center; justify-content: center; border: 2rpx solid #b8aa74; border-radius: 20rpx; background: #f1efd2; color: #536e32; font-size: 26rpx; }
 .confirm-btn.is-danger { background: #fbe9df; color: #8a473a; border-color: #d7b894; }
 .delete-status { display: block; margin-top: 16rpx; font-size: 26rpx; color: #8a473a; }
 .gallery { display: flex; flex-wrap: wrap; gap: 24rpx; }
@@ -320,7 +357,7 @@
 .memory-meta { display: flex; align-items: center; justify-content: space-between; gap: 6rpx; margin-top: 14rpx; }
 .memory-date { font-size: 24rpx; color: #ac9774; }
 .memory-badge { font-size: 24rpx; background: #e8edbe; color: #8a9542; border-radius: 12rpx; padding: 4rpx 8rpx; }
-.delete-memory { width: 100%; min-height: 88rpx; margin-top: 12rpx; border: 2rpx solid #d7b894; border-radius: 22rpx; background: #fff2e2; color: #8a473a; font-size: 26rpx; display: flex; align-items: center; justify-content: center; }
+.delete-memory { width: 100%; min-height: max(88rpx, 44px); margin-top: 12rpx; border: 2rpx solid #d7b894; border-radius: 22rpx; background: #fff2e2; color: #8a473a; font-size: 26rpx; display: flex; align-items: center; justify-content: center; }
 .album-foot { text-align: center; font-size: 24rpx; line-height: 1.8; color: #9ca071; margin: 34rpx 0 0; }
 .demo-note { font-size: 24rpx; line-height: 1.9; text-align: center; color: #9d9f73; margin: 50rpx 0 0; }
 .footer { display: flex; align-items: center; justify-content: center; gap: 20rpx; color: #9b9b69; font-size: 20rpx; letter-spacing: 3rpx; padding: 48rpx 0 68rpx; }
@@ -329,7 +366,7 @@
 /* ---------- 轻提示与合照查看器 ---------- */
 .toast {
     position: fixed; left: 50%; transform: translateX(-50%);
-    max-width: 84%; z-index: 1500;
+    max-width: 84%; z-index: 2001; pointer-events: none;
     background: rgba(63,88,55,.96); color: #fffbea;
     font-size: 24rpx; line-height: 1.6; text-align: center;
     padding: 24rpx 40rpx; border-radius: 24rpx;
@@ -337,15 +374,28 @@
 }
 .viewer-mask { position: fixed; left: 0; right: 0; top: 0; bottom: 0; z-index: 2000; background: rgba(36,53,29,.7); display: flex; align-items: center; justify-content: center; padding: 24rpx; }
 .viewer { width: 100%; max-height: 92%; overflow-y: auto; box-sizing: border-box; background: #f7f9ef; border: 2rpx solid #dce3cd; border-radius: 40rpx; padding: 28rpx 32rpx 40rpx; color: #3f5837; box-shadow: 0 40rpx 120rpx rgba(19,32,14,.27); }
-.viewer-header { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin-bottom: 16rpx; }
+.album-delete-backdrop { position: absolute; inset: 0; touch-action: none; }
+.album-delete-dialog { position: relative; background: #fff8e9; border-color: #c8b17d; color: #725530; }
+.viewer-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20rpx;
+    margin-bottom: 16rpx;
+    background: #f7f9ef;
+}
 .viewer-title { font-size: 36rpx; }
-.viewer-close { width: 88rpx; height: 88rpx; border: 2rpx solid #8ca374; border-radius: 20rpx; background: transparent; color: #6c805e; font-size: 52rpx; display: flex; align-items: center; justify-content: center; }
+.viewer-close { width: 88rpx; height: 88rpx; min-width: 44px; min-height: 44px; flex-shrink: 0; border: 2rpx solid #8ca374; border-radius: 20rpx; background: transparent; color: #6c805e; font-size: 52rpx; display: flex; align-items: center; justify-content: center; }
 .viewer-image { display: block; width: 100%; height: 700rpx; border-radius: 20rpx; background: #fff; }
 .viewer-meta { margin: 20rpx 0 8rpx; text-align: center; color: #809171; font-size: 24rpx; }
 .viewer-note { margin: 0 0 24rpx; text-align: center; color: #5b7549; font-size: 26rpx; }
-.viewer-save { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 96rpx; border-radius: 24rpx; background: #5b7549; color: #fffdf1; font-weight: 600; font-size: 32rpx; }
+.viewer-save { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; min-height: max(96rpx, 44px); border-radius: 24rpx; background: #5b7549; color: #fffdf1; font-weight: 600; font-size: 32rpx; }
+.viewer-save.is-pending { opacity: 0.65; }
 .viewer-hint { margin: 20rpx 0 0; text-align: center; font-size: 24rpx; line-height: 1.7; color: #718464; }
 .viewer-other { margin-top: 24rpx; font-size: 24rpx; color: #809171; }
-.other-summary { min-height: 88rpx; display: flex; align-items: center; }
+.other-summary { min-height: 44px; min-height: max(88rpx, 44px); display: flex; align-items: center; }
 .other-note { font-size: 24rpx; line-height: 1.7; }
-.other-btn { min-height: 88rpx; display: flex; align-items: center; color: #536c43; text-decoration: underline; font-size: 24rpx; }
+.other-btn { min-height: 44px; min-height: max(88rpx, 44px); display: flex; align-items: center; color: #536c43; text-decoration: underline; font-size: 24rpx; }

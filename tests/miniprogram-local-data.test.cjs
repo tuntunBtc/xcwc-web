@@ -16,7 +16,7 @@ function fixture({ recursive = false } = {}) {
     album.clearDraft();
     const values = new Map();
     const files = new Set(['/tmp/work', '/tmp/original']);
-    const faults = { read: null, write: null, unlink: null, rmdir: false, albumWriteAt: 0, albumWrites: 0 };
+    const faults = { read: null, write: null, remove: null, unlink: null, rmdir: false, albumWriteAt: 0, albumWrites: 0 };
     const notices = [];
     global.wx = {
         env: { USER_DATA_PATH: '/mock' },
@@ -29,7 +29,10 @@ function fixture({ recursive = false } = {}) {
             if (faults.write === key || (key === album.KEY && faults.albumWrites === faults.albumWriteAt)) throw new Error('quota exceeded');
             values.set(key, structuredClone(value));
         },
-        removeStorageSync(key) { values.delete(key); },
+        removeStorageSync(key) {
+            if (faults.remove === key) throw new Error('storage remove denied');
+            values.delete(key);
+        },
         getFileSystemManager() {
             const fs = {
                 accessSync(path) { if (!files.has(path)) throw new Error('ENOENT'); },
@@ -47,6 +50,7 @@ function fixture({ recursive = false } = {}) {
                 fs.rmdirSync = function (path, withChildren) {
                     assert.equal(path, '/mock/photo');
                     assert.equal(withChildren, true);
+                    if (faults.rmdir === 'partial') files.delete(work);
                     if (faults.rmdir) throw new Error('permission denied');
                     if (!files.has(path)) throw new Error('ENOENT');
                     for (const file of files) {
@@ -94,6 +98,95 @@ test('不识别的养成缓存结构或版本不会被新的养成操作覆盖',
         assert.equal(store.snapshot(now).error, 'STORAGE_UNAVAILABLE');
         assert.equal(store.feed(now).error, 'STORAGE_UNAVAILABLE');
         assert.deepEqual(values.get(guest.STORAGE_KEY), raw);
+    }
+});
+
+test('超过 60 个历史日期后仍限制同一天补给和合照奖励次数', () => {
+    const { store } = fixture();
+    const dayMs = 24 * 60 * 60 * 1000;
+    for (let day = 0; day < 60; day += 1) {
+        const at = now + day * dayMs;
+        assert.equal(store.supply(at).error, null);
+        assert.equal(store.photoReward('earlier-' + day, 'earlier-hash-' + day, at).data.reward, 1);
+    }
+    const at = now + 60 * dayMs;
+    const firstSupply = store.supply(at);
+    assert.equal(firstSupply.error, null);
+    assert.equal(store.snapshot(at).data.snapshot.supplyClaimed, true);
+    const repeatSupply = store.supply(at);
+    assert.equal(repeatSupply.error, 'ALREADY_CLAIMED');
+    assert.equal(repeatSupply.data.snapshot.food, firstSupply.data.snapshot.food);
+    assert.equal(repeatSupply.data.snapshot.water, firstSupply.data.snapshot.water);
+
+    for (let i = 0; i < 4; i += 1) {
+        assert.equal(store.photoReward('recent-' + i, 'recent-hash-' + i, at).data.reward, i < 3 ? 1 : 0);
+    }
+    assert.equal(store.snapshot(at).data.snapshot.todayPhotos, 3);
+});
+
+test('相册累计超过 400 次时仍记得新作品的请求和原图防重记录', () => {
+    const { values, store } = fixture();
+    const history = values.get(guest.STORAGE_KEY);
+    for (let i = 0; i < 400; i += 1) {
+        history.photoHashes.push('history-hash-' + i);
+        history.photoRequests['photo:history-' + i] = { reward: 1 };
+    }
+    values.set(guest.STORAGE_KEY, history);
+    assert.equal(store.photoReward('new-work', 'new-original', now).data.reward, 1);
+    const replay = store.photoReward('new-work', 'new-original', now);
+    assert.equal(replay.data.reward, 1);
+    assert.equal(replay.data.replayed, true);
+    assert.equal(store.photoReward('same-original', 'new-original', now).data.reward, 0);
+    assert.equal(store.snapshot(now).data.snapshot.points, 1);
+});
+
+test('库存已满不占当日补给，单项有空间时只增加该项', () => {
+    const { values, store } = fixture();
+    const state = values.get(guest.STORAGE_KEY);
+    state.care.food = 99;
+    state.care.water = 99;
+    values.set(guest.STORAGE_KEY, state);
+    const full = store.supply(now);
+    assert.equal(full.data.foodAdded, 0);
+    assert.equal(full.data.waterAdded, 0);
+    assert.equal(full.data.snapshot.supplyClaimed, false);
+    assert.equal(store.feed(now).error, null);
+    const refill = store.supply(now);
+    assert.equal(refill.data.foodAdded, 1);
+    assert.equal(refill.data.waterAdded, 0);
+    assert.equal(refill.data.snapshot.supplyClaimed, true);
+});
+
+test('钱包先验证领养和每日记录，微信运动权限设置仅响应明确点按', async () => {
+    fixture();
+    const page = pageFrom('../miniprogram/pages/index/index');
+    const store = require('../miniprogram/utils/store');
+    const originalRedeem = store.redeemSteps;
+    let redeemCalls = 0;
+    let settingCalls = 0;
+    store.redeemSteps = async () => { redeemCalls += 1; return { error: 'WERUN_DENIED' }; };
+    wx.openSetting = (options) => {
+        settingCalls += 1;
+        options.success({ authSetting: { 'scope.werun': true } });
+    };
+    page.showToast = () => {};
+    try {
+        await page.onRedeemSteps();
+        assert.equal(page.data.sheet.type, 'claim');
+        page.setData({ hasBird: true, todayStepClaimed: true });
+        await page.onRedeemSteps();
+        assert.equal(redeemCalls, 0);
+        page.setData({ todayStepClaimed: false });
+        await page.onRedeemSteps();
+        assert.equal(redeemCalls, 1);
+        assert.equal(settingCalls, 0);
+        assert.equal(page.data.werunNeedsSetting, true);
+        page.onOpenWeRunSettings();
+        assert.equal(settingCalls, 1);
+        assert.equal(page.data.werunNeedsSetting, false);
+        assert.equal(redeemCalls, 1);
+    } finally {
+        store.redeemSteps = originalRedeem;
     }
 });
 
@@ -164,11 +257,99 @@ test('相册读取失败时保护旧索引，旧合照删除失败后可继续�
     assert.equal(album.remove(requestId).error, 'STORAGE_UNAVAILABLE');
     assert.equal(album.history().total, 1);
     assert.equal(files.has(original), true);
-    assert.equal(files.has(work), false);
+    assert.equal(files.has(work), true);
     faults.unlink = null;
     assert.equal(album.remove(requestId).deleted, true);
     assert.equal(files.has(original), false);
     assert.equal(album.history().total, 0);
+});
+
+test('未能记录删除操作时保留合照、原图和索引', async () => {
+    const { values, files, faults, store, payload } = fixture();
+    assert.equal((await album.create(payload, store)).reward, 1);
+    const before = structuredClone(values.get(album.KEY));
+    faults.albumWriteAt = faults.albumWrites + 1;
+    assert.equal(album.remove(requestId).error, 'STORAGE_UNAVAILABLE');
+    assert.deepEqual(values.get(album.KEY), before);
+    assert.equal(files.has(original), true);
+    assert.equal(files.has(work), true);
+    assert.equal(album.history().total, 1);
+    assert.equal(store.snapshot(now).data.snapshot.points, 1);
+});
+
+test('文件删除后索引写入失败时隐藏失效合照，重开清理且不影响其他作品与叽分', async () => {
+    const { values, files, faults, store, payload } = fixture();
+    const other = { ...payload, id: 'photo-storage-other-work', digest: 'another-original' };
+    assert.equal((await album.create(payload, store)).reward, 1);
+    const kept = (await album.create(other, store)).item;
+    const before = store.snapshot(now).data.snapshot.points;
+    album.saveDraft({ pendingSubmission: { id: requestId } });
+    faults.write = album.KEY;
+    assert.equal(album.remove(requestId).error, 'STORAGE_UNAVAILABLE');
+    assert.equal(album.readDraft().pendingSubmission.id, requestId);
+    faults.write = null;
+    faults.albumWriteAt = faults.albumWrites + 2;
+
+    const failed = album.remove(requestId);
+    assert.equal(failed.error, 'STORAGE_UNAVAILABLE');
+    assert.equal(failed.workDeleted, true);
+    assert.equal(values.get(album.KEY).find(row => row.id === requestId).stage, 'delete-pending');
+    assert.equal(album.readDraft().pendingSubmission, null);
+    assert.equal(files.has(work), false);
+    assert.equal(files.has(original), false);
+    assert.equal(files.has(kept.image), true);
+    assert.equal(files.has(kept.original), true);
+    assert.deepEqual(album.history().items.map(item => item.id), [other.id]);
+    assert.equal(album.detail(requestId), null);
+    assert.equal((await album.create(payload, store)).error, 'DELETE_PENDING');
+
+    assert.equal(album.recoverPending(store).error, null);
+    assert.equal(album.recoverPending(store).error, null);
+    assert.deepEqual(values.get(album.KEY).map(row => row.id), [other.id]);
+    assert.equal(store.snapshot(now).data.snapshot.points, before);
+    assert.equal((await album.create({ ...payload, id: 'photo-storage-same-original' }, store)).reward, 0);
+    assert.equal(store.snapshot(now).data.snapshot.points, before);
+});
+
+test('合照删除到文件阶段后写索引失败，界面移除失效卡片并保留重试入口', async () => {
+    const { faults, files, store, payload } = fixture();
+    assert.equal((await album.create(payload, store)).error, null);
+    const page = pageFrom('../miniprogram/pages/photo/photo');
+    page.onLoad();
+    assert.equal(page.data.albumTotal, 1);
+    page.pendingSubmission = { id: requestId };
+    page.saveDraft();
+    page.onDeleteTap({ currentTarget: { dataset: { id: requestId } } });
+    assert.equal(page.data.deletePending, false);
+    faults.albumWriteAt = faults.albumWrites + 2;
+    page.onConfirmDelete();
+    assert.equal(files.has(work), false);
+    assert.equal(page.data.albumTotal, 0);
+    assert.equal(page.data.deleteConfirm, true);
+    assert.equal(page.data.deletePending, true);
+    assert.match(page.data.deleteStatus, /重试/);
+    assert.match(page.data.albumError, /重试/);
+    assert.equal(page.pendingSubmission, null);
+    assert.equal(album.readDraft().pendingSubmission, null);
+
+    page.onCancelDelete();
+    assert.equal(page.data.deletePending, false);
+    page.onRetryAlbum();
+    assert.equal(page.data.albumError, '');
+    assert.equal(page.data.albumTotal, 0);
+    assert.equal(page.data.deleteConfirm, false);
+    assert.equal(store.snapshot(now).data.snapshot.points, 1);
+});
+
+test('原图指纹读取失败时仍可收藏，合照不发叽分', async () => {
+    const { store, payload } = fixture();
+    const digest = await album.digestOf(payload.originalPath);
+    assert.equal(digest, '');
+    const result = await album.create({ ...payload, digest }, store);
+    assert.equal(result.error, null);
+    assert.equal(result.reward, 0);
+    assert.equal(album.history().total, 1);
+    assert.equal(store.snapshot(now).data.snapshot.points, 0);
 });
 
 test('我的清除失败时保留重试入口，成功后已打开的商城重读空购物车', async () => {
@@ -214,4 +395,61 @@ test('重置损坏的相册索引并清理无索引旧照片，只删除相册�
     assert.equal(files.has('/mock/photo/orphan.bin'), false);
     assert.equal(files.has('/mock/another-feature.bin'), true);
     assert.equal(album.clear(), true);
+});
+
+test('重置时先保护相册，索引清理失败不显示坏卡且可以重试', async () => {
+    const { values, files, faults, store, payload, notices } = fixture({ recursive: true });
+    assert.equal((await album.create(payload, store)).error, null);
+    album.saveDraft({ pendingSubmission: { id: requestId } });
+    assert.equal(cart.write(['hangzhou-xihu']), true);
+    files.add('/mock/photo/orphan.bin');
+    files.add('/mock/another-feature.bin');
+    const profile = pageFrom('../miniprogram/pages/profile/profile');
+    profile.onReset();
+
+    for (const blocked of ['read', 'write']) {
+        faults[blocked] = album.KEY;
+        profile.confirmReset();
+        faults[blocked] = null;
+        assert.equal(notices.at(-1), '清除未完成，请重试');
+        assert.equal(files.has(work), true);
+        assert.equal(files.has(original), true);
+        assert.equal(album.history().total, 1);
+        assert.equal(album.readDraft().pendingSubmission.id, requestId);
+    }
+
+    faults.rmdir = 'partial';
+    profile.confirmReset();
+    assert.equal(notices.at(-1), '清除未完成，请重试');
+    assert.equal(files.has(work), false);
+    assert.equal(files.has(original), true);
+    assert.equal(album.history().total, 0);
+    assert.equal(album.detail(requestId), null);
+    assert.equal(store.snapshot(now).data.snapshot.hasBird, true);
+    assert.deepEqual(cart.read(), ['hangzhou-xihu']);
+
+    faults.rmdir = false;
+    faults.remove = album.KEY;
+    profile.confirmReset();
+    assert.equal(notices.at(-1), '清除未完成，请重试');
+    assert.equal(profile.data.resetVisible, true);
+    assert.equal(files.has(work), false);
+    assert.equal(files.has(original), false);
+    assert.equal(files.has('/mock/photo/orphan.bin'), false);
+    assert.equal(files.has('/mock/another-feature.bin'), true);
+    assert.equal(album.history().total, 0);
+    assert.equal(album.detail(requestId), null);
+    assert.equal(album.readDraft(), null);
+    assert.equal(store.snapshot(now).data.snapshot.hasBird, true);
+    assert.deepEqual(cart.read(), ['hangzhou-xihu']);
+
+    faults.remove = null;
+    faults.write = album.KEY;
+    profile.confirmReset();
+    assert.equal(notices.at(-1), '已清除');
+    assert.equal(profile.data.resetVisible, false);
+    assert.equal(values.has(album.KEY), false);
+    assert.equal(store.snapshot(now).data.snapshot.hasBird, false);
+    assert.equal(cart.read(), undefined);
+    assert.equal(files.has('/mock/another-feature.bin'), true);
 });

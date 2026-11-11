@@ -25,7 +25,7 @@ const wxml = read(path.join(PAGE, 'wardrobe.wxml'));
 const wxss = read(path.join(PAGE, 'wardrobe.wxss'));
 const pageJson = json(path.join(PAGE, 'wardrobe.json'));
 const appJson = json(path.join(MP, 'app.json'));
-const catalog = require(path.join(MP, 'utils/wardrobe-catalog'));
+const catalog = require(path.join(MP, 'pages/wardrobe/wardrobe-catalog'));
 
 check('四件套齐全', () => {
     for (const f of ['wardrobe.js', 'wardrobe.wxml', 'wardrobe.wxss', 'wardrobe.json']) {
@@ -39,26 +39,28 @@ check('wardrobe.json 自定义导航 + 复用 custom-tab-bar', () => {
     exists(path.join(MP, 'custom-tab-bar/index.wxml'));
 });
 check('app.json 注册 wardrobe 页且未破坏既有路由', () => {
-    assert.ok(appJson.pages.includes('pages/wardrobe/wardrobe'), 'wardrobe not registered');
-    for (const p of ['pages/index/index', 'pages/city/city', 'pages/shop/shop',
-                     'pages/profile/profile', 'pages/adopt/adopt', 'pages/photo/photo']) {
-        assert.ok(appJson.pages.includes(p), 'lost existing route ' + p);
+    const subpackages = appJson.subpackages || [];
+    for (const page of ['adopt', 'photo', 'wardrobe']) {
+        const root = 'pages/' + page;
+        assert.ok(subpackages.some(pkg => pkg.root === root && !pkg.independent && pkg.pages.includes(page)), 'lost subpackage ' + page);
+        assert.ok(!appJson.pages.includes(root + '/' + page), 'subpackage also in main package ' + page);
     }
     assert.equal(appJson.tabBar.custom, true);
     assert.equal(appJson.tabBar.list.length, 4, 'tabBar must stay 4 items');
+    for (const tab of appJson.tabBar.list) assert.ok(appJson.pages.includes(tab.pagePath), 'tab missing from main package ' + tab.pagePath);
 });
 
 // ---------- 2. 素材与 H5 一致性 ----------
 const SKINS = ['osmanthus', 'peach', 'bamboo', 'sakura', 'scholar', 'moon', 'jade', 'pilgrim'];
 const H5_COPIES = [
-    ['dist/assets/wardrobe/felt/scene-top-v2-900.webp', 'miniprogram/assets/wardrobe/felt/scene-top.webp'],
-    ['dist/assets/wardrobe/felt/scene-lower-v2-900.webp', 'miniprogram/assets/wardrobe/felt/scene-lower.webp'],
-    ['dist/assets/nest/felt/idle-640.webp', 'miniprogram/assets/wardrobe/felt/idle-640.webp'],
+    ['dist/assets/wardrobe/felt/scene-top-v2-900.webp', 'miniprogram/pages/wardrobe/assets/felt/scene-top.webp'],
+    ['dist/assets/wardrobe/felt/scene-lower-v2-900.webp', 'miniprogram/pages/wardrobe/assets/felt/scene-lower.webp'],
+    ['dist/assets/nest/felt/idle-640.webp', 'miniprogram/pages/wardrobe/assets/felt/idle-640.webp'],
 ];
 for (const n of SKINS) {
     H5_COPIES.push([
         'dist/assets/wardrobe/huangying/' + n + '-320.webp',
-        'miniprogram/assets/wardrobe/huangying/' + n + '-320.webp',
+        'miniprogram/pages/wardrobe/assets/huangying/' + n + '-320.webp',
     ]);
 }
 check('11 张 H5 原素材逐字节一致（SHA-256）', () => {
@@ -73,14 +75,14 @@ check('11 张 H5 原素材逐字节一致（SHA-256）', () => {
 });
 check('烘焙底板存在且非空', () => {
     for (const f of ['panel-head.webp', 'panel-card.webp']) {
-        exists(path.join(MP, 'assets/wardrobe/felt', f));
-        assert.ok(fs.statSync(path.join(MP, 'assets/wardrobe/felt', f)).size > 4000, f + ' too small');
+        exists(path.join(MP, 'pages/wardrobe/assets/felt', f));
+        assert.ok(fs.statSync(path.join(MP, 'pages/wardrobe/assets/felt', f)).size > 4000, f + ' too small');
     }
 });
 check('WXML 引用的全部本地资源存在', () => {
     const refs = new Set();
-    for (const m of wxml.matchAll(/(?:src|src\{\{)="?(\/assets\/[^"\s}]+)/g)) refs.add(m[1]);
-    for (const m of js.matchAll(/'(\/assets\/[^']+)'/g)) refs.add(m[1]);
+    for (const m of wxml.matchAll(/src="(\/(?:pages\/wardrobe\/)?assets\/[^"\s}]+)/g)) refs.add(m[1]);
+    for (const m of js.matchAll(/'(\/(?:pages\/wardrobe\/)?assets\/[^']+)'/g)) refs.add(m[1]);
     assert.ok(refs.size >= 4, 'no asset refs found');
     for (const r of refs) exists(path.join(MP, r.replace(/^\//, '')));
     checks.push('  资源引用 ' + refs.size + ' 个');
@@ -163,7 +165,8 @@ check('WXSS 关键换算值与 H5 实测几何一致', () => {
     // H5 在 390px 视口实测：hero 195、head 118、note 58、card 317、wear 44
     const expect = [
         ['scene-top height 63cqw', /\.scene-top[\s\S]*?height:\s*472rpx/],
-        ['scene-lower top 63cqw', /\.scene-lower\s*\{[\s\S]*?top:\s*472rpx/],
+        ['下段背景与上段重叠淡接', /\.scene-top\s*\{[^}]*mask-image:[^}]*\}[\s\S]*?\.scene-lower\s*\{[^}]*top:\s*354rpx/],
+        ['相邻下段背景镜像相接', /\.scene-lower-tile\.is-reversed\s*\{[^}]*transform:\s*scaleY\(-1\)/],
         ['hero min-height 195px', /\.hero\s*\{[\s\S]*?min-height:\s*375rpx/],
         ['head min-height 118px', /\.head\s*\{[\s\S]*?min-height:\s*227rpx/],
         ['note min-height 58px', /\.note\s*\{[\s\S]*?min-height:\s*112rpx/],
@@ -200,23 +203,25 @@ check('本机体验说明与 H5 语义一致（平台措辞适配）', () => {
 check('页面逻辑自测（返回 / 卡片点击 / 安全区 / 只读边界）', () => {
     const calls = [];
     let pageDef = null;
+    let width = 600;
+    let navigation;
     const fakeWx = {
         showToast: (o) => calls.push(['showToast', o.title]),
-        navigateBack: () => calls.push(['navigateBack']),
-        switchTab: (o) => calls.push(['switchTab', o.url]),
+        navigateBack: (o) => { navigation = o; calls.push(['navigateBack']); },
+        switchTab: (o) => { navigation = o; calls.push(['switchTab', o.url]); },
         navigateTo: (o) => calls.push(['navigateTo', o.url]),
-        getWindowInfo: () => ({ windowWidth: 390, statusBarHeight: 47 }),
-        getMenuButtonBoundingClientRect: () => ({ top: 48, height: 32 }),
+        getWindowInfo: () => ({ windowWidth: width, statusBarHeight: 47 }),
+        getMenuButtonBoundingClientRect: () => ({ top: 58, height: 32 }),
     };
+    const safeArea = { wx: fakeWx, module: { exports: {} } };
+    vm.runInNewContext(read(path.join(MP, 'utils/safe-area.js')), safeArea);
     const sandbox = {
         Page: (def) => { pageDef = def; },
         wx: fakeWx,
         getCurrentPages: () => [{ route: 'pages/index/index' }, { route: 'pages/wardrobe/wardrobe' }],
         require: (rel) => {
             if (rel.includes('wardrobe-catalog')) return catalog;
-            if (rel.includes('safe-area')) {
-                return { readTopInsetRpx: () => 176 };
-            }
+            if (rel.includes('safe-area')) return safeArea.module.exports;
             throw Error('unexpected require ' + rel);
         },
         console: console,
@@ -230,26 +235,35 @@ check('页面逻辑自测（返回 / 卡片点击 / 安全区 / 只读边界）'
         setData(o) { Object.assign(this.data, o); },
     });
 
-    // onLoad：安全区换算 + 8 套服装 + 5 张下段背景
+    // onLoad：安全区换算、8 套服装和 8 张下段背景
     page.onLoad();
-    assert.equal(page.data.topInset, 176);
+    assert.equal(page.data.topInset, 124);
     assert.equal(page.data.outfits.length, 8);
     assert.equal(page.data.outfitCount, 8);
     assert.equal(page.data.lowerTiles.length, 8);
     assert.equal(page.data.outfits[0].isLeft, true);
     assert.equal(page.data.outfits[1].isLeft, false);
     assert.equal(page.data.outfits[7].isLeft, false);
+    width = 320;
+    page.onResize();
+    assert.ok(page.data.topInset * width / 750 > 90, '缩窄后返回按钮仍在胶囊下方');
+    assert.match(wxss, /\.back\s*\{[^}]*min-height:\s*44px/);
 
     // 返回：有上一页 → navigateBack
     calls.length = 0;
     page.onBack();
+    page.onBack();
     assert.deepEqual(calls, [['navigateBack']]);
+    navigation.fail();
+    navigation.complete();
+    assert.deepEqual(calls.at(-1), ['showToast', '返回失败，请重试']);
 
     // 返回：作为启动页 → 回小窝
     calls.length = 0;
     sandbox.getCurrentPages = () => [{ route: 'pages/wardrobe/wardrobe' }];
     page.onBack();
     assert.deepEqual(calls, [['switchTab', '/pages/index/index']]);
+    navigation.complete();
 
     // 卡片点击：只提示，不写任何状态、不跳转
     calls.length = 0;
@@ -276,7 +290,7 @@ check('小窝「换装」入口跳 wardrobe 页', () => {
 check('「我的 → 我的衣橱」复用同一路由', () => {
     assert.ok(profileWxml.includes('我的衣橱'));
     assert.ok(profileWxml.includes('bindtap="onWardrobe"'));
-    assert.ok(/onWardrobe\(\)[\s\S]{0,320}navigateTo\(\{ url: '\/pages\/wardrobe\/wardrobe' \}\)/.test(profileJs));
+    assert.ok(/onWardrobe\(\)[\s\S]{0,320}navigateTo\(\{\s*url: '\/pages\/wardrobe\/wardrobe'/.test(profileJs));
     assert.ok(!/wx:if="\{\{wardrobeVisible\}\}"/.test(profileWxml), 'stale wardrobe overlay remains');
 });
 check('H5 两个入口确实共用 wardrobe 路由', () => {
@@ -292,32 +306,18 @@ check('「我的」页不再残留旧衣橱浮层状态', () => {
 });
 
 // ---------- 8. 包体 ----------
-check('衣橱新增资源体积记录', () => {
+check('衣橱普通分包源码体积记录', () => {
     let total = 0, count = 0;
     const walk = (dir) => {
         for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+            if (e.name === '.DS_Store') continue;
             const p = path.join(dir, e.name);
             if (e.isDirectory()) walk(p);
             else { total += fs.statSync(p).size; count += 1; }
         }
     };
-    walk(path.join(MP, 'assets/wardrobe'));
-    for (const f of ['wardrobe.js', 'wardrobe.wxml', 'wardrobe.wxss', 'wardrobe.json']) {
-        total += fs.statSync(path.join(PAGE, f)).size; count += 1;
-    }
-    total += fs.statSync(path.join(MP, 'utils/wardrobe-catalog.js')).size; count += 1;
-    checks.push('  衣橱增量 ' + count + ' 文件 / ' + (total / 1024).toFixed(1) + ' KB');
-    let all = 0;
-    const walkAll = (dir) => {
-        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-            if (e.name === '.DS_Store') continue;
-            const p = path.join(dir, e.name);
-            if (e.isDirectory()) walkAll(p);
-            else all += fs.statSync(p).size;
-        }
-    };
-    walkAll(MP);
-    checks.push('  小程序主包合计 ' + (all / 1024).toFixed(1) + ' KB / 2048 KB');
+    walk(PAGE);
+    checks.push('  衣橱分包源码 ' + count + ' 文件 / ' + (total / 1024).toFixed(1) + ' KiB，编译体积以开发者工具为准');
 });
 
 // ---------- 输出 ----------

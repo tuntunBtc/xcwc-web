@@ -3,10 +3,14 @@
     "pages/index/index",
     "pages/city/city",
     "pages/shop/shop",
-    "pages/profile/profile",
-    "pages/adopt/adopt",
-    "pages/photo/photo",
-    "pages/wardrobe/wardrobe"
+    "pages/profile/profile"
+  ],
+  "subpackages": [
+    { "root": "pages/adopt", "pages": ["adopt"] },
+    { "root": "pages/photo", "pages": ["photo"] },
+    { "root": "pages/wardrobe", "pages": ["wardrobe"] },
+    { "root": "media/nest-idle", "name": "nest-idle-media", "pages": ["anchor"] },
+    { "root": "media/collection", "name": "collection-media", "pages": ["anchor"] }
   ],
   "window": {
     "navigationBarTitleText": "卜叽岛 · 小鸟伙伴",
