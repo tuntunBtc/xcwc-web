@@ -60,7 +60,10 @@ function adoptPage(t, options) {
 }
 
 test('领养入口解析接受当前直达、编码二维码及 scene，拒绝重复、伪编码和全局场景值', () => {
+    assert.equal(entry.readBirdCode({ code }), code);
     assert.equal(entry.readBirdCode({ birdCode: code }), code);
+    assert.equal(entry.readBirdCode({ bird: code }), code);
+    assert.equal(entry.readBirdCode({ scene: encodeURIComponent('code=' + code) }), code);
     assert.equal(entry.readBirdCode({ scene: encodeURIComponent('birdCode=' + code) }), code);
     assert.equal(entry.readBirdCode({ scene: code }), code);
     assert.equal(entry.readBirdCode({ scene: code + '#batch' }), '');
@@ -70,12 +73,17 @@ test('领养入口解析接受当前直达、编码二维码及 scene，拒绝�
     assert.equal(entry.readBirdCode({ scene: 'birdCode=' + code + '&bird=' + nextCode }), '');
     assert.equal(entry.readBirdCode({ q: encodeURIComponent('https://fixture.invalid/register.html?birdCode=' + code + '#test') }), code);
     assert.equal(entry.readBirdCode({ q: 'https://fixture.invalid/register.html?birdCode=SZ%2DTEST%2D1' }), code);
+    assert.equal(entry.readBirdCode({ q: 'https://fixture.invalid/register.html?code=SZ%2DTEST%2D1' }), code);
+    assert.equal(entry.readBirdCode({ q: 'code=' + code + '&code=' + nextCode }), '');
     assert.equal(entry.readBirdCode({ q: 'bird=' + code }), code);
     assert.equal(entry.readBirdCode({ q: 'unrelated' }), '');
     assert.equal(entry.readBirdCode({ q: 'https://fixture.invalid/register.html?birdCode=' + code + '&bird=' + nextCode }), '');
     assert.equal(entry.readBirdCode({ birdCode: code, bird: nextCode }), '');
+    assert.equal(entry.readBirdCode({ code, birdCode: nextCode }), '');
+    assert.equal(entry.readBirdCodeFromLaunch({ query: { code } }), code);
     assert.equal(entry.readBirdCode({ birdCode: 'Z'.repeat(65) }), '');
     assert.equal(entry.readBirdCodeFromLaunch({ scene: 1047 }), '');
+    assert.equal(entry.buildAdoptUrl(code), '/pages/adopt/adopt?code=SZ-TEST-1');
     assert.equal(entry.isManufacturingCode('HZ-TEST-9223372036854775808'), false);
 });
 
@@ -84,7 +92,7 @@ test('启动带码兼容跳转只执行一次，后续热启动可带新码', as
     wx.getAppBaseInfo = () => ({ SDKVersion: '3.5.4' });
     wx.onAppRoute = () => { assert.fail('早期基础库的路由事件没有稳定的参数格式'); };
     const app = instance('../miniprogram/app', 'App');
-    const first = { path: 'pages/index/index', query: { birdCode: code } };
+    const first = { path: 'pages/index/index', query: { code } };
     app.onLaunch(first);
     app.onShow(first);
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -136,7 +144,7 @@ test('有原生路由事件时，先后到达的热启动 onShow 与路由仅转
     const app = instance('../miniprogram/app', 'App');
     app.onLaunch({ path: 'pages/index/index', query: {} });
     const first = { path: 'pages/index/index', query: { birdCode: code }, scene: 1047 };
-    const second = { ...first, query: { birdCode: nextCode } };
+    const second = { ...first, query: { code: nextCode } };
 
     app.onShow(first);
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -212,7 +220,7 @@ test('新扫码和直达领养使之前的跳转错误和重试失效', async (t
 
 test('正式领养用已核验实体资料，保存一次且城市解锁与返回依据真实资料', (t) => {
     const { requests, storage } = fixture(t);
-    const page = adoptPage(t, { birdCode: code });
+    const page = adoptPage(t, { code });
     assert.equal(page.data.buttonDisabled, true);
     page.handleAdopt();
     assert.equal(storage.has(guest.STORAGE_KEY), false);

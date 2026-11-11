@@ -1,6 +1,6 @@
 'use strict';
 
-// 小程序端「带着 birdCode 进入领养页」的统一入口解析。
+// 小程序领养入口使用 code，同时兼容已发行链接中的 birdCode 和 bird。
 // 规则依据（以微信官方最新规则为准）：
 //  - URL Link / URL Scheme 的 query、开发者工具自定义编译条件、wx.navigateTo 的 query
 //    会作为目标页 onLoad(options) 的参数传入；
@@ -11,6 +11,7 @@
 // 本模块只做搬运与解码，不改写已发行的实体编码本身。
 
 var ADOPT_PAGE = 'pages/adopt/adopt';
+var CODE_QUERY_KEYS = ['code', 'birdCode', 'bird'];
 var MAX_CODE_LENGTH = 64;
 
 function normalize(value) {
@@ -35,7 +36,7 @@ function pickQueryCode(query) {
         var eq = pair.indexOf('=');
         if (eq < 0) continue;
         var key = decodeMaybe(pair.slice(0, eq));
-        if (key === 'birdCode' || key === 'bird') codes.push(decodeMaybe(pair.slice(eq + 1)));
+        if (CODE_QUERY_KEYS.indexOf(key) >= 0) codes.push(decodeMaybe(pair.slice(eq + 1)));
     }
     return codes.length === 1 ? normalize(codes[0]) : '';
 }
@@ -58,10 +59,8 @@ function readQrCode(value) {
 // 页面级入口：URL Link / URL Scheme / 自定义编译条件 / 站内跳转 / 小程序码 / 普通二维码。
 function readBirdCode(options) {
     var o = options || {};
-    if (o.birdCode !== undefined || o.bird !== undefined) {
-        if (o.birdCode !== undefined && o.bird !== undefined) return '';
-        return normalize(o.birdCode !== undefined ? o.birdCode : o.bird);
-    }
+    var keys = CODE_QUERY_KEYS.filter(function (key) { return o[key] !== undefined; });
+    if (keys.length) return keys.length === 1 ? normalize(o[keys[0]]) : '';
     if (typeof o.scene === 'string' && o.scene) {
         var fromScene = readSceneCode(o.scene);
         if (fromScene) return fromScene;
@@ -76,17 +75,11 @@ function readBirdCode(options) {
 // options.scene 是数值场景值，刻意不读取，避免把 1001 之类的数字当成实体编码。
 function readBirdCodeFromLaunch(options) {
     var o = options || {};
-    var query = o.query || {};
-    return readBirdCode({
-        birdCode: query.birdCode,
-        bird: query.bird,
-        scene: query.scene,
-        q: query.q,
-    });
+    return readBirdCode(o.query);
 }
 
 function buildAdoptUrl(code) {
-    return '/' + ADOPT_PAGE + '?birdCode=' + encodeURIComponent(normalize(code));
+    return '/' + ADOPT_PAGE + '?code=' + encodeURIComponent(normalize(code));
 }
 
 function isManufacturingCode(code) {
