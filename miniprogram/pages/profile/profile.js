@@ -1,16 +1,15 @@
 'use strict';
 
 const store = require('../../utils/store');
-const photoAlbum = require('../../utils/photo-album');
-const cartStorage = require('../../utils/cart-storage');
 const entry = require('../../utils/entry');
 const config = require('../../utils/config');
 const tabBar = require('../../utils/tab-bar');
 const safeArea = require('../../utils/safe-area');
 const collectionMedia = require('../../utils/collection-media');
+const cloudUI = require('../../utils/cloud-ui');
 const { ERROR_TEXT } = require('../../utils/nest-rules');
 
-const LOCAL_NOTE = '小鸟、养成、叽分和装扮仅保存在当前设备，不与云端账号同步。清除小程序数据或更换设备后不会自动恢复；请先保存重要合照。';
+const LOCAL_NOTE = '宠物、昵称、养成、库存和叽分保存在微信账号，登录后可换手机恢复。合照仍留在当前设备；旧体验记录隔离保留，不自动导入。';
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
 
 function formatLedgerTime(at) {
@@ -18,8 +17,8 @@ function formatLedgerTime(at) {
     const d = new Date(at + BEIJING_OFFSET_MS);
     return Number.isFinite(d.getTime()) ? d.toISOString().slice(0, 19).replace('T', ' ') : '';
 }
-const POINTS_RULES = '有效抚摸每次 +1 叽分，间隔 30 秒。每天前 3 张不同原图的合照各可获得 1 叽分，重复原图不计分。本机互动奖励共用每日额度，按北京时间结算。叽分不提供充值。';
-const RESET_DESC = '将删除本机的小鸟领取记录、昵称、养成状态、叽分及流水、装扮、购物车，以及相册中的原图和作品。';
+const POINTS_RULES = '初见礼每账号一次 +5；摸摸每天最多 +10 叽分、奖励间隔 30 秒。没有奖励仍可陪伴。合照不发云端叽分，步数奖励暂未开放。';
+const RESET_DESC = '只清除当前账号的云端展示缓存，随后可从服务端重新恢复。合照、旧体验记录、云端存档与权益均保留。';
 
 function closedSheets() {
     return {
@@ -30,7 +29,7 @@ function closedSheets() {
     };
 }
 
-Page({
+Page(cloudUI.page({
     data: {
         topInset: 176,
         profileBackground: '',
@@ -113,7 +112,7 @@ Page({
         if (!ready) status = '微信登录尚未开放';
         else if (stored === null) status = '本机登录记录暂时无法读取';
         else if (checking) status = '正在验证登录状态…';
-        else if (stored) status = '本机已有登录记录';
+        else if (stored) status = '微信已登录';
         this.setData({
             wechatLoginReady: ready,
             wechatSignedIn: stored === null ? this.data.wechatSignedIn : stored,
@@ -161,7 +160,35 @@ Page({
         }
         if (this.pageVisible) {
             const action = signedIn ? '退出微信登录' : '微信登录';
-            wx.showToast({ title: action + (result.error ? '失败，请重试' : '成功'), icon: 'none' });
+            wx.showToast({ title: result.error ? cloudUI.message(result.error) : action + '成功', icon: 'none' });
+        }
+    },
+
+    async onPhoneLogin(event) {
+        const state = store.status();
+        if (!this.data.wechatLoginReady || this.data.wechatLoginBusy || state.loading || state.busy || !state.online) return;
+        const detail = event && event.detail || {};
+        if (typeof detail.code !== 'string' || !detail.code.trim()) {
+            const denied = /deny|cancel|reject/i.test(String(detail.errMsg || ''));
+            if (this.pageVisible) wx.showToast({ title: cloudUI.message(denied ? 'WX_PHONE_DENIED' : 'WX_PHONE_UNSUPPORTED'), icon: 'none' });
+            return;
+        }
+        this.setData({ wechatLoginBusy: true });
+        try {
+            const result = await store.loginWithPhone(detail.code);
+            if (this.unloaded) return;
+            this.refreshWechatStatus();
+            if (this.pageVisible) wx.showToast({ title: result.error ? cloudUI.message(result.error) : '手机号登录成功', icon: 'none' });
+        } finally {
+            if (!this.unloaded) this.setData({ wechatLoginBusy: false });
+        }
+    },
+
+    onPhonePrivacy() {
+        if (typeof wx.openPrivacyContract === 'function') {
+            wx.openPrivacyContract({ fail: () => wx.showToast({ title: '暂时无法打开隐私指引，请稍后重试', icon: 'none' }) });
+        } else {
+            wx.showToast({ title: '请更新微信后查看隐私指引', icon: 'none' });
         }
     },
 
@@ -185,8 +212,9 @@ Page({
             storageUnavailable: false,
             hasBird: !!snapshot.hasBird,
             displayName: snapshot.hasBird ? snapshot.nickname : '我的小伙伴',
-            birdSubtitle: snapshot.hasBird ? '当前陪伴 · 本机保存' : '等待第一位小伙伴',
-            birdCount: snapshot.hasBird ? 1 : 0,
+            birdSubtitle: snapshot.hasBird ? '当前陪伴 · 云端存档' : '暂无云端宠物',
+            birdCount: snapshot.pets.length,
+            pets: snapshot.pets, selectedPetId: snapshot.petId,
             birdCode: snapshot.birdCode || '',
             points: snapshot.points,
             todayPoints: snapshot.todayPoints,
@@ -196,14 +224,27 @@ Page({
         return true;
     },
 
-    onWallet() {
+    async onWallet() {
         if (!this.loadProfile()) {
             wx.showToast({ title: ERROR_TEXT.STORAGE_UNAVAILABLE, icon: 'none' });
             return;
         }
         this.setData(Object.assign(closedSheets(), { walletVisible: true }));
+        await this.loadLedger(false);
     },
 
+    async loadLedger(more) {
+        const result = await cloudUI.run(this, () => store.history('points', more));
+        if (!result) return;
+        this.setData({ ledgerError: result.error ? cloudUI.message(result.error) : '', ledgerMore: !!(result.data && result.data.hasMore) });
+        this.loadProfile();
+    },
+    onMoreLedger() { return this.loadLedger(!!this.data.ledgerMore); },
+    async onSelectPet(event) {
+        this.setData(closedSheets());
+        await store.selectPet(event.currentTarget.dataset.id);
+        this.loadProfile();
+    },
     onBirds() {
         if (!this.loadProfile()) {
             wx.showToast({ title: ERROR_TEXT.STORAGE_UNAVAILABLE, icon: 'none' });
@@ -247,15 +288,17 @@ Page({
         }
         this.setData({ resetBusy: true });
         // 相册先保留未删文件的索引以便重试，再清除购物车和养成记录。
-        const cleared = photoAlbum.clear() && cartStorage.clear() && !store.reset().error;
+        const result = store.reset();
+        const cleared = !result.error;
         if (!cleared) {
             this.setData({ resetBusy: false });
-            wx.showToast({ title: '清除未完成，请重试', icon: 'none' });
+            wx.showToast({ title: cloudUI.message(result.error), icon: 'none' });
             return;
         }
         this.loadProfile();
         this.setData(closedSheets());
-        wx.showToast({ title: '已清除', icon: 'none' });
+        wx.showToast({ title: '展示缓存已清除', icon: 'none' });
+        store.resume();
     },
 
     goHome() {
@@ -279,4 +322,4 @@ Page({
 
     // 遮罩内部点击/滑动不冒泡，避免误关或滚动穿透。
     noop() {},
-});
+}));

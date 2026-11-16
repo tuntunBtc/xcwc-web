@@ -1,6 +1,7 @@
 'use strict';
 
 var entry = require('./utils/entry');
+var store = require('./utils/store');
 
 function supportsNativeRelaunch() {
     if (typeof wx.onAppRoute !== 'function' || typeof wx.getAppBaseInfo !== 'function') return false;
@@ -15,10 +16,14 @@ function supportsNativeRelaunch() {
 App({
     globalData: {
         appName: '卜叽岛 · 小鸟伙伴',
-        versionStage: '小程序调试版：免登录、本机数据、商城仅展示',
+        versionStage: '小程序云端存档接入版 · 待真机验收',
     },
 
     onLaunch: function (options) {
+        if (typeof wx.onNetworkStatusChange === 'function') {
+            wx.onNetworkStatusChange(function (res) { store.setOnline(res.isConnected); if (res.isConnected) store.resume(); });
+        }
+        if (typeof wx.getNetworkType === 'function') wx.getNetworkType({ success: function (res) { store.setOnline(res.networkType !== 'none'); } });
         this.observesNativeRelaunch = supportsNativeRelaunch();
         if (this.observesNativeRelaunch) {
             var app = this;
@@ -33,6 +38,7 @@ App({
     },
 
     onShow: function (options) {
+        store.resume();
         // 有可靠的路由事件时只用它处理热启动，避免 onShow 与自动重载先后转发同一入口。
         if (!this.observesNativeRelaunch) this.handleEntry(options);
     },

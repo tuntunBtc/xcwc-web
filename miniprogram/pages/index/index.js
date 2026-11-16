@@ -7,52 +7,12 @@ const tabBar = require('../../utils/tab-bar');
 const rules = require('../../utils/nest-rules');
 const nestLayout = require('../../utils/nest-layout');
 const nestIdle = require('../../utils/nest-idle');
-const { dayKey } = require('../../utils/guest-store');
-const STATUS_REFRESH_MS = 5000;
-
-const STEP_SUPPLY_ERROR_TEXT = Object.freeze({
-    NO_ENDPOINT: '微信步数补给暂未开放。',
-    NO_BIRD: '请先领养一只小鸟。',
-    STOCK_FULL: '食物和水的库存已满，消耗后可以再领。',
-    STORAGE_UNAVAILABLE: '本机记录暂时无法读写，请重试。',
-    WERUN_DENIED: '微信运动权限未开启，开启后可重新读取步数。',
-    PRIVACY_NOT_AUTHORIZED: '同意小程序隐私保护指引后，才能读取步数。',
-    PRIVACY_UNAVAILABLE: rules.ERROR_TEXT.PRIVACY_UNAVAILABLE,
-    WX_LOGIN_REQUIRED: '微信登录已失效，请重试。',
-    WX_LOGIN_FAILED: '暂时无法完成微信登录，请重试。',
-    LOGIN_FAILED: '暂时无法完成微信登录，请重试。',
-    LOGIN_CODE_MISSING: '暂时无法完成微信登录，请重试。',
-    RATE_LIMITED: '请求太频繁，请稍后再试。',
-    SUPPLY_DAY_CHANGED: '已进入新的一天，请重新读取微信步数。',
-    SUPPLY_CONTEXT_CHANGED: '本机领养记录已变化，请重新读取微信步数。',
-    WX_SESSION_CHANGED: '微信登录状态已变化，请重新读取步数。',
-    SUPPLY_BIRD_MISMATCH: '本机小鸟已变化，请重新读取微信步数。',
-    BIRD_NOT_FOUND: '暂未找到这只小鸟的领养记录。',
-    BIRD_INACTIVE: '这只小鸟的领养资料已停用。',
-    INVALID_SUPPLY_RECEIPT: '补给记录暂时无法核对，请重试。',
-});
-function describeStepSupply(data) {
-    const localClaimed = data.localClaimed === true;
-    const restore = data.claimed && (data.restoreAvailable === true || !!data.receipt) && !localClaimed;
-    const shortfall = Math.max(0, data.requiredSteps - data.steps);
-    let note = '还差 ' + shortfall + ' 步。';
-    if (localClaimed) note = '今日补给已入库。';
-    else if (restore) note = '已有领取记录，可以恢复到本机。';
-    else if (data.claimed) note = '这个微信账号今日已领取。';
-    else if (data.claimable) note = '已达到领取目标。';
-    return {
-        date: data.date,
-        displayedOn: dayKey(Date.now()),
-        steps: data.steps,
-        requiredSteps: data.requiredSteps,
-        cached: data.cached === true,
-        progress: Math.min(100, Math.round(data.steps / data.requiredSteps * 100)),
-        note: note,
-        claimed: data.claimed || localClaimed,
-        restore: restore,
-        canClaim: !localClaimed && (data.claimable || restore),
-    };
-}
+const nestFoot = require('../../utils/nest-foot');
+const cloudUI = require('../../utils/cloud-ui');
+const werun = require('../../utils/werun');
+const STATUS_REFRESH_MS = 30000;
+const HAPPY_ART = '/assets/nest/emotion-happy.webp';
+const ANGRY_ART = '/assets/nest/emotion-angry.webp';
 
 // 与网页端 src/nest/template.html 的导航、工具、状态顺序一致。
 // 雪碧图格位对应 H5 的 .tools .p0~p3、cards-1200 三格、hud-icons 3×2。
@@ -60,7 +20,7 @@ const TOOLS = Object.freeze([
     { key: 'clean', label: '清洁', propClass: 'prop-clean' },
     { key: 'supply', label: '补给', propClass: 'prop-supply' },
     { key: 'checkin', label: '合照打卡', propClass: 'prop-checkin' },
-    { key: 'dress', label: '换装', propClass: 'prop-dress' },
+    { key: 'dress', label: '换装', propClass: 'prop-dress', hidden: true },
 ]);
 const DOCK = Object.freeze([
     { key: 'feed', label: '喂食', cardClass: 'card-feed' },
@@ -73,7 +33,7 @@ const STAT_META = Object.freeze([
     { key: 'mood', label: '心情', iconClass: 'icon-mood' },
 ]);
 
-Page({
+Page(cloudUI.page({
     data: {
         // 静态兜底：onLoad 算出真实机型数值前，首帧也能正确布局。
         layout: {
@@ -97,15 +57,16 @@ Page({
         hydration: 0,
         mood: 0,
         supplyClaimed: false,
-        stepSupplyEnabled: false,
-        stepSupplyStatus: null,
-        stepSupplyBusy: '',
-        stepSupplyNotice: '',
-        stepSupplyNeedsSetting: false,
+        testWeRun: config.ENABLE_WERUN_SUPPLIES === true,
+        testSteps: null,
+        testStepPointsAvailable: 0,
+        testStepPointsRedeemed: 0,
+        testStepsToNext: 0,
+        testStepMessage: '',
+        testStepBusy: false,
+        testStepNeedsSetting: false,
+        historyLoading: false,
         fixtureMode: config.USE_LOCAL_FIXTURE,
-        todayStepClaimed: false,
-        redeeming: false,
-        werunNeedsSetting: false,
         ledger: [],
         stats: [],
         needs: [],
@@ -124,7 +85,7 @@ Page({
         renameValue: '',
         feedFxId: 0,                 // 喂食动效计数：每次喂食 +1，配合 wx:if 重触发谷粒动画
         waterFxId: 0,                // 添水动效计数：每次添水 +1，配合 wx:if 重触发水滴动画
-        tools: TOOLS,
+        tools: TOOLS.filter(tool => !tool.hidden),
         dock: DOCK,
     },
 
@@ -172,7 +133,7 @@ Page({
         this.setData({ motionPaused: !!this.data.sheet });
         this.refresh();
         if (this.statusTimer === null) {
-            this.statusTimer = setInterval(() => this.refresh(), STATUS_REFRESH_MS);
+            this.statusTimer = setInterval(() => store.resume(), STATUS_REFRESH_MS);
         }
     },
 
@@ -180,16 +141,13 @@ Page({
         this.syncIdle(true);
         this.clearTimers();
         if (this.chirpAudio) { try { this.chirpAudio.stop(); } catch (e) { /* ignore */ } }
-        const request = this.stepSupplyRequest;
-        const keepSupplySheet = request && request.action === 'settings' && this.isCurrentStepSupply(request);
         this.setData({
-            motionPaused: true, sheet: keepSupplySheet ? this.data.sheet : null, keyboardHeightRpx: 0,
+            motionPaused: true, sheet: null, keyboardHeightRpx: 0,
             toast: '', happy: false, feedFxId: 0, waterFxId: 0,
         });
     },
 
     onUnload() {
-        this.stepSupplyRequest = null;
         if (this.onKeyboardHeightChange) {
             try { wx.offKeyboardHeightChange(this.onKeyboardHeightChange); } catch (err) { /* ignore */ }
         }
@@ -237,7 +195,6 @@ Page({
 
     // 单次 setData 只提交展示字段，不把整个状态对象塞进视图层（E-02）。
     refresh() {
-        this.clearExpiredStepSupply();
         const result = store.snapshot();
         const s = result.data ? result.data.snapshot : null;
         if (!s) {
@@ -246,8 +203,6 @@ Page({
             return;
         }
         const state = rules.describeNestState(s, s.hasBird);
-        // 交互反馈有效期内，气泡文案与开心表情不被状态刷新覆盖（对齐 H5 的 interactionEmotion）。
-        const feedbackActive = !!(this.feedback && Date.now() < this.feedback.until);
         const stats = STAT_META.map(function (meta) {
             const value = meta.key === 'hunger' ? s.satiety : (meta.key === 'water' ? s.hydration : s.mood);
             const percent = s.hasBird ? Math.min(100, Math.max(0, value)) : 0;
@@ -267,12 +222,20 @@ Page({
             };
         });
         const code = s.birdCode || '';
+        if (this.currentPetId !== s.petId) {
+            const polling = this.statusTimer !== null;
+            this.clearTimers(); this.currentPetId = s.petId;
+            this.setData({ happy: false, feedFxId: 0, waterFxId: 0 });
+            if (polling && this.cloudVisible) this.statusTimer = setInterval(() => store.resume(), STATUS_REFRESH_MS);
+        }
         this.currentBirdCode = code;
+        const feedback = this.feedbackActive() ? this.feedback : null;
         this.setData({
             hasBird: s.hasBird,
+            pets: s.pets, selectedPetId: s.petId, cleaning: s.cleaning,
             storageUnavailable: false,
             displayName: s.hasBird ? s.nickname : '等待小鸟入住',
-            placeText: s.hasBird ? '⌖ 江南小窝' : '⌖ 我的小窝',
+            placeText: '⌖ 我的小窝',
             birdCodeShort: code ? '编码 ···' + code.slice(-6) : '尚未领养',
             points: s.points,
             todayPoints: s.todayPoints,
@@ -283,12 +246,11 @@ Page({
             hydration: s.hydration,
             mood: s.mood,
             supplyClaimed: !!s.supplyClaimed,
-            todayStepClaimed: !!s.todayStepClaimed,
             ledger: s.ledger,
             stats: stats,
             needs: needs,
-            speech: feedbackActive ? this.feedback.speech : state.speech,
-            birdArt: feedbackActive ? '/assets/nest/emotion-happy.webp' : rules.emotionArt(state.emotion),
+            speech: feedback ? feedback.speech : state.speech,
+            birdArt: feedback ? feedback.art : rules.emotionArt(state.emotion),
             thirsty: state.emotion === 'thirsty',
         });
         // 状态刷新后同步待机动画：领养状态 / 面板开关变化都要反映到动画播放。
@@ -344,10 +306,11 @@ Page({
 
     applyResult(result, action, closeSheetOnSuccess) {
         if (result.error) {
-            this.showToast(rules.ERROR_TEXT[result.error] || '操作未完成');
+            this.showToast(cloudUI.message(result.error));
+            if (result.error === 'NO_FOOD' || result.error === 'NO_WATER') this.onOpenSupply();
             return false;
         }
-        if (result.data && result.data.changed === false) {
+        if (result.data && result.data.outcome === 'ALREADY_FULL') {
             this.refresh();
             this.showToast(rules.careCopy(action, false).notice);
             return false;
@@ -365,12 +328,13 @@ Page({
 
     // 对齐网页端 nest.js 的 interactionEmotion：反馈期间保留气泡与开心表情，
     // 到期后再回到状态驱动，避免 setData 与紧随的 refresh 互相覆盖。
-    showFeedback(speech, duration) {
+    showFeedback(speech, duration, art = HAPPY_ART) {
+        if (this.feedbackActive() && this.feedback.art === ANGRY_ART) return;
         const keep = duration || 1600;
-        this.feedback = { until: Date.now() + keep, speech: speech };
+        this.feedback = { until: Date.now() + keep, speech: speech, art: art };
         if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
         if (this.happyTimer) clearTimeout(this.happyTimer);
-        this.setData({ speech: speech, birdArt: '/assets/nest/emotion-happy.webp', happy: false });
+        this.setData({ speech: speech, birdArt: art, happy: false });
         // 互动反馈一开始就让待机动画「让位」：暂停后 idle.stop() 会清空画布、停掉原声，
         // idlePlaying 变 false，静态开心海报重新可见——nest-happy 弹跳 / 爱心 / 谷粒 / 水滴
         // 这些画在海报那一层的动效才能被看见（否则全被待机画布盖住，表现为「动效没了」）。
@@ -378,9 +342,9 @@ Page({
         this.syncIdle(false);
         const page = this;
         // 下一帧再加 class，确保连续点击时动画能重新触发。
-        this.happyTimer = setTimeout(function () {
+        this.happyTimer = art === HAPPY_ART ? setTimeout(function () {
             page.setData({ happy: true });
-        }, 30);
+        }, 30) : null;
         this.feedbackTimer = setTimeout(function () {
             page.feedback = null;
             page.feedbackTimer = null;
@@ -390,9 +354,11 @@ Page({
         }, keep);
     },
 
-    doCare(action, closeSheetOnSuccess) {
+    async doCare(action, closeSheetOnSuccess) {
         if (!this.requireBird()) return;
-        const ok = this.applyResult(action === 'feed' ? store.feed() : store.water(), action, closeSheetOnSuccess);
+        const result = await cloudUI.run(this, () => action === 'feed' ? store.feed() : store.water());
+        if (!result) return;
+        const ok = this.applyResult(result, action, closeSheetOnSuccess);
         if (ok) {
             // 按动作给专属反馈动效：喂食谷粒、添水水滴；摸一摸走 showFeedback 的开心弹跳 + 爱心。
             if (action === 'water') this.triggerWaterFx();
@@ -433,11 +399,12 @@ Page({
         }
     },
 
-    pet() {
+    async pet() {
         if (!this.requireBird()) return;
-        const result = store.pet();
+        const result = await cloudUI.run(this, () => store.pet());
+        if (!result) return;
         if (result.error) {
-            this.showToast(rules.ERROR_TEXT[result.error] || '摸摸未完成');
+            this.showToast(cloudUI.message(result.error));
             return;
         }
         this.showFeedback('嘿嘿，你摸摸我，我就开心啦～', 1600);
@@ -449,16 +416,37 @@ Page({
         this.refresh();
     },
 
-    onPet() {
-        this.pet();
+    onPet(event) {
+        if (!this.requireBird()) return;
+        const touch = event?.changedTouches?.[0];
+        const x = touch?.clientX ?? event?.detail?.x;
+        const y = touch?.clientY ?? event?.detail?.y;
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return this.pet();
+
+        const view = this.cloudView;
+        const petId = this.data.selectedPetId;
+        const art = this.data.birdArt;
+        const idleFrame = this.idle?.getVisibleFrame?.();
+        const selector = idleFrame == null ? '.bird-art' : '#idleCanvas';
+        wx.createSelectorQuery().select(selector).boundingClientRect(rect => {
+            if (!this.cloudVisible || this.cloudView !== view || this.data.selectedPetId !== petId) return;
+            if (!nestFoot.isFootTap(art, idleFrame, rect, x, y)) {
+                this.pet();
+                return;
+            }
+            if (this.feedbackActive() && this.feedback.art === ANGRY_ART) return;
+            this.showFeedback('哎呀，脚脚痒痒的，摸摸头嘛～', 2000, ANGRY_ART);
+            this.playChirp();
+        }).exec();
     },
 
     // ---------- 右侧工具 ----------
-    onTool(event) {
+    async onTool(event) {
         const key = event.currentTarget.dataset.key;
         if (key === 'clean') {
             if (!this.requireBird()) return;
-            if (this.applyResult(store.clean(), 'clean', false)) {
+            const result = await cloudUI.run(this, () => store.clean());
+            if (result && this.applyResult(result, 'clean', false)) {
                 this.playChirp();
                 this.idle.kick();
             }
@@ -544,17 +532,18 @@ Page({
     onRename() {
         if (!this.requireBird()) return;
         this.setData({ renameValue: this.data.displayName });
-        this.openSheet({ type: 'rename', title: '给小鸟改个名字', desc: '1–6 个字，仅保存在本机。' });
+        this.openSheet({ type: 'rename', title: '给小鸟改个名字', desc: '1–6 个字，保存到当前账号的这只小鸟。' });
     },
 
     onRenameInput(event) {
-        this.setData({ renameValue: event.detail.value });
+        this.setData({ renameValue: Array.from(event.detail.value).slice(0, 6).join('') });
     },
 
-    onSaveRename() {
-        const result = store.rename(this.data.renameValue);
+    async onSaveRename() {
+        const result = await cloudUI.run(this, () => store.rename(this.data.renameValue));
+        if (!result) return;
         if (result.error) {
-            this.showToast(rules.ERROR_TEXT[result.error] || '昵称未保存');
+            this.showToast(cloudUI.message(result.error));
             return;
         }
         this.showToast('昵称已保存');
@@ -564,17 +553,18 @@ Page({
         this.refresh();
     },
 
-    onWallet() {
+    async onWallet() {
+        if (this.cloudActionBusy) return;
         this.refresh();
         if (this.data.storageUnavailable) {
             this.showToast(rules.ERROR_TEXT.STORAGE_UNAVAILABLE);
             return;
         }
         this.openSheet({ type: 'wallet', title: '叽分钱包' });
+        await this.loadHistory('points', false);
     },
 
     onSwitch() {
-        if (!this.requireBird()) return;
         this.openSheet({ type: 'switch', title: '今天，想陪谁？' });
     },
 
@@ -584,159 +574,183 @@ Page({
 
     onOpenSupply() {
         if (!this.requireBird()) return;
-        const bridge = require('../../utils/step-supply');
-        const enabled = bridge.enabled();
-        const cached = enabled ? bridge.cachedPreview() : null;
-        this.stepSupplyRevision = (this.stepSupplyRevision || 0) + 1;
+        this.supplyView = (this.supplyView || 0) + 1;
+        const cached = this.testStepResult;
+        const current = cached?.userId === store.status().userId && cached.date === this.supplyDay() ? cached : null;
+        this.displayStepPoints(current);
+        this.setData({ testStepMessage: '', testStepNeedsSetting: false, testStepBusy: !!this.testStepReading });
+        this.openSheet({ type: 'supply', title: '小窝补给' });
+    },
+
+    supplyDay() {
+        return new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10);
+    },
+
+    displayStepPoints(result) {
+        const steps = result?.steps ?? null;
+        const redeemed = result?.stepPointsRedeemed ?? 0;
         this.setData({
-            stepSupplyEnabled: enabled,
-            stepSupplyStatus: cached ? describeStepSupply(cached) : null,
-            stepSupplyBusy: this.stepSupplyRequest ? this.stepSupplyRequest.action : '',
-            stepSupplyNotice: '',
-            stepSupplyNeedsSetting: false,
+            testSteps: steps,
+            testStepPointsAvailable: result?.stepPointsAvailable ?? 0,
+            testStepPointsRedeemed: redeemed,
+            testStepsToNext: steps === null ? 0 : (Math.max(Math.floor(steps / 1000), redeemed) + 1) * 1000 - steps,
         });
-        this.openSheet({ type: 'supply', title: enabled ? '微信步数补给' : '补给' });
     },
 
-    isStepSupplySheet() {
-        return this.data.stepSupplyEnabled && this.data.sheet && this.data.sheet.type === 'supply';
-    },
-
-    clearExpiredStepSupply() {
-        const status = this.data.stepSupplyStatus;
-        if (this.isStepSupplySheet() && status && status.displayedOn !== dayKey(Date.now())) {
-            this.setData({ stepSupplyStatus: null, stepSupplyNotice: STEP_SUPPLY_ERROR_TEXT.SUPPLY_DAY_CHANGED });
+    async onReadTestSteps(event) {
+        if (!this.data.testWeRun || this.testStepReading || this.data.sheet?.type !== 'supply') return;
+        const { userId } = store.status();
+        let token = store.getToken();
+        if (!token || !userId) {
+            this.setData({ testStepMessage: '请先微信登录，再读取微信步数。' });
+            return;
         }
-    },
+        const redeem = event?.currentTarget?.dataset?.action === 'redeem';
+        const day = this.supplyDay();
+        const view = this.cloudView;
+        const sheet = this.supplyView;
+        const current = () => this.cloudVisible && this.cloudView === view && this.supplyView === sheet &&
+            this.data.sheet?.type === 'supply' && store.status().userId === userId;
+        const checkContext = () => {
+            if (!current() || token !== store.getToken()) throw { error: 'CONTEXT_CHANGED' };
+        };
+        const renew = async () => {
+            checkContext();
+            const result = await store.loginWithWechat();
+            if (!current()) throw { error: 'CONTEXT_CHANGED' };
+            if (result.error || !store.getToken()) throw { error: result.error || 'WX_LOGIN_REQUIRED' };
+            token = store.getToken();
+        };
 
-    isCurrentStepSupply(request) {
-        return this.isStepSupplySheet() && this.stepSupplyRequest === request && this.stepSupplyRevision === request.revision;
-    },
-
-    finishStepSupply(request) {
-        if (this.stepSupplyRequest !== request) return;
-        this.stepSupplyRequest = null;
-        if (this.isStepSupplySheet()) this.setData({ stepSupplyBusy: '' });
-    },
-
-    onReadSupplySteps() {
-        return this.requestStepSupply('read');
-    },
-
-    onClaimStepSupply() {
-        return this.requestStepSupply('claim');
-    },
-
-    async requestStepSupply(action) {
-        if (!this.isStepSupplySheet() || this.stepSupplyRequest || !this.requireBird()) return;
-        this.clearExpiredStepSupply();
-        const previous = this.data.stepSupplyStatus;
-        if (action === 'claim' && (this.data.stepSupplyNeedsSetting || !previous || !previous.canClaim)) return;
-        const startedOn = dayKey(Date.now());
-        const experienceGeneration = store.getExperienceGeneration();
-        const request = { action: action, revision: this.stepSupplyRevision };
-        this.stepSupplyRequest = request;
-        this.setData({ stepSupplyBusy: action, stepSupplyNotice: '' });
+        const cached = this.testStepResult;
+        let pending = this.pendingStepRedemption;
+        if (pending?.day !== day || pending?.userId !== userId) pending = null;
+        if (redeem && !pending) {
+            if (!cached || cached.userId !== userId || cached.date !== day || cached.stepPointsAvailable < 1) {
+                this.displayStepPoints(null);
+                this.setData({ testStepMessage: '请先读取今日微信步数。' });
+                return;
+            }
+            pending = { day, userId, id: 'steps_' + Date.now() + '_' + Math.random().toString(36).slice(2) };
+            this.pendingStepRedemption = pending;
+        }
+        const read = () => redeem
+            ? werun.redeemStepPoints(token, day, pending.id, checkContext)
+            : werun.previewStepPoints(token, checkContext);
+        this.testStepReading = true;
+        this.setData({ testStepBusy: true, testStepMessage: '', testStepNeedsSetting: false });
         try {
-            const bridge = require('../../utils/step-supply');
-            const claimToken = action === 'claim' ? store.getToken() : null;
-            const result = action === 'claim' ? await bridge.claim(previous.date) : await bridge.preview();
-            const today = dayKey(Date.now());
-            const reread = bridge.needsNewPreview(result.error);
-            const sameClaimContext = !!claimToken && claimToken === store.getToken() && startedOn === today &&
-                experienceGeneration === store.getExperienceGeneration();
-            const notice = STEP_SUPPLY_ERROR_TEXT[result.error] ||
-                (action === 'claim' ? '补给结果暂未确认，请重试。' : '步数读取失败，请重试。');
-            if (!this.isCurrentStepSupply(request)) {
-                // 重新打开的面板只接收通过当前日期与身份校验的快照。
-                if (this.isStepSupplySheet() && this.stepSupplyRequest === request) {
-                    if (action === 'claim') this.refresh();
-                    if (!result.error || reread || action === 'claim') {
-                        const cached = bridge.cachedPreview();
-                        const update = { stepSupplyStatus: cached ? describeStepSupply(cached) : null };
-                        if (result.error === 'WERUN_DENIED' && experienceGeneration === store.getExperienceGeneration()) {
-                            update.stepSupplyNeedsSetting = true;
-                            update.stepSupplyNotice = notice;
-                        } else if (result.error && !reread && sameClaimContext && cached && !cached.localClaimed) {
-                            update.stepSupplyNotice = notice;
-                        }
-                        this.setData(update);
-                    }
-                }
-                return;
+            let renewed = false;
+            if (!await werun.sessionIsCurrent()) {
+                await renew();
+                renewed = true;
             }
-            if (startedOn !== today && (!result.data || result.data.date !== today)) {
-                if (action === 'claim') this.refresh();
-                this.setData({ stepSupplyStatus: null, stepSupplyNotice: STEP_SUPPLY_ERROR_TEXT.SUPPLY_DAY_CHANGED });
-                return;
+            let result;
+            try { result = await read(); } catch (error) {
+                if (renewed || error?.error !== 'WX_LOGIN_REQUIRED') throw error;
+                await renew();
+                result = await read();
             }
-            if (result.error) {
-                if (!reread && claimToken && !sameClaimContext) {
-                    const cached = bridge.cachedPreview();
-                    this.setData({ stepSupplyStatus: cached ? describeStepSupply(cached) : null });
-                    return;
-                }
-                if (result.error === 'ALREADY_CLAIMED' && result.data && result.data.localClaimed && previous) {
-                    this.refresh();
-                    this.setData({ stepSupplyStatus: Object.assign({}, previous, {
-                        note: '今日补给已入库。', claimed: true, restore: false, canClaim: false,
-                    }) });
-                    return;
-                }
-                const cached = sameClaimContext && !reread ? bridge.cachedPreview() : null;
-                this.setData({
-                    stepSupplyStatus: reread ? null : (cached && cached.restoreAvailable ? describeStepSupply(cached) : previous),
-                    stepSupplyNeedsSetting: this.data.stepSupplyNeedsSetting || result.error === 'WERUN_DENIED',
-                    stepSupplyNotice: notice,
-                });
-                return;
+            if (redeem) this.pendingStepRedemption = null;
+            checkContext();
+            if (result?.date !== this.supplyDay()) throw { error: 'STEPS_DAY_CHANGED' };
+            if (![result.steps, result.stepPointsAvailable, result.stepPointsRedeemed, result.granted]
+                .every(value => Number.isSafeInteger(value) && value >= 0)) throw { error: 'INVALID_STEPS' };
+            this.testStepResult = { ...result, userId };
+            this.displayStepPoints(result);
+            if (redeem) {
+                this.setData({ testStepMessage: result.granted
+                    ? (result.replayed ? '已确认兑换 ' : '已兑换 ') + result.granted + ' 叽分'
+                    : '目前没有新的可兑换步数。' });
+                await store.refresh();
             }
-            const status = describeStepSupply(result.data);
-            if (action === 'claim') this.refresh();
-            this.setData({ stepSupplyStatus: status, stepSupplyNeedsSetting: false });
         } catch (error) {
-            if (this.isCurrentStepSupply(request)) {
-                this.setData({ stepSupplyNotice: action === 'claim' ? '补给结果暂未确认，请重试。' : '步数读取失败，请重试。' });
+            if (!current()) return;
+            if (error?.error === 'STEPS_DAY_CHANGED') {
+                this.pendingStepRedemption = null;
+                this.testStepResult = null;
+                this.displayStepPoints(null);
             }
+            const messages = {
+                WERUN_DENIED: '请在设置中开启微信运动权限。',
+                PRIVACY_NOT_AUTHORIZED: '同意隐私保护指引后可重新读取。',
+                PRIVACY_UNAVAILABLE: '当前小程序尚未配置微信运动隐私授权。',
+                WX_LOGIN_REQUIRED: '微信会话已失效，请重新登录。',
+                STEPS_DAY_CHANGED: '已进入新的一天，请重新读取步数。',
+                STEP_NETWORK_ERROR: redeem ? '兑换结果暂未确认，请点同一按钮重试。' : '网络未连通，请检查网络后重试。',
+                RATE_LIMITED: '操作太频繁，请稍后重试。',
+            };
+            this.setData({
+                testStepMessage: messages[error?.error] || (redeem ? '兑换暂未完成，请重试。' : '暂时读不到微信步数，请重试。'),
+                testStepNeedsSetting: error?.error === 'WERUN_DENIED',
+            });
         } finally {
-            this.finishStepSupply(request);
+            this.testStepReading = false;
+            if (this.cloudVisible) this.setData({ testStepBusy: false });
         }
     },
 
-    onSupply() {
-        if (this.isStepSupplySheet() || !config.USE_LOCAL_FIXTURE || !this.requireBird()) return;
-        if (this.data.supplyClaimed) {
-            this.showToast('今日已补给');
-            return;
-        }
-        const result = store.supply();
-        if (result.error) {
-            if (result.error === 'ALREADY_CLAIMED') this.refresh();
-            this.showToast(result.error === 'ALREADY_CLAIMED' ? '今日已补给' : (rules.ERROR_TEXT[result.error] || '补给未完成'));
-            return;
-        }
-        const { foodAdded, waterAdded } = result.data;
-        if (!foodAdded && !waterAdded) {
-            this.showToast('食物和水库存已满，消耗后可再领');
-            return;
-        }
-        const additions = [];
-        if (foodAdded) additions.push('食物 +1');
-        if (waterAdded) additions.push('水 +1');
-        this.showToast(additions.join('、'));
+    onTestStepSettings() {
+        if (!this.data.testStepNeedsSetting) return;
+        wx.openSetting({ success: result => {
+            if (this.data.sheet?.type === 'supply' && result.authSetting?.['scope.werun']) {
+                this.setData({ testStepNeedsSetting: false, testStepMessage: '权限已开启，请重新读取。' });
+            }
+        } });
+    },
+
+    async onSupply() {
+        if (!this.requireBird()) return;
+        const result = await cloudUI.run(this, () => store.supply());
+        if (!result) return;
+        this.refresh();
+        this.showToast(result.error ? cloudUI.message(result.error) : result.data.outcome === 'ALREADY_CLAIMED' ? '今日已领取' : '食物 +1、水 +1，已存入当前小鸟');
+    },
+
+    onFeed() { return this.doCare('feed', false); },
+    async onSelectPet(event) {
+        this.feedback = null;
         this.setData({ sheet: null, motionPaused: false });
-        this.showFeedback('这下可以安心玩啦～', 1600);
+        await store.selectPet(event.currentTarget.dataset.id);
         this.refresh();
     },
-
-    // 直接喂食：不再弹框，扣库存 + 饱食 +20，并播放谷粒动效与小鸟开心反馈。
-    onFeed() {
-        if (!this.requireBird()) return;
-        const result = store.feed();
-        if (!this.applyResult(result, 'feed', false)) return;
-        this.triggerFeedFx();
-        this.playChirp();
-        this.idle.kick();
+    async loadHistory(kind, more) {
+        const result = await cloudUI.run(this, () => store.history(kind, more));
+        if (!result) return;
+        this.setData({ historyError: result.error ? cloudUI.message(result.error) : '', historyKind: kind,
+            historyItems: result.data ? result.data.items : [], historyMore: !!(result.data && result.data.hasMore) });
+        this.refresh();
+    },
+    onHistory(event) {
+        if (this.cloudActionBusy) return;
+        const kind = event.currentTarget.dataset.kind;
+        this.openSheet({ type: 'history', title: kind === 'inventory' ? '库存流水' : '免费补给领取记录' });
+        this.setData({ historyKind: kind, historyError: '', historyItems: [], historyMore: false });
+        return this.loadSupplyHistory(kind, false);
+    },
+    async loadSupplyHistory(kind, more) {
+        if (this.data.historyLoading) return;
+        const view = this.cloudView;
+        const current = () => this.cloudVisible && this.cloudView === view &&
+            this.data.sheet?.type === 'history' && this.data.historyKind === kind;
+        this.setData({ historyLoading: true, historyError: '' });
+        try {
+            const result = await store.history(kind, more);
+            if (!current()) return;
+            if (result.error) {
+                this.setData({ historyError: cloudUI.message(result.error) });
+                return;
+            }
+            this.setData({ historyItems: result.data.items, historyMore: result.data.hasMore });
+        } finally {
+            this.setData({ historyLoading: false });
+        }
+    },
+    onMoreHistory() {
+        const { historyKind, historyMore } = this.data;
+        return this.data.sheet?.type === 'history'
+            ? this.loadSupplyHistory(historyKind, !!historyMore)
+            : this.loadHistory(historyKind, !!historyMore);
     },
 
     // 谷粒动效：先归零再置位，确保连续点击也能重新触发 CSS 动画（与 showFeedback 的 happy 重触发同构）。
@@ -771,88 +785,10 @@ Page({
         }, 20);
     },
 
-    async onRedeemSteps() {
-        if (this.data.redeeming || this.data.todayStepClaimed || !this.requireBird()) return;
-        this.setData({ redeeming: true, werunNeedsSetting: false });
-        try {
-            const result = await store.redeemSteps();
-            if (result.error === 'WERUN_DENIED') {
-                this.setData({ werunNeedsSetting: true });
-                return;
-            }
-            if (result.error === 'WX_LOGIN_REQUIRED') {
-                this.showToast('请先在微信中授权登录');
-                return;
-            }
-            if (result.error) {
-                this.showToast(rules.ERROR_TEXT[result.error] || '兑换未完成');
-                this.refresh();
-                return;
-            }
-            const granted = (result.data && result.data.granted) || 0;
-            if (config.USE_LOCAL_FIXTURE && granted > 0) {
-                this.showToast('调试预览：步数兑换 · 叽分 +' + granted);
-            } else {
-                this.showToast(granted > 0 ? ('步数兑换 · 叽分 +' + granted) : '今日步数已兑换');
-            }
-            this.refresh();
-        } finally {
-            this.setData({ redeeming: false });
-        }
-    },
-
-    onOpenWeRunSettings() {
-        if (this.isStepSupplySheet()) {
-            this.onOpenSupplySettings();
-            return;
-        }
-        if (!this.data.werunNeedsSetting) return;
-        if (typeof wx.openSetting !== 'function') {
-            this.showToast('请从右上角菜单进入设置，开启微信运动权限');
-            return;
-        }
-        wx.openSetting({
-            success: (result) => {
-                if (result.authSetting && result.authSetting['scope.werun']) {
-                    this.setData({ werunNeedsSetting: false });
-                    this.showToast('权限已开启，请再次点击兑换');
-                }
-            },
-            fail: () => this.showToast('未能打开设置，请从右上角菜单进入'),
-        });
-    },
-
-    onOpenSupplySettings() {
-        if (!this.data.stepSupplyNeedsSetting || this.stepSupplyRequest) return;
-        if (typeof wx.openSetting !== 'function') {
-            this.setData({ stepSupplyNotice: '请从右上角菜单进入设置，开启微信运动权限。' });
-            return;
-        }
-        const request = { action: 'settings', revision: this.stepSupplyRevision };
-        this.stepSupplyRequest = request;
-        this.setData({ stepSupplyBusy: request.action });
-        const fail = () => {
-            if (this.isCurrentStepSupply(request)) this.setData({ stepSupplyNotice: '未能打开设置，请从右上角菜单进入。' });
-            this.finishStepSupply(request);
-        };
-        try {
-            wx.openSetting({
-                success: (result) => {
-                    if (this.isCurrentStepSupply(request) && result.authSetting && result.authSetting['scope.werun']) {
-                        this.setData({ stepSupplyNeedsSetting: false, stepSupplyStatus: null, stepSupplyNotice: '权限已开启，请重新读取微信步数。' });
-                    }
-                    this.finishStepSupply(request);
-                },
-                fail: fail,
-            });
-        } catch (error) {
-            fail();
-        }
-    },
-
     goAdopt() {
         if (!config.USE_LOCAL_FIXTURE) return;
         this.setData({ sheet: null, motionPaused: false });
-        wx.navigateTo({ url: entry.buildAdoptUrl(config.DEBUG_DEMO_BIRD_CODE) });
+        const url = entry.buildAdoptUrl(config.DEBUG_DEMO_BIRD_CODE);
+        wx.navigateTo({ url: config.DEVICE_SANDBOX_TEST === true ? url + '&testBird=1' : url });
     },
-});
+}));

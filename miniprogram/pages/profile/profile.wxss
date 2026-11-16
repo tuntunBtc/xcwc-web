@@ -785,3 +785,10 @@ page {
     color: #6d8053;
     font-size: 27rpx;
 }
+
+/* Native phone authorization button keeps the existing felt menu layout. */
+.phone-login { width: 100%; margin: 0; padding: 23rpx 46rpx 25rpx 33rpx; text-align: left; line-height: normal; background: transparent; border: 0; font-weight: normal; }
+.phone-login::after { border: 0; }
+.phone-login[disabled] { opacity: .6; color: inherit; }
+.phone-login-note { padding: 8rpx 20rpx 16rpx; color: #8A8578; font-size: 22rpx; line-height: 1.6; }
+.phone-privacy { color: #5F7A4F; text-decoration: underline; }

@@ -174,10 +174,10 @@ test('release check protects required files from packaging exclusions', t => {
     const unusedModule = { type: 'file', value: 'utils/unused-preview.js' };
     fs.writeFileSync(path.join(output, unusedModule.value), 'module.exports = {};', 'utf8');
     assert.equal(run([unusedModule]).status, 0);
-    const bridge = { type: 'file', value: 'utils/step-supply.js' };
+    const bridge = { type: 'file', value: 'utils/cloud-store.js' };
     const ignoredBridge = run([bridge]);
     assert.equal(ignoredBridge.status, 1, ignoredBridge.stdout + ignoredBridge.stderr);
-    assert.match(ignoredBridge.stderr, /打包规则排除了必需文件：utils\/step-supply\.js/);
+    assert.match(ignoredBridge.stderr, /打包规则排除了必需文件：utils\/cloud-store\.js/);
     assert.equal(run([bridge], [bridge]).status, 0);
 
     const runtimeDependencies = ['media/collection/files.js', 'media/nest-idle/files.js', 'utils/release-images.wxs'];
@@ -269,7 +269,8 @@ test('generated adoption artwork waits for mountable sources and tracks native i
     const controller = fs.readFileSync(path.join(output, 'pages/adopt/adopt.js'), 'utf8');
     vm.runInNewContext(controller, {
         Page() {},
-        require: name => name === '../../utils/release-images' ? releaseImages : {},
+        require: name => name === '../../utils/release-images' ? releaseImages :
+            name === '../../utils/cloud-ui' ? { page: definition => definition } : {},
     });
     assert.deepEqual(registrations, [{ paths: Object.values(slots).sort(), artwork: slots }]);
 });

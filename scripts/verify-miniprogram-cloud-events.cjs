@@ -1,0 +1,23 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { createCloudStore } = require('../miniprogram/utils/cloud-store');
+const { platform, http } = require('../tests/cloud-platform.cjs');
+const base = 'http://127.0.0.1:18097', snap = s => s.snapshot().data.snapshot;
+(async () => {
+    const a = createCloudStore(platform(http), { API_BASE: base });
+    assert.equal((await a.loginWithWechat()).error, null);
+    const p = snap(a).pets.find(p => p.nickname === '甲伙伴'); assert(p);
+    await a.selectPet(p.petId);
+    assert.equal(snap(a).cleaning.status, 'PRESENT', 'Run after the 60-second event due time');
+    assert.equal((await a.clean()).error, null); assert.equal(snap(a).cleaning.status, 'NONE');
+    await a.feed(); await a.feed();
+    const before = snap(a).food;
+    const full = await a.feed(); assert.equal(full.error, null); assert.equal(full.data.outcome, 'ALREADY_FULL'); assert.equal(snap(a).food, before);
+    const b = createCloudStore(platform(http), { API_BASE: base }); await b.loginWithWechat(); await b.selectPet(p.petId);
+    assert.equal(snap(b).food, before); assert.equal(snap(b).cleaning.dueAt, snap(a).cleaning.dueAt);
+    assert.equal(snap(b).cityCode, 'hangzhou');
+    fs.writeFileSync(path.resolve(__dirname, '../../output/miniprogram-cloud-20261111/events-report.json'), JSON.stringify({ passed: 4, facts: ['server event becomes PRESENT after 60 seconds', 'clean removes due event', 'full feeding does not consume inventory', 'new session restores pending dueAt/inventory and verified city metadata'] }, null, 2)+'\n', 'utf8');
+    console.log('PASS 4 real backend event/full-state/recovery checks');
+})().catch(e => { console.error(e); process.exitCode=1; });

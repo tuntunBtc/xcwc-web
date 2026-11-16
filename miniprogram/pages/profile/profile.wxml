@@ -98,11 +98,19 @@
                         <view class="clip item-icon-clip">
                             <image class="sprite tool-sprite icon-clean" src="/assets/nest/tools.webp" mode="scaleToFill"></image>
                         </view>
-                        <text class="item-text">重置本机数据</text>
+                        <text class="item-text">清除展示缓存</text>
                     </view>
                     <view class="item-meta">
-                        <text class="meta-text">删除小鸟与相册 ›</text>
+                        <text class="meta-text">云端可恢复 ›</text>
                     </view>
+                </view>
+                <button wx:if="{{!wechatSignedIn}}" class="menu-item phone-login" open-type="getPhoneNumber" bindgetphonenumber="onPhoneLogin" disabled="{{!wechatLoginReady || wechatLoginBusy || cloudStatus.loading || cloudStatus.busy || !cloudStatus.online}}" loading="{{wechatLoginBusy}}" hover-class="ui-hover">
+                    <image class="item-tex" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
+                    <view class="item-label"><text class="item-text">手机号快捷登录</text></view>
+                    <view class="item-meta"><text class="meta-text">恢复云端宠物</text><text class="arrow">›</text></view>
+                </button>
+                <view wx:if="{{!wechatSignedIn}}" class="phone-login-note">
+                    <text>手机号用于账号验证。</text><text class="phone-privacy" bindtap="onPhonePrivacy">查看隐私保护指引</text>
                 </view>
                 <view class="menu-item" bindtap="onWechatAccount" hover-class="{{wechatLoginReady && !wechatLoginBusy ? 'ui-hover' : 'none'}}" aria-disabled="{{!wechatLoginReady || wechatLoginBusy}}">
                     <image class="item-tex" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
@@ -120,12 +128,12 @@
         <text class="signoff">一只小鸟，一点温柔，都是日常的小美好。</text>
 
         <view wx:if="{{!hasBird}}" class="empty">
-            <text class="empty-title">等待第一位小伙伴</text>
-            <text class="empty-desc">用手机碰一碰实体小鸟的 NFC 标签，或扫描包装二维码，打开专属领取链接。确认名字后即可免费孵化，无需登录。</text>
+            <text class="empty-title">暂无云端宠物</text>
+            <text class="empty-desc">用手机碰一碰实体小鸟的 NFC 标签，或扫描包装二维码，打开专属领取链接。微信登录后确认名字，即可免费孵化。</text>
             <view class="empty-btn" bindtap="goHome"><text>回小窝看看</text></view>
         </view>
 
-        <text class="local-note">本机体验 · 无需登录；清除小程序数据或换设备后不会自动恢复。</text>
+        <text class="local-note">云端宠物可换手机恢复；合照与旧体验记录仅在本机。</text>
         <view class="tab-space"></view>
     </view>
 
@@ -135,15 +143,15 @@
         <view class="sheet">
             <view class="sheet-close" catchtap="closeSheets"><text>×</text></view>
             <scroll-view class="sheet-body" scroll-y="true">
-                <text class="sheet-h2">本机叽分</text>
+                <text class="sheet-h2">云端叽分</text>
                 <text class="wallet-balance">{{points}} 叽分</text>
                 <view class="fold" bindtap="toggleLocalNote">
-                    <text class="fold-title">{{localNoteOpen ? '▾' : '▸'}} 本机保存 · 查看说明</text>
+                    <text class="fold-title">{{localNoteOpen ? '▾' : '▸'}} 存档与合照说明</text>
                     <text wx:if="{{localNoteOpen}}" class="fold-body">{{localNoteText}}</text>
                 </view>
-                <text class="wallet-today">今日计入本机额度 {{todayPoints}} / {{dailyLimit}} 叽分</text>
+                <text class="wallet-today">今日摸摸奖励 {{todayPoints}} / {{dailyLimit}} 叽分</text>
                 <text class="sheet-h3">最近流水</text>
-                <text class="sheet-muted">按北京时间显示，最近 8 条。</text>
+                <text class="sheet-muted">按北京时间显示，每页最多 50 条。</text>
                 <view wx:if="{{ledger.length}}" class="ledger">
                     <view class="ledger-row" wx:for="{{ledger}}" wx:key="id">
                         <text class="ledger-time">{{item.dayText}}</text>
@@ -155,6 +163,8 @@
                     </view>
                 </view>
                 <text wx:else class="ledger-empty">还没有叽分记录。领取小鸟后，可以通过互动获得叽分。</text>
+                <text wx:if="{{ledgerError}}" class="sheet-muted">{{ledgerError}}</text>
+                <view class="sheet-action" bindtap="onMoreLedger">{{ledgerError ? '重试读取' : ledgerMore ? '加载更多' : '刷新流水'}}</view>
                 <view class="fold rules-fold" bindtap="toggleRules">
                     <text class="fold-title">{{rulesOpen ? '▾' : '▸'}} 查看叽分获取与使用规则</text>
                     <text wx:if="{{rulesOpen}}" class="fold-body">{{pointsRules}}</text>
@@ -163,14 +173,14 @@
         </view>
     </view>
 
-    <!-- 重置本机数据：对齐 H5 .account-cache-dialog -->
+    <!-- 清除展示缓存：对齐 H5 .account-cache-dialog -->
     <view class="overlay" wx:if="{{resetVisible}}" style="padding-top:{{topInset}}rpx">
         <view class="overlay-backdrop" bindtap="closeSheets" catchtouchmove="noop"></view>
         <view class="sheet reset-sheet">
             <scroll-view class="sheet-body reset-body" scroll-y="true">
-                <text class="reset-h2">重置全部本机体验数据？</text>
+                <text class="reset-h2">清除当前账号的展示缓存？</text>
                 <text class="reset-desc">{{resetDesc}}</text>
-                <text class="reset-warn">清除后无法恢复，请先导出需要保留的照片。</text>
+                <text class="reset-warn">不删除云端宠物，不重发初始库存或奖励。</text>
                 <view class="reset-actions">
                     <view class="reset-cancel" bindtap="closeSheets"><text>暂不清除</text></view>
                     <view class="reset-confirm" bindtap="confirmReset"><text>{{resetBusy ? '正在清除…' : '确认清除'}}</text></view>
@@ -186,16 +196,16 @@
             <view class="sheet-close" catchtap="closeSheets"><text>×</text></view>
             <scroll-view class="sheet-body" scroll-y="true">
                 <text class="sheet-h2">我的小伙伴</text>
-                <view wx:if="{{hasBird}}" class="bird-row">
+                <view wx:for="{{pets}}" wx:key="petId" class="bird-row" data-id="{{item.petId}}" bindtap="onSelectPet">
                     <image class="bird-avatar" src="/assets/nest/avatar.webp" mode="aspectFit"></image>
                     <view class="bird-copy">
-                        <text class="bird-name">{{displayName}}</text>
-                        <text class="bird-code">实体编码 {{birdCode}}</text>
+                        <text class="bird-name">{{item.nickname}}</text>
+                        <text class="bird-code">实体编码 {{item.birdCode}}</text>
                     </view>
-                    <text class="bird-current">当前陪伴</text>
+                    <text class="bird-current">{{item.petId === selectedPetId ? '当前陪伴' : '切换'}}</text>
                 </view>
-                <text wx:else class="birds-empty">还没有领养小鸟。用实体标签上的链接领养第一只吧。</text>
-                <text class="sheet-muted">本机只保存一只小鸟，暂不支持多只切换。</text>
+                <text wx:if="{{!pets.length}}" class="birds-empty">还没有领养小鸟。用实体标签上的链接领养第一只吧。</text>
+                <text class="sheet-muted">点击伙伴可切换，库存与养成独立保存。</text>
                 <view wx:if="{{showDemoAdopt && !hasBird}}" class="sheet-action debug-action" bindtap="goAdopt"><text>预览 NFC 领养页（调试）</text></view>
                 <view class="sheet-action" bindtap="goHome"><text>回小窝看看</text></view>
             </scroll-view>
@@ -204,4 +214,10 @@
 
     <!-- 「我的 → 我的衣橱」已与小窝「换装」统一为独立 wardrobe 页，
          原页内简易浮层移除，避免两套衣橱 UI 并存。 -->
+</view>
+
+<view class="cloud-status" role="status">
+    <text>{{cloudNotice}}</text>
+    <button wx:if="{{!cloudStatus.signedIn}}" size="mini" disabled="{{cloudStatus.loading || !cloudStatus.online}}" bindtap="onCloudLogin">微信登录</button>
+    <button wx:else size="mini" disabled="{{cloudStatus.busy || cloudStatus.loading || !cloudStatus.online}}" bindtap="onCloudRetry">{{cloudStatus.pending ? '确认上次操作' : '刷新'}}</button>
 </view>

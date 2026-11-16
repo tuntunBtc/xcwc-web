@@ -4,15 +4,8 @@ const store = require('../../utils/store');
 const entry = require('../../utils/entry');
 const safeArea = require('../../utils/safe-area');
 const config = require('../../utils/config');
+const cloudUI = require('../../utils/cloud-ui');
 
-// 只有显式调试模式使用展示资料，正式领养依赖已核验的公开实体资料。
-const DEFAULT_BIRD = Object.freeze({
-    name: '西湖小黄莺',
-    city: '杭州',
-    style: '西湖小黄莺',
-    skin: '绿色',
-    cityCode: 'hangzhou',
-});
 const TRAITS = ['温柔治愈', '热爱旅行', '好奇探索'];
 const SUGGESTIONS = ['湖小叽', '西湖团团', '小桂', '啾啾', '慢慢'];
 
@@ -41,7 +34,7 @@ function readBottomInsetPx() {
     }
 }
 
-Page({
+Page(cloudUI.page({
     data: {
         topInset: 176,
         bottomInset: 0,
@@ -108,9 +101,10 @@ Page({
             this.showLookupError(ERROR_TEXT.STORAGE_UNAVAILABLE, true);
             return;
         }
-        const alreadyMine = snapshot.hasBird && snapshot.birdCode === code;
-        const alreadyHaveBird = snapshot.hasBird && !alreadyMine;
-        const nickname = alreadyMine ? snapshot.nickname : this.data.nicknameInput || bird.name;
+        const mine = snapshot.pets.find(p => p.birdId === bird.id);
+        const alreadyMine = !!mine;
+        const alreadyHaveBird = false;
+        const nickname = alreadyMine ? mine.nickname : this.data.nicknameInput || bird.name;
         this.bird = bird;
         this.randomIndex = 0;
         this.setData({
@@ -123,12 +117,12 @@ Page({
             skinText: bird.skin,
             nicknameInput: chars(nickname).slice(0, 6).join(''),
             heading: alreadyMine ? '它已经住进你的小窝啦' : (alreadyHaveBird ? '你的小窝已有一位伙伴' : '给小鸟取个名字吧～'),
-            buttonText: snapshot.hasBird ? '回小窝，看看它' : '孵化并领养',
+            buttonText: alreadyMine ? '回小窝，看看它' : '孵化并领养',
             buttonDisabled: false,
             notice: alreadyHaveBird ? ERROR_TEXT.BIRD_ALREADY_PRESENT : '',
             noticeKind: 'info',
             retryVisible: false,
-            actionNote: config.USE_LOCAL_FIXTURE ? '调试版 · 本机展示资料，不联网、不发放云端权益。' : '插画为示意 · 领取记录仅保存在本机。',
+            actionNote: '插画为示意 · 确认领养后保存到微信账号，可换手机恢复。',
         });
     },
 
@@ -149,12 +143,14 @@ Page({
             this.showLookupError('请碰一碰实体小鸟，并打开系统弹出的领取链接。', false);
             return;
         }
-        if (config.USE_LOCAL_FIXTURE) {
-            this.showBird(code, DEFAULT_BIRD);
-            return;
-        }
         if (!entry.isManufacturingCode(code)) {
             this.showLookupError(ERROR_TEXT.INVALID_CODE, false);
+            return;
+        }
+        const testBird = config.DEBUG_DEMO_BIRD;
+        if (config.DEVICE_SANDBOX_TEST === true && this.entryOptions.testBird === '1'
+            && code === config.DEBUG_DEMO_BIRD_CODE && testBird && testBird.id) {
+            this.showBird(code, testBird);
             return;
         }
         const base = (config.API_BASE || '').replace(/\/+$/, '');
@@ -189,6 +185,7 @@ Page({
                         this.showLookupError('收到的实体资料与链接不一致，请重试。', true);
                     } else {
                         this.showBird(code, {
+                            id: bird.id,
                             name: label(bird.name, label(bird.typeName, '小鸟')),
                             city: label(bird.cityName, '—'),
                             cityCode: label(bird.cityCode, ''),
@@ -249,9 +246,11 @@ Page({
         this.setData({ nicknameInput: list[index % list.length], validation: '' });
     },
 
-    handleAdopt() {
+    async handleAdopt() {
         if (this.navigationPending || this.data.buttonDisabled || this.data.submitting) return;
         if (this.data.alreadyMine || this.data.alreadyHaveBird) {
+            const mine = store.snapshot().data.snapshot.pets.find(p => p.birdId === this.bird.id);
+            if (mine) await store.selectPet(mine.petId);
             this.leavePage(false);
             return;
         }
@@ -263,14 +262,15 @@ Page({
             return;
         }
         this.setData({ submitting: true, buttonDisabled: true, buttonText: '正在领取…' });
-        const result = store.adopt(this.data.birdCode, nickname, Date.now(), this.bird.cityCode);
+        const result = await cloudUI.run(this, () => store.adopt(this.bird.id, nickname));
+        if (!result) { if (!this.unloaded) this.setData({ submitting: false, buttonDisabled: false }); return; }
         if (result.error) {
             this.setData({ submitting: false, buttonDisabled: false, buttonText: '孵化并领养' });
             if (result.error === 'BIRD_ALREADY_PRESENT') this.showBird(this.data.birdCode, this.bird);
-            wx.showToast({ title: ERROR_TEXT[result.error] || '领养未完成', icon: 'none' });
+            wx.showToast({ title: cloudUI.message(result.error), icon: 'none' });
             return;
         }
-        wx.showToast({ title: '已保存到本机', icon: 'success' });
+        wx.showToast({ title: '已保存到云端', icon: 'success' });
         this.adoptTimer = setTimeout(() => this.leavePage(false), 600);
     },
-});
+}));

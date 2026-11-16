@@ -1,6 +1,7 @@
 'use strict';
 
 const store = require('../../utils/store');
+const cloudUI = require('../../utils/cloud-ui');
 const safeArea = require('../../utils/safe-area');
 const tabBar = require('../../utils/tab-bar');
 const collectionMedia = require('../../utils/collection-media');
@@ -18,19 +19,18 @@ const CITIES = Object.freeze([
     { id: 'wh', code: 'wuhan', name: '武汉', en: 'WUHAN', line: '江城花开，等你而来', artLeft: '-200%', artTop: '-100%' },
 ]);
 
-const POINTS_RULES = '有效抚摸每次 +1 叽分，间隔 30 秒。每天前 3 张不同原图的合照各可获得 1 叽分，重复原图不计分。本机互动奖励共用每日额度，按北京时间结算。';
+const POINTS_RULES = '初见礼每账号一次 +5，摸摸每账号每日最多 +10、奖励间隔 30 秒；奖励为零仍可陪伴。合照只留本机，不发云端叽分；步数奖励暂未开放。';
 
 // 与 city.wxss 的 .hero-stage 高度保持一致：底图层 = 状态栏安全区 + 主视觉区。
 // 两者用同一个数，插入画与下方卡片区之间才不会出现缝隙或重叠。
 const HERO_STAGE_RPX = 519;
 
 const HANGZHOU_EMPTY = '尚未领取杭州小鸟。碰一碰已建档的实体小黄莺并打开链接，即可领取。';
-const OTHER_CITY_EMPTY = '本机还没有领取这座城的小鸟。';
+const OTHER_CITY_EMPTY = '当前账号还没有领取这座城的小鸟。';
 
-// 本机模型保存一只小鸟及其已核验的城市。不凭编码前缀推断城市。
+// 使用本人云端宠物及已核验实体城市，不凭编码前缀推断。
 function unlockedCityCodes(snapshot) {
-    return snapshot && snapshot.hasBird && CITIES.some(function (city) { return city.code === snapshot.cityCode; })
-        ? [snapshot.cityCode] : [];
+    return snapshot ? Array.from(new Set(snapshot.pets.map(p => p.cityCode).filter(code => CITIES.some(city => city.code === code)))) : [];
 }
 
 function readStatusBarHeight() {
@@ -43,7 +43,7 @@ function readStatusBarHeight() {
     return 20;
 }
 
-Page({
+Page(cloudUI.page({
     data: {
         topInset: 176,
         statusBarHeight: 20,
@@ -77,7 +77,7 @@ Page({
         sheetHasBird: false,
         sheetBirdName: '',
         sheetEmptyText: HANGZHOU_EMPTY,
-        walletTitle: '本机叽分',
+        walletTitle: '云端叽分',
         walletRulesFirst: false,
         walletRulesOpen: false,
         walletLocalNoteOpen: false,
@@ -169,7 +169,7 @@ Page({
             const isUnlocked = unlocked.indexOf(city.code) !== -1;
             return Object.assign({}, city, {
                 status: isUnlocked ? 'unlocked' : 'locked',
-                statusText: isUnlocked ? '本机已解锁' : '尚未领取',
+                statusText: isUnlocked ? '已领养' : '尚未领取',
                 rowEnd: index % 3 === 2,
                 rowLast: Math.floor(index / 3) === lastRow,
             });
@@ -225,7 +225,7 @@ Page({
             sheetKind: 'birds',
             sheetCityName: city.name,
             sheetHasBird: hasBird,
-            sheetBirdName: hasBird ? snapshot.nickname : '',
+            sheetBirdName: snapshot.pets.filter(p => p.cityCode === city.code).map(p => p.nickname).join('、'),
             sheetEmptyText: city.code === 'hangzhou' ? HANGZHOU_EMPTY : OTHER_CITY_EMPTY,
         });
     },
@@ -238,7 +238,10 @@ Page({
         this.openWallet(true);
     },
 
-    openWallet(rulesFirst) {
+    async openWallet(rulesFirst) {
+        const result = await cloudUI.run(this, () => store.history('points', false));
+        if (!result) return;
+        if (result.error) wx.showToast({ title: cloudUI.message(result.error), icon: 'none' });
         if (!this.render()) {
             wx.showToast({ title: ERROR_TEXT.STORAGE_UNAVAILABLE, icon: 'none' });
             return;
@@ -247,7 +250,7 @@ Page({
         this.setData({
             sheetVisible: true,
             sheetKind: 'wallet',
-            walletTitle: rulesFirst ? '叽分获取规则' : '本机叽分',
+            walletTitle: rulesFirst ? '叽分获取规则' : '云端叽分',
             walletRulesFirst: rulesFirst,
             walletRulesOpen: rulesFirst,
             walletLocalNoteOpen: false,
@@ -297,4 +300,4 @@ Page({
     },
 
     noop() {},
-});
+}));

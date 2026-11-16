@@ -2,8 +2,9 @@
 
 // 打卡合照页：交互状态机对齐 H5 src/checkin-page.js / checkin-generate.js。
 // 照片全程在本机：wx.chooseMedia 选图 → Canvas 2D 合成 → USER_DATA_PATH 保存，
-// 不调用任何照片上传接口；叽分与去重由 utils/guest-store.js 结算。
+// 合照只保存在本机，不上传、不结算云端叽分。
 const store = require('../../utils/store');
+const cloudUI = require('../../utils/cloud-ui');
 const album = require('../../utils/photo-album');
 const model = require('../../utils/photo-model');
 const safeArea = require('../../utils/safe-area');
@@ -76,7 +77,7 @@ function systemAlbumAuthorization() {
     }
 }
 
-Page({
+Page(cloudUI.page({
     data: {
         topInset: 176,
         viewportHeight: 1334,
@@ -271,7 +272,7 @@ Page({
     },
 
     onPoints() {
-        this.showToast('本机叽分：' + this.pointsNow() + '，仅保存在当前手机');
+        this.showToast('云端叽分：' + this.pointsNow() + '；合照不发放叽分');
     },
 
     pointsNow() {
@@ -296,6 +297,15 @@ Page({
 
     // ---------- 小鸟名单 ----------
     loadBirds() {
+        const owner = store.status().userId;
+        if (this.cloudPhotoOwner !== owner) {
+            this.cloudPhotoOwner = owner;
+            this.pendingSubmission = null; this.photoPath = ''; this.uploaded = false;
+            this.selected = []; this.selectionOwner = null; this.poses = {}; this.active = null;
+            this.resetCanvas();
+            this.setData({ viewer: null, editorOpen: false, uploaded: false });
+            this.loadAlbum();
+        }
         const result = store.snapshot();
         const snap = result.data ? result.data.snapshot : null;
         if (!snap) {
@@ -303,21 +313,18 @@ Page({
             this.ready = false;
             return;
         }
-        const birds = [];
-        if (snap.hasBird) {
-            birds.push({ id: snap.birdCode || 'local-bird', name: snap.nickname || '小黄莺', adopted: true });
-        }
+        const birds = snap.pets.map(p => ({ id: p.petId, name: p.nickname, adopted: true }));
         for (let i = 0; i < LOCKED_BIRDS.length; i += 1) birds.push(LOCKED_BIRDS[i]);
         this.birds = birds;
         const owned = birds.filter(function (bird) { return bird.adopted; });
-        const ownerId = owned.length ? owned[0].id : '';
+        const ownerId = snap.userId + ':' + snap.petId;
         const firstLoad = this.selectionOwner === null;
         const ownerChanged = this.selectionOwner !== ownerId;
         const previous = this.selected.filter(function (id) {
             return owned.some(function (bird) { return bird.id === id; });
         });
         // 同一只小鸟保持手动取消的空选择。只有首次读到或更换领养记录时默认选中。
-        this.selected = ownerChanged && ownerId && !previous.length ? [ownerId] : previous;
+        this.selected = ownerChanged ? (snap.petId ? [snap.petId] : []) : previous;
         this.selectionOwner = ownerId;
         this.poses = model.reconcilePoses(this.selected, this.poses);
         this.active = this.selected.indexOf(this.active) >= 0 ? this.active : (this.selected[0] || null);
@@ -1053,6 +1060,7 @@ Page({
 
     async onGenerate() {
         if (this.data.generateDisabled || this.busy || this.readingPhoto) return;
+        const generation = store.getExperienceGeneration();
         this.busy = true;
         this.clearGesture();
         this.syncGenerate();
@@ -1060,10 +1068,10 @@ Page({
         try {
             if (!this.pendingSubmission) {
                 const imagePath = await this.exportCanvas();
-                if (this.unloaded) return;
+                if (this.unloaded || generation !== store.getExperienceGeneration()) return;
                 const digest = await album.digestOf(this.photoPath);
                 const outputHash = await album.digestOf(imagePath);
-                if (this.unloaded) return;
+                if (this.unloaded || generation !== store.getExperienceGeneration()) return;
                 this.pendingSubmission = {
                     id: album.requestId(),
                     imagePath: imagePath,
@@ -1089,7 +1097,7 @@ Page({
                 label: submission.label,
                 createdAt: submission.createdAt,
             }, store);
-            if (this.unloaded) return;
+            if (this.unloaded || generation !== store.getExperienceGeneration()) return;
             if (result.error) {
                 if (result.error === 'ALBUM_FULL') {
                     this.albumTotal = model.ALBUM_LIMIT;
@@ -1117,7 +1125,7 @@ Page({
             if (!this.unloaded) this.showToast('合照还没收藏成功，请原样重试，不会重复发分');
         } finally {
             this.busy = false;
-            if (!this.unloaded) {
+            if (!this.unloaded && generation === store.getExperienceGeneration()) {
                 this.syncGenerate();
                 this.saveDraft();
             }
@@ -1428,6 +1436,7 @@ Page({
 
     // ---------- 编辑草稿（仅内存，路由往返恢复） ----------
     saveDraft() {
+        if (this.cloudPhotoOwner !== store.status().userId) return;
         // 首次读取领养记录失败时先保留上次草稿，等记录可用再恢复。
         if (this.selectionOwner === null) return;
         album.saveDraft({
@@ -1488,4 +1497,4 @@ Page({
             if (this.pageReady && this.data.editorOpen) this.prepareCanvasImages();
         });
     },
-});
+}));

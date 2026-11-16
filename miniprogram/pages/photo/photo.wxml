@@ -207,7 +207,7 @@
                         </view>
                         <view class="reward-line">
                             <image src="/pages/photo/assets/icon-spark.png" mode="aspectFit"></image>
-                            <text>新原图合照 <text class="reward-strong">+1 叽分</text> · 每日最多 3 次 <text class="reward-spark">✧</text></text>
+                            <text>合照仅保存在本机 · 不发放云端叽分 <text class="reward-spark">✧</text></text>
                         </view>
                     </view>
                 </view>

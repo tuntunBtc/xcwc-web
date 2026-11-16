@@ -188,7 +188,7 @@ async function postSteps(token, endpoint, fields, checkExperience = () => {}) {
         timeout: 10000,
         header: { 'content-type': 'application/json', Authorization: 'Bearer ' + token },
         data: Object.assign({}, fields, encrypted),
-    });
+    }).catch(error => { throw endpoint.endsWith('-v2') ? { error: 'STEP_NETWORK_ERROR' } : error; });
     if (res.statusCode === 200 && res.data) {
         return res.data;
     }
@@ -202,12 +202,21 @@ async function postSteps(token, endpoint, fields, checkExperience = () => {}) {
     if (res.statusCode === 503 && code === 'SUPPLY_DISABLED') throw { error: 'NO_ENDPOINT' };
     if ((res.statusCode === 404 && code === 'BIRD_NOT_FOUND') ||
         (res.statusCode === 410 && code === 'BIRD_INACTIVE')) throw { error: code };
+    if (endpoint.endsWith('-v2') && typeof code === 'string') throw { error: code };
     throw { error: 'REDEEM_FAILED' };
 }
 
 function redeemSteps(token, checkExperience) {
     const requestId = String(Date.now()) + '-' + Math.random().toString(36).slice(2, 8);
     return postSteps(token, config.STEPS_REDEEM_ENDPOINT || '/api/steps/redeem', { requestId }, checkExperience);
+}
+
+function previewStepPoints(token, checkExperience) {
+    return postSteps(token, '/api/steps/preview-v2', {}, checkExperience);
+}
+
+function redeemStepPoints(token, expectedDate, requestId, checkExperience) {
+    return postSteps(token, '/api/steps/redeem-v2', { expectedDate, requestId }, checkExperience);
 }
 
 function previewSupplies(token, fields, checkExperience) {
@@ -218,4 +227,4 @@ function claimSupplies(token, fields, checkExperience) {
     return postSteps(token, '/api/supplies/claim', fields, checkExperience);
 }
 
-module.exports = { TOKEN_KEY, captureSessionGuard, loginAndGetToken, withLogout, revokeToken, checkServerSession, sessionIsCurrent, withSession, redeemSteps, previewSupplies, claimSupplies };
+module.exports = { TOKEN_KEY, captureSessionGuard, loginAndGetToken, withLogout, revokeToken, checkServerSession, sessionIsCurrent, withSession, redeemSteps, previewStepPoints, redeemStepPoints, previewSupplies, claimSupplies };

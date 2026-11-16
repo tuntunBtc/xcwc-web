@@ -131,3 +131,10 @@ button::after {
     font-size: 26rpx;
     line-height: 1.6;
 }
+
+/* 云端状态与恢复入口，不改变底栏与场景素材。 */
+.cloud-status { position:fixed; z-index:10; left:24rpx; right:24rpx; bottom:calc(156rpx + env(safe-area-inset-bottom)); display:flex; align-items:center; gap:12rpx; padding:8rpx 16rpx; border-radius:18rpx; background:rgba(247,245,240,.95); color:#4f6346; font-size:22rpx; }
+.cloud-status text { flex:1; } .cloud-status button { margin:0; flex-shrink:0; font-size:22rpx; }
+.cloud-disabled { opacity:.55; } .cloud-poop { position:absolute; left:38%; z-index:8; font-size:38rpx; }
+
+.cloud-adopt-status { bottom:calc(12rpx + env(safe-area-inset-bottom)); }

@@ -331,6 +331,7 @@ function createNestIdle(page, opts) {
         kick: kick,
         retry: retry,
         dispose: dispose,
+        getVisibleFrame: function () { return canvasHidden ? null : frame; },
         isPlaying: function () { return ready && !canvasHidden && audio && !audio.paused; },
     };
 }

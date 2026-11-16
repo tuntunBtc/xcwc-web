@@ -1,6 +1,6 @@
 /* 网页端 .phone>.bottom 的等比换算：H5 480px 产品态对应 750rpx，
    底栏 960×195 铺满宽度时恒定 149rpx 高（rpx 会随屏宽等比缩放）。
-   底板与四个入口都固定 149rpx 并贴 bottom:0，比例不变形、入口与底板同轴居中；
+   底板与入口都固定 149rpx 并贴 bottom:0，比例不变形、入口与底板同轴居中；
    容器多出的 Home Indicator 安全区留在上方且透明，不再拉伸毛绒图。 */
 .tab-bar-space {
     width: 100%;
@@ -31,7 +31,7 @@
     pointer-events: none;
 }
 
-/* 与底板同高、同底边，四个入口在这 149rpx 内垂直居中。 */
+/* 与底板同高、同底边，可见入口在这 149rpx 内垂直居中。 */
 .tab-bar-items {
     position: absolute;
     bottom: 0;

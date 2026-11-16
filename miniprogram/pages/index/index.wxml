@@ -3,7 +3,7 @@
 <!-- 全屏底图：自定义 tabBar 是透明毛绒底板，背景必须铺满整个视口（含底栏区域），
      否则内容区在底栏上沿截断，底栏附近会露出纯色空缺。整页只保留这一张图，
      不另在 .nest 内重复拉伸一份，避免底栏上沿出现接缝。 -->
-<image class="page-scene" src="/assets/nest/background.webp" mode="scaleToFill" style="height:{{layout.viewportHeight}}rpx"></image>
+<image class="page-scene" src="/assets/nest/background.webp" mode="scaleToFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx"></image>
 <view class="nest" style="height:{{layout.pageHeight}}rpx">
 
     <view class="scene-shade"></view>
@@ -55,7 +55,7 @@
             <image class="tex-bg" src="/assets/nest/cloud.webp" mode="scaleToFill"></image>
             <view class="clip tool-prop-clip"><image class="sprite {{item.propClass}}" src="/assets/nest/tools.webp" mode="scaleToFill"></image></view>
             <text class="tool-label">{{item.label}}</text>
-            <view wx:if="{{item.key === 'supply' && fixtureMode && hasBird && !supplyClaimed}}" class="tool-dot"></view>
+            <view wx:if="{{item.key === 'supply' && hasBird && !supplyClaimed}}" class="tool-dot"></view>
         </view>
     </view>
 
@@ -68,6 +68,7 @@
     <!-- 空态领取入口 -->
     <view wx:if="{{!hasBird}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover">如何领取小鸟</view>
 
+    <view wx:if="{{cleaning.status === 'PRESENT'}}" class="cloud-poop" style="top:{{layout.actorTop + layout.actorHeight - 25}}rpx" data-key="clean" bindtap="onTool">💩</view>
     <!-- 小鸟立绘 -->
     <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}}" style="top:{{layout.actorTop}}rpx;height:{{layout.actorHeight}}rpx">
         <view class="shadow {{hasBird ? '' : 'is-hidden'}}"></view>
@@ -93,7 +94,7 @@
     </view>
 
     <!-- 底部三按钮 dock -->
-    <view class="dock" style="bottom:{{layout.dockBottom}}rpx">
+    <view class="dock {{cloudStatus.canOperate ? '' : 'cloud-disabled'}}" style="bottom:{{layout.dockBottom}}rpx">
         <view wx:for="{{dock}}" wx:key="key" class="dock-btn" data-key="{{item.key}}" bindtap="onDock" hover-class="dock-hover">
             <image class="dock-sheet {{item.cardClass}}" src="/assets/nest/cards.webp" mode="scaleToFill"></image>
             <text class="dock-label">{{item.label}} <text class="dock-arrow">›</text></text>
@@ -116,67 +117,120 @@
             <text wx:if="{{sheet.desc}}" class="sheet-desc">{{sheet.desc}}</text>
 
             <block wx:if="{{sheet.type === 'rename'}}">
-                <input class="sheet-input" value="{{renameValue}}" bindinput="onRenameInput" maxlength="6" adjust-position="{{false}}" placeholder="1–6 个字" />
-                <view class="sheet-primary" catchtap="onSaveRename">保存昵称</view>
+                <input class="sheet-input" value="{{renameValue}}" bindinput="onRenameInput" maxlength="12" adjust-position="{{false}}" placeholder="1–6 个字" />
+                <button class="sheet-primary" disabled="{{!cloudStatus.canOperate}}" catchtap="onSaveRename">保存昵称</button>
             </block>
 
             <block wx:if="{{sheet.type === 'wallet'}}">
                 <view class="sheet-row"><text>当前余额</text><text>{{points}} 叽分</text></view>
                 <view class="sheet-row"><text>今日获得</text><text>{{todayPoints}} / {{dailyLimit}}</text></view>
-                <view class="sheet-row"><text>步数兑换</text><text>{{todayStepClaimed ? '今日已兑换' : '今日未兑换'}}</text></view>
                 <text class="sheet-subtitle">叽分记录</text>
                 <view wx:if="{{ledger.length > 0}}" class="ledger">
                     <view class="sheet-row" wx:for="{{ledger}}" wx:key="id"><text>{{item.note}} · {{item.day}}</text><text>{{item.amountText}}</text></view>
                 </view>
                 <text wx:else class="sheet-desc">还没有叽分记录</text>
-                <block wx:if="{{werunNeedsSetting && !todayStepClaimed}}">
-                    <text class="sheet-note">微信运动权限未开启。开启后，再点「兑换今日步数」。</text>
-                    <view class="sheet-secondary" catchtap="onOpenWeRunSettings">打开微信设置</view>
-                </block>
-                <view class="sheet-secondary {{todayStepClaimed || redeeming ? 'is-disabled' : ''}}" catchtap="onRedeemSteps">{{todayStepClaimed ? '今日已兑换' : (redeeming ? '兑换中…' : '兑换今日步数')}}</view>
+                <text wx:if="{{historyError}}" class="sheet-note">{{historyError}}</text>
+                <view wx:if="{{historyMore}}" class="sheet-secondary" catchtap="onMoreHistory">加载更多</view>
+
             </block>
 
             <block wx:if="{{sheet.type === 'supply'}}">
-                <view class="sheet-row"><text>食物剩余</text><text>{{food}} 份</text></view>
-                <view class="sheet-row"><text>水剩余</text><text>{{water}} 份</text></view>
-                <block wx:if="{{stepSupplyEnabled}}">
-                    <text class="step-supply-copy">当日微信步数达标后，可领取食物和水各 1 份。按北京时间每个账号每天限领一次。</text>
-                    <view wx:if="{{stepSupplyStatus}}" class="step-supply-meter">
-                        <text class="step-supply-value">{{stepSupplyStatus.steps}} / {{stepSupplyStatus.requiredSteps}} 步</text>
-                        <view class="step-supply-track"><view class="step-supply-fill" style="width:{{stepSupplyStatus.progress}}%"></view></view>
-                        <text class="step-supply-copy">{{stepSupplyStatus.cached ? '今日上次读取 · ' : ''}}{{stepSupplyStatus.note}}</text>
+                <view wx:if="{{testWeRun}}" class="supply-card supply-steps">
+                    <view class="supply-card-head">
+                        <text class="supply-card-title">微信步数兑换</text>
+                        <text class="supply-card-meta">1,000 步兑 1 叽分</text>
                     </view>
-                    <text wx:elif="{{supplyClaimed && !storageUnavailable}}" class="step-supply-copy step-supply-notice">本机今日补给已入库。</text>
-                    <text wx:if="{{stepSupplyNotice}}" class="step-supply-copy step-supply-notice">{{stepSupplyNotice}}</text>
-                    <block wx:if="{{stepSupplyNeedsSetting}}">
-                        <button class="sheet-primary step-supply-action" disabled="{{!!stepSupplyBusy}}" catchtap="onOpenWeRunSettings">{{stepSupplyBusy === 'settings' ? '打开中…' : '打开微信设置'}}</button>
-                        <button class="sheet-secondary step-supply-action" disabled="{{!!stepSupplyBusy}}" catchtap="onReadSupplySteps">{{stepSupplyBusy === 'read' ? '读取中…' : '重新读取微信步数'}}</button>
+
+                    <block wx:if="{{testSteps !== null}}">
+                        <view class="supply-metrics">
+                            <view class="supply-metric supply-metric-primary">
+                                <text class="supply-metric-label">当前可兑换</text>
+                                <text class="supply-metric-value">{{testStepPointsAvailable}}<text class="supply-metric-unit"> 叽分</text></text>
+                            </view>
+                            <view class="supply-metric">
+                                <text class="supply-metric-label">今日步数</text>
+                                <text class="supply-metric-value">{{testSteps}}<text class="supply-metric-unit"> 步</text></text>
+                            </view>
+                            <view class="supply-metric">
+                                <text class="supply-metric-label">今日已兑换</text>
+                                <text class="supply-metric-value">{{testStepPointsRedeemed}}<text class="supply-metric-unit"> 叽分</text></text>
+                            </view>
+                        </view>
+                        <text wx:if="{{testStepsToNext > 0}}" class="supply-hint">再走 {{testStepsToNext}} 步可多兑 1 叽分</text>
+                        <button wx:if="{{testStepPointsAvailable > 0}}" class="supply-button supply-button-primary"
+                            disabled="{{testStepBusy || !cloudStatus.online || !cloudStatus.signedIn}}"
+                            data-action="redeem" catchtap="onReadTestSteps">{{testStepBusy ? '处理中…' : '兑换 ' + testStepPointsAvailable + ' 叽分'}}</button>
+                        <button class="supply-button {{testStepPointsAvailable > 0 ? 'supply-button-text' : 'supply-button-primary'}}"
+                            disabled="{{testStepBusy || !cloudStatus.online || !cloudStatus.signedIn}}"
+                            catchtap="onReadTestSteps">{{testStepBusy ? '处理中…' : '更新微信步数'}}</button>
                     </block>
                     <block wx:else>
-                        <button wx:if="{{stepSupplyStatus && stepSupplyStatus.canClaim}}" class="sheet-primary step-supply-action" disabled="{{!!stepSupplyBusy}}" catchtap="onClaimStepSupply">{{stepSupplyBusy === 'claim' ? '领取中…' : (stepSupplyStatus.restore ? '恢复本机补给' : '领取今日补给')}}</button>
-                        <button class="{{supplyClaimed || (stepSupplyStatus && (stepSupplyStatus.canClaim || stepSupplyStatus.claimed)) ? 'sheet-secondary' : 'sheet-primary'}} step-supply-action" disabled="{{!!stepSupplyBusy}}" catchtap="onReadSupplySteps">{{stepSupplyBusy === 'read' ? '读取中…' : (stepSupplyStatus ? '重新读取微信步数' : '读取微信步数')}}</button>
+                        <text class="supply-hint">{{!cloudStatus.signedIn ? '微信登录后可读取步数' : '当天可多次兑换，已兑换的步数不会重复计算'}}</text>
+                        <button class="supply-button supply-button-primary" disabled="{{testStepBusy || !cloudStatus.online || !cloudStatus.signedIn}}"
+                            catchtap="onReadTestSteps">{{testStepBusy ? '正在读取…' : '读取微信步数'}}</button>
                     </block>
-                </block>
-                <block wx:elif="{{fixtureMode}}">
-                    <view class="sheet-primary {{supplyClaimed ? 'is-disabled' : ''}}" catchtap="onSupply">{{supplyClaimed ? '今日已补给' : '领取今日补给 · 各 +1'}}</view>
-                    <text class="sheet-note">本机体验每天可免费领取食物和水各 1 份。</text>
-                </block>
-                <text wx:else class="sheet-note">微信步数补给暂未开放。</text>
+                    <text wx:if="{{testStepMessage}}" class="supply-hint supply-message">{{testStepMessage}}</text>
+                    <text wx:elif="{{!cloudStatus.online && cloudStatus.signedIn}}" class="supply-hint supply-message">联网后可更新步数并兑换</text>
+                    <button wx:if="{{testStepNeedsSetting}}" class="supply-button supply-button-text" catchtap="onTestStepSettings">打开权限设置</button>
+                </view>
+
+                <view class="supply-card supply-inventory">
+                    <view class="supply-card-head">
+                        <text class="supply-card-title">小鸟库存</text>
+                        <text class="supply-card-meta">{{displayName}}</text>
+                    </view>
+                    <view class="supply-stock">
+                        <view class="supply-stock-item"><text>食物</text><text class="supply-stock-value">{{food}} 份</text></view>
+                        <view class="supply-stock-item"><text>水</text><text class="supply-stock-value">{{water}} 份</text></view>
+                    </view>
+                    <button class="supply-button supply-button-quiet" disabled="{{!cloudStatus.canOperate || supplyClaimed}}"
+                        catchtap="onSupply">{{supplyClaimed ? '今日免费食水已领' : '领取免费食水 · 各 1 份'}}</button>
+                </view>
+
+                <view class="supply-history-links">
+                    <button class="supply-button supply-button-quiet" data-kind="inventory" catchtap="onHistory">库存流水</button>
+                    <button class="supply-button supply-button-quiet" data-kind="claims" catchtap="onHistory">食水领取记录</button>
+                </view>
             </block>
 
             <block wx:if="{{sheet.type === 'switch'}}">
-                <text class="sheet-desc">当前伙伴</text>
-                <view class="bird-choice">
-                    <image src="/assets/nest/avatar.webp" mode="aspectFit"></image>
-                    <view><text class="choice-name">{{displayName}}</text><text class="choice-meta">{{birdCodeShort}}</text></view>
+                <scroll-view scroll-y="true" style="max-height:420rpx">
+                    <view class="bird-choice" wx:for="{{pets}}" wx:key="petId" data-id="{{item.petId}}" catchtap="onSelectPet">
+                        <image src="/assets/nest/avatar.webp" mode="aspectFit"></image>
+                        <view><text class="choice-name">{{item.nickname}}</text><text>{{item.petId === selectedPetId ? '当前陪伴' : '切换陪伴'}}</text></view>
+                    </view>
+                </scroll-view>
+                <text class="sheet-note">昵称、库存和养成按小鸟独立保存。</text>
+            </block>
+            <block wx:if="{{sheet.type === 'history'}}">
+                <view class="supply-history">
+                    <scroll-view wx:if="{{historyItems.length}}" scroll-y="true" class="supply-history-list">
+                        <view wx:for="{{historyItems}}" wx:key="index" class="supply-history-row">
+                            <block wx:if="{{historyKind === 'inventory'}}">
+                                <text class="supply-history-event">{{item.operation === 'INITIAL' ? '初始库存' : item.operation === 'FEED' ? '喂食' : item.operation === 'WATER' ? '添水' : item.operation === 'SUPPLY' || item.operation === 'CLAIM_SUPPLY' ? '领取食水' : item.operation}}</text>
+                                <text class="supply-history-detail">食物 {{item.foodDelta > 0 ? '+' : ''}}{{item.foodDelta}}，剩 {{item.foodAfter}} 份</text>
+                                <text class="supply-history-detail">水 {{item.waterDelta > 0 ? '+' : ''}}{{item.waterDelta}}，剩 {{item.waterAfter}} 份</text>
+                            </block>
+                            <block wx:else>
+                                <text class="supply-history-event">{{item.date}}</text>
+                                <text class="supply-history-detail">食物 +{{item.food}} 份 · 水 +{{item.water}} 份</text>
+                            </block>
+                        </view>
+                    </scroll-view>
+                    <text wx:if="{{historyError}}" class="supply-hint supply-message">{{historyError}}</text>
+                    <text wx:elif="{{!historyItems.length}}" class="supply-hint">{{historyLoading ? '正在读取记录…' : '暂无记录'}}</text>
+                    <view class="supply-history-links">
+                        <button class="supply-button supply-button-quiet" catchtap="onOpenSupply">返回补给</button>
+                        <button class="supply-button supply-button-quiet" disabled="{{historyLoading}}"
+                            catchtap="onMoreHistory">{{historyLoading ? '正在读取…' : historyError ? '重试读取' : historyMore ? '加载更多' : '刷新记录'}}</button>
+                    </view>
                 </view>
-                <view wx:if="{{fixtureMode}}" class="sheet-secondary" catchtap="goAdopt">查看领养页（调试示例编码）</view>
             </block>
 
             <block wx:if="{{sheet.type === 'claim'}}">
                 <text class="sheet-desc">1. 用支持 NFC 的手机碰一碰实体小鸟，打开系统弹出的链接；或扫描小鸟的小程序码。</text>
                 <text class="sheet-desc">2. 在领取页确认资料与昵称，免费孵化后回到小窝。</text>
-                <text class="sheet-desc">领取无需登录。小鸟、叽分与合照仅保存在本机，换设备不会自动恢复。</text>
+                <text class="sheet-desc">微信登录可恢复云端小鸟与叽分，合照仅保存在本机。</text>
                 <view wx:if="{{fixtureMode}}" class="sheet-primary" catchtap="goAdopt">查看领养页（调试示例编码）</view>
             </block>
 
@@ -185,3 +239,7 @@
             </block>
         </view>
     </view>
+
+<view wx:if="{{cloudStatus.signedIn && cloudStatus.pending}}" class="cloud-status cloud-nest-status" style="bottom:{{layout.tabBarHeight + 192}}rpx" role="status">
+    <button size="mini" disabled="{{cloudStatus.busy || cloudStatus.loading || !cloudStatus.online}}" bindtap="onCloudRetry">确认上次操作</button>
+</view>

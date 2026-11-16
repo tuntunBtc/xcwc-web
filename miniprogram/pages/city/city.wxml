@@ -90,7 +90,7 @@
             </view>
         </view>
 
-        <button wx:if="{{storageUnavailable}}" class="storage-retry" bindtap="retryCityData">本机城市记录暂时无法读取，点此重试</button>
+        <button wx:if="{{storageUnavailable}}" class="storage-retry" bindtap="retryCityData">云端城市记录暂时无法读取，点此重试</button>
         <button wx:if="{{artworkFailed}}" class="artwork-retry" disabled="{{artworkLoading}}" bindtap="loadCityArtwork">{{artworkLoading ? '正在加载城市插图…' : '城市插图加载失败，点此重试'}}</button>
 
         <view class="grid">
@@ -129,9 +129,9 @@
         </view>
 
         <view class="footnote">
-            <text class="footnote-main">城市状态来自本机领取缓存 · 不代表云端购买权益</text>
+            <text class="footnote-main">城市状态来自当前账号的云端领养记录</text>
             <view class="footnote-row">
-                <text class="footnote-extra">公开小鸟目录暂未接入，仍可查看本机伙伴。</text>
+                <text class="footnote-extra">公开小鸟目录暂未接入，仍可查看已领养伙伴。</text>
             </view>
         </view>
     </view>
@@ -149,21 +149,21 @@
                 <view class="sheet-close" hover-class="is-pressed" bindtap="handleCloseSheet">×</view>
                 <text class="sheet-eyebrow">CITY BIRD COLLECTION</text>
                 <text class="sheet-title">{{sheetCityName}}的小鸟伙伴</text>
-                <text class="sheet-subtitle">查看这座城在本机领取的小鸟。</text>
+                <text class="sheet-subtitle">查看当前账号在这座城领养的小鸟。</text>
             </view>
             <view class="sheet-body">
                 <view class="bird-row" wx:if="{{sheetHasBird}}">
                     <image class="bird-row-art" src="/assets/nest/emotion-happy.webp" mode="aspectFit"></image>
                     <view class="bird-row-copy">
                         <text class="bird-row-name">{{sheetBirdName}}</text>
-                        <text class="bird-row-desc">已领取 · 本机已孵化</text>
+                        <text class="bird-row-desc">已领养 · 云端保存</text>
                     </view>
                     <view class="bird-pill" hover-class="is-pressed" bindtap="handleVisitBird">去小窝</view>
                 </view>
                 <view class="catalog-status" wx:if="{{!sheetHasBird}}">
                     <text class="catalog-text">{{sheetEmptyText}}</text>
                 </view>
-                <view wx:if="{{!sheetHasBird && sheetCityName === '杭州'}}" class="instructions">碰一碰实体小鸟的 NFC 或扫描小程序码，打开对应领取页面。领取记录保存在本机。</view>
+                <view wx:if="{{!sheetHasBird && sheetCityName === '杭州'}}" class="instructions">碰一碰实体小鸟的 NFC 或扫描小程序码，打开对应领取页面。领取记录保存到微信账号。</view>
                 <view class="sheet-primary" hover-class="is-pressed" bindtap="handleCloseSheet">返回城市手账</view>
             </view>
         </view>
@@ -185,12 +185,12 @@
                 </view>
                 <view class="wallet-badge" hover-class="is-pressed" bindtap="handleToggleLocalNote">
                     <text class="wallet-badge-arrow">{{walletLocalNoteOpen ? '▼' : '▶'}}</text>
-                    <text>本机保存 · 查看说明</text>
+                    <text>云端存档 · 查看说明</text>
                 </view>
-                <text class="wallet-local-note" wx:if="{{walletLocalNoteOpen}}">小鸟、养成、叽分和装扮仅保存在当前小程序，不与云端账号同步。清除缓存、卸载或更换设备后不会自动恢复。</text>
-                <text class="wallet-today">今日计入本机额度 {{todayPoints}} / {{dailyLimit}} 叽分</text>
+                <text class="wallet-local-note" wx:if="{{walletLocalNoteOpen}}">宠物、养成、库存和叽分保存到微信账号，换手机登录即可恢复。合照与旧体验记录仍留本机。</text>
+                <text class="wallet-today">今日摸摸奖励 {{todayPoints}} / {{dailyLimit}} 叽分</text>
                 <text class="wallet-heading">最近流水</text>
-                <text class="wallet-sub">按北京时间显示，最近 8 条。</text>
+                <text class="wallet-sub">按北京时间显示，最多 50 条；完整流水见“我的”。</text>
                 <view class="wallet-ledger" wx:if="{{ledger.length > 0}}">
                     <view class="ledger-row" wx:for="{{ledger}}" wx:key="id">
                         <view class="ledger-copy">

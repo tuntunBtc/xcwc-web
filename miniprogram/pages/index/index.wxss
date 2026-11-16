@@ -8,7 +8,7 @@ page {
 }
 
 /* 整页唯一底图：fixed 铺满视口，透明自定义底栏从同一张图上透出；
-   高度由 layout.viewportHeight 内联给出，不用 vh，避免机型差异与滚动漂移。 */
+   高度由 layout.sceneHeight 内联给出，覆盖手机端可能被窗口高度排除的底栏区。 */
 .page-scene {
     position: fixed;
     top: 0;
@@ -1010,6 +1010,191 @@ page {
 
 .step-supply-action::after {
     border: 0;
+}
+
+.supply-card {
+    margin-top: 16rpx;
+    padding: 20rpx;
+    border: 1rpx solid #E9DDC5;
+    border-radius: 26rpx;
+    background: #FFFDF6;
+}
+
+.supply-steps {
+    border-color: #D8E0C5;
+    background: #EFF3E3;
+}
+
+.supply-card-head,
+.supply-stock,
+.supply-stock-item,
+.supply-history-links {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12rpx;
+}
+
+.supply-card-title {
+    flex-shrink: 0;
+    color: #424F35;
+    font-size: 26rpx;
+    font-weight: 600;
+}
+
+.supply-card-meta {
+    min-width: 0;
+    overflow: hidden;
+    color: #625740;
+    font-size: 20rpx;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.supply-metrics {
+    display: flex;
+    margin-top: 14rpx;
+    padding: 12rpx 0;
+    border-radius: 18rpx;
+    background: #FEFFF8;
+}
+
+.supply-metric {
+    flex: 1;
+    min-width: 0;
+    padding: 0 6rpx;
+    text-align: center;
+}
+
+.supply-metric + .supply-metric {
+    border-left: 1rpx solid #DBE4CD;
+}
+
+.supply-metric-label,
+.supply-hint {
+    display: block;
+    color: #566345;
+    font-size: 21rpx;
+    line-height: 1.45;
+}
+
+.supply-metric-value {
+    display: block;
+    margin-top: 4rpx;
+    color: #334325;
+    font-size: 30rpx;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.supply-metric-primary .supply-metric-value {
+    color: #3D6537;
+}
+
+.supply-metric-unit {
+    font-size: 19rpx;
+    font-weight: 400;
+}
+
+.supply-hint {
+    margin-top: 12rpx;
+}
+
+.supply-message {
+    color: #654A33;
+}
+
+.supply-stock {
+    margin-top: 12rpx;
+}
+
+.supply-stock-item {
+    flex: 1;
+    min-width: 0;
+    padding: 8rpx 12rpx;
+    border-radius: 14rpx;
+    background: #F5EEDF;
+    color: #645238;
+    font-size: 22rpx;
+}
+
+.supply-stock-value {
+    color: #50422D;
+    font-weight: 600;
+}
+
+.supply-button {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    margin: 10rpx 0 0;
+    padding: 10rpx 12rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16rpx;
+    font-size: 23rpx;
+    line-height: 1.35;
+}
+
+.supply-button::after {
+    border: 0;
+}
+
+.supply-button-primary {
+    background: #526C43;
+    color: #FFFCED;
+    font-weight: 600;
+}
+
+.supply-button-text,
+.supply-button-quiet {
+    color: #4D603E;
+}
+
+.supply-button-text {
+    margin-top: 2rpx;
+    background: transparent;
+}
+
+.supply-button-quiet {
+    background: #F0EEDD;
+}
+
+.supply-button[disabled] {
+    background: #ECEBDC;
+    color: #6B6959;
+}
+
+.supply-history-links .supply-button {
+    flex: 1;
+    min-width: 0;
+}
+
+.supply-history-list {
+    max-height: 408rpx;
+}
+
+.supply-history-row {
+    padding: 12rpx 8rpx;
+    border-bottom: 1rpx solid #E9DDC5;
+}
+
+.supply-history-event,
+.supply-history-detail {
+    display: block;
+    font-size: 22rpx;
+    line-height: 1.5;
+}
+
+.supply-history-event {
+    color: #424F35;
+    font-weight: 600;
+}
+
+.supply-history-detail {
+    color: #625740;
 }
 
 .bird-choice {

@@ -52,7 +52,7 @@
             </view>
             <text wx:if="{{validation}}" class="validation">{{validation}}</text>
 
-            <view class="adopt-button {{buttonDisabled ? 'is-disabled' : ''}}" bindtap="handleAdopt">
+            <view class="adopt-button {{buttonDisabled || (!alreadyMine && !cloudStatus.canOperate) ? 'is-disabled' : ''}}" bindtap="handleAdopt">
                 <image class="adopt-button-art" src="/pages/adopt/assets/button.webp" mode="aspectFill"></image>
                 <text class="adopt-button-text">{{buttonText}}</text>
             </view>
@@ -64,4 +64,10 @@
             </view>
         </view>
     </view>
+</view>
+
+<view class="cloud-status cloud-adopt-status" role="status">
+    <text>{{cloudNotice}}</text>
+    <button wx:if="{{!cloudStatus.signedIn}}" size="mini" disabled="{{cloudStatus.loading || !cloudStatus.online}}" bindtap="onCloudLogin">微信登录</button>
+    <button wx:else size="mini" disabled="{{cloudStatus.busy || cloudStatus.loading || !cloudStatus.online}}" bindtap="onCloudRetry">{{cloudStatus.pending ? '确认上次操作' : '刷新'}}</button>
 </view>

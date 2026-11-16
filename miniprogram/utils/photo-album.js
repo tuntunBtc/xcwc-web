@@ -1,21 +1,23 @@
 'use strict';
 
 // 本机打卡相册：作品与原照片落在小程序 USER_DATA_PATH，检索资料放 storage。
-// 与 H5 的 IndexedDB 本机相册等价：不上传服务器、不进账号、最多 30 张。
-// 删除作品不会退回叽分，也不删除原图去重记录（与 H5 一致）。
-var KEY = 'xcwc.mp.album.v1';
+// 不上传服务器；新相册按 userId 分开，每账号本机最多 30 张。旧相册键与文件原样保留。
+// 合照不结算云端叽分。删除操作只处理当前账号的本机照片。
+var store = require('./store');
+function owner() { return store.status().userId || 'signed-out'; }
+function albumKey() { return 'xcwc.mp.cloud-album.v1:' + owner(); }
 var LIMIT = 30;
 var ID_RE = /^[a-zA-Z0-9_-]{16,64}$/;
 
 // H5 的编辑草稿只留在宿主内存：路由往返恢复，关闭小程序不恢复。
-var draft = null;
+var drafts = Object.create(null);
 
 function fs() {
     return wx.getFileSystemManager();
 }
 
 function dir() {
-    return wx.env.USER_DATA_PATH + '/photo';
+    return wx.env.USER_DATA_PATH + '/cloud-photo/' + owner();
 }
 
 function ensureDir() {
@@ -36,11 +38,11 @@ function parseRows(raw) {
 }
 
 function readRows() {
-    try { return parseRows(wx.getStorageSync(KEY)); } catch (error) { return null; }
+    try { return parseRows(wx.getStorageSync(albumKey())); } catch (error) { return null; }
 }
 
 function writeRows(rows) {
-    try { wx.setStorageSync(KEY, rows); return true; }
+    try { wx.setStorageSync(albumKey(), rows); return true; }
     catch (error) { return false; }
 }
 
@@ -224,9 +226,9 @@ function create(payload, store) {
     var snapshot = store.snapshot();
     if (snapshot.error) return Promise.resolve(storageError('本机领取记录读取失败，请原样重试'));
     var state = snapshot.data ? snapshot.data.snapshot : null;
-    var ownedId = state && state.hasBird ? (state.birdCode || 'local-bird') : '';
-    if (!ownedId || payload.birdIds.some(function (id) { return id !== ownedId; })) {
-        return Promise.resolve({ error: 'INVALID_BIRDS', message: '本机领取记录已变化，请重新选择小鸟' });
+    var ownedIds = state && state.pets ? state.pets.map(function (p) { return p.petId; }) : [];
+    if (!ownedIds.length || payload.birdIds.some(function (id) { return ownedIds.indexOf(id) < 0; })) {
+        return Promise.resolve({ error: 'INVALID_BIRDS', message: '账号或小鸟已变化，请重新选择' });
     }
     var row = existing || {
         id: id,
@@ -289,7 +291,7 @@ function remove(id) {
 function clear() {
     try {
         // 读取失败和索引损坏分开处理。前者无法安全记录删除，后者仍可用相册目录清理。
-        var rows = parseRows(wx.getStorageSync(KEY));
+        var rows = parseRows(wx.getStorageSync(albumKey()));
         var fileSystem = fs();
         var recursive = typeof fileSystem.rmdirSync === 'function';
         if (!rows && !recursive) return false;
@@ -298,7 +300,7 @@ function clear() {
             var pending = rows.map(function (row) { return Object.assign({}, row, { stage: 'delete-pending' }); });
             if (!writeRows(pending)) return false;
         }
-        if (rows && rows.length) draft = null;
+        if (rows && rows.length) drafts[owner()] = null;
         if (recursive) {
             // 仅删除相册自有目录，覆盖旧版本遗留的无索引文件。
             try { fileSystem.rmdirSync(dir(), true); }
@@ -310,20 +312,20 @@ function clear() {
             }
             if (!removed) return false;
         }
-        draft = null;
-        wx.removeStorageSync(KEY);
+        drafts[owner()] = null;
+        wx.removeStorageSync(albumKey());
         return true;
     } catch (error) {
         return false;
     }
 }
 
-function saveDraft(value) { draft = value || null; }
-function readDraft() { return draft; }
-function clearDraft() { draft = null; }
+function saveDraft(value) { drafts[owner()] = value || null; }
+function readDraft() { return drafts[owner()] || null; }
+function clearDraft() { drafts[owner()] = null; }
 
 module.exports = {
-    KEY: KEY,
+    KEY: 'xcwc.mp.cloud-album.v1',
     LIMIT: LIMIT,
     requestId: requestId,
     digestOf: digestOf,

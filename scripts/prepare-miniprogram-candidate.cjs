@@ -100,11 +100,14 @@ function renderView(text, file, files, artwork, shopArtwork) {
 
 function wrapController(text, file, kind, paths, artwork) {
     const method = kind === 'Component' ? 'component' : 'page';
-    const wrapped = replaceOnce(text, `${kind}({`, `${kind}(releaseImages.${method}({`, file);
-    if (!/\n\}\);\s*$/.test(wrapped)) throw new Error(`${file} 注册表达式结尾无法识别`);
+    const cloud = kind === 'Page' && text.includes('Page(cloudUI.page({');
+    const start = cloud ? 'Page(cloudUI.page({' : `${kind}({`;
+    const wrapped = replaceOnce(text, start, cloud ? 'Page(releaseImages.page(cloudUI.page({' : `${kind}(releaseImages.${method}({`, file);
+    const ending = cloud ? /\n\}\)\);\s*$/ : /\n\}\);\s*$/;
+    if (!ending.test(wrapped)) throw new Error(`${file} 注册表达式结尾无法识别`);
     const args = [JSON.stringify([...paths].sort())];
     if (artwork) args.push(JSON.stringify(artwork));
-    return injectRequire(wrapped.replace(/\n\}\);\s*$/, `\n}, ${args.join(', ')}));\n`), file);
+    return injectRequire(wrapped.replace(ending, `\n}${cloud ? ')' : ''}, ${args.join(', ')}));\n`), file);
 }
 
 function publicHttps(value) {

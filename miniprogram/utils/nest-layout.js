@@ -93,6 +93,7 @@ function readNestLayout() {
         hudRight = HUD_FALLBACK_RIGHT;
     }
     var viewportRpx = DESIGN_HEIGHT_RPX;
+    var screenViewportRpx = 0;
     var bottomInset = 0;
     var width = 375;
     try {
@@ -101,10 +102,17 @@ function readNestLayout() {
         var height = info.windowHeight || 667;
         viewportRpx = Math.round((height * 750) / width);
         bottomInset = readBottomInset(info, width);
+        // 只有手机端用物理屏幕高度补足底栏区域。电脑端的 screenHeight 可能指显示器。
+        var device = wx.getDeviceInfo ? wx.getDeviceInfo() : info;
+        if (device && /^(ios|android|ohos)$/.test(device.platform) && Number.isFinite(info.screenHeight)) {
+            var screenTop = Number.isFinite(info.screenTop) ? Math.max(0, info.screenTop) : 0;
+            screenViewportRpx = Math.ceil((info.screenHeight - screenTop) * 750 / width);
+        }
     } catch (error) {
-        viewportRpx = DESIGN_HEIGHT_RPX;
+        // 保留已取得的窗口尺寸，旧基础库或缺少设备信息时沿用窗口高度。
     }
     var tabBarHeight = TAB_BAR_ART_RPX + bottomInset;
+    var sceneHeight = Math.max(viewportRpx, Math.min(screenViewportRpx, viewportRpx + tabBarHeight));
     // custom-tab-bar 会在文档流末尾注入一个等高 spacer；页面高度需扣掉它，
     // 否则 .nest + spacer 会多出整条底栏高度，出现无谓滚动。
     var pageHeight = Math.max(inset + DESIGN_HEIGHT_RPX, viewportRpx - tabBarHeight);
@@ -129,8 +137,8 @@ function readNestLayout() {
     return {
         inset: inset,
         tabBarHeight: tabBarHeight,
-        // 全屏底图用整个视口高度；内容区 pageHeight 仍扣掉底栏占位，
-        // 这样透明底栏背后也是同一张图，且 .nest + spacer 不会多出滚动。
+        // 底图单独覆盖手机端可能被窗口高度排除的透明底栏区。
+        sceneHeight: sceneHeight,
         viewportHeight: viewportRpx,
         pageHeight: pageHeight,
         dockBottom: dockBottom,

@@ -2,6 +2,6 @@
   "navigationStyle": "custom",
   "navigationBarTextStyle": "black",
   "backgroundColor": "#B7D68F",
-  "disableScroll": false,
+  "disableScroll": true,
   "usingComponents": {}
 }
