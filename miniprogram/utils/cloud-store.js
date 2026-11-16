@@ -6,19 +6,83 @@ const PREFIX = 'xcwc.cloud.v1:';
 const clone = value => JSON.parse(JSON.stringify(value));
 const failure = error => ({ error: error && error.error || 'SERVICE_UNAVAILABLE' });
 const version = value => typeof value === 'string' && /^\d+$/.test(value);
+const hasField = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
+const sparkEnabled = pet => pet.sparkRuleVersion === 'spark-v1';
+const nonnegative = value => Number.isSafeInteger(value) && value >= 0;
+const dateTime = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
+const sparkActions = ['PET', 'FEED', 'WATER', 'CLEAN'];
+const shanghaiOffsetMs = 8 * 60 * 60 * 1000;
+const dayMs = 24 * 60 * 60 * 1000;
 function compare(a, b) {
     a = a.replace(/^0+(?=\d)/, ''); b = b.replace(/^0+(?=\d)/, '');
     return a.length === b.length ? (a === b ? 0 : a > b ? 1 : -1) : a.length > b.length ? 1 : -1;
 }
+function dateOnly(value) {
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && dateTime(value) &&
+        new Date(value).toISOString().slice(0, 10) === value;
+}
+function validSpark(pet) {
+    if (!hasField(pet, 'sparkRuleVersion') && !hasField(pet, 'spark')) return true;
+    if (!sparkEnabled(pet) || !pet.spark || !dateOnly(pet.businessDate) || !validCareFields(pet)) return false;
+    const timeWithinDay = Date.parse(pet.serverTime) + shanghaiOffsetMs - Date.parse(pet.businessDate);
+    if (timeWithinDay < 0 || timeWithinDay >= dayMs) return false;
+    const { status, level, affinity, effectiveToday, frozenLevel, recoveryProgress, recoveryDeadline } = pet.spark;
+    if (![level, affinity, frozenLevel, recoveryProgress].every(nonnegative) ||
+        typeof effectiveToday !== 'boolean' || affinity < level + recoveryProgress) return false;
+    if (status === 'RECOVERABLE' || status === 'RECOVERING') {
+        if (!(level > 0 && frozenLevel === level && dateOnly(recoveryDeadline))) return false;
+        return status === 'RECOVERABLE'
+            ? recoveryProgress === 0 && !effectiveToday && recoveryDeadline >= pet.businessDate
+            : recoveryProgress === 1 || recoveryProgress === 2;
+    }
+    if (frozenLevel !== 0 || recoveryProgress !== 0 || recoveryDeadline !== null) return false;
+    if (status === 'ACTIVE') return level > 0;
+    if (level !== 0 || effectiveToday) return false;
+    return status === 'UNLIT' ? affinity === 0 : status === 'EXPIRED' && affinity > 0;
+}
+function validCareFields(pet) {
+    return dateTime(pet.care.lastCompanionAt) && pet.cleaning.type === 'POOP' &&
+        (pet.cleaning.dueAt === null || dateTime(pet.cleaning.dueAt));
+}
 function validPet(p) {
     return p && /^[a-f0-9]{32}$/.test(p.petId) && /^[a-f0-9]{32}$/.test(p.birdId) &&
         typeof p.nickname === 'string' && typeof p.active === 'boolean' && version(p.version) &&
-        p.ruleVersion === 'normal-v1' && Number.isFinite(Date.parse(p.serverTime)) && /^\d{4}-\d{2}-\d{2}$/.test(p.businessDate) &&
+        p.ruleVersion === 'normal-v1' && dateTime(p.serverTime) && /^\d{4}-\d{2}-\d{2}$/.test(p.businessDate) &&
         p.care && ['satiety', 'hydration', 'mood'].every(k => Number.isInteger(p.care[k]) && p.care[k] >= 0 && p.care[k] <= 100) &&
-        p.inventory && ['food', 'water'].every(k => Number.isInteger(p.inventory[k]) && p.inventory[k] >= 0) &&
-        p.cleaning && ['NONE', 'PENDING', 'PRESENT'].includes(p.cleaning.status) && typeof p.supplyClaimed === 'boolean';
+        p.inventory && ['food', 'water'].every(k => nonnegative(p.inventory[k])) &&
+        p.cleaning && ['NONE', 'PENDING', 'PRESENT'].includes(p.cleaning.status) && typeof p.supplyClaimed === 'boolean' && validSpark(p);
 }
 function validWallet(w) { return w && Number.isSafeInteger(w.balance) && version(w.accountVersion); }
+function validSparkEvent(result, action) {
+    if (!hasField(result, 'sparkEvent')) return true;
+    if (!sparkEnabled(result.pet) || result.outcome !== 'SUCCEEDED' || !sparkActions.includes(action)) return false;
+    const { status, level, effectiveToday, recoveryProgress } = result.pet.spark;
+    if (!effectiveToday) return false;
+    switch (result.sparkEvent) {
+        case 'LIT':
+        case 'RELIT': return status === 'ACTIVE' && level === 1;
+        case 'LEVELED': return status === 'ACTIVE' && level > 1;
+        case 'RESTORED': return status === 'ACTIVE' && level >= 4;
+        case 'RECOVERY_STARTED': return status === 'RECOVERING' && recoveryProgress === 1;
+        case 'RECOVERY_PROGRESS': return status === 'RECOVERING' && recoveryProgress === 2;
+        default: return false;
+    }
+}
+function validReceipt(result, op, fromLookup) {
+    if (!result || typeof result.replayed !== 'boolean' || (fromLookup && !result.replayed) ||
+        result.requestId !== op.body.requestId || !validPet(result.pet) || !validCareFields(result.pet) ||
+        !dateOnly(result.pet.businessDate) || !validWallet(result.wallet)) return false;
+    if (!op.petId) {
+        return result.pet.birdId === op.body.birdId && result.outcome === 'SUCCEEDED' &&
+            typeof result.created === 'boolean' && !hasField(result, 'sparkEvent');
+    }
+    const action = op.body.action;
+    const outcome = result.outcome;
+    return result.pet.petId === op.petId && typeof result.changed === 'boolean' &&
+        (result.reward === 0 || (result.reward === 1 && action === 'PET' && outcome === 'SUCCEEDED')) &&
+        (outcome === 'SUCCEEDED' || (outcome === 'ALREADY_FULL' && ['FEED', 'WATER'].includes(action)) ||
+            (outcome === 'ALREADY_CLAIMED' && action === 'CLAIM_SUPPLY')) && validSparkEvent(result, action);
+}
 const NOTES = { PET: '摸摸奖励', WELCOME: '初见礼', REDEEM: '兑换', STEPS: '历史步数奖励', CHECKIN_REWARD: '历史合照奖励' };
 
 function createCloudStore(platform, config) {
@@ -105,25 +169,39 @@ function createCloudStore(platform, config) {
             list = await request('/me/pets/initialize', 'POST', {}, c);
         }
         guard(c);
-        if (!list || list.userId !== c.userId || !Array.isArray(list.items) || !list.items.every(validPet) || !validWallet(list.wallet)) throw { error: 'INVALID_RESPONSE' };
-        const latestMembership = compare(list.wallet.accountVersion, data.wallet.accountVersion) >= 0;
-        list.items.forEach(mergePet); mergeWallet(list.wallet);
-        if (latestMembership) data.items = data.items.filter(p => list.items.some(item => p.petId === item.petId));
-        if (!data.items.some(p => p.petId === data.selected)) data.selected = data.items[0] && data.items[0].petId || '';
-        if (data.selected) {
-            const detail = await request('/me/pets/' + data.selected, 'GET', null, c); guard(c);
-            if (!detail || !detail.pet || detail.pet.petId !== data.selected) throw { error: 'INVALID_RESPONSE' };
-            mergePet(detail.pet); mergeWallet(detail.wallet);
+        if (!list || list.userId !== c.userId || !Array.isArray(list.items) || !list.items.every(validPet) ||
+            !list.items.every(p => sparkEnabled(p) === sparkEnabled(list.items[0])) || !validWallet(list.wallet)) {
+            throw { error: 'INVALID_RESPONSE' };
+        }
+        const items = compare(list.wallet.accountVersion, data.wallet.accountVersion) >= 0 ? list.items : data.items;
+        const pet = items.find(p => p.petId === data.selected) || items[0];
+        let detail;
+        if (pet) {
+            detail = await request('/me/pets/' + pet.petId, 'GET', null, c); guard(c);
+            if (!detail || !validPet(detail.pet) || detail.pet.petId !== pet.petId || detail.pet.birdId !== pet.birdId ||
+                !validWallet(detail.wallet) || (list.items.length && sparkEnabled(detail.pet) !== sparkEnabled(list.items[0]))) {
+                throw { error: 'INVALID_RESPONSE' };
+            }
         }
         const quota = await request('/me/points', 'GET', null, c); guard(c);
-        data.quota = { earnedToday: quota.earnedToday, dailyLimit: quota.dailyLimit };
         // 城市展示资料不在 CloudPet 内，读取本人实体名单；不据编码前缀推断。
+        let metadata;
         try {
             const birds = await request('/me/birds', 'GET', null, c); guard(c);
-            if (Array.isArray(birds)) data.metadata = birds.reduce((all, bird) => {
+            if (Array.isArray(birds)) metadata = birds.reduce((all, bird) => {
                 all[bird.id] = { cityCode: bird.cityCode, cityName: bird.cityName, typeName: bird.typeName }; return all;
             }, {});
         } catch (e) { guard(c); /* 资料失败不伪造城市，养成快照仍可使用 */ }
+        // 先核对整个响应，避免畸形详情覆盖已确认的快照。
+        const latestMembership = compare(list.wallet.accountVersion, data.wallet.accountVersion) >= 0;
+        list.items.forEach(mergePet); mergeWallet(list.wallet);
+        if (latestMembership) data.items = data.items.filter(p => list.items.some(item => item.petId === p.petId));
+        if (detail && data.items.some(p => p.petId === detail.pet.petId)) {
+            mergePet(detail.pet); mergeWallet(detail.wallet);
+        }
+        if (!data.items.some(p => p.petId === data.selected)) data.selected = data.items[0]?.petId || '';
+        data.quota = { earnedToday: quota.earnedToday, dailyLimit: quota.dailyLimit };
+        if (metadata) data.metadata = metadata;
         synced = true; lastError = ''; save(); emit();
         return { error: null, data: snapshot().data };
     }
@@ -201,6 +279,8 @@ function createCloudStore(platform, config) {
             points: data.wallet.balance, todayPoints: q.earnedToday || 0, dailyLimit: q.dailyLimit || 10,
             food: p ? p.inventory.food : 0, water: p ? p.inventory.water : 0,
             satiety: p ? p.care.satiety : 0, hydration: p ? p.care.hydration : 0, mood: p ? p.care.mood : 0,
+            spark: p && sparkEnabled(p) ? clone(p.spark) : null, businessDate: p?.businessDate || '',
+            serverTime: p?.serverTime || '',
             supplyClaimed: !!(p && p.supplyClaimed), cleaning: p && clone(p.cleaning), status: status(),
             ledger: (data.histories.points || []).map(row => Object.assign({}, row, {
                 at: Date.parse(row.createdAt), day: row.createdAt.slice(0, 10), note: NOTES[row.operation] || row.operation,
@@ -227,30 +307,39 @@ function createCloudStore(platform, config) {
         if (!write(key('pending'), value)) throw { error: 'STORAGE_UNAVAILABLE' };
         pending = value;
     }
-    async function finish(result, c, op) {
+    async function finish(result, c, op, fromLookup) {
         guard(c);
-        if (!result || typeof result.replayed !== 'boolean' || !['SUCCEEDED', 'ALREADY_FULL', 'ALREADY_CLAIMED'].includes(result.outcome) || result.requestId !== op.body.requestId || !validPet(result.pet) || !validWallet(result.wallet) ||
-            (op.petId && result.pet.petId !== op.petId) || (!op.petId && result.pet.birdId !== op.body.birdId)) throw { error: 'INVALID_RESPONSE', uncertain: true };
+        const knownPet = op.petId && data.items.find(p => p.petId === op.petId);
+        if (!validReceipt(result, op, fromLookup) ||
+            (knownPet && result.pet.birdId !== knownPet.birdId) ||
+            (!result.replayed && data.items.some(sparkEnabled) && !sparkEnabled(result.pet))) {
+            throw { error: 'INVALID_RESPONSE', uncertain: true };
+        }
         // 历史回执只能证明结算，不用来覆盖当前快照。
         if (!result.replayed) { mergePet(result.pet); mergeWallet(result.wallet); }
         if (!op.petId) data.selected = result.pet.petId;
         persistPending(null); save();
+        synced = false;
         try { await refreshInternal(c); } catch (e) { guard(c); synced = false; lastError = e.error; }
         guard(c); emit();
-        return { error: null, data: Object.assign({}, result, { granted: result.reward || 0 }) };
+        const { sparkEvent, ...acknowledged } = result;
+        const pet = selected();
+        if (synced && sparkEvent && !result.replayed && pet?.petId === result.pet.petId &&
+            pet.businessDate === result.pet.businessDate && pet.spark?.effectiveToday) acknowledged.sparkEvent = sparkEvent;
+        return { error: null, data: { ...acknowledged, granted: result.reward || 0 } };
     }
     async function runPending(c, lookup) {
         const op = clone(pending);
         try {
             if (Date.now() < retryAt) throw { error: 'RATE_LIMITED', uncertain: true };
-            let result;
+            let result, fromLookup = false;
             if (lookup) {
-                try { result = await request('/me/operations/' + op.body.requestId, 'GET', null, c); if (result) result.replayed = true; }
-                catch (e) { if (e.error !== 'OPERATION_NOT_FOUND') throw e; }
+                try { result = await request('/me/operations/' + op.body.requestId, 'GET', null, c); fromLookup = true; }
+                catch (e) { if (e.error !== 'OPERATION_NOT_FOUND') throw { ...e, uncertain: true }; }
             }
             guard(c);
-            if (!result) result = await request(op.path, 'POST', op.body, c);
-            return await finish(result, c, op);
+            if (!fromLookup) result = await request(op.path, 'POST', op.body, c);
+            return await finish(result, c, op, fromLookup);
         } catch (e) {
             if (!current(c)) return failure({ error: 'CONTEXT_CHANGED' });
             if (!e.uncertain && e.error !== 'LOGIN_REQUIRED') {
@@ -260,7 +349,7 @@ function createCloudStore(platform, config) {
                     try { await refreshInternal(c); } catch (ignored) { /* 保留只读快照 */ }
                 }
             } else synced = false;
-            guard(c); lastError = pending ? 'RESULT_PENDING' : e.error; emit();
+            guard(c); lastError = pending && e.error !== 'INVALID_RESPONSE' ? 'RESULT_PENDING' : e.error; emit();
             return failure({ error: pending ? 'RESULT_PENDING' : e.error });
         }
     }

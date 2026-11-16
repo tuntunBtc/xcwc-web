@@ -25,7 +25,8 @@ function fixture() {
         if (records.has(k)) return response(Object.assign({}, records.get(k), { replayed: true }));
         let p;
         if (path.endsWith('/adopt')) {
-            p = { petId: b.birdId, birdId: b.birdId, birdCode: 'HZ-HY-' + (++count), nickname: b.nickname, active: true, version: '0', ruleVersion: 'normal-v1', serverTime: new Date().toISOString(), businessDate: '2026-11-11', care: { satiety: 60, hydration: 60, mood: 80 }, inventory: { food: 3, water: 3 }, cleaning: { status: 'NONE', type: 'POOP', dueAt: null }, supplyClaimed: false };
+            const serverTime = '2026-11-11T01:00:00.000Z';
+            p = { petId: b.birdId, birdId: b.birdId, birdCode: 'HZ-HY-' + (++count), nickname: b.nickname, active: true, version: '0', ruleVersion: 'normal-v1', serverTime, businessDate: '2026-11-11', care: { satiety: 60, hydration: 60, mood: 80, lastCompanionAt: serverTime }, inventory: { food: 3, water: 3 }, cleaning: { status: 'NONE', type: 'POOP', dueAt: null }, supplyClaimed: false };
             u.pets.push(p);
         } else {
             p = u.pets.find(p => p.petId === path.split('/')[4]);
@@ -35,7 +36,8 @@ function fixture() {
             p.version = String(Number(p.version) + 1);
         }
         u.wallet.accountVersion = String(Number(u.wallet.accountVersion) + 1);
-        const result = { requestId: b.requestId, pet: p, wallet: u.wallet, replayed: false, changed: true, reward: 0, outcome: 'SUCCEEDED' };
+        const summary = path.endsWith('/adopt') ? { created: true } : { changed: true, reward: 0 };
+        const result = { requestId: b.requestId, pet: p, wallet: u.wallet, replayed: false, ...summary, outcome: 'SUCCEEDED' };
         records.set(k, copy(result)); return response(result);
     };
     let intercept;
@@ -184,4 +186,185 @@ test('uninitialized account explicitly POSTs once and recovers after a lost init
     assert.equal(posts, 2);
     assert.equal((await f.store.refresh()).error, null);
     assert.equal(posts, 2);
+});
+
+function setSpark(pet, fields = {}, date = '2026-11-16') {
+    pet.businessDate = date;
+    pet.serverTime = date + 'T01:00:00.000Z';
+    pet.sparkRuleVersion = 'spark-v1';
+    pet.spark = {
+        status: 'ACTIVE', level: 1, affinity: 1, effectiveToday: true,
+        frozenLevel: 0, recoveryProgress: 0, recoveryDeadline: null, ...fields,
+    };
+}
+
+async function loseLegacyOperation(f) {
+    await ready(f);
+    f.intercept(async (options, next) => {
+        if (options.url.endsWith('/actions')) { await next(options); throw Error('response lost after commit'); }
+        if (options.url.includes('/operations/')) throw Error('lookup unavailable');
+        return next(options);
+    });
+    assert.equal((await f.store.feed()).error, 'RESULT_PENDING');
+    assert.equal(f.store.status().pending, true);
+    f.intercept(null);
+}
+
+test('old server keeps original care working; an upgraded snapshot preserves normal-v1 and exposes spark', async () => {
+    const f = fixture(); await ready(f);
+    assert.equal(snap(f.store).spark, null);
+    assert.equal((await f.store.pet()).error, null);
+    setSpark(f.user(A).pets[0]);
+    assert.equal((await f.store.refresh()).error, null);
+    assert.equal(snap(f.store).pets[0].ruleVersion, 'normal-v1');
+    assert.equal(snap(f.store).spark.level, 1);
+    assert.equal(snap(f.store).businessDate, '2026-11-16');
+});
+
+test('ongoing recovery stays valid past the start deadline; a true server rollback restores legacy capability', async () => {
+    const f = fixture(); await ready(f);
+    const p = f.user(A).pets[0];
+    setSpark(p, { status: 'RECOVERING', level: 5, affinity: 7, frozenLevel: 5, recoveryProgress: 2, recoveryDeadline: '2026-11-20' }, '2026-11-21');
+    assert.equal((await f.store.refresh()).error, null);
+    assert.deepEqual(snap(f.store).spark, p.spark);
+    delete p.sparkRuleVersion;
+    delete p.spark;
+    p.serverTime = '2026-11-21T02:00:00.000Z';
+    assert.equal((await f.store.refresh()).error, null);
+    assert.equal(snap(f.store).spark, null);
+    assert.equal((await f.store.pet()).error, null);
+});
+
+test('supported but malformed list/detail cannot downgrade spark or replace the current state', async t => {
+    for (const [name, corrupt] of [
+        ['missing value', pet => { delete pet.spark; }],
+        ['missing marker', pet => { delete pet.sparkRuleVersion; }],
+        ['unknown version', pet => { pet.sparkRuleVersion = 'spark-v2'; }],
+        ['wrong server date', pet => { pet.businessDate = '2026-11-15'; }],
+        ['invalid recovery progress', pet => { pet.spark.recoveryProgress = 3; }],
+        ['detail falsely looks legacy', pet => { delete pet.spark; delete pet.sparkRuleVersion; }],
+    ]) {
+        await t.test(name, async () => {
+            const f = fixture(); await ready(f);
+            setSpark(f.user(A).pets[0]);
+            await f.store.refresh();
+            const before = snap(f.store);
+            const serverPet = f.user(A).pets[0];
+            serverPet.version = '5';
+            setSpark(serverPet, { level: 2, affinity: 2 });
+            f.intercept(async (o, next) => {
+                const response = await next(o);
+                if (o.url.endsWith('/pets/' + P)) corrupt(response.data.pet);
+                return response;
+            });
+            assert.equal((await f.store.refresh()).error, 'INVALID_RESPONSE');
+            assert.deepEqual(snap(f.store).spark, before.spark);
+            assert.equal(f.store.status().synced, false);
+            assert.equal((await f.store.pet()).error, 'REFRESH_REQUIRED');
+        });
+    }
+});
+
+test('previously committed legacy receipt clears pending, refreshes confirmed spark and never writes the operation again', async () => {
+    const f = fixture(); await loseLegacyOperation(f);
+    setSpark(f.user(A).pets[0], { effectiveToday: false }, '2026-11-17');
+    const wx = platform(f.transport, f.wx.memory);
+    const upgraded = createCloudStore(wx, { API_BASE: 'http://test.invalid' });
+    const recovered = await upgraded.recover();
+    assert.equal(recovered.error, null);
+    assert.equal(recovered.data.replayed, true);
+    assert.equal(recovered.data.sparkEvent, undefined);
+    assert.equal(wx.calls.filter(c => c.method === 'POST').length, 0);
+    assert.equal(upgraded.status().pending, false);
+    assert.equal(snap(upgraded).food, 2);
+    assert.equal(snap(upgraded).businessDate, '2026-11-17');
+    assert.equal(snap(upgraded).spark.effectiveToday, false);
+});
+
+test('failed snapshot after confirming old receipt keeps the newer cached state read only', async () => {
+    const f = fixture(); await loseLegacyOperation(f);
+    setSpark(f.user(A).pets[0], { level: 2, affinity: 3 });
+    f.user(A).pets[0].inventory.food = 1;
+    await f.store.refresh();
+    f.intercept(async (o, next) => { if (o.url.endsWith('/me/pets')) throw Error('snapshot unavailable'); return next(o); });
+    assert.equal((await f.store.recover()).error, null);
+    assert.equal(f.store.status().pending, false);
+    assert.equal(f.store.status().synced, false);
+    assert.equal(snap(f.store).food, 1);
+    assert.equal(snap(f.store).spark.level, 2);
+    assert.equal((await f.store.feed()).error, 'REFRESH_REQUIRED');
+    assert.equal(f.wx.calls.filter(c => c.path.endsWith('/actions')).length, 1);
+});
+
+test('unknown or mismatched receipts remain pending and are never treated as a negative lookup', async t => {
+    for (const [name, modify] of [
+        ['empty receipt', r => { r.data = null; }],
+        ['missing replay flag', r => { delete r.data.replayed; }],
+        ['wrong ID', r => { r.data.requestId = 'b'.repeat(32); }],
+        ['wrong pet', r => { r.data.pet.petId = Q; }],
+        ['wrong bird within the pet', r => { r.data.pet.birdId = Q; }],
+        ['unknown base version', r => { r.data.pet.ruleVersion = 'normal-v2'; }],
+        ['missing original care field', r => { delete r.data.pet.care.lastCompanionAt; }],
+        ['missing wallet version', r => { delete r.data.wallet.accountVersion; }],
+    ]) {
+        await t.test(name, async () => {
+            const f = fixture(); await loseLegacyOperation(f);
+            f.intercept(async (o, next) => {
+                const result = await next(o);
+                if (o.url.includes('/operations/')) modify(result);
+                return result;
+            });
+            assert.equal((await f.store.recover()).error, 'RESULT_PENDING');
+            assert.equal(f.store.status().error, 'INVALID_RESPONSE');
+            assert.equal(f.store.status().pending, true);
+            assert.equal(f.store.status().canOperate, false);
+            assert.equal(f.wx.calls.filter(c => c.path.endsWith('/actions')).length, 1);
+        });
+    }
+});
+
+test('malformed new action and history response are never shown as success', async () => {
+    const f = fixture(); await ready(f);
+    const pet = f.user(A).pets[0];
+    setSpark(pet);
+    await f.store.refresh();
+    f.intercept(async (o, next) => {
+        const result = await next(o);
+        if (o.url.endsWith('/actions') || o.url.includes('/operations/')) delete result.data.pet.spark;
+        return result;
+    });
+    assert.equal((await f.store.feed()).error, 'RESULT_PENDING');
+    assert.equal(f.store.status().error, 'INVALID_RESPONSE');
+    assert.equal(f.store.status().synced, false);
+    assert.equal(f.store.status().pending, true);
+    assert.equal(snap(f.store).food, 3);
+    assert.equal(f.wx.calls.filter(c => c.path.endsWith('/actions')).length, 1);
+});
+
+test('only a valid immediate action emits spark feedback; replay and date rollover suppress it', async t => {
+    for (const mode of ['current', 'replay', 'midnight']) {
+        await t.test(mode, async () => {
+            const f = fixture(); await ready(f);
+            const pet = f.user(A).pets[0];
+            setSpark(pet, { status: 'UNLIT', level: 0, affinity: 0, effectiveToday: false });
+            await f.store.refresh();
+            f.intercept(async (o, next) => {
+                if (!o.url.endsWith('/actions')) return next(o);
+                setSpark(pet);
+                const result = await next(o);
+                const recorded = f.records.get(A + o.data.requestId);
+                recorded.sparkEvent = 'LIT';
+                result.data.sparkEvent = 'LIT';
+                if (mode === 'replay') throw Error('response lost');
+                if (mode === 'midnight') setSpark(pet, { effectiveToday: false }, '2026-11-17');
+                return result;
+            });
+            const response = await f.store.pet();
+            assert.equal(response.error, null);
+            assert.equal(response.data.granted, 0);
+            assert.equal(response.data.sparkEvent, mode === 'current' ? 'LIT' : undefined);
+            assert.equal(snap(f.store).spark.level, 1);
+            assert.equal(snap(f.store).spark.effectiveToday, mode !== 'midnight');
+        });
+    }
 });

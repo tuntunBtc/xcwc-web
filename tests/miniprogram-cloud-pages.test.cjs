@@ -51,6 +51,111 @@ test('nest discards feedback after page hidden; supports switch and asynchronous
  const h=harness('index');h.page.onLoad();h.page.onShow();const p=h.page.onFeed();h.page.onHide();h.complete({error:null,data:{outcome:'SUCCEEDED',changed:true}});await p;assert.equal(h.page.data.feedFxId,0);
  h.page.onShow();await h.page.onSelectPet({currentTarget:{dataset:{id:h.Q}}});assert.equal(h.page.data.displayName,'乙');h.page.data.renameValue='新名字';await h.page.onSaveRename();assert.equal(h.page.data.displayName,'新名字');h.page.onHide();h.page.onUnload();
 });
+function sparkState(overrides = {}) {
+    return { status: 'UNLIT', level: 0, affinity: 0, effectiveToday: false, frozenLevel: 0, recoveryProgress: 0,
+        recoveryDeadline: null, ...overrides };
+}
+
+test('spark presentation distinguishes readiness, recovery, tiers, and unavailable data', () => {
+    const { presentSpark } = require('../miniprogram/pages/index/spark');
+    const ready = { signedIn: true, online: true, synced: true };
+    const present = data => presentSpark({ hasBird: true, spark: sparkState(data) }, ready);
+    assert.equal(present().badge, '待点亮');
+    for (const [level, tier] of [[1, 1], [6, 1], [7, 2], [29, 2], [30, 3], [99, 3], [100, 4], [365, 4]]) {
+        const view = present({ status: 'ACTIVE', level, affinity: level });
+        assert.equal(view.tier, tier);
+        assert.equal(view.badge, level > 99 ? 'Lv.99+' : 'Lv.' + level);
+        assert.equal(view.spark.level, level);
+        assert.equal(view.action, 'pet');
+        assert.equal(view.dim, false);
+    }
+    assert.equal(present({ status: 'ACTIVE', level: 8, effectiveToday: true }).action, '');
+    const resume = { level: 5, frozenLevel: 5, affinity: 6, recoveryDeadline: '2026-11-20' };
+    const recoverable = present({ ...resume, status: 'RECOVERABLE' });
+    assert.equal(recoverable.badge, '可恢复');
+    assert.equal(recoverable.dim, true);
+    assert.match(recoverable.deadline, /11 月 20 日结束前开始/);
+    const recovering = present({ ...resume, status: 'RECOVERING', recoveryProgress: 2, effectiveToday: true });
+    assert.equal(recovering.badge, '恢复 2/3');
+    assert.equal(recovering.action, '');
+    assert.match(recovering.deadline, /已开始，继续陪伴/);
+    assert.match(recovering.message, /明天继续/);
+    assert.equal(present({ ...resume, status: 'RECOVERING', recoveryProgress: 1 }).action, 'pet');
+    assert.equal(present({ status: 'EXPIRED', affinity: 6 }).button, '摸摸，重新点亮');
+    assert.equal(presentSpark({ hasBird: true, spark: null }, ready).mode, 'unavailable');
+    const previousBird = { hasBird: true, spark: sparkState({ level: 6, affinity: 6 }) };
+    for (const state of [{ signedIn: false }, { online: false }, { error: 'INVALID_RESPONSE' }]) {
+        assert.equal(presentSpark(previousBird, { ...ready, ...state }).spark, null);
+    }
+});
+
+test('spark CTA closes the sheet, uses one existing pet action, and merges the bird response with confirmed rewards', async () => {
+    const h = harness('index');
+    const angryArt = '/assets/nest/emotion-angry.webp';
+    let requests = 0;
+    h.state.spark = sparkState();
+    h.store.pet = async () => {
+        requests++;
+        assert.equal(h.page.data.sheet, null);
+        h.state.spark = sparkState({ status: 'ACTIVE', level: 1, affinity: 1, effectiveToday: true });
+        return { error: null, data: { outcome: 'SUCCEEDED', replayed: false, granted: 1, sparkEvent: 'LIT' } };
+    };
+    h.page.onLoad();
+    h.page.onShow();
+    try {
+        h.page.showFeedback('脚脚痒痒', 2000, angryArt);
+        h.page.onOpenSpark();
+        assert.equal(h.page.data.sheet.type, 'spark');
+        assert.equal(h.page.data.sparkDisplay.badge, '待点亮');
+        await Promise.all([h.page.onSparkAction(), h.page.onSparkAction()]);
+        assert.equal(requests, 1);
+        assert.equal(h.page.data.birdArt, angryArt);
+        assert.match(h.page.data.toast, /嘿嘿.*点亮啦.*叽分 \+1/);
+        assert.equal(h.page.data.sparkDisplay.badge, 'Lv.1');
+        h.page.onOpenSpark();
+        await h.page.onSparkAction();
+        assert.equal(requests, 1);
+    } finally {
+        h.page.onHide();
+        h.page.onUnload();
+    }
+});
+
+test('spark notice follows the confirmed clean transition and suppresses replayed or stale transitions', async () => {
+    const h = harness('index');
+    h.state.spark = sparkState({ status: 'ACTIVE', level: 6, affinity: 6 });
+    h.page.onLoad();
+    h.page.onShow();
+    const clean = () => h.page.onTool({ currentTarget: { dataset: { key: 'clean' } } });
+    try {
+        await clean();
+        assert.equal(h.page.data.speech, '小窝打扫干净啦');
+        assert.equal(h.page.data.toast, '');
+        assert.equal(h.page.data.sparkDisplay.badge, 'Lv.6');
+        h.store.clean = async () => {
+            h.state.spark = sparkState({ status: 'ACTIVE', level: 7, affinity: 7, effectiveToday: true });
+            return { error: null, data: { outcome: 'SUCCEEDED', sparkEvent: 'LEVELED' } };
+        };
+        await clean();
+        assert.match(h.page.data.toast, /Lv.7，亲密度 \+1/);
+        assert.equal(h.page.data.sparkDisplay.tier, 2);
+        assert.equal(h.page.confirmedSparkNotice({ data: { replayed: true, sparkEvent: 'LEVELED' } }), '');
+        h.store.status().synced = false;
+        h.page.refresh();
+        assert.equal(h.page.confirmedSparkNotice({ data: { sparkEvent: 'LEVELED' } }), '');
+    } finally {
+        h.page.onHide();
+        h.page.onUnload();
+    }
+});
+
+test('spark entry catches only its own tap and uses the existing sheet', () => {
+    const xml = fs.readFileSync(path.join(ROOT, 'pages/index/index.wxml'), 'utf8');
+    assert.match(xml, /class="identity" bindtap="onSwitch"/);
+    assert.match(xml, /class="identity-text" catchtap="onRename"/);
+    assert.match(xml, /class="companion spark-entry"[^>]*catchtap="onOpenSpark"/);
+    assert.match(xml, /class="sheet-primary spark-action" catchtap="onSparkAction"/);
+});
 test('adoption uses verified birdId, permits second bird, never adopts just by opening NFC link',async()=>{
  const h=harness('adopt');h.state.pets=h.state.pets.slice(0,1);h.page.onLoad({code:'HZ-HY-9000000000000000102'});h.page.onShow();await h.settle();
  assert.equal(h.page.data.ready,true);assert.equal(h.page.data.alreadyHaveBird,false);assert.equal(h.calls.filter(c=>c[0]==='ADOPT').length,0);

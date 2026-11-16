@@ -180,31 +180,106 @@ page {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 47rpx;
+    justify-content: center;
+    width: 70rpx;
+    min-height: 44px;
     flex: none;
     z-index: 1;
 }
 
-.hud-clip {
-    width: 47rpx;
-    height: 47rpx;
-}
-
-/* hud-icons-v2-768.webp = 3 列 × 2 行，背景 300% × 200% */
-.hud-clip .sprite {
-    width: 300%;
-    height: 200%;
-}
-
-.icon-companion {
-    top: -100%;
-    left: 0;
-}
-
 .companion-text {
-    font-size: 14rpx;
-    color: #A17B53;
+    font-size: 15rpx;
+    font-weight: 600;
+    color: #795336;
     line-height: 1.2;
+    white-space: nowrap;
+}
+
+.spark-icon {
+    position: relative;
+    width: 46rpx;
+    height: 43rpx;
+    pointer-events: none;
+}
+
+.spark-flame {
+    position: absolute;
+    top: 7rpx;
+    left: 10rpx;
+    width: 26rpx;
+    height: 26rpx;
+    border: 2rpx solid rgba(255, 237, 182, 0.75);
+    border-radius: 56% 16% 55% 58%;
+    background: linear-gradient(135deg, #d77643, #ffad54);
+    box-shadow: inset 0 2rpx 4rpx rgba(255, 240, 189, 0.55), 0 2rpx 4rpx rgba(178, 89, 40, 0.28);
+    transform: rotate(-45deg);
+}
+
+.spark-tier-3 .spark-flame,
+.spark-tier-4 .spark-flame {
+    top: 5rpx;
+    left: 8rpx;
+    width: 30rpx;
+    height: 30rpx;
+}
+
+.spark-tier-4 .spark-flame {
+    background: linear-gradient(145deg, #bd741f, #ffd571);
+}
+
+.spark-core {
+    position: absolute;
+    bottom: 6rpx;
+    left: 17rpx;
+    width: 12rpx;
+    height: 12rpx;
+    border-radius: 56% 16% 55% 58%;
+    background: #ffe09b;
+    transform: rotate(-45deg);
+}
+
+.spark-dot {
+    position: absolute;
+    top: 7rpx;
+    right: 3rpx;
+    width: 6rpx;
+    height: 6rpx;
+    border-radius: 50%;
+    background: #db9543;
+}
+
+.spark-dot-small {
+    top: 14rpx;
+    right: auto;
+    left: 2rpx;
+    width: 5rpx;
+    height: 5rpx;
+}
+
+.spark-orbit {
+    position: absolute;
+    right: 1rpx;
+    bottom: 2rpx;
+    left: 1rpx;
+    height: 15rpx;
+    border: 2rpx solid #ce9a48;
+    border-radius: 50%;
+    transform: rotate(-14deg);
+}
+
+.spark-dim .spark-flame {
+    background: linear-gradient(135deg, #a79e90, #c7bcae);
+    border-color: #e6dbcc;
+    box-shadow: inset 0 2rpx 4rpx rgba(239, 231, 216, 0.55);
+}
+
+.spark-dim .spark-core,
+.spark-dim .spark-dot {
+    background: #ddd1c1;
+}
+
+.spark-dim .spark-orbit {
+    border-color: #a99e8d;
 }
 
 .switch {
@@ -892,6 +967,120 @@ page {
     line-height: 1.9;
     color: #8C8269;
     margin-bottom: 10rpx;
+}
+
+.spark-summary {
+    margin-top: 18rpx;
+    padding: 20rpx;
+    border: 2rpx solid #eadbc0;
+    border-radius: 22rpx;
+    background: #fff5e3;
+    color: #65452f;
+}
+
+.spark-summary-head,
+.spark-recovery-label {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8rpx 18rpx;
+}
+
+.spark-bird {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 26rpx;
+    font-weight: 650;
+}
+
+.spark-today {
+    padding: 4rpx 12rpx;
+    border-radius: 16rpx;
+    background: #f3e0bc;
+    color: #60432e;
+    font-size: 19rpx;
+    white-space: nowrap;
+}
+
+.spark-metrics {
+    display: flex;
+    gap: 12rpx;
+    margin-top: 18rpx;
+}
+
+.spark-metric {
+    flex: 1;
+    min-width: 0;
+}
+
+.spark-metric-label,
+.spark-metric-value {
+    display: block;
+    line-height: 1.35;
+}
+
+.spark-metric-label {
+    font-size: 19rpx;
+    color: #795b43;
+}
+
+.spark-metric-value {
+    margin-top: 5rpx;
+    font-size: 27rpx;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+}
+
+.spark-recovery {
+    padding-top: 13rpx;
+    margin-top: 17rpx;
+    border-top: 2rpx solid #eadbc0;
+}
+
+.spark-recovery-label,
+.spark-deadline {
+    font-size: 20rpx;
+    line-height: 1.45;
+}
+
+.spark-progress {
+    display: flex;
+    gap: 8rpx;
+    margin: 8rpx 0;
+}
+
+.spark-progress-day {
+    flex: 1;
+    height: 8rpx;
+    border-radius: 5rpx;
+    background: #e7dac7;
+}
+
+.spark-progress-day.is-done {
+    background: #bc733f;
+}
+
+.spark-deadline,
+.spark-message {
+    display: block;
+}
+
+.spark-message {
+    margin-top: 16rpx;
+    color: #65452f;
+    font-size: 24rpx;
+    line-height: 1.5;
+}
+
+.spark-action {
+    min-height: 44px;
+    margin-top: 18rpx;
+    line-height: 1.5;
 }
 
 .ledger {

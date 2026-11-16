@@ -8,7 +8,7 @@
 
     <view class="scene-shade"></view>
 
-    <!-- 顶部 HUD：头像 / 名字 / 城市 / 相伴 / 切换 / 叽分钱包 -->
+    <!-- 顶部 HUD：头像 / 名字 / 城市 / 火花 / 切换 / 叽分钱包 -->
     <view class="hud" style="top:{{layout.hudTop}}rpx;right:{{layout.hudRight}}rpx">
         <view class="identity" bindtap="onSwitch" hover-class="ui-hover">
             <image class="tex-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
@@ -17,9 +17,15 @@
                 <view class="name"><text class="name-text">{{displayName}}</text><text class="pen">✎</text></view>
                 <text class="place">{{placeText}}</text>
             </view>
-            <view class="companion">
-                <view class="clip hud-clip"><image class="sprite icon-companion" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image></view>
-                <text class="companion-text">相伴</text>
+            <view class="companion spark-entry" role="button" aria-label="{{'陪伴火花，' + sparkDisplay.badge}}" catchtap="onOpenSpark" hover-class="ui-hover">
+                <view class="spark-icon spark-tier-{{sparkDisplay.tier}} {{sparkDisplay.dim ? 'spark-dim' : ''}}" aria-hidden="true">
+                    <view class="spark-flame"></view>
+                    <view wx:if="{{sparkDisplay.tier >= 2}}" class="spark-core"></view>
+                    <view wx:if="{{sparkDisplay.tier >= 2}}" class="spark-dot"></view>
+                    <view wx:if="{{sparkDisplay.tier >= 3}}" class="spark-dot spark-dot-small"></view>
+                    <view wx:if="{{sparkDisplay.tier >= 4}}" class="spark-orbit"></view>
+                </view>
+                <text class="companion-text">{{sparkDisplay.badge}}</text>
             </view>
             <text class="switch">›</text>
         </view>
@@ -115,6 +121,46 @@
             <view class="sheet-close" catchtap="closeSheet">×</view>
             <text class="sheet-title">{{sheet.title}}</text>
             <text wx:if="{{sheet.desc}}" class="sheet-desc">{{sheet.desc}}</text>
+
+            <block wx:if="{{sheet.type === 'spark'}}">
+                <view wx:if="{{sparkDisplay.mode === 'ready'}}" class="spark-summary">
+                    <view class="spark-summary-head">
+                        <text class="spark-bird">{{displayName}}</text>
+                        <text class="spark-today">{{sparkDisplay.spark.effectiveToday ? '今日已完成' : '今日待互动'}}</text>
+                    </view>
+                    <view class="spark-metrics">
+                        <view class="spark-metric">
+                            <text class="spark-metric-label">火花等级</text>
+                            <text class="spark-metric-value">{{sparkDisplay.spark.level ? 'Lv.' + sparkDisplay.spark.level : '未点亮'}}</text>
+                        </view>
+                        <view class="spark-metric">
+                            <text class="spark-metric-label">火花天数</text>
+                            <text class="spark-metric-value">{{sparkDisplay.spark.level}} 天</text>
+                        </view>
+                        <view class="spark-metric">
+                            <text class="spark-metric-label">累计亲密度</text>
+                            <text class="spark-metric-value">{{sparkDisplay.spark.affinity}}</text>
+                        </view>
+                    </view>
+                    <view wx:if="{{sparkDisplay.spark.status === 'RECOVERABLE' || sparkDisplay.spark.status === 'RECOVERING'}}" class="spark-recovery">
+                        <view class="spark-recovery-label">
+                            <text>冻结等级 Lv.{{sparkDisplay.spark.frozenLevel}}</text>
+                            <text>恢复 {{sparkDisplay.spark.recoveryProgress}} / 3</text>
+                        </view>
+                        <view class="spark-progress" aria-hidden="true">
+                            <view class="spark-progress-day {{sparkDisplay.spark.recoveryProgress >= 1 ? 'is-done' : ''}}"></view>
+                            <view class="spark-progress-day {{sparkDisplay.spark.recoveryProgress >= 2 ? 'is-done' : ''}}"></view>
+                            <view class="spark-progress-day"></view>
+                        </view>
+                        <text wx:if="{{sparkDisplay.deadline}}" class="spark-deadline">{{sparkDisplay.deadline}}</text>
+                    </view>
+                </view>
+                <text class="spark-message">{{sparkDisplay.message}}</text>
+                <button class="sheet-primary spark-action" catchtap="onSparkAction"
+                    disabled="{{(sparkDisplay.action === 'pet' && !cloudStatus.canOperate) || ((sparkDisplay.action === 'retry' || sparkDisplay.action === 'login') && (cloudStatus.loading || !cloudStatus.online))}}">
+                    {{sparkDisplay.button}}
+                </button>
+            </block>
 
             <block wx:if="{{sheet.type === 'rename'}}">
                 <input class="sheet-input" value="{{renameValue}}" bindinput="onRenameInput" maxlength="12" adjust-position="{{false}}" placeholder="1–6 个字" />

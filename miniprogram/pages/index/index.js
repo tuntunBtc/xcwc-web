@@ -10,6 +10,7 @@ const nestIdle = require('../../utils/nest-idle');
 const nestFoot = require('../../utils/nest-foot');
 const cloudUI = require('../../utils/cloud-ui');
 const werun = require('../../utils/werun');
+const { presentSpark, sparkNotice } = require('./spark');
 const STATUS_REFRESH_MS = 30000;
 const HAPPY_ART = '/assets/nest/emotion-happy.webp';
 const ANGRY_ART = '/assets/nest/emotion-angry.webp';
@@ -44,6 +45,7 @@ Page(cloudUI.page({
             speechTop: 506, claimTop: 641, actorTop: 750,
         },
         hasBird: false,
+        sparkDisplay: presentSpark(null, {}),
         storageUnavailable: false,
         displayName: '等待小鸟入住',
         placeText: '⌖ 我的小窝',
@@ -198,7 +200,12 @@ Page(cloudUI.page({
         const result = store.snapshot();
         const s = result.data ? result.data.snapshot : null;
         if (!s) {
-            this.setData({ storageUnavailable: true, speech: '本机记录暂时无法读取，请重试。' });
+            const connection = store.status();
+            this.setData({
+                storageUnavailable: true,
+                speech: '本机记录暂时无法读取，请重试。',
+                sparkDisplay: presentSpark(null, { ...connection, synced: false }),
+            });
             this.syncIdle(true);
             return;
         }
@@ -232,6 +239,7 @@ Page(cloudUI.page({
         const feedback = this.feedbackActive() ? this.feedback : null;
         this.setData({
             hasBird: s.hasBird,
+            sparkDisplay: presentSpark(s, store.status()),
             pets: s.pets, selectedPetId: s.petId, cleaning: s.cleaning,
             storageUnavailable: false,
             displayName: s.hasBird ? s.nickname : '等待小鸟入住',
@@ -316,10 +324,15 @@ Page(cloudUI.page({
             return false;
         }
         const copy = rules.careCopy(action, true);
+        const angry = this.feedbackActive() && this.feedback.art === ANGRY_ART;
         if (copy.speech) {
             this.showFeedback(copy.speech, 1600);
         }
         this.refresh();
+        const sparkFeedback = this.confirmedSparkNotice(result);
+        const fallbackSpeech = angry && (action !== 'clean' || sparkFeedback) ? copy.speech : '';
+        const notice = [fallbackSpeech, sparkFeedback].filter(Boolean).join(' · ');
+        if (notice) this.showToast(notice);
         if (closeSheetOnSuccess) {
             this.setData({ sheet: null, motionPaused: false });
         }
@@ -407,13 +420,21 @@ Page(cloudUI.page({
             this.showToast(cloudUI.message(result.error));
             return;
         }
-        this.showFeedback('嘿嘿，你摸摸我，我就开心啦～', 1600);
-        if (result.data && result.data.granted > 0) {
-            this.showToast('叽分 +' + result.data.granted);
-        }
+        const speech = '嘿嘿，你摸摸我，我就开心啦～';
+        const angry = this.feedbackActive() && this.feedback.art === ANGRY_ART;
+        this.showFeedback(speech, 1600);
         this.playChirp();
         this.idle.kick();
         this.refresh();
+        const granted = result.data && result.data.granted;
+        const notice = [angry ? speech : '', this.confirmedSparkNotice(result), granted > 0 ? '叽分 +' + granted : '']
+            .filter(Boolean).join(' · ');
+        if (notice) this.showToast(notice);
+    },
+
+    confirmedSparkNotice(result) {
+        const data = result.data;
+        return data && !data.replayed ? sparkNotice(data.sparkEvent, this.data.sparkDisplay.spark) : '';
     },
 
     onPet(event) {
@@ -566,6 +587,22 @@ Page(cloudUI.page({
 
     onSwitch() {
         this.openSheet({ type: 'switch', title: '今天，想陪谁？' });
+    },
+
+    onOpenSpark() {
+        this.refresh();
+        this.openSheet({ type: 'spark', title: '陪伴火花' });
+    },
+
+    async onSparkAction() {
+        if (this.data.sheet?.type !== 'spark') return;
+        const action = this.data.sparkDisplay.action;
+        if (action === 'login') return this.onCloudLogin();
+        if (action === 'retry') return this.onCloudRetry();
+        if (action === 'pet' && (!store.status().canOperate || this.cloudActionBusy)) return;
+        this.closeSheet();
+        if (action === 'pet') return this.pet();
+        if (action === 'adopt') return this.onClaimHelp();
     },
 
     onClaimHelp() {
