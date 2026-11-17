@@ -106,7 +106,8 @@ function readNestLayout() {
         var device = wx.getDeviceInfo ? wx.getDeviceInfo() : info;
         if (device && /^(ios|android|ohos)$/.test(device.platform) && Number.isFinite(info.screenHeight)) {
             var screenTop = Number.isFinite(info.screenTop) ? Math.max(0, info.screenTop) : 0;
-            screenViewportRpx = Math.ceil((info.screenHeight - screenTop) * 750 / width);
+            var screenViewport = info.screenHeight - screenTop;
+            if (screenViewport > height) screenViewportRpx = Math.ceil(screenViewport * 750 / width);
         }
     } catch (error) {
         // 保留已取得的窗口尺寸，旧基础库或缺少设备信息时沿用窗口高度。
