@@ -1,9 +1,9 @@
-// Real local xcwc-api integration; external purchases are never performed.
+// Real local xcwh-api integration; external purchases are never performed.
 const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'/tmp/xcwc-browser-check/node_modules/playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const base=process.env.XCWC_PREVIEW_URL||'http://127.0.0.1:8814';
 if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local preview only');
-const catalogue=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../xcwc-api/src/main/resources/shop/catalog.json'),'utf8'));
+const catalogue=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../xcwh-api/src/main/resources/shop/catalog.json'),'utf8'));
 const expected=catalogue.products.filter(p=>p.enabled!==false).sort((a,b)=>(a.sortOrder||0)-(b.sortOrder||0)||a.id.localeCompare(b.id));
 const inCity=city=>expected.filter(p=>p.cityCode===city);
 const output=process.env.XCWC_SCREENSHOT_DIR||path.resolve('output/shop-api');fs.mkdirSync(output,{recursive:true});

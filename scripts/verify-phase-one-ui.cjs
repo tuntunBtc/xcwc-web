@@ -7,7 +7,7 @@ const base=process.env.XCWC_PREVIEW_URL;
 if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base||''))throw Error('Explicit loopback preview required');
 const root=path.resolve(__dirname,'..'),out=path.resolve(process.env.XCWC_UI_OUTPUT||path.join(root,'output/ui-optimization-20261104/browser'));
 fs.mkdirSync(out,{recursive:true});
-const catalogue=JSON.parse(fs.readFileSync(path.join(root,'../xcwc-api/src/main/resources/shop/catalog.json'),'utf8'));
+const catalogue=JSON.parse(fs.readFileSync(path.join(root,'../xcwh-api/src/main/resources/shop/catalog.json'),'utf8'));
 const ids=['a','b','c'].map(c=>c.repeat(32));
 const publicBird=id=>({id,name:'验收小鸟',cityCode:'hangzhou',cityName:'杭州',typeId:'huangying',typeName:'小黄莺',skinId:'green',skinName:'绿色',active:true});
 const report={conditions:{base,viewport:'390x844',clock:'2026-11-04T08:00:00Z',api:'Synthetic public fixtures; non-GET requests rejected'},engines:[],limits:['Native Chinese keyboards, NFC hardware, iPhone/WeChat and system gallery remain device checks.']};

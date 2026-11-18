@@ -67,6 +67,44 @@ test('release image cache reclaims obsolete generated directories and preserves 
         [old, recent, busy, unrelatedFile, warm].map(name => `${base}/${name}`).sort());
 });
 
+test('城市主图等待素材分包，下载失败后重试，缓存命中时可离线读取', async () => {
+    const source = 'media/collection/assets/city/felt/hero.bin';
+    const bytes = Uint8Array.from(Buffer.from('RIFF\x08\0\0\0WEBPtest', 'latin1'));
+    const disk = new Map();
+    let loads = 0;
+    const lookup = () => ({ version: 'audit', files: {
+        '/hero.webp': { name: 'hero.webp', source, size: bytes.length },
+    } });
+    lookup.async = async name => {
+        assert.equal(name, '../media/collection/files.js');
+        if (++loads === 1) throw new Error('分包下载中断');
+    };
+    const files = {
+        mkdir: options => options.success(),
+        stat: ({ path, success, fail }) => disk.has(path) ? success({ stats: { size: bytes.length } }) : fail(),
+        readFile({ filePath, success, length }) {
+            if (filePath === source) assert.equal(loads, 2);
+            const data = filePath === source ? bytes : disk.get(filePath);
+            success({ data: data.slice(0, length).buffer });
+        },
+        writeFile({ filePath, data, success }) { disk.set(filePath, new Uint8Array(data)); success(); },
+        rename({ oldPath, newPath, success }) { disk.set(newPath, disk.get(oldPath)); disk.delete(oldPath); success(); },
+        unlink({ filePath, success }) { disk.delete(filePath); success(); },
+    };
+    function start() {
+        const sandbox = { module: { exports: {} }, require: lookup,
+            wx: { env: { USER_DATA_PATH: '/mock' }, getFileSystemManager: () => files } };
+        vm.runInNewContext(runtime, sandbox);
+        return sandbox.module.exports;
+    }
+    const client = start();
+    await assert.rejects(client.resolve('/hero.webp'), /分包下载中断/);
+    const location = await client.resolve('/hero.webp');
+    assert.deepEqual([...disk.get(location)], [...bytes]);
+    assert.equal(await start().resolve('/hero.webp'), location);
+    assert.equal(loads, 2);
+});
+
 test('strict release check matches both step supply states', t => {
     const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'xcwc-release-supply-'));
     t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));

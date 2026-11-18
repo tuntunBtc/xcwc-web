@@ -137,8 +137,8 @@ function createCandidate(output, args) {
         config.DEBUG_DEMO_BIRD_CODE = 'HZ-HY-9000000000000000001';
     }
     project.appid = args.appid || project.appid;
-    project.projectname = args.fixture ? 'xcwc-release-media-local-fixture' : 'xcwc-release-candidate';
-    project.description = args.fixture ? 'XCWC 本地媒体验收用模拟数据' : '卜叽岛 · 小鸟伙伴';
+    project.projectname = args.fixture ? 'xcwh-release-media-local-fixture' : 'xcwh-release-candidate';
+    project.description = args.fixture ? 'XCWH 本地媒体验收用模拟数据' : '卜叽岛 · 小鸟伙伴';
     project.setting.urlCheck = true;
     delete project.condition;
 
@@ -167,7 +167,8 @@ function createCandidate(output, args) {
             throw new Error(`素材不是有效的 WebP 容器：${name}`);
         }
         const hash = digest(content);
-        const binaryPath = name + '.bin';
+        // The city page already loads its collection subpackage. Keep its full-size scene there too.
+        const binaryPath = (name.startsWith('assets/city/') ? 'media/collection/' : '') + name + '.bin';
         if (all.has(binaryPath)) throw new Error(`二进制素材路径冲突：${binaryPath}`);
         files['/' + name] = { source: binaryPath, name: hash.slice(0, 32) + '.webp', size: content.length, sha256: hash };
         signatures.push(name + ':' + hash);

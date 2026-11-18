@@ -76,7 +76,7 @@ def main():
     rows = '\n'.join(f"| {record['file']} | {record['width']} × {record['height']} | {record['bytes'] / 1024:.2f} KB | {'透明' if record['alpha'] else '保留白底'} |" for record in records)
     readme = '''# 第一版小黄莺网页素材
 
-来源：`/Users/beluga/Code/xcwc/小鸟资料库/小黄莺/小黄莺_开心.webp`。
+来源：`/Users/beluga/Code/xcwh/小鸟资料库/小黄莺/小黄莺_开心.webp`。
 
 选用“开心”作为默认角色，因为它是完整站姿、绿叶冠与黄绿配色清晰，适合头像、静态展示和兼容页面主角。饥饿为趴地并带饭碗气泡，害羞带心形，大哭/生气/难受等具有明确情绪用途；第一版静态换图不批量预加载这些表情，也不把它们当同一站姿混用。
 

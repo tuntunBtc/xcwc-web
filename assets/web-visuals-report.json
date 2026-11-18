@@ -1,6 +1,6 @@
 [
   {
-    "source": "/Users/beluga/Code/xcwc/xcwc-web/assets/treehouse-background.png",
+    "source": "/Users/beluga/Code/xcwh/xcwh-web/assets/treehouse-background.png",
     "source_sha256": "c9ac712ace594d6e5a7002c8cf30cc110f87d93602624994486a5347ed93f458",
     "source_bytes": 2788620,
     "source_size": [
@@ -16,7 +16,7 @@
     "mode": "RGB"
   },
   {
-    "source": "/Users/beluga/Code/xcwc/xcwc-web/assets/city-landscapes.png",
+    "source": "/Users/beluga/Code/xcwh/xcwh-web/assets/city-landscapes.png",
     "source_sha256": "208e1fdfd4dba0e7c8078869a7f4e020d651dac7f2f5633446d4d0b43f17efb0",
     "source_bytes": 3455308,
     "source_size": [
@@ -32,7 +32,7 @@
     "mode": "RGB"
   },
   {
-    "source": "/Users/beluga/Code/xcwc/xcwc-web/assets/painted-props.png",
+    "source": "/Users/beluga/Code/xcwh/xcwh-web/assets/painted-props.png",
     "source_sha256": "3a8d85cc1620fe037477cd5f45f1d731a2e72974d30b451826fdf4fc750f8be0",
     "source_bytes": 2283183,
     "source_size": [

@@ -11,7 +11,7 @@ const collectionMedia = require('../../utils/collection-media');
 // 排序与城市筛选、详情浮层与文字信息、规则说明、轮播暂停/圆点、toast。
 // 📌 本分支口径：只做「本机购物车」，不联网、不跳淘宝、不站内下单/支付、
 // 不产生订单或鸟蛋；购物车只保存在本机，清除缓存即丢失。
-// 商品文字与价格来自 xcwc-api 现行目录快照；详情长图含旧价与「加入购物车」
+// 商品文字与价格来自 xcwh-api 现行目录快照；详情长图含旧价与「加入购物车」
 // 画面且 17 张合计 3.1MB，主包放不下，详情浮层改用动态封面 + 动态价格。
 const PRODUCTS = catalog.PRODUCTS.slice();
 const BANNERS = catalog.BANNERS.slice();

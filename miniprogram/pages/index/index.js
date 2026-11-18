@@ -11,6 +11,9 @@ const nestFoot = require('../../utils/nest-foot');
 const cloudUI = require('../../utils/cloud-ui');
 const werun = require('../../utils/werun');
 const { presentSpark, sparkNotice } = require('./spark');
+const { createButtonArt } = require('../../utils/nest-button-art');
+const { createBrandArt } = require('../../utils/nest-brand-art');
+const { createBrandIdle } = require('../../utils/nest-brand-idle');
 const STATUS_REFRESH_MS = 30000;
 const HAPPY_ART = '/assets/nest/emotion-happy.webp';
 const ANGRY_ART = '/assets/nest/emotion-angry.webp';
@@ -45,6 +48,7 @@ Page(cloudUI.page({
             speechTop: 506, claimTop: 641, actorTop: 750,
         },
         hasBird: false,
+        nestLoginBusy: false,
         sparkDisplay: presentSpark(null, {}),
         storageUnavailable: false,
         displayName: '等待小鸟入住',
@@ -69,6 +73,7 @@ Page(cloudUI.page({
         testStepNeedsSetting: false,
         historyLoading: false,
         fixtureMode: config.USE_LOCAL_FIXTURE,
+        testBirdAdoption: config.DEVICE_SANDBOX_TEST === true && entry.isManufacturingCode(config.DEBUG_DEMO_BIRD_CODE),
         ledger: [],
         stats: [],
         needs: [],
@@ -89,9 +94,13 @@ Page(cloudUI.page({
         waterFxId: 0,                // 添水动效计数：每次添水 +1，配合 wx:if 重触发水滴动画
         tools: TOOLS.filter(tool => !tool.hidden),
         dock: DOCK,
+        dockRemoteImage: '',
     },
 
     onLoad() {
+        this.brandIdle = createBrandIdle(this, wx, () => this.refresh());
+        this.brandArt = createBrandArt(wx, config.API_BASE, () => this.refresh());
+        this.buttonArt = createButtonArt(this, wx, config.NEST_BUTTONS_IMAGE_URL);
         this.statusTimer = null;
         this.currentBirdCode = '';
         this.toastTimer = null;
@@ -140,6 +149,7 @@ Page(cloudUI.page({
     },
 
     onHide() {
+        this.brandArt?.suspend();
         this.syncIdle(true);
         this.clearTimers();
         if (this.chirpAudio) { try { this.chirpAudio.stop(); } catch (e) { /* ignore */ } }
@@ -150,6 +160,11 @@ Page(cloudUI.page({
     },
 
     onUnload() {
+        this.nestUnloaded = true;
+        this.brandIdle?.stop();
+        this.brandArt?.display(null);
+        this.brandArt?.suspend();
+        if (this.buttonArt) this.buttonArt.dispose();
         if (this.onKeyboardHeightChange) {
             try { wx.offKeyboardHeightChange(this.onKeyboardHeightChange); } catch (err) { /* ignore */ }
         }
@@ -197,6 +212,7 @@ Page(cloudUI.page({
 
     // 单次 setData 只提交展示字段，不把整个状态对象塞进视图层（E-02）。
     refresh() {
+        this.syncNestLoginPrompt();
         const result = store.snapshot();
         const s = result.data ? result.data.snapshot : null;
         if (!s) {
@@ -237,10 +253,24 @@ Page(cloudUI.page({
         }
         this.currentBirdCode = code;
         const feedback = this.feedbackActive() ? this.feedback : null;
+        const pet = s.pets?.find(item => item.petId === s.petId);
+        const nextBundle = this.cloudVisible ? this.brandArt?.select(pet, this.cloudView) : null;
+        if (this.brandPetId !== s.petId || this.brandRole !== pet?.characterId || !this.brandIdle?.isPlaying()) {
+            this.brandBundle = nextBundle;
+        }
+        this.brandPetId = s.petId;
+        this.brandRole = pet?.characterId;
+        const stateSlot = { happy: 'normal', unwell: 'lonely' }[state.emotion] || state.emotion;
+        const slot = feedback ? (feedback.art === ANGRY_ART ? 'angry' : 'happy') : stateSlot;
         this.setData({
             hasBird: s.hasBird,
             sparkDisplay: presentSpark(s, store.status()),
-            pets: s.pets, selectedPetId: s.petId, cleaning: s.cleaning,
+            pets: (s.pets || []).map(pet => ({
+                ...pet,
+                sparkLevel: pet.spark?.level ?? null,
+                sparkLit: pet.spark?.status === 'ACTIVE',
+            })).sort((a, b) => (b.sparkLevel ?? -1) - (a.sparkLevel ?? -1)),
+            selectedPetId: s.petId, cleaning: s.cleaning,
             storageUnavailable: false,
             displayName: s.hasBird ? s.nickname : '等待小鸟入住',
             placeText: '⌖ 我的小窝',
@@ -258,11 +288,15 @@ Page(cloudUI.page({
             stats: stats,
             needs: needs,
             speech: feedback ? feedback.speech : state.speech,
+            brandImage: this.brandBundle?.paths[slot] || '',
+            hasBrandAnimation: !!this.brandBundle?.animation,
+            brandRelease: this.brandBundle?.releaseId || '',
             birdArt: feedback ? feedback.art : rules.emotionArt(state.emotion),
             thirsty: state.emotion === 'thirsty',
         });
-        // 状态刷新后同步待机动画：领养状态 / 面板开关变化都要反映到动画播放。
+        // 先停旧播放器，再释放它仍在使用的文件。
         this.syncIdle(false);
+        this.brandArt?.display(this.brandBundle);
     },
 
     showToast(text) {
@@ -292,7 +326,8 @@ Page(cloudUI.page({
         const hasBird = this.data.hasBird;
         const birdId = hasBird ? this.currentBirdCode || 'local-bird' : null;
         const feedbacking = this.feedbackActive() || this.data.happy;
-        this.idle.sync(hasBird, !!(suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking), birdId, hasBird);
+        this.brandIdle?.sync(this.brandBundle, this.currentPetId, suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking);
+        this.idle.sync(hasBird && !this.brandBundle, !!(suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking), birdId, hasBird && !this.brandBundle);
     },
 
     // 短鸟叫：与网页端 Web Audio 合成的轻量鸟叫等价，用 InnerAudioContext 播放。
@@ -309,6 +344,7 @@ Page(cloudUI.page({
     },
 
     onIdleRetry() {
+        if (this.brandBundle?.animation) return this.brandIdle.retry();
         if (this.idle) this.idle.retry();
     },
 
@@ -347,7 +383,7 @@ Page(cloudUI.page({
         this.feedback = { until: Date.now() + keep, speech: speech, art: art };
         if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
         if (this.happyTimer) clearTimeout(this.happyTimer);
-        this.setData({ speech: speech, birdArt: art, happy: false });
+        this.setData({ speech: speech, birdArt: art, brandImage: this.brandBundle?.paths[art === ANGRY_ART ? 'angry' : 'happy'] || '', happy: false });
         // 互动反馈一开始就让待机动画「让位」：暂停后 idle.stop() 会清空画布、停掉原声，
         // idlePlaying 变 false，静态开心海报重新可见——nest-happy 弹跳 / 爱心 / 谷粒 / 水滴
         // 这些画在海报那一层的动效才能被看见（否则全被待机画布盖住，表现为「动效没了」）。
@@ -447,8 +483,10 @@ Page(cloudUI.page({
         const view = this.cloudView;
         const petId = this.data.selectedPetId;
         const art = this.data.birdArt;
-        const idleFrame = this.idle?.getVisibleFrame?.();
-        const selector = idleFrame == null ? '.bird-art' : '#idleCanvas';
+        const brandFrame = this.brandIdle?.getVisibleFrame();
+        const sameFootMasks = this.brandBundle?.animation?.atlasHash === nestFoot.idleAtlasHash;
+        const idleFrame = brandFrame == null ? this.idle?.getVisibleFrame?.() : (sameFootMasks ? brandFrame : null);
+        const selector = brandFrame != null ? '#brandCanvas' : (idleFrame == null ? '.bird-art' : '#idleCanvas');
         wx.createSelectorQuery().select(selector).boundingClientRect(rect => {
             if (!this.cloudVisible || this.cloudView !== view || this.data.selectedPetId !== petId) return;
             if (!nestFoot.isFootTap(art, idleFrame, rect, x, y)) {
@@ -548,6 +586,27 @@ Page(cloudUI.page({
         this.refresh();
     },
 
+    syncNestLoginPrompt() {
+        if (!this.cloudVisible) return;
+        if (store.status().signedIn) {
+            this.loginPromptOffered = false;
+            if (this.data.sheet?.type === 'login') this.setData({ sheet: null, motionPaused: false });
+        } else if (!this.loginPromptOffered && !this.data.sheet) {
+            this.loginPromptOffered = true;
+            this.openSheet({ type: 'login', title: '登录你的小窝', desc: '用微信登录，找回已领养的小鸟和陪伴记录。' });
+        }
+    },
+
+    async onNestLogin() {
+        if (this.data.nestLoginBusy || store.status().signedIn) return;
+        this.setData({ nestLoginBusy: true });
+        try {
+            await this.onCloudLogin();
+        } finally {
+            if (!this.nestUnloaded) this.setData({ nestLoginBusy: false });
+        }
+    },
+
     noop() {},
 
     onRename() {
@@ -583,6 +642,10 @@ Page(cloudUI.page({
         }
         this.openSheet({ type: 'wallet', title: '叽分钱包' });
         await this.loadHistory('points', false);
+    },
+
+    onDockImageError() {
+        if (this.buttonArt) this.buttonArt.fallback();
     },
 
     onSwitch() {
@@ -823,9 +886,16 @@ Page(cloudUI.page({
     },
 
     goAdopt() {
-        if (!config.USE_LOCAL_FIXTURE) return;
+        if (!this.data.testBirdAdoption && !config.USE_LOCAL_FIXTURE) {
+            this.onClaimHelp();
+            return;
+        }
+        if (!entry.isManufacturingCode(config.DEBUG_DEMO_BIRD_CODE)) {
+            this.showToast('测试实体编码未配置，请检查测试环境');
+            return;
+        }
         this.setData({ sheet: null, motionPaused: false });
         const url = entry.buildAdoptUrl(config.DEBUG_DEMO_BIRD_CODE);
-        wx.navigateTo({ url: config.DEVICE_SANDBOX_TEST === true ? url + '&testBird=1' : url });
+        this.openToolPage(url, '测试领养页暂时打不开，请重试');
     },
 }));

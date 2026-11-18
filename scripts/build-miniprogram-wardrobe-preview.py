@@ -17,7 +17,7 @@ import os
 import re
 import sys
 
-ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
+ROOT = '/Users/beluga/Code/xcwh/xcwh-web'
 MP = os.path.join(ROOT, 'miniprogram')
 PAGE = os.path.join(MP, 'pages/wardrobe')
 WARDROBE = os.path.join(PAGE, 'assets')

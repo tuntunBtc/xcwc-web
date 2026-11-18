@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8').replaceAll('__XCWC_ASSET_ORIGIN__', 'http://ui-fixture.test');
-const catalog = JSON.parse(fs.readFileSync(path.join(root, '../xcwc-api/src/main/resources/shop/catalog.json'), 'utf8'));
+const catalog = JSON.parse(fs.readFileSync(path.join(root, '../xcwh-api/src/main/resources/shop/catalog.json'), 'utf8'));
 const products = catalog.products.filter(p => p.enabled !== false).sort((a, b) => a.sortOrder - b.sortOrder);
 const output = path.join(root, 'output/ui-shop-city');
 fs.mkdirSync(output, { recursive: true });

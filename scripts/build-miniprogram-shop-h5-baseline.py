@@ -10,9 +10,9 @@ import json
 import os
 import re
 
-ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
+ROOT = '/Users/beluga/Code/xcwh/xcwh-web'
 DIST = os.path.join(ROOT, 'dist')
-CATALOG = '/Users/beluga/Code/xcwc/xcwc-api/src/main/resources/shop/catalog.json'
+CATALOG = '/Users/beluga/Code/xcwh/xcwh-api/src/main/resources/shop/catalog.json'
 OUT_DIR = os.path.join(ROOT, 'output', 'miniprogram-shop-preview')
 OUT = os.path.join(OUT_DIR, 'h5-baseline.html')
 

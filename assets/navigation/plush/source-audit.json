@@ -6,7 +6,7 @@
   "pixelPolicy": "Only bounds ignore alpha 1-3 noise; crop/resize retains source RGBA; icons remain lossless; background uses reviewed q94 with exact alpha and >=40 dB validation.",
   "sources": [
     {
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-background.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-background.png",
       "sourceSha256": "1a886673f94019cd67a127ceccc200115bd3e439b5f5cb6a1254e37f02fe4853",
       "sourceBytes": 1421981,
       "sourceSize": [
@@ -63,7 +63,7 @@
       ]
     },
     {
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-home-default.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-home-default.png",
       "sourceSha256": "fad99589ab09d1749f209243450b34bd399db87817a788001c1685c05e4bcccb",
       "sourceBytes": 807214,
       "sourceSize": [
@@ -126,7 +126,7 @@
       ]
     },
     {
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-home-active.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-home-active.png",
       "sourceSha256": "846e8b86c78569d884b48332b9f76dfd2a5257dd51b4ab2ebb6bfb42aad85fb3",
       "sourceBytes": 823714,
       "sourceSize": [
@@ -189,7 +189,7 @@
       ]
     },
     {
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-city-default.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-city-default.png",
       "sourceSha256": "200f33980f83b96d9838784aa0e7840fcdcc2d5632df9e20b8064e06bb32f7ac",
       "sourceBytes": 865995,
       "sourceSize": [
@@ -252,7 +252,7 @@
       ]
     },
     {
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-city-active.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-city-active.png",
       "sourceSha256": "72fa8f4fc12c1715992ed8a2f12e5169f1e8b85168e502cd23468deca877f770",
       "sourceBytes": 819697,
       "sourceSize": [
@@ -315,7 +315,7 @@
       ]
     },
     {
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-shop-default.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-shop-default.png",
       "sourceSha256": "452c9cbdd4725fef203c7196fcee25b78aad740eae1a8671c4f445fc8db30e5e",
       "sourceBytes": 990325,
       "sourceSize": [
@@ -378,7 +378,7 @@
       ]
     },
     {
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-shop-active.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-shop-active.png",
       "sourceSha256": "a0c19cd01a305e1c6623f26446cb9de67c13052bd200af16fe321c31b186140f",
       "sourceBytes": 811596,
       "sourceSize": [
@@ -441,7 +441,7 @@
       ]
     },
     {
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-profile-default.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-profile-default.png",
       "sourceSha256": "df0d7ab8c99a79539da95c2b0607fcc335b87395dbc47838acb4a602dd8988e7",
       "sourceBytes": 755923,
       "sourceSize": [
@@ -504,7 +504,7 @@
       ]
     },
     {
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-profile-active.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-profile-active.png",
       "sourceSha256": "5849fe2ef0c245a9b34f241ecb6630d4daef81af19fae9f0481bd649829dd054",
       "sourceBytes": 710168,
       "sourceSize": [

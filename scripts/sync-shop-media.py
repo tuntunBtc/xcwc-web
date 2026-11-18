@@ -3,7 +3,7 @@ from pathlib import Path
 from media_pipeline import MediaPlan
 
 root=Path(__file__).resolve().parents[1]
-catalogue=root.parent/'xcwc-api/src/main/resources/shop/catalog.json'
+catalogue=root.parent/'xcwh-api/src/main/resources/shop/catalog.json'
 plan=MediaPlan(root)
 old=catalogue.read_text(encoding='utf-8')
 new=plan.rewrite(old)

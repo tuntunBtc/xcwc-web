@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypt
 const base=process.env.XCWC_PREVIEW_URL||'http://127.0.0.1:8814',root=path.resolve(__dirname,'..');
 if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local preview only');
 const manifest=JSON.parse(fs.readFileSync(path.join(root,'assets/shop/media-optimization.json'),'utf8'));
-const catalogue=JSON.parse(fs.readFileSync(path.join(root,'../xcwc-api/src/main/resources/shop/catalog.json'),'utf8'));
+const catalogue=JSON.parse(fs.readFileSync(path.join(root,'../xcwh-api/src/main/resources/shop/catalog.json'),'utf8'));
 const file=url=>path.join(root,url.slice(1)),sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 for(const p of manifest.products){assert.equal(sha(file(p.source.url)),p.source.sha256);const item=catalogue.products.find(x=>x.id===p.id);assert.equal(item.coverImageUrl,p.cover.url);assert.equal(item.detailImageUrl,p.detail.url);assert.deepEqual(item.coverCrop,{left:0,top:0,width:1,height:1})}
 assert(manifest.stats.allCoverBytes<500000);assert(manifest.stats.firstTwoCoverBytes<70000);assert(manifest.stats.allOptimizedDetailBytes<3500000);

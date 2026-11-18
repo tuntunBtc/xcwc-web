@@ -2,7 +2,7 @@
 const {chromium,webkit}=require(process.env.PLAYWRIGHT_MODULE||'/tmp/xcwc-browser-check/node_modules/playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),base=process.env.XCWC_PREVIEW_URL;
-const shopCatalog=JSON.parse(fs.readFileSync(path.resolve(root,'../xcwc-api/src/main/resources/shop/catalog.json'),'utf8'));
+const shopCatalog=JSON.parse(fs.readFileSync(path.resolve(root,'../xcwh-api/src/main/resources/shop/catalog.json'),'utf8'));
 const codes=(process.env.XCWC_TEST_BIRD_CODES||'').split(',').filter(Boolean);
 if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base||''))throw Error('Explicit isolated local preview required');
 if(codes.length<2)throw Error('Two actual isolated backend bird codes required');

@@ -17,7 +17,7 @@ import os
 import re
 from html.parser import HTMLParser
 
-ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
+ROOT = '/Users/beluga/Code/xcwh/xcwh-web'
 MP = os.path.join(ROOT, 'miniprogram')
 OUT_DIR = os.path.join(ROOT, 'output', 'miniprogram-profile-preview')
 WXML = os.path.join(MP, 'pages/profile/profile.wxml')

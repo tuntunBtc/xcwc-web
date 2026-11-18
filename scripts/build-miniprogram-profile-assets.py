@@ -12,7 +12,7 @@ import os
 
 from PIL import Image
 
-ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
+ROOT = '/Users/beluga/Code/xcwh/xcwh-web'
 SRC = os.path.join(ROOT, 'assets/profile/felt/background-v1.png')
 OUT_DIR = os.path.join(ROOT, 'miniprogram/media/collection')
 OUT = os.path.join(OUT_DIR, 'profile.webp')

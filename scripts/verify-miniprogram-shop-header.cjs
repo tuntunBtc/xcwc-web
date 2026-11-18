@@ -4,7 +4,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const cp = require('node:child_process');
-const ROOT = '/Users/beluga/Code/xcwc/xcwc-web';
+const ROOT = '/Users/beluga/Code/xcwh/xcwh-web';
 const MP = path.join(ROOT, 'miniprogram');
 const SHOP = path.join(MP, 'pages/shop');
 const layout = require(path.join(MP, 'utils/shop-layout.js'));

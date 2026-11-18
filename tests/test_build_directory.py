@@ -130,13 +130,13 @@ class BuildPipelinePreservationTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temp = tempfile.TemporaryDirectory(prefix='xcwc-build-transaction-test-')
-        cls.root = Path(cls.temp.name) / 'xcwc-web'
+        cls.root = Path(cls.temp.name) / 'xcwh-web'
         cls.root.mkdir()
         for folder in ['src', 'scripts', 'assets', 'config', 'vendor']:
             shutil.copytree(ROOT / folder, cls.root / folder, ignore=shutil.ignore_patterns('__pycache__'))
         shutil.copy2(ROOT / 'package.json', cls.root / 'package.json')
-        catalogue = ROOT.parent / 'xcwc-api/src/main/resources/shop/catalog.json'
-        cls.catalogue = cls.root.parent / 'xcwc-api/src/main/resources/shop/catalog.json'
+        catalogue = ROOT.parent / 'xcwh-api/src/main/resources/shop/catalog.json'
+        cls.catalogue = cls.root.parent / 'xcwh-api/src/main/resources/shop/catalog.json'
         if catalogue.is_file():
             cls.catalogue.parent.mkdir(parents=True)
             shutil.copy2(catalogue, cls.catalogue)

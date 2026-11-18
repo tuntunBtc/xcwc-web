@@ -1,6 +1,6 @@
 // 商城/城市页的本地展示快照（调试期不联网）。
-// 数据来源：xcwc-api/src/main/resources/shop/catalog.json（现行商品目录，17 款 enabled）。
-// 封面来源：xcwc-web/dist/assets/shop/products/*/cover-480.*.webp 的现行 H5 派生素材，
+// 数据来源：xcwh-api/src/main/resources/shop/catalog.json（现行商品目录，17 款 enabled）。
+// 封面来源：xcwh-web/dist/assets/shop/products/*/cover-480.*.webp 的现行 H5 派生素材，
 // 由 scripts/build-miniprogram-shop-assets.py 生成小程序主包内 WebP 派生（480px / quality 72）。
 // 正式版改由 /api/shop/products 只读接口提供；按本分支决策不接入网络、
 // 不提供购买链接、不做淘宝跳转、不产生订单或鸟蛋，也不搬入含旧价格的详情长图。

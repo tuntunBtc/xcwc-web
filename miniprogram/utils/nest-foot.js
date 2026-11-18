@@ -38,4 +38,6 @@ function isFootTap(artPath, idleFrame, rect, x, y) {
     return area.masks.some(mask => containsFootPixel(mask, pixelX, pixelY));
 }
 
-module.exports = { isFootTap };
+// These masks describe the bundled atlas and identical published copies, frame for frame.
+const idleAtlasHash = '5537383d5cf6bc8e0bc218bd611e9211451ab567dee3c61494b996e703e56716';
+module.exports = { isFootTap, idleAtlasHash };

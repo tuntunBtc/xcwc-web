@@ -330,7 +330,7 @@ function xcwcMediaUrl(value){
         for path in dist.rglob('*'):
             if path.name in {'.DS_Store', 'Thumbs.db'} or path.name.startswith('._'):
                 raise ValueError('System metadata must not be deployed: ' + str(path))
-        catalogue = self.root.parent / 'xcwc-api/src/main/resources/shop/catalog.json'
+        catalogue = self.root.parent / 'xcwh-api/src/main/resources/shop/catalog.json'
         if catalogue.is_file():
             def image_urls(value):
                 if isinstance(value, dict):

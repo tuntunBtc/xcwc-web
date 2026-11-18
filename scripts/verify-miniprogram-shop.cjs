@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
-const ROOT = '/Users/beluga/Code/xcwc/xcwc-web';
+const ROOT = '/Users/beluga/Code/xcwh/xcwh-web';
 const MP = path.join(ROOT, 'miniprogram');
 const SHOP = path.join(MP, 'pages/shop');
 const problems = [];
@@ -162,7 +162,7 @@ facts.push('商城素材引用 ' + refs.size + ' 个');
 
 // ---- 5. 商品数据与后端目录一致 ----------------------------------------
 const catalog = require(path.join(MP, 'utils/catalog.js'));
-const api = JSON.parse(read(path.join(ROOT, '../xcwc-api/src/main/resources/shop/catalog.json')));
+const api = JSON.parse(read(path.join(ROOT, '../xcwh-api/src/main/resources/shop/catalog.json')));
 const enabled = api.products.filter(p => p.enabled !== false);
 check('商品数一致', catalog.PRODUCTS.length === enabled.length,
     catalog.PRODUCTS.length + ' vs ' + enabled.length);

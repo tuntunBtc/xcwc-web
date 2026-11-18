@@ -173,7 +173,7 @@ document.addEventListener('pointerover',trigger,true);document.addEventListener(
         frame = frame.replace('style-src ', 'style-src __XCWC_ASSET_ORIGIN__ ',1)
         frame,styles=extract(frame,'style',lambda attrs:attrs.get('id')!='codex-visualization-host-theme')
         css_url = self.emit('frame', '\n'.join(styles), 'css')
-        frame = frame.replace('</head>', '<link id="xcwc-common-style" rel="stylesheet" href="'+css_url+'"></head>',1)
+        frame = frame.replace('</head>', '<link id="xcwh-common-style" rel="stylesheet" href="'+css_url+'"></head>',1)
         frame,scripts=extract(frame,'script',executable)
         js_url = self.emit('frame', '\n;\n'.join(scripts))
         self.common_hints='<link rel="preload" as="script" href="'+js_url.replace('__XCWC_ASSET_ORIGIN__','')+'">'

@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const lib = require('/tmp/xcwc-nest-bg-probe.cjs');
 
-const ROOT = '/Users/beluga/Code/xcwc/xcwc-web';
+const ROOT = '/Users/beluga/Code/xcwh/xcwh-web';
 const DIR = path.join(ROOT, 'output', 'miniprogram-shop-preview');
 const OUT = path.join(ROOT, 'output', 'miniprogram-shop-header');
 fs.mkdirSync(OUT, { recursive: true });

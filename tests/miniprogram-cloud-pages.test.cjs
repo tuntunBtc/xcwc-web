@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '../miniprogram');
-function harness(name) {
+function harness(name, config = {}) {
     const P = '1'.repeat(32), Q = '2'.repeat(32), U = 'a'.repeat(32);
     let generation = 0, operation;
     const calls = [], listeners = new Set();
@@ -31,7 +31,7 @@ function harness(name) {
     const cache=new Map();
     function load(file) {
       if(file.endsWith('/utils/store.js')) return store;
-      if(file.endsWith('/utils/config.js')) return {API_BASE:'http://isolated.invalid',USE_LOCAL_FIXTURE:false};
+      if(file.endsWith('/utils/config.js')) return {API_BASE:'http://isolated.invalid',USE_LOCAL_FIXTURE:false,...config};
       if(file.endsWith('/utils/nest-idle.js')) return {createNestIdle:()=>({sync(){},kick(){},dispose(){},stop(){}})};
       if(file.endsWith('/utils/collection-media.js')) return {load:async()=>({profileBackground:'/x.webp',citySprite:'/x.webp'})};
       if(cache.has(file))return cache.get(file).exports;
@@ -181,6 +181,13 @@ test('local photos and drafts are scoped by userId; legacy album is preserved an
  user='b'.repeat(32);assert.equal(album.history().total,0);assert.equal(album.readDraft(),null);album.saveDraft({photo:'b'});
  user='a'.repeat(32);assert.equal(album.history().total,1);assert.equal(album.readDraft().photo,'a');assert.equal(rows.get('xcwc.mp.album.v1')[0].reward,1);
  assert([...files.keys()].every(p=>p.includes('/cloud-photo/'+user+'/')));
+ assert.equal(album.recoverPending(store).error,null);
+ album.saveDraft({pendingSubmission:{id:result.item.id}});
+ assert.equal(album.remove(result.item.id).error,null);
+ assert.equal(album.readDraft().pendingSubmission,null);
+ assert.equal(album.history().total,0);
+ user='b'.repeat(32);assert.equal(album.readDraft().photo,'b');
+
 });
 
 test('profile phone authorization handles denial, old payloads, duplicate taps and success',async()=>{
@@ -196,4 +203,61 @@ test('profile uses a native phone authorization button and privacy contract entr
  const xml=fs.readFileSync(path.join(ROOT,'pages/profile/profile.wxml'),'utf8');
  assert.match(xml,/<button[^>]*open-type="getPhoneNumber"[^>]*bindgetphonenumber="onPhoneLogin"/);
  const h=harness('profile');let opened=0;h.wx.openPrivacyContract=()=>opened++;h.page.onPhonePrivacy();assert.equal(opened,1);
+});
+
+test('小窝游客可关闭登录提示，登录失败可重试，成功后返回小窝不再提示', async () => {
+    const h = harness('index');
+    const { page, store } = h;
+    const status = store.status();
+    status.signedIn = false;
+    let finishLogin;
+    let attempts = 0;
+    store.loginWithWechat = () => {
+        attempts++;
+        return new Promise(resolve => { finishLogin = resolve; });
+    };
+    page.onLoad();
+    page.onShow();
+    try {
+        assert.equal(page.data.sheet.type, 'login');
+        page.closeSheet();
+        page.refresh();
+        page.onHide();
+        page.onShow();
+        assert.equal(page.data.sheet, null);
+        const cancelled = page.onNestLogin();
+        await page.onNestLogin();
+        assert.equal(attempts, 1);
+        finishLogin({ error: 'LOGIN_FAILED' });
+        await cancelled;
+        assert.equal(page.data.nestLoginBusy, false);
+        assert.equal(page.data.sheet, null);
+        const retry = page.onNestLogin();
+        assert.equal(attempts, 2);
+        status.signedIn = true;
+        finishLogin({ error: null });
+        await retry;
+        page.onHide();
+        page.onShow();
+        assert.equal(page.data.sheet, null);
+        assert.equal(page.data.cloudStatus.signedIn, true);
+    } finally {
+        page.onHide();
+        page.onUnload();
+    }
+});
+
+
+test('测试领养共用显示与跳转条件，普通小窝保留领取说明', () => {
+    const code = 'HZ-HY-18679';
+    const preview = harness('index', { DEVICE_SANDBOX_TEST: true, DEBUG_DEMO_BIRD_CODE: code });
+    const urls = [];
+    preview.wx.navigateTo = options => { urls.push(options.url); options.complete(); };
+    assert.equal(preview.page.data.testBirdAdoption, true);
+    preview.page.goAdopt();
+    assert.deepEqual(urls, ['/pages/adopt/adopt?code=' + code]);
+    const ordinary = harness('index', { DEBUG_DEMO_BIRD_CODE: code });
+    assert.equal(ordinary.page.data.testBirdAdoption, false);
+    ordinary.page.goAdopt();
+    assert.equal(ordinary.page.data.sheet.type, 'claim');
 });

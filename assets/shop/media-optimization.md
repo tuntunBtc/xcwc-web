@@ -22,7 +22,7 @@
 
 ## 复现与验证
 
-在 `xcwc-web` 执行：
+在 `xcwh-web` 执行：
 
 ```sh
 node scripts/optimize-shop-images.cjs

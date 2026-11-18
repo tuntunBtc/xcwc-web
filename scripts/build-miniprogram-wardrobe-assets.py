@@ -18,7 +18,7 @@ import shutil
 
 from PIL import Image, ImageEnhance
 
-ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
+ROOT = '/Users/beluga/Code/xcwh/xcwh-web'
 DIST = os.path.join(ROOT, 'dist', 'assets')
 OUT = os.path.join(ROOT, 'miniprogram', 'pages', 'wardrobe', 'assets')
 FELT = os.path.join(OUT, 'felt')

@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'assets/导航栏/xcwc-ui-assets'
+SOURCE = ROOT / 'assets/导航栏/xcwh-ui-assets'
 OUTPUT = ROOT / 'assets/navigation/plush'
 ALPHA_THRESHOLD = 4
 FUR_PADDING = 12

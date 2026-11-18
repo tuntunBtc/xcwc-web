@@ -1,4 +1,4 @@
-// UI options only. Public merchandise and prices come from xcwc-api JSON configuration.
+// UI options only. Public merchandise and prices come from xcwh-api JSON configuration.
 const shopConfig=Object.freeze({pageSize:20,carouselIntervalMs:5000});
 // Presentation coordinates only. The displayed retail price always comes from the API.
 const shopDetailPriceRegions=Object.freeze({

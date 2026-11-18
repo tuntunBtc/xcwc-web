@@ -118,6 +118,9 @@ async function extract(root, entry, refresh) {
     const target = root + '/' + entry.name;
     if (!refresh && await isValid(target, entry.size)) return target;
 
+    if (entry.source.startsWith('media/collection/assets/city/')) {
+        await require.async('../media/collection/files.js');
+    }
     const { data } = await fsCall('readFile', { filePath: entry.source });
     const bytes = new Uint8Array(data);
     if (bytes.length !== entry.size || !isWebp(bytes, entry.size)) throw new Error('小程序图片包校验失败');

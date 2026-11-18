@@ -281,6 +281,8 @@ function createNestIdle(page, opts) {
     function sync(eligible, suspended, birdId, prepareEligible) {
         if (currentBird !== birdId) { stop(); currentBird = birdId; frame = 0; blocked = false; }
         if (canPrepare && !prepareEligible) {
+            // 交给品牌播放器之前，保留画布引用以清除最后一帧。
+            stop();
             loadGen += 1;
             loading = false;
             failed = false;

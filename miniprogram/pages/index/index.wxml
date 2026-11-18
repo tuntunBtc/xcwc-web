@@ -12,7 +12,7 @@
     <view class="hud" style="top:{{layout.hudTop}}rpx;right:{{layout.hudRight}}rpx">
         <view class="identity" bindtap="onSwitch" hover-class="ui-hover">
             <image class="tex-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
-            <view class="avatar"><image src="/assets/nest/avatar.webp" mode="aspectFill"></image></view>
+            <view class="avatar" role="button" aria-label="切换小鸟" catchtap="onSwitch"><image src="/assets/nest/avatar.webp" mode="aspectFill"></image></view>
             <view class="identity-text" catchtap="onRename">
                 <view class="name"><text class="name-text">{{displayName}}</text><text class="pen">✎</text></view>
                 <text class="place">{{placeText}}</text>
@@ -51,7 +51,8 @@
     </view>
 
     <!-- 需求气泡 -->
-    <view class="needs" style="top:{{layout.needsTop}}rpx" wx:if="{{needs.length > 0}}">
+    <view class="needs" style="top:{{layout.needsTop}}rpx" wx:if="{{needs.length > 0 || (cloudStatus && !cloudStatus.signedIn)}}">
+        <button wx:if="{{cloudStatus && !cloudStatus.signedIn}}" class="nest-login-entry" catchtap="onNestLogin" loading="{{nestLoginBusy}}" disabled="{{nestLoginBusy}}">微信登录</button>
         <view wx:for="{{needs}}" wx:key="key" class="need {{item.isCurrent ? 'is-current' : ''}}" data-key="{{item.key}}" bindtap="onNeed" hover-class="ui-hover">{{item.label}}</view>
     </view>
 
@@ -72,7 +73,8 @@
     </view>
 
     <!-- 空态领取入口 -->
-    <view wx:if="{{!hasBird}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover">如何领取小鸟</view>
+    <view wx:if="{{!hasBird && testBirdAdoption}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="goAdopt" hover-class="ui-hover" role="button">领取测试小鸟</view>
+    <view wx:elif="{{!hasBird}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover">如何领取小鸟</view>
 
     <view wx:if="{{cleaning.status === 'PRESENT'}}" class="cloud-poop" style="top:{{layout.actorTop + layout.actorHeight - 25}}rpx" data-key="clean" bindtap="onTool">💩</view>
     <!-- 小鸟立绘 -->
@@ -84,12 +86,13 @@
         </view>
         <view class="bird-hit" bindtap="onPet" hover-class="none">
             <!-- 待机动画播放时隐藏静态表情海报，避免动画小鸟与表情海报重叠（动画画布覆盖在立绘之上）。 -->
-            <image class="bird-art {{idlePlaying ? 'is-hidden' : ''}}" src="{{birdArt}}" mode="aspectFit"></image>
+            <image wx:if="{{!(brandRelease ? brandPlaying : idlePlaying)}}" class="bird-art" src="{{brandImage || birdArt}}" mode="aspectFit"></image>
         </view>
         <!-- 画布支持穿透时由 bird-hit 接收，画布直接命中时也触发同一个摸摸动作。 -->
-        <canvas wx:if="{{hasBird}}" type="2d" id="idleCanvas" class="idle-canvas" bindtap="onPet"></canvas>
+        <canvas wx:if="{{hasBird && !brandRelease}}" type="2d" id="idleCanvas" class="idle-canvas {{idlePlaying ? '' : 'canvas-rest'}}" bindtap="onPet"></canvas>
+        <canvas wx:elif="{{hasBrandAnimation}}" type="2d" id="brandCanvas" class="idle-canvas {{brandPlaying ? '' : 'canvas-rest'}}" bindtap="onPet"></canvas>
         <!-- 首次自动播放被系统策略拦截时，给出手动入口（仅在已加载成功但被拦截时出现）。 -->
-        <view wx:if="{{showIdleButton}}" class="idle-retry" catchtap="onIdleRetry">▶ 播放动画</view>
+        <view wx:if="{{showIdleButton || (brandBlocked && !motionPaused)}}" class="idle-retry" catchtap="onIdleRetry">▶ 播放动画</view>
         <view wx:if="{{feedFxId > 0}}" class="feed-fx">🌾</view>
         <!-- 添水动效：三滴水滴错峰落下（配合 wx:if 重挂载重复触发）；与口渴状态的静态 💧 互不干扰。 -->
         <view wx:if="{{waterFxId > 0}}" class="water-fx">
@@ -102,8 +105,8 @@
     <!-- 底部三按钮 dock -->
     <view class="dock {{cloudStatus.canOperate ? '' : 'cloud-disabled'}}" style="bottom:{{layout.dockBottom}}rpx">
         <view wx:for="{{dock}}" wx:key="key" class="dock-btn" data-key="{{item.key}}" bindtap="onDock" hover-class="dock-hover">
-            <image class="dock-sheet {{item.cardClass}}" src="/assets/nest/cards.webp" mode="scaleToFill"></image>
-            <text class="dock-label">{{item.label}} <text class="dock-arrow">›</text></text>
+            <image class="dock-sheet {{item.cardClass}}" src="{{dockRemoteImage || '/assets/nest/cards.webp'}}" mode="scaleToFill" binderror="onDockImageError"></image>
+            <text class="dock-label">{{item.label}}</text>
             <!-- 喂食按钮右上角：剩余食物份数角标（红底白字，0 份转灰） -->
             <view wx:if="{{item.key === 'feed'}}" class="dock-badge {{food === 0 ? 'is-empty' : ''}}">{{food}}</view>
         </view>
@@ -121,6 +124,11 @@
             <view class="sheet-close" catchtap="closeSheet">×</view>
             <text class="sheet-title">{{sheet.title}}</text>
             <text wx:if="{{sheet.desc}}" class="sheet-desc">{{sheet.desc}}</text>
+
+            <block wx:if="{{sheet.type === 'login'}}">
+                <button class="sheet-primary" catchtap="onNestLogin" loading="{{nestLoginBusy}}" disabled="{{nestLoginBusy}}">微信登录</button>
+                <button class="sheet-secondary" catchtap="closeSheet">先逛逛</button>
+            </block>
 
             <block wx:if="{{sheet.type === 'spark'}}">
                 <view wx:if="{{sparkDisplay.mode === 'ready'}}" class="spark-summary">
@@ -244,6 +252,12 @@
                     <view class="bird-choice" wx:for="{{pets}}" wx:key="petId" data-id="{{item.petId}}" catchtap="onSelectPet">
                         <image src="/assets/nest/avatar.webp" mode="aspectFit"></image>
                         <view><text class="choice-name">{{item.nickname}}</text><text>{{item.petId === selectedPetId ? '当前陪伴' : '切换陪伴'}}</text></view>
+                        <view class="bird-choice-spark">
+                            <view class="spark-icon spark-tier-1 {{item.sparkLit ? '' : 'spark-dim'}}" aria-hidden="true">
+                                <view class="spark-flame"></view>
+                            </view>
+                            <text aria-label="{{item.sparkLevel === null ? '火花等级未知' : '火花等级 ' + item.sparkLevel}}">{{item.sparkLevel === null ? '—' : 'Lv.' + item.sparkLevel}}</text>
+                        </view>
                     </view>
                 </scroll-view>
                 <text class="sheet-note">昵称、库存和养成按小鸟独立保存。</text>
@@ -277,7 +291,8 @@
                 <text class="sheet-desc">1. 用支持 NFC 的手机碰一碰实体小鸟，打开系统弹出的链接；或扫描小鸟的小程序码。</text>
                 <text class="sheet-desc">2. 在领取页确认资料与昵称，免费孵化后回到小窝。</text>
                 <text class="sheet-desc">微信登录可恢复云端小鸟与叽分，合照仅保存在本机。</text>
-                <view wx:if="{{fixtureMode}}" class="sheet-primary" catchtap="goAdopt">查看领养页（调试示例编码）</view>
+                <view wx:if="{{!hasBird && testBirdAdoption}}" class="sheet-primary" catchtap="goAdopt">领取测试小鸟</view>
+                <view wx:elif="{{fixtureMode}}" class="sheet-primary" catchtap="goAdopt">查看领养页（调试示例编码）</view>
             </block>
 
             <block wx:if="{{sheet.type === 'info'}}">

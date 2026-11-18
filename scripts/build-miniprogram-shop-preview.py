@@ -13,13 +13,13 @@ import os
 import re
 import sys
 
-ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
+ROOT = '/Users/beluga/Code/xcwh/xcwh-web'
 MP = os.path.join(ROOT, 'miniprogram')
 SHOP_ASSETS = os.path.join(MP, 'assets/shop')
 SHOP_COVERS = os.path.join(MP, 'media/collection/shop-covers')
 NAV_ASSETS = os.path.join(MP, 'assets/navigation/plush')
 OUT_DIR = os.path.join(ROOT, 'output', 'miniprogram-shop-preview')
-CATALOG = '/Users/beluga/Code/xcwc/xcwc-api/src/main/resources/shop/catalog.json'
+CATALOG = '/Users/beluga/Code/xcwh/xcwh-api/src/main/resources/shop/catalog.json'
 # 可选参数：模拟机型宽度（默认 390）。750rpx 恒等于整屏宽，故 1rpx = WIDTH / 750 px。
 # 第二个参数为 before 时输出改前版（品牌条在流内 + 旧的分段渐变），用于并排对比。
 WIDTH = int(sys.argv[1]) if len(sys.argv) > 1 else 390

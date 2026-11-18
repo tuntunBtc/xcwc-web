@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """从现行 H5 商城派生资源生成小程序主包内素材。
 
-来源：xcwc-web/dist/assets/shop/**（现行 H5 派生 WebP）
-目标：xcwc-web/miniprogram/assets/shop/**
+来源：xcwh-web/dist/assets/shop/**（现行 H5 派生 WebP）
+目标：xcwh-web/miniprogram/assets/shop/**
 原因：小程序主包 2MB 上限；原始 felt / cover / detail 合计约 4MB，
       详情长图含旧价格与「加入购物车」画面且本分支不做购买，不搬入。
 """
@@ -12,11 +12,11 @@ import os
 import random
 from PIL import Image, ImageDraw, ImageFilter
 
-ROOT = '/Users/beluga/Code/xcwc/xcwc-web'
+ROOT = '/Users/beluga/Code/xcwh/xcwh-web'
 DIST = os.path.join(ROOT, 'dist')
 MP = os.path.join(ROOT, 'miniprogram', 'assets', 'shop')
 COVERS = os.path.join(ROOT, 'miniprogram', 'media', 'collection', 'shop-covers')
-CATALOG = '/Users/beluga/Code/xcwc/xcwc-api/src/main/resources/shop/catalog.json'
+CATALOG = '/Users/beluga/Code/xcwh/xcwh-api/src/main/resources/shop/catalog.json'
 
 
 def derive(src, dst, width, quality):

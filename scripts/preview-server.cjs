@@ -63,4 +63,4 @@ http.createServer((req,res)=>{
    send(req,res,200,headers,data);
   });
  });
-}).listen(Number(process.env.PORT||8766),'127.0.0.1',function(){console.log('xcwc-web: http://127.0.0.1:'+this.address().port);});
+}).listen(Number(process.env.PORT||8766),'127.0.0.1',function(){console.log('xcwh-web: http://127.0.0.1:'+this.address().port);});

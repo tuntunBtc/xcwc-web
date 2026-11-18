@@ -183,6 +183,7 @@ function finishReward(rows, row, store, replayed) {
 function recoverPending(store) {
     var rows = readRows();
     if (!rows) return storageError('本机相册读取失败，请重试');
+    var draft = readDraft();
     var draftId = draft && draft.pendingSubmission && draft.pendingSubmission.id;
     var pending = rows.filter(function (row) {
         return row.stage === 'reward-pending' || row.stage === 'delete-pending' ||
@@ -276,8 +277,9 @@ function remove(id) {
         if (!writeRows(replaceRow(rows, pending))) return storageError('本机相册无法记录删除操作，请重试');
     }
     // 删除已记录，旧草稿不再重放这条收藏请求。
+    var draft = readDraft();
     if (draft && draft.pendingSubmission && draft.pendingSubmission.id === id) {
-        draft = Object.assign({}, draft, { pendingSubmission: null });
+        saveDraft(Object.assign({}, draft, { pendingSubmission: null }));
     }
     if (!removeFiles(target)) {
         return Object.assign(storageError('本机照片未完全删除，请重试'), { pendingDeletion: true });

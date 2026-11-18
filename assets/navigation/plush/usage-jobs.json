@@ -3,7 +3,7 @@
   "jobs": [
     {
       "id": "nav-plush-nav-background",
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-background.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-background.png",
       "sourceSize": [
         2172,
         724
@@ -26,7 +26,7 @@
     },
     {
       "id": "nav-plush-nav-home-default",
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-home-default.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-home-default.png",
       "sourceSize": [
         1254,
         1254
@@ -48,7 +48,7 @@
     },
     {
       "id": "nav-plush-nav-home-active",
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-home-active.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-home-active.png",
       "sourceSize": [
         1254,
         1254
@@ -70,7 +70,7 @@
     },
     {
       "id": "nav-plush-nav-city-default",
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-city-default.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-city-default.png",
       "sourceSize": [
         1254,
         1254
@@ -92,7 +92,7 @@
     },
     {
       "id": "nav-plush-nav-city-active",
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-city-active.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-city-active.png",
       "sourceSize": [
         1254,
         1254
@@ -114,7 +114,7 @@
     },
     {
       "id": "nav-plush-nav-shop-default",
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-shop-default.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-shop-default.png",
       "sourceSize": [
         1254,
         1254
@@ -136,7 +136,7 @@
     },
     {
       "id": "nav-plush-nav-shop-active",
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-shop-active.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-shop-active.png",
       "sourceSize": [
         1254,
         1254
@@ -158,7 +158,7 @@
     },
     {
       "id": "nav-plush-nav-profile-default",
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-profile-default.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-profile-default.png",
       "sourceSize": [
         1254,
         1254
@@ -180,7 +180,7 @@
     },
     {
       "id": "nav-plush-nav-profile-active",
-      "sourceFile": "assets/导航栏/xcwc-ui-assets/nav-icons/nav-profile-active.png",
+      "sourceFile": "assets/导航栏/xcwh-ui-assets/nav-icons/nav-profile-active.png",
       "sourceSize": [
         1254,
         1254
