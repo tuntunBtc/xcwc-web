@@ -9,6 +9,7 @@ const { collectRuntimeFiles, isFile } = require('./miniprogram-runtime-files.cjs
 const { values: flags, positionals } = parseArgs({
     options: {
         release: { type: 'boolean' },
+        'test-bird-code': { type: 'string' },
         'step-supply': { type: 'boolean' },
         appid: { type: 'string' },
         'api-base': { type: 'string' },
@@ -82,10 +83,10 @@ function apiRoot(value) {
     try {
         const url = new URL(value);
         const hostname = url.hostname.replace(/^\[|\]$/g, '').replace(/\.$/, '');
-        if (url.protocol === 'https:' && url.href === url.origin + '/' && hostname.includes('.') &&
+        if (url.protocol === 'https:' && ['/bird/v1', '/test/bird/v1'].includes(url.pathname) && url.href === url.origin + url.pathname && hostname.includes('.') &&
             !hostname.startsWith('.') && !hostname.endsWith('.') && !hostname.includes('..') &&
             !net.isIP(hostname) && !/(?:^|\.)(?:localhost|local)$/.test(hostname)) {
-            return { origin: url.origin, hostname };
+            return { base: url.origin + url.pathname.replace(/\/$/, ''), hostname };
         }
     } catch (error) { /* 由调用处报告无效地址 */ }
     return null;
@@ -99,7 +100,16 @@ function isReservedHost(api) {
 const api = apiRoot(config.API_BASE);
 if (!api) failures.push('缺少有效的 HTTPS API 域名根地址');
 if (config.USE_LOCAL_FIXTURE !== false) failures.push('仍启用调试数据');
-if (config.DEBUG_DEMO_BIRD_CODE) failures.push('发布配置仍带调试领养码');
+if (flags['test-bird-code']) {
+    if (!flags.release || project.appid !== 'wx4f4b2df4a761b88d' ||
+        api?.base !== 'https://api.xinchengip.com/test/bird/v1' || config.DEVICE_SANDBOX_TEST !== true ||
+        config.DEBUG_DEMO_BIRD_CODE !== flags['test-bird-code'] ||
+        !require('../miniprogram/utils/entry').isManufacturingCode(config.DEBUG_DEMO_BIRD_CODE)) {
+        failures.push('测试领养入口必须匹配独立测试包配置');
+    }
+} else if (config.DEBUG_DEMO_BIRD_CODE || config.DEVICE_SANDBOX_TEST) {
+    failures.push('发布配置仍带调试领养码');
+}
 if (flags['step-supply'] && config.ENABLE_WERUN_SUPPLIES !== true) failures.push('候选包尚未开启微信步数补给');
 if (flags.release && !flags['step-supply'] && config.ENABLE_WERUN_SUPPLIES !== false) {
     failures.push('正式校验预期关闭微信步数补给，但候选包没有明确关闭');
@@ -119,7 +129,7 @@ if (flags.release) {
 
     const expectedApi = apiRoot(flags['api-base']);
     if (!expectedApi) failures.push('正式校验需要独立提供有效的 --api-base');
-    else if (api && expectedApi.origin !== api.origin) failures.push('候选 API 根地址与正式校验提供的 API 根地址不一致');
+    else if (api && expectedApi.base !== api.base) failures.push('候选 API 根地址与正式校验提供的 API 根地址不一致');
     if (isReservedHost(api) || isReservedHost(expectedApi)) failures.push('正式校验不接受示例或保留域名');
 } else if (flags.appid !== undefined || flags['api-base'] !== undefined) {
     failures.push('--appid 和 --api-base 需要与 --release 一起使用');

@@ -16,7 +16,7 @@ async function run(browser,engine,scenario){
  const gate=new Promise(resolve=>releaseAtlas=resolve);
  await context.route('**/*',async route=>{
   const u=new URL(route.request().url());
-  if(u.pathname.startsWith('/api/')||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base)return route.abort();
+  if(u.pathname.startsWith('/bird/v1/')||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base)return route.abort();
   if(u.pathname.includes('/idle/')&&u.pathname.includes('huangying-idle')&&u.pathname.endsWith('.webp')){
    r.requests.push({url:u.pathname,at:Date.now()});
    if(scenario==='late-resource'&&!held){held=true;await gate}

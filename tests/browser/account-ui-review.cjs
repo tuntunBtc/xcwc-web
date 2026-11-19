@@ -44,9 +44,9 @@ function legacyDocument(params){
   await page.route('**/*',async route=>{
    const request=route.request(),url=new URL(request.url());assert.equal(url.origin,origin,'all requests stay in local interception');
    if(url.pathname.startsWith('/assets/')){const file=path.join(root,url.pathname);return route.fulfill({path:file})}
-   if(url.pathname.startsWith('/api/')){
+   if(url.pathname.startsWith('/bird/v1/')){
     requests.push({path:url.pathname,method:request.method(),body:request.postDataJSON()});
-    let data={};if(url.pathname==='/api/me/birds')data=[];else if(url.pathname==='/api/me/points')data={balance:100,earnedToday:0,dailyLimit:10};else if(url.pathname==='/api/skins')data=[{id:'lake_glow',name:'湖蓝光晕',price:30,owned:false}];else if(url.pathname==='/api/me/outfits'||url.pathname==='/api/me/points/ledger')data=[];else if(url.pathname.endsWith('/redeem'))data={replayed:false,entry:{delta:-30}};else if(url.pathname.includes('/birds/'))data=bird;else if(url.pathname.includes('/auth/'))data={token:'d'.repeat(64),username:'fixture_user',expiresAt:'2099-01-01T00:00:00Z'};else throw Error('Unexpected intercepted API '+url.pathname);
+    let data={};if(url.pathname==='/bird/v1/me/birds')data=[];else if(url.pathname==='/bird/v1/me/points')data={balance:100,earnedToday:0,dailyLimit:10};else if(url.pathname==='/bird/v1/skins')data=[{id:'lake_glow',name:'湖蓝光晕',price:30,owned:false}];else if(url.pathname==='/bird/v1/me/outfits'||url.pathname==='/bird/v1/me/points/ledger')data=[];else if(url.pathname.endsWith('/redeem'))data={replayed:false,entry:{delta:-30}};else if(url.pathname.includes('/birds/'))data=bird;else if(url.pathname.includes('/auth/'))data={token:'d'.repeat(64),username:'fixture_user',expiresAt:'2099-01-01T00:00:00Z'};else throw Error('Unexpected intercepted API '+url.pathname);
     return route.fulfill({json:data});
    }
    const html=url.pathname==='/adopt'?adoptionDocument(url.searchParams):url.pathname==='/account.html'?legacyDocument(url.searchParams):accountDocument(url.searchParams);return route.fulfill({contentType:'text/html',body:html});

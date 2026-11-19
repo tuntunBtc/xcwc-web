@@ -9,7 +9,7 @@ const report={base,code,method:'Local fixture entity GET; synchronous quota/open
 async function run(engine){
  const browser=await engine.launch({headless:true,...(engine===chromium?{executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage();page.setDefaultTimeout(10000);
- const r={engine:engine.name(),checks:[],errors:[],requests:[]};report.engines.push(r);page.on('pageerror',e=>r.errors.push(e.message));page.on('request',q=>{if(new URL(q.url()).pathname.startsWith('/api/'))r.requests.push({method:q.method(),url:q.url()})});
+ const r={engine:engine.name(),checks:[],errors:[],requests:[]};report.engines.push(r);page.on('pageerror',e=>r.errors.push(e.message));page.on('request',q=>{if(new URL(q.url()).pathname.startsWith('/bird/v1/'))r.requests.push({method:q.method(),url:q.url()})});
  await context.addInitScript(()=>{if(window!==window.top)return;window.__storageFault={quota:false,album:false,cart:false};const set=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key==='xcwc.guest.v1'&&window.__storageFault.quota)throw new DOMException('Audit storage full','QuotaExceededError');return set.call(this,key,value)};const open=IDBFactory.prototype.open;IDBFactory.prototype.open=function(name,...args){if((name==='xcwc.guest.album.v1'&&window.__storageFault.album)||(name==='xcwc.shop.coordination.v1'&&window.__storageFault.cart))throw new DOMException('Audit storage temporarily denied','SecurityError');return open.call(this,name,...args)}});
  const frame=()=>page.frameLocator('iframe');
  try{

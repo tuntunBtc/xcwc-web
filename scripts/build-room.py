@@ -3,6 +3,7 @@ import html
 import base64
 import re
 import json
+import os
 import mimetypes
 import shutil
 from media_pipeline import MediaPlan
@@ -12,6 +13,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def build(dist):
+    bird_root = os.environ.get("XCWH_H5_BIRD_API_ROOT", "/bird/v1")
+    if bird_root not in ("/bird/v1", "/test/bird/v1"):
+        raise ValueError("Unsupported same-origin H5 bird API root")
+    api_script = "<script>window.xcwhBirdApiRoot=" + json.dumps(bird_root) + ";</script>"
     media = MediaPlan(ROOT, output_dir=dist)
     def data_image(name):
         p = ROOT / 'assets' / name
@@ -127,6 +132,7 @@ def build(dist):
     runtime = RuntimeBundle(ROOT, media, output_dir=dist)
     frame = runtime.split_frame(frame)
     shell = (ROOT / 'src/shell.html').read_text(encoding='utf-8')
+    shell = shell.replace('</head>', api_script + '</head>', 1)
     # The srcdoc inherits its parent policy as well; allow local static vendor scripts.
     shell = shell.replace('script-src ', "script-src 'self' ", 1)
     shell = shell.replace('style-src ', "style-src 'self' ", 1)
@@ -185,6 +191,7 @@ def build(dist):
     for name in ['registration.js','registration.css','points.js','session-store.js']:
         (dist/'preview'/name).write_text(media.rewrite((account/name).read_text(encoding='utf-8')),encoding='utf-8')
     registration=(account/'register.html').read_text(encoding='utf-8').replace('</header>', '<a id="xcwc-return" href="/?page=photo">返回应用 →</a></header>',1)
+    registration=registration.replace('</head>', api_script + '</head>', 1)
     registration=registration.replace('<script type="module"', '<script src="/preview/session.js"></script><script type="module"',1)
     registration=registration.replace('</body>', '<script src="/preview/return.js"></script></body>')
     # Keep the established NFC URL. The same app shell reads the original query without redirects.

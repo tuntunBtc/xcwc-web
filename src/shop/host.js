@@ -96,7 +96,7 @@
    const controller=new AbortController();job={controller,waiters:new Set(),settled:false};
    const timeout=setTimeout(()=>controller.abort(),20000);
    job.promise=(async()=>{
-    const response=await fetch(path,{credentials:'omit',cache:revalidate?'no-cache':'default',signal:controller.signal});
+    const response=await fetch((window.xcwhBirdApiRoot || '/bird/v1')+path,{credentials:'omit',cache:revalidate?'no-cache':'default',signal:controller.signal});
     let value;try{value=await response.json()}catch{throw failure('SHOP_UNAVAILABLE','商城服务暂时无法读取，请稍后重试')}
     if(!response.ok){publicCache.delete(path);throw failure(value.code||'SHOP_UNAVAILABLE',value.message||'商城服务暂时不可用')}
     const headers=response.headers,policy=headers?.get('Cache-Control')||'',maxAge=/\bmax-age=(\d+)/i.exec(policy),date=Date.parse(headers?.get('Date')||''),age=Number(headers?.get('Age')||0)*1000;
@@ -105,8 +105,8 @@
     if(/\b(no-store|private)\b/i.test(policy))record.freshUntil=Date.now();
     rememberPublic(path,record);
     // Lists and details use the same public Product representation.
-    if(path.startsWith('/api/shop/products?')&&Array.isArray(value?.items))for(const item of value.items){
-     if(item&&typeof item.id==='string'&&productId.test(item.id))rememberPublic('/api/shop/products/'+encodeURIComponent(item.id),{value:item,freshUntil:record.freshUntil});
+    if(path.startsWith('/shop/products?')&&Array.isArray(value?.items))for(const item of value.items){
+     if(item&&typeof item.id==='string'&&productId.test(item.id))rememberPublic('/shop/products/'+encodeURIComponent(item.id),{value:item,freshUntil:record.freshUntil});
     }
     return record;
    })().finally(()=>{job.settled=true;clearTimeout(timeout);if(publicJobs.get(key)===job)publicJobs.delete(key)});
@@ -133,13 +133,13 @@
     if(!controller.signal.aborted)frame.contentWindow?.postMessage({channel:'xcwc-shop-data-result',id:m.id,ok:true,value},'*');
     return;
    }
-   if(m.operation==='banners')path='/api/shop/banners';
+   if(m.operation==='banners')path='/shop/banners';
    else if(m.operation==='detail'||m.operation==='purchase'){
     if(typeof a.id!=='string'||!/^[a-z0-9_-]{1,64}$/.test(a.id))throw failure('INVALID_PRODUCT','商品编号无效');
-    path='/api/shop/products/'+encodeURIComponent(a.id);
+    path='/shop/products/'+encodeURIComponent(a.id);
    }else if(m.operation==='list'){
     if(!Number.isInteger(a.page)||a.page<1||!Number.isInteger(a.pageSize)||a.pageSize<1||a.pageSize>100||!['default','priceAsc','priceDesc'].includes(a.sort)||typeof a.city!=='string'||a.city.length>64)throw failure('INVALID_QUERY','商品查询条件无效');
-    path='/api/shop/products?'+new URLSearchParams({page:String(a.page),pageSize:String(a.pageSize),sort:a.sort,city:a.city});
+    path='/shop/products?'+new URLSearchParams({page:String(a.page),pageSize:String(a.pageSize),sort:a.sort,city:a.city});
    }else throw failure('UNSUPPORTED_OPERATION','商城操作暂不支持');
    // Reserve while the click's user activation is still live; an async check
    // must not turn a valid Taobao click into a blocked mobile popup.

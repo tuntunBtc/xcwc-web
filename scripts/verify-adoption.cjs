@@ -2,12 +2,12 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/Users/beluga/.cache/co
 const assert=require('node:assert/strict'),fs=require('node:fs');const base='http://127.0.0.1:8784',id='0'.repeat(31)+'1',token='b'.repeat(64);
 (async()=>{fs.mkdirSync('output/adoption/screenshots',{recursive:true});const browser=await chromium.launch({headless:true,timeout:30000,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}),errors=[],checks=[],calls=[];
 try{for(const width of [320,390,480,1024]){const context=await browser.newContext({viewport:{width,height:900},...(width<500?{isMobile:true,hasTouch:true}:{})});const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>errors.push(e.message));let mine=[];
-await page.route('**/api/**',async route=>{const req=route.request(),pathname=new URL(req.url()).pathname;calls.push({path:pathname,method:req.method()});let data,status=200;
-if(pathname==='/api/birds/'+id)data={id,typeId:'test_bird',typeName:'斗笠小鸟',cityName:'杭州',cityCode:'hangzhou',skinName:'蓝色',name:'西湖啾啾',claimed:true};
-else if(pathname==='/api/me/birds')data=mine;
-else if(pathname==='/api/me/points')data={balance:0};
-else if(pathname==='/api/checkin-catalog')data=[];
-else if(pathname==='/api/auth/login'){assert.equal(req.method(),'POST');assert.deepEqual(req.postDataJSON(),{username:'adopt_fixture',password:'fixture-password-only'});data={token,username:'adopt_fixture',expiresAt:'2099-01-01T00:00:00Z'};}
+await page.route('**/bird/v1/**',async route=>{const req=route.request(),pathname=new URL(req.url()).pathname;calls.push({path:pathname,method:req.method()});let data,status=200;
+if(pathname==='/bird/v1/birds/'+id)data={id,typeId:'test_bird',typeName:'斗笠小鸟',cityName:'杭州',cityCode:'hangzhou',skinName:'蓝色',name:'西湖啾啾',claimed:true};
+else if(pathname==='/bird/v1/me/birds')data=mine;
+else if(pathname==='/bird/v1/me/points')data={balance:0};
+else if(pathname==='/bird/v1/checkin-catalog')data=[];
+else if(pathname==='/bird/v1/auth/login'){assert.equal(req.method(),'POST');assert.deepEqual(req.postDataJSON(),{username:'adopt_fixture',password:'fixture-password-only'});data={token,username:'adopt_fixture',expiresAt:'2099-01-01T00:00:00Z'};}
 else{status=404;data={code:'BIRD_NOT_FOUND',message:'fixture only'};}
 await route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});});
 await page.goto(base+'/?page=adopt&bird='+id);const f=page.frameLocator('iframe'),a=f.locator('#xcwc-adopt');await a.locator('[data-role="identity-state"]').filter({hasText:'资料已确认'}).waitFor();await a.locator('#adoption-login[open]').waitFor();assert.equal(await a.locator('[data-role="hero-name"]').innerText(),'西湖啾啾');assert.equal(await a.locator('[data-role="recognition"]').innerText(),'NFC 已识别到小鸟');assert.equal(await a.locator('.trait-gentle').innerText(),'温柔治愈');await a.locator('[data-action="close-login"]').click();assert.equal(await f.locator('.bottom button').count(),4);assert.equal(await f.locator('.bottom [data-go="adopt"]').count(),0);assert.equal(await f.locator('body').evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);

@@ -12,7 +12,7 @@ function fixture(t) {
     const source = path.join(root, 'sample');
     fs.writeFileSync(source, 'fixture', 'utf8');
     const ids = ['1', '2', '3', '4'].map(digit => digit.repeat(32));
-    const assets = ids.map(id => ({ id, mime: 'image/png', width: 16, height: 24, size_bytes: 7, url: '/api/content/assets/' + id }));
+    const assets = ids.map(id => ({ id, mime: 'image/png', width: 16, height: 24, size_bytes: 7, url: '/bird/v1/content/assets/' + id }));
     const look = { id: 'look', characterId: 'bird', slots: {normal: ids[0], happy: ids[1], angry: ids[2]} };
     const doc = { character: {id: 'bird', defaultAppearanceId: 'look'}, appearances: [look], releaseId: 'A', assets };
     let index;
@@ -31,7 +31,7 @@ function fixture(t) {
     const pet = {petId:'pet', characterId:'bird'};
     function client() {
         delete require.cache[modulePath];
-        return require(modulePath).createBrandArt(platform,'https://test.example', () => {});
+        return require(modulePath).createBrandArt(platform,'https://test.example/bird/v1', () => {});
     }
     return { platform, pet, client, doc, look, ids, root };
 }
@@ -92,7 +92,7 @@ test('带原声的版本缺少可下载音轨时整套保留上一版', async t 
     a.select(pet,1); await settle();
     const old = a.select(pet,1);
     const soundId = 'f'.repeat(32);
-    doc.assets.push({id:soundId,mime:'audio/mp4',size_bytes:7,url:'/api/content/assets/'+soundId});
+    doc.assets.push({id:soundId,mime:'audio/mp4',size_bytes:7,url:'/bird/v1/content/assets/'+soundId});
     look.animation = {assetId:ids[3],audioAssetId:soundId,frames:2,columns:2,rows:1,fps:3,frameTimesMs:[0,300],durationMs:650};
     doc.releaseId = 'sound';
     const download = platform.downloadFile;
@@ -102,4 +102,28 @@ test('带原声的版本缺少可下载音轨时整套保留上一版', async t 
     platform.downloadFile = download;
     a.select(pet,3); await settle();
     assert.match(a.select(pet,3).animation.audioPath,/\.m4a$/);
+});
+
+test('旧地址的视觉缓存失效，同一发布版本用新素材地址重取', async t => {
+    const { platform, client, pet } = fixture(t);
+    const memory = new Map([['auth_token', 'test-session'], ['xcwc.mp.guest.v1', { oldBirds: true }]]);
+    platform.getStorageSync = key => memory.get(key);
+    platform.setStorageSync = (key, value) => memory.set(key, value);
+    const first = client();
+    first.select(pet, 1);
+    await settle();
+    const newIndex = 'xcwc.nest.brand.art.v2';
+    memory.set('xcwc.nest.brand.art.v1', memory.get(newIndex));
+    memory.delete(newIndex);
+    const urls = [];
+    const download = platform.downloadFile;
+    platform.downloadFile = options => { urls.push(options.url); return download(options); };
+    const upgraded = client();
+    assert.equal(upgraded.select(pet, 1), null);
+    await settle();
+    assert.equal(upgraded.select(pet, 1).releaseId, 'A');
+    assert.equal(urls.length, 3);
+    assert.ok(urls.every(url => url.startsWith('https://assets.xinchengip.com/bird/v1/content/assets/')));
+    assert.equal(memory.get('auth_token'), 'test-session');
+    assert.deepEqual(memory.get('xcwc.mp.guest.v1'), { oldBirds: true });
 });

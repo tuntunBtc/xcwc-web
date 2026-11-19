@@ -10,7 +10,7 @@ async function run(browser,engine,mode){
  const r={engine,mode,checks:[],errors:[],passed:false};report.cases.push(r);
  const context=await browser.newContext({viewport:{width:393,height:852},isMobile:true,hasTouch:true,reducedMotion:'reduce',locale:'zh-CN'}),page=await context.newPage();page.setDefaultTimeout(15000);
  page.on('pageerror',e=>r.errors.push(e.message));
- await context.route('**/*',route=>{const u=new URL(route.request().url());return u.pathname.startsWith('/api/')||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base?route.abort():route.continue()});
+ await context.route('**/*',route=>{const u=new URL(route.request().url());return u.pathname.startsWith('/bird/v1/')||!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base?route.abort():route.continue()});
  const {createGuestStore}=await import('../../src/guest-store.mjs');let raw;const store=createGuestStore({getItem:()=>raw??null,setItem:(_,v)=>raw=v});store.adopt(bird,'间隔验收');
  const s=JSON.parse(raw);if(mode==='needs'){s.birds[0].hunger=20;s.birds[0].water=20}
  await context.addInitScript(value=>{

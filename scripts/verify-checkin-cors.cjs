@@ -32,7 +32,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
   const code=await frame.locator('#ck-file').evaluate(()=>new Promise((resolve,reject)=>{
    const id='invalid-asset-probe',timer=setTimeout(()=>{window.removeEventListener('message',receive);reject(Error('asset probe timed out'));},5000);
    function receive(event){if(event.source!==window.parent||event.data?.id!==id||event.data.channel!=='xcwc-checkin-result')return;clearTimeout(timer);window.removeEventListener('message',receive);resolve(event.data.value?.code)}
-   window.addEventListener('message',receive);window.parent.postMessage({channel:'xcwc-checkin',id,operation:'canvasAsset',args:{key:'../../api/private'}},'*');
+   window.addEventListener('message',receive);window.parent.postMessage({channel:'xcwc-checkin',id,operation:'canvasAsset',args:{key:'../../bird/v1/private'}},'*');
   }));assert.equal(code,'INVALID_ASSET');
   missing=true;await page.reload({waitUntil:'domcontentloaded'});
   await frame.locator('.section-desc').filter({hasText:'合照素材暂时无法加载'}).waitFor({state:'attached'});

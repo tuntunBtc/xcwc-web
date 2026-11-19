@@ -1,4 +1,5 @@
-// API_BASE 为服务根地址（不含 /api）。未部署时留空，禁止回退到本机权益或旧网关。
+// API_BASE 使用完整业务根地址，如 https://api.xinchengip.com/bird/v1。
+// 未部署时留空，禁止回退到本机权益或旧网关。
 // 隔离联调配置在独立候选目录生成，不将测试地址写入正式源码。
 module.exports = {
     API_BASE: '',

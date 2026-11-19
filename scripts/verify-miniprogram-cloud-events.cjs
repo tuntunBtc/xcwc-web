@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createCloudStore } = require('../miniprogram/utils/cloud-store');
 const { platform, http } = require('../tests/cloud-platform.cjs');
-const base = 'http://127.0.0.1:18097', snap = s => s.snapshot().data.snapshot;
+const base = 'http://127.0.0.1:18097/bird/v1', snap = s => s.snapshot().data.snapshot;
 (async () => {
     const a = createCloudStore(platform(http), { API_BASE: base });
     assert.equal((await a.loginWithWechat()).error, null);

@@ -1,4 +1,5 @@
 'use strict';
+const { apiRoot } = require('./api-root');
 
 // 服务端是唯一资产来源。工厂注入平台接口，供真实 HTTP 与故障测试复用同一实现。
 const SESSION_KEY = 'xcwc.cloud.session.v1';
@@ -68,13 +69,14 @@ function validSparkEvent(result, action) {
         default: return false;
     }
 }
-function validReceipt(result, op, fromLookup) {
+function validReceipt(result, op, fromLookup, sandbox) {
     if (!result || typeof result.replayed !== 'boolean' || (fromLookup && !result.replayed) ||
         result.requestId !== op.body.requestId || !validPet(result.pet) || !validCareFields(result.pet) ||
         !dateOnly(result.pet.businessDate) || !validWallet(result.wallet)) return false;
     if (!op.petId) {
         return result.pet.birdId === op.body.birdId && result.outcome === 'SUCCEEDED' &&
-            typeof result.created === 'boolean' && !hasField(result, 'sparkEvent');
+            (typeof result.created === 'boolean' || (sandbox && fromLookup && !hasField(result, 'created'))) &&
+            !hasField(result, 'sparkEvent');
     }
     const action = op.body.action;
     const outcome = result.outcome;
@@ -121,12 +123,12 @@ function createCloudStore(platform, config) {
     }
     function signedIn() { return !!(session && session.token && Date.parse(session.expiresAt) > Date.now()); }
     function request(path, method, body, c, anonymous, tokenOverride) {
-        if (!config.API_BASE) return Promise.reject({ error: 'NO_ENDPOINT' });
+        if (!apiRoot(config.API_BASE)) return Promise.reject({ error: 'NO_ENDPOINT' });
         if (!online) return Promise.reject({ error: 'OFFLINE', uncertain: true });
         if (!anonymous && (!c || !(tokenOverride || c.token))) return Promise.reject({ error: 'LOGIN_REQUIRED' });
         return new Promise((resolve, reject) => {
             platform.request({
-                url: config.API_BASE.replace(/\/+$/, '') + '/api' + path, method: method || 'GET', data: body,
+                url: apiRoot(config.API_BASE) + path, method: method || 'GET', data: body,
                 timeout: path === '/auth/wx-phone-login' ? 45000 : 10000,
                 header: Object.assign({ 'content-type': 'application/json' }, anonymous ? {} : { Authorization: 'Bearer ' + (tokenOverride || c.token) }),
                 success(res) {
@@ -206,7 +208,7 @@ function createCloudStore(platform, config) {
         return { error: null, data: snapshot().data };
     }
     async function refresh() {
-        if (!signedIn()) { synced = false; lastError = config.API_BASE ? 'LOGIN_REQUIRED' : 'NO_ENDPOINT'; emit(); return failure({ error: lastError }); }
+        if (!signedIn()) { synced = false; lastError = apiRoot(config.API_BASE) ? 'LOGIN_REQUIRED' : 'NO_ENDPOINT'; emit(); return failure({ error: lastError }); }
         if (refreshJob) return refreshJob;
         const c = ctx(); loading = true; emit();
         const job = refreshInternal(c).catch(e => {
@@ -217,7 +219,7 @@ function createCloudStore(platform, config) {
     }
     async function login(phoneCode) {
         if (loginJob) return phoneCode ? failure({ error: 'BUSY' }) : loginJob;
-        if (!config.API_BASE) return failure({ error: 'NO_ENDPOINT' });
+        if (!apiRoot(config.API_BASE)) return failure({ error: 'NO_ENDPOINT' });
         if (!online) return failure({ error: 'OFFLINE' });
         invalidate(); const c = ctx(); loading = true; emit();
         const job = (async () => {
@@ -310,7 +312,7 @@ function createCloudStore(platform, config) {
     async function finish(result, c, op, fromLookup) {
         guard(c);
         const knownPet = op.petId && data.items.find(p => p.petId === op.petId);
-        if (!validReceipt(result, op, fromLookup) ||
+        if (!validReceipt(result, op, fromLookup, config.DEVICE_SANDBOX_TEST === true) ||
             (knownPet && result.pet.birdId !== knownPet.birdId) ||
             (!result.replayed && data.items.some(sparkEnabled) && !sparkEnabled(result.pet))) {
             throw { error: 'INVALID_RESPONSE', uncertain: true };

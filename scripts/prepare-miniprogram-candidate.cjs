@@ -113,11 +113,11 @@ function wrapController(text, file, kind, paths, artwork) {
 function publicHttps(value) {
     const url = new URL(value);
     const hostname = url.hostname.replace(/^\[|\]$/g, '');
-    if (url.protocol !== 'https:' || url.href !== url.origin + '/' ||
+    if (url.protocol !== 'https:' || !(['/bird/v1', '/test/bird/v1'].includes(url.pathname) && url.href === url.origin + url.pathname) ||
         !hostname.includes('.') || net.isIP(hostname) || /(?:^|\.)(?:localhost|local)$/.test(hostname)) {
         throw new Error('API 地址须使用微信后台可登记的 HTTPS 域名根地址');
     }
-    return url.origin;
+    return url.origin + url.pathname.replace(/\/$/, '');
 }
 
 function createCandidate(output, args) {
@@ -131,7 +131,16 @@ function createCandidate(output, args) {
         config.API_BASE = publicHttps(args['api-base']);
         config.USE_LOCAL_FIXTURE = false;
         config.DEBUG_DEMO_BIRD_CODE = '';
+        if (args['test-bird-code']) {
+            if (args.appid !== 'wx4f4b2df4a761b88d' || config.API_BASE !== 'https://api.xinchengip.com/test/bird/v1' ||
+                !require('../miniprogram/utils/entry').isManufacturingCode(args['test-bird-code'])) {
+                throw new Error('测试领养入口仅可用于已配置的独立测试小程序与已建档实体码');
+            }
+            config.DEVICE_SANDBOX_TEST = true;
+            config.DEBUG_DEMO_BIRD_CODE = args['test-bird-code'];
+        }
     } else {
+        if (args['test-bird-code']) throw new Error('测试领养入口需要独立测试 API');
         config.API_BASE = '';
         config.USE_LOCAL_FIXTURE = true;
         config.DEBUG_DEMO_BIRD_CODE = 'HZ-HY-9000000000000000001';
@@ -346,7 +355,7 @@ try {
     const args = parseArgs({
         options: {
             output: { type: 'string' }, fixture: { type: 'boolean' }, appid: { type: 'string' },
-            'api-base': { type: 'string' }, 'step-supply': { type: 'boolean' },
+            'api-base': { type: 'string' }, 'test-bird-code': { type: 'string' }, 'step-supply': { type: 'boolean' },
         },
     }).values;
     if (!args.output) throw new Error('用法：node scripts/prepare-miniprogram-candidate.cjs --output <新目录> [--fixture | --appid <小程序ID> --api-base <HTTPS地址> [--step-supply]]');

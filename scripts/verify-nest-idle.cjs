@@ -29,7 +29,7 @@ async function run(browser,engine,width,mode='normal'){
  let heldAtlas=false,releaseAtlas=()=>{},failAtlas=mode==='failure',failAudio=mode==='audio-failure';
  await context.route('**/*',async route=>{
   const u=new URL(route.request().url());
-  if(u.pathname.startsWith('/api/')||(!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base))return route.abort();
+  if(u.pathname.startsWith('/bird/v1/')||(!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base))return route.abort();
   if(failAtlas&&u.pathname.includes('/idle/')&&u.pathname.includes('huangying-idle'))return route.fulfill({status:404,body:'missing'});
   if(failAudio&&u.pathname.includes('/idle/')&&u.pathname.endsWith('.m4a'))return route.fulfill({status:404,body:'missing'});
   if(mode==='timeout'&&u.pathname.includes('/idle/')&&u.pathname.includes('huangying-idle')&&u.pathname.endsWith('.webp')&&!heldAtlas){heldAtlas=true;await new Promise(resolve=>{releaseAtlas=resolve})}

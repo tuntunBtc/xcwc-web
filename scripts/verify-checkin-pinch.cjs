@@ -7,7 +7,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
  const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});
  try{
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
-  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/api/**',r=>r.fulfill({json:[]}));
+  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/bird/v1/**',r=>r.fulfill({json:[]}));
   await page.goto(base);await page.waitForFunction(()=>!!window.xcwcGuest);
   await page.evaluate(()=>window.xcwcGuest.adopt({id:'a'.repeat(32),cityCode:'hangzhou',cityName:'杭州',typeId:'hy',skinId:'default',active:true},'手势测试'));
   await page.goto(base+'/?page=photo');const frame=page.frameLocator('iframe');

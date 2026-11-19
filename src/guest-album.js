@@ -66,7 +66,7 @@
  });}
  window.xcwcLocalAlbum={operations,clear,async run(op,args){
   const guest=window.xcwcGuest;
-  if(op==='bootstrap'){let catalog=[];try{const response=await fetch('/api/checkin-catalog',{cache:'no-store'});if(response.ok)catalog=await response.json();}catch{}const state=guest.snapshot();return{authenticated:true,localMode:true,birds:state.birds,wallet:state.wallet,catalog};}
+  if(op==='bootstrap'){let catalog=[];try{const response=await fetch((window.xcwhBirdApiRoot || '/bird/v1')+'/checkin-catalog',{cache:'no-store'});if(response.ok)catalog=await response.json();}catch{}const state=guest.snapshot();return{authenticated:true,localMode:true,birds:state.birds,wallet:state.wallet,catalog};}
   if(op==='points')return guest.snapshot().wallet;
   if(op==='history'){const rows=(await all()).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)||b.id.localeCompare(a.id));const start=args.cursor?rows.findIndex(row=>row.id===args.cursor)+1:0;if(args.cursor&&start===0)throw Error('相册分页位置已变化，请重新进入');const page=rows.slice(start,start+20);return{items:page,nextCursor:rows.length>start+page.length?page.at(-1)?.id:null,total:rows.length};}
   if(op==='detail')return view(await get(args.id));

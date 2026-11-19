@@ -21,7 +21,7 @@
  document.addEventListener('visibilitychange',()=>{changed();watchSession()});watchSession();
  async function api(path,{method='GET',body,signal}={}){
   const publicRead=method==='GET'&&(/^\/birds\/(?:[a-f0-9]{32}|by-code\/[A-Za-z0-9_-]+)$/.test(path)||path==='/checkin-catalog'||path==='/health');if(!trusted&&!publicRead)throw Error('账号服务需要 HTTPS；当前 IP 站点仅提供免登录本机体验');const auth=session(),token=auth?.token;const publicAuth=/^\/auth\/(login|register)$/.test(path);
-  const response=await fetch('/api'+path,{method,signal,cache:'no-store',headers:{...(token&&!publicAuth&&!publicRead?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
+  const response=await fetch((window.xcwhBirdApiRoot || '/bird/v1')+path,{method,signal,cache:'no-store',headers:{...(token&&!publicAuth&&!publicRead?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
   if(!publicRead&&session()?.token!==token)throw Error('账号已切换，请重新进入');
   if(response.status===401&&!publicAuth&&!publicRead){window.xcwcSession.clear();changed();throw Object.assign(Error('登录已失效，请重新登录'),{code:'LOGIN_REQUIRED'})}
   if(response.status===204)return null;let result;try{result=await response.json()}catch{throw Error('服务未连接或返回格式有误')}

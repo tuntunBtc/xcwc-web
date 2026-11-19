@@ -10,17 +10,17 @@ function fixture() {
     const wallet = {balance:12,accountVersion:'4'};
     async function transport(o) {
         const path=new URL(o.url).pathname;
-        if (path==='/api/auth/wx-login' || path==='/api/auth/wx-phone-login') return {statusCode:200,data:{userId:identity,token:identity.repeat(2),expiresAt:'2099-01-01T00:00:00Z',...(path.endsWith('phone-login')?{phoneMasked:'+86 **** 0000'}:{})}};
-        if (path==='/api/auth/logout') return {statusCode:204};
+        if (path==='/bird/v1/auth/wx-login' || path==='/bird/v1/auth/wx-phone-login') return {statusCode:200,data:{userId:identity,token:identity.repeat(2),expiresAt:'2099-01-01T00:00:00Z',...(path.endsWith('phone-login')?{phoneMasked:'+86 **** 0000'}:{})}};
+        if (path==='/bird/v1/auth/logout') return {statusCode:204};
         const id=o.header.Authorization.slice(7,39), items=id===A?[structuredClone(pet)]:[];
-        if(path==='/api/me/pets')return{statusCode:200,data:{userId:id,items,wallet}};
-        if(path==='/api/me/pets/'+P)return{statusCode:200,data:{pet:structuredClone(pet),wallet}};
-        if(path==='/api/me/points')return{statusCode:200,data:{balance:12,earnedToday:0,dailyLimit:10}};
-        if(path==='/api/me/birds')return{statusCode:200,data:[]};
+        if(path==='/bird/v1/me/pets')return{statusCode:200,data:{userId:id,items,wallet}};
+        if(path==='/bird/v1/me/pets/'+P)return{statusCode:200,data:{pet:structuredClone(pet),wallet}};
+        if(path==='/bird/v1/me/points')return{statusCode:200,data:{balance:12,earnedToday:0,dailyLimit:10}};
+        if(path==='/bird/v1/me/birds')return{statusCode:200,data:[]};
         return{statusCode:404,data:{code:'ENDPOINT_NOT_FOUND'}};
     }
     const wx=platform(o=>intercept?intercept(o,transport):transport(o));
-    const store=createCloudStore(wx,{API_BASE:'http://fixture.invalid'});
+    const store=createCloudStore(wx,{API_BASE:'http://fixture.invalid/bird/v1'});
     return{store,wx,intercept:f=>intercept=f,identity:id=>identity=id};
 }
 test('phone login uses fresh independent codes and restores original user assets',async()=>{
@@ -29,8 +29,8 @@ test('phone login uses fresh independent codes and restores original user assets
     assert.equal((await f.store.loginWithPhone('phone-grant')).error,null);
     const after=f.store.snapshot().data.snapshot;
     assert.equal(after.userId,before.userId);assert.equal(after.petId,before.petId);assert.equal(after.food,before.food);assert.equal(after.points,before.points);
-    const call=f.wx.calls.find(c=>c.path==='/api/auth/wx-phone-login');assert.deepEqual(call.data,{code:'MP_CLOUD_TEST',phoneCode:'phone-grant'});
-    assert.equal(call.header.Authorization,undefined);assert.equal(f.wx.calls.filter(c=>c.path==='/api/auth/session').length,0);
+    const call=f.wx.calls.find(c=>c.path==='/bird/v1/auth/wx-phone-login');assert.deepEqual(call.data,{code:'MP_CLOUD_TEST',phoneCode:'phone-grant'});
+    assert.equal(call.header.Authorization,undefined);assert.equal(f.wx.calls.filter(c=>c.path==='/bird/v1/auth/session').length,0);
     assert.equal(f.store.status().phoneMasked,'+86 **** 0000');
     const saved=f.wx.memory.get(SESSION_KEY);assert.deepEqual(Object.keys(saved).sort(),['expiresAt','phoneMasked','token','userId']);
 });
@@ -43,7 +43,7 @@ test('invalid/replayed phone authorization never falls back to ordinary login',a
     const f=fixture();f.intercept(async o=>({statusCode:401,data:{code:'WX_PHONE_CODE_INVALID'}}));
     assert.equal((await f.store.loginWithPhone('used-code')).error,'WX_PHONE_CODE_INVALID');
     assert.equal(f.store.status().signedIn,false);assert.equal(f.wx.calls.length,1);
-    assert.equal(f.wx.calls[0].path,'/api/auth/wx-phone-login');
+    assert.equal(f.wx.calls[0].path,'/bird/v1/auth/wx-phone-login');
 });
 test('logout rejects a late successful phone login response',async()=>{
     const f=fixture();let release,reached;const seen=new Promise(r=>reached=r);

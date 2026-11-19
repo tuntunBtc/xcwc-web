@@ -11,9 +11,9 @@ async function run(browser,engine,mode){
  const r={engine,mode,passed:false,checks:[],errors:[],api:[]};report.cases.push(r);let publicReads=0;
  const c=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:mode==='reduced'?'reduce':'no-preference'}),p=await c.newPage();p.setDefaultTimeout(12000);p.on('pageerror',e=>r.errors.push(e.message));
  await c.addInitScript(()=>{if(window!==top)return;let handler;window.__arrivalOps=[];Object.defineProperty(window,'xcwcGuestOperation',{configurable:true,get:()=>handler,set(fn){handler=async function(op,args,...rest){window.__arrivalOps.push({op,action:args?.action});return fn.call(this,op,args,...rest)}}})});
- await c.route('**/*',route=>{const u=new URL(route.request().url());if(u.pathname.startsWith('/api/')){
+ await c.route('**/*',route=>{const u=new URL(route.request().url());if(u.pathname.startsWith('/bird/v1/')){
   r.api.push({method:route.request().method(),path:u.pathname});
-  if(u.pathname==='/api/birds/by-code/'+fixture.birdCode&&route.request().method()==='GET'){
+  if(u.pathname==='/bird/v1/birds/by-code/'+fixture.birdCode&&route.request().method()==='GET'){
    publicReads++;if(mode==='failed-adoption'&&publicReads>1)return route.fulfill({status:503,json:{code:'TEST_UNAVAILABLE',message:'隔离领取失败'}});
    return route.fulfill({status:200,json:fixture});
   }return route.abort();

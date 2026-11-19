@@ -12,7 +12,7 @@ fs.mkdirSync(output,{recursive:true});
  await context.addInitScript(()=>{const NativeDate=Date;globalThis.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:[1793707200000]))}static now(){return 1793707200000}}});
  await context.route('**/*',route=>route.continue());const page=await context.newPage();const errors=[],failures=[],requests=[],pending=[],captures={},checks=[],requestPages=new WeakMap();let current='register';
  page.on('pageerror',error=>errors.push({page:current,message:error.message}));
- page.on('request',r=>{requestPages.set(r,current);if(new URL(r.url()).pathname.startsWith('/api/'))requests.push({page:current,path:new URL(r.url()).pathname,method:r.method()})});
+ page.on('request',r=>{requestPages.set(r,current);if(new URL(r.url()).pathname.startsWith('/bird/v1/'))requests.push({page:current,path:new URL(r.url()).pathname,method:r.method()})});
  page.on('response',r=>{const url=new URL(r.url());if(url.origin!==base||(!url.pathname.startsWith('/assets/')&&!url.pathname.startsWith('/vendor/')))return;const tag=requestPages.get(r.request())||current;pending.push((async()=>{let bytes=0;try{await r.finished();bytes=(await r.request().sizes()).responseBodySize}catch{try{bytes=(await r.body()).length}catch{}}const record={page:tag,path:url.pathname,status:r.status(),bytes};if(r.status()>=400)failures.push(record);(captures[tag]??={resources:[]}).resources.push(record)})())});
  page.on('requestfailed',r=>{if(!r.failure()?.errorText?.includes('ERR_ABORTED'))failures.push({page:current,path:r.url(),error:r.failure()?.errorText})});
  const frame=()=>page.frameLocator('iframe');

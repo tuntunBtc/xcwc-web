@@ -18,7 +18,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
     };
    });
    const page=await context.newPage(),errors=[],audioRequests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.resourceType()==='media'||/\.(mp3|wav|ogg|m4a)(\?|$)/.test(r.url()))audioRequests.push(r.url())});
-   await page.route('**/api/**',r=>r.fulfill({json:[]}));await page.goto(base);await page.waitForFunction(()=>!!window.xcwcGuest);
+   await page.route('**/bird/v1/**',r=>r.fulfill({json:[]}));await page.goto(base);await page.waitForFunction(()=>!!window.xcwcGuest);
    await page.evaluate(()=>window.xcwcGuest.adopt({id:'a'.repeat(32),cityCode:'hangzhou',cityName:'杭州',typeId:'hy',skinId:'default',active:true},'快门测试'));
    await page.goto(base+'/?page=photo');const frame=page.frameLocator('iframe');await frame.locator('.bird-card[aria-pressed=true]').waitFor();
    const child=page.frames().find(f=>f.parentFrame());

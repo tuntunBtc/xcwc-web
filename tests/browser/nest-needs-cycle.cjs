@@ -9,7 +9,7 @@ fs.mkdirSync(out,{recursive:true});const report={base,passed:false,cases:[]};
  const browser=await engine.launch({headless:true,executablePath:engineName==='chromium'?'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome':undefined});
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,locale:'zh-CN'}),page=await context.newPage();
  const result={engine:engineName,checks:[],errors:[]};report.cases.push(result);page.on('pageerror',e=>result.errors.push(e.message));
- await context.route('**/*',route=>{const u=new URL(route.request().url());return u.pathname.startsWith('/api/')||(!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base)?route.abort():route.continue()});
+ await context.route('**/*',route=>{const u=new URL(route.request().url());return u.pathname.startsWith('/bird/v1/')||(!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base)?route.abort():route.continue()});
  const nest=()=>page.frameLocator('iframe').locator('#xcwc-nest'),image=()=>nest().locator('#bird img'),canvas=()=>nest().locator('canvas'),audio=()=>nest().locator('audio');
  const tick=async ms=>{await page.clock.runFor(ms);await new Promise(resolve=>setTimeout(resolve,80))};
  const snapshot=()=>nest().evaluate(host=>{const q=s=>host.shadowRoot.querySelector(s);return{emotion:q('#bird img').dataset.emotion,src:q('#bird img').src,canvas:!q('canvas').hidden,speech:q('#speech').textContent,hunger:q('#hunger').textContent,water:q('#water').textContent,mood:q('#mood').textContent,current:host.shadowRoot.querySelector('[data-need].is-current')?.dataset.need,audioPaused:q('audio').paused,loop:q('audio').loop}});

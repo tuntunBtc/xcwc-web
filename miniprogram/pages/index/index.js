@@ -271,6 +271,7 @@ Page(cloudUI.page({
                 sparkLit: pet.spark?.status === 'ACTIVE',
             })).sort((a, b) => (b.sparkLevel ?? -1) - (a.sparkLevel ?? -1)),
             selectedPetId: s.petId, cleaning: s.cleaning,
+            hasTestBird: this.data.testBirdAdoption && s.pets.some(pet => pet.birdCode === config.DEBUG_DEMO_BIRD_CODE),
             storageUnavailable: false,
             displayName: s.hasBird ? s.nickname : '等待小鸟入住',
             placeText: '⌖ 我的小窝',

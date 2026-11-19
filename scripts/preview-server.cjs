@@ -1,5 +1,5 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),zlib=require('node:zlib');
-const root=path.resolve(__dirname,'../dist');
+const root=path.resolve(process.env.XCWH_PREVIEW_DIST || path.join(__dirname,'../dist'));
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.avif':'image/avif','.svg':'image/svg+xml','.mp3':'audio/mpeg','.m4a':'audio/mp4','.aac':'audio/aac','.ogg':'audio/ogg','.wav':'audio/wav','.mp4':'video/mp4','.webm':'video/webm','.json':'application/json; charset=utf-8','.txt':'text/plain; charset=utf-8','.mjs':'text/javascript; charset=utf-8'};
 const textType=value=>/^(?:text\/|application\/(?:javascript|x-javascript|json|manifest\+json|xml)|image\/svg\+xml)/i.test(value||'');
 const acceptsGzip=value=>{
@@ -24,14 +24,15 @@ function send(req,res,status,headers,data){
  res.writeHead(status,output);res.end(req.method==='HEAD'||status===304?undefined:data);
 }
 http.createServer((req,res)=>{
- if(req.url.startsWith('/api/')){
+ if(/^\/(?:test\/)?bird\/v1(?:[/?]|$)|^\/admin\/v1(?:[/?]|$)/.test(req.url)){
   if(!process.env.API_TARGET){send(req,res,503,{'Content-Type':'application/json','Cache-Control':'no-store'},Buffer.from(JSON.stringify({code:'BACKEND_NOT_CONFIGURED',message:'未配置后端，请设置 API_TARGET 后重启预览服务'})));return;}
   const failUpstream=()=>{if(res.writableEnded)return;if(!res.headersSent)send(req,res,502,{'Content-Type':'application/json','Cache-Control':'no-store'},Buffer.from(JSON.stringify({code:'BACKEND_UNAVAILABLE',message:'打卡服务暂时不可用，请稍后重试'})));else res.end();};
   const target=new URL(process.env.API_TARGET);
-  const upstream=http.request(new URL(req.url,target),{method:req.method,headers:{...req.headers,host:target.host}},response=>{
+  const transport=target.protocol==='https:'?require('node:https'):http;
+  const upstream=transport.request(new URL(req.url,target),{method:req.method,headers:{...req.headers,host:target.host}},response=>{
    response.on('error',failUpstream);
    // Only bounded public JSON is buffered for preview compression; private photos stay streamed.
-   const publicRead=req.method==='GET'&&/^\/api\/(?:health|checkin-catalog|birds\/|shop\/)/.test(req.url);
+   const publicRead=req.method==='GET'&&/^\/(?:test\/)?bird\/v1\/(?:health|checkin-catalog|birds\/|shop\/)/.test(req.url);
    if(publicRead&&textType(response.headers['content-type'])&&!response.headers['content-encoding']&&response.statusCode!==304){
     const chunks=[];let length=0,streaming=false;
     response.on('data',chunk=>{

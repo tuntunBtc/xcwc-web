@@ -8,7 +8,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
  try{
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   const page=await context.newPage(),errors=[],writes=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.url())});
-  await page.route('**/api/**',route=>route.fulfill({json:[]}));
+  await page.route('**/bird/v1/**',route=>route.fulfill({json:[]}));
   fs.mkdirSync('output/profile-felt',{recursive:true});
   await page.goto(base+'/?page=profile');await page.waitForFunction(()=>!!window.xcwcGuest);
   const frame=page.frameLocator('iframe'),profile=frame.locator('#xcwc-account-page.account-profile-felt');

@@ -25,7 +25,7 @@ const server = http.createServer((request, response) => {
   try {
     if (!['GET', 'HEAD'].includes(request.method)) return response.writeHead(405).end();
     const url = new URL(request.url, 'http://127.0.0.1');
-    if (url.pathname.startsWith('/api/')) return response.writeHead(503).end('Fixture only');
+    if (url.pathname.startsWith('/bird/v1/')) return response.writeHead(503).end('Fixture only');
     const file = path.resolve(buildRoot, '.' + (url.pathname === '/' ? '/index.html' : decodeURIComponent(url.pathname)));
     if (!file.startsWith(buildRoot + path.sep)) return response.writeHead(403).end();
     fs.readFile(file, (error, data) => {
@@ -61,14 +61,14 @@ async function verifyViewport(browser, base, width, height) {
   const result = {width, height, passed: false, errors: [], failedResources: [], blockedRequests: [], clicks: []};
   page.on('pageerror', error => result.errors.push(error.message));
   page.on('response', response => {
-    if (!response.ok() && !new URL(response.url()).pathname.startsWith('/api/')) {
+    if (!response.ok() && !new URL(response.url()).pathname.startsWith('/bird/v1/')) {
       result.failedResources.push({status: response.status(), path: new URL(response.url()).pathname});
     }
   });
   try {
     await context.route('**/*', route => {
       const url = new URL(route.request().url());
-      if (url.pathname.startsWith('/api/')) {
+      if (url.pathname.startsWith('/bird/v1/')) {
         result.blockedRequests.push({method: route.request().method(), path: url.pathname});
         return route.fulfill({status: 200, contentType: 'application/json', body: '[]'});
       }

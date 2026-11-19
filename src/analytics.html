@@ -54,7 +54,7 @@
   status.textContent='正在读取…';
   try{
    const query=new URLSearchParams({from:$('from').value,to:$('to').value});
-   const response=await fetch('/api/admin/analytics?'+query,{headers:{Authorization:'Bearer '+token},cache:'no-store'});
+   const response=await fetch('/admin/v1/bird/analytics?'+query,{headers:{Authorization:'Bearer '+token},cache:'no-store'});
    const data=await response.json();if(!response.ok)throw Error(data.message||'读取失败');
    $('visits').textContent=data.daily.reduce((sum,item)=>sum+item.visits,0).toLocaleString();
    $('page-views').textContent=data.daily.reduce((sum,item)=>sum+item.pageViews,0).toLocaleString();

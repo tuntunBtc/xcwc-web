@@ -46,7 +46,7 @@ async function api(path, body, method) {
   const headers = {};
   if (body) headers['Content-Type'] = 'application/json';
   if (session && !publicAuth) headers.Authorization = `Bearer ${session.token}`;
-  const response = await fetch(`/api${path}`, {method: method || (body ? 'POST' : 'GET'), headers, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(15000), cache: 'no-store'});
+  const response = await fetch((window.xcwhBirdApiRoot || '/bird/v1') + path, {method: method || (body ? 'POST' : 'GET'), headers, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(15000), cache: 'no-store'});
   if (window.xcwcSession.read()?.token !== requestToken) throw new Error('账号已切换，请重新加载页面');
   if (response.status === 204) return null;
   let value;

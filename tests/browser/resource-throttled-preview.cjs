@@ -4,7 +4,7 @@ const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/tmp/xcwc-nest-browser-check/node_modules/playwright');
 const upstream=process.env.XCWC_PREVIEW_URL||'http://127.0.0.1:8997',fixtureUpstream=process.env.XCWC_FIXTURE_URL||'http://127.0.0.1:8866';
 for(const origin of [upstream,fixtureUpstream])if(!/^http:\/\/(?:127\.0\.0\.1|localhost):\d+$/.test(origin))throw Error('Fixed local upstream required');
-const publicPath='/api/birds/by-code/HZ-HY-900000000000000001',rate=500000,latency=100,chunkSize=16384;
+const publicPath='/bird/v1/birds/by-code/HZ-HY-900000000000000001',rate=500000,latency=100,chunkSize=16384;
 const out=path.resolve(process.env.XCWC_THROTTLED_REPORT_DIR||'output/page-resource-preparation-20261105/throttled');fs.mkdirSync(out,{recursive:true});
 const started=Date.now(),now=()=>Date.now()-started,delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const isHero=p=>/\/adopt-v1\/felt\/scene-v2-900(?:\.[a-f0-9]+)?\.webp$/.test(p),isAtlas=p=>/\/nest\/idle\/huangying-idle(?:\.[a-f0-9]+)?\.webp$/.test(p),isAudio=p=>/\/nest\/idle\/huangying-idle(?:\.[a-f0-9]+)?\.m4a$/.test(p);
@@ -20,7 +20,7 @@ async function drain(){if(running)return;running=true;try{while(queue.length&&!c
 const server=http.createServer((req,res)=>{const job=(async()=>{
  const u=new URL(req.url,'http://127.0.0.1'),row={seq:report.requests.length+1,path:u.pathname,method:req.method,receivedAtMs:now(),kind:isHero(u.pathname)?'adopt-critical':isAtlas(u.pathname)?'atlas':isAudio(u.pathname)?'audio':essential(u.pathname)||null,deliveredBodyBytes:0};report.requests.push(row);
  if(!['GET','HEAD'].includes(req.method)||!req.url.startsWith('/')||req.url.startsWith('//')){report.forbidden.push({path:req.url,method:req.method});res.writeHead(403);return res.end('local GET only')}
- let origin=upstream;if(u.pathname.startsWith('/api/')){if(u.pathname!==publicPath||req.method!=='GET'){report.forbidden.push({path:req.url,method:req.method});res.writeHead(403);return res.end('synthetic public lookup only')}origin=fixtureUpstream;row.fixture=true;}
+ let origin=upstream;if(u.pathname.startsWith('/bird/v1/')){if(u.pathname!==publicPath||req.method!=='GET'){report.forbidden.push({path:req.url,method:req.method});res.writeHead(403);return res.end('synthetic public lookup only')}origin=fixtureUpstream;row.fixture=true;}
  const response=await new Promise((resolve,reject)=>{const outgoing=http.get(origin+u.pathname+u.search,{headers:{'accept-encoding':req.headers['accept-encoding']||'identity',accept:req.headers.accept||'*/*'}},incoming=>{const chunks=[];incoming.on('data',chunk=>chunks.push(chunk));incoming.on('end',()=>resolve({status:incoming.statusCode,headers:incoming.headers,buffer:Buffer.concat(chunks)}));incoming.on('error',reject)});outgoing.on('error',reject);outgoing.setTimeout(15000,()=>outgoing.destroy(Error('local upstream timeout')))});
  row.status=response.status;row.upstreamBodyBytes=response.buffer.length;row.contentEncoding=response.headers['content-encoding']||'identity';row.upstreamReadyAtMs=now();if(response.status>=300&&response.status<400)throw Error('Upstream redirect forbidden');
  const held=[hero,atlas].find(value=>!value.used&&value.match(u.pathname));if(held){held.used=true;held.row=row;await held.wait;row.gateReleasedAtMs=now()}

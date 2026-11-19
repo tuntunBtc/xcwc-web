@@ -30,7 +30,7 @@ const server=http.createServer((request,response)=>{
  try{
   const url=new URL(request.url,'http://127.0.0.1');
   if(!['GET','HEAD'].includes(request.method)){response.writeHead(405).end();return}
-  if(url.pathname.startsWith('/api/')){response.writeHead(503,{'Content-Type':'application/json'}).end('{"code":"FIXTURE_ONLY"}');return}
+  if(url.pathname.startsWith('/bird/v1/')){response.writeHead(503,{'Content-Type':'application/json'}).end('{"code":"FIXTURE_ONLY"}');return}
   const file=path.resolve(buildRoot,'.'+(url.pathname==='/'?'/index.html':decodeURIComponent(url.pathname)));
   if(!file.startsWith(buildRoot+path.sep)){response.writeHead(403).end();return}
   fs.readFile(file,(error,data)=>{
@@ -61,7 +61,7 @@ async function verifySlowFeedback(browser,engine,width,base){
   page.on('request',request=>{const match=new URL(request.url()).pathname.match(/\/emotions\/([^/]+)\.webp$/);if(match)entry.requestedEmotions.push(match[1].replace(/\.[0-9a-f]{12}$/,''))});
   await context.route('**/*',route=>{
    const url=new URL(route.request().url());
-   if(url.pathname.startsWith('/api/')){assert.equal(route.request().method(),'GET');return route.fulfill({json:[]})}
+   if(url.pathname.startsWith('/bird/v1/')){assert.equal(route.request().method(),'GET');return route.fulfill({json:[]})}
    assert(['data:','blob:','about:'].includes(url.protocol)||url.origin===base,'slow-image cases must remain local');
    return route.continue();
   });
@@ -151,7 +151,7 @@ async function regressionHarness(browser,base,result,initialize){
  await context.route('**/*',route=>{
   const url=new URL(route.request().url());
   assert(['data:','blob:','about:'].includes(url.protocol)||url.origin===base,'regressions must remain local');
-  if(url.pathname.startsWith('/api/')){assert.equal(route.request().method(),'GET');return route.fulfill({json:[]})}
+  if(url.pathname.startsWith('/bird/v1/')){assert.equal(route.request().method(),'GET');return route.fulfill({json:[]})}
   return route.continue();
  });
  if(initialize)await context.addInitScript(initialize);
@@ -403,10 +403,10 @@ async function runCase(browser,engine,width,base){
  page.setDefaultTimeout(10000);
  page.on('pageerror',error=>result.errors.push(error.message));
  page.on('request',request=>{if(/\/emotions\/shy(?:\.|-)/.test(request.url()))result.retiredRequests.push(request.url())});
- page.on('response',response=>{if(!response.ok()&&!new URL(response.url()).pathname.startsWith('/api/'))result.failedResources.push({status:response.status(),url:response.url()})});
+ page.on('response',response=>{if(!response.ok()&&!new URL(response.url()).pathname.startsWith('/bird/v1/'))result.failedResources.push({status:response.status(),url:response.url()})});
  await context.route('**/*',route=>{
   const url=new URL(route.request().url());
-  if(url.pathname.startsWith('/api/')){
+  if(url.pathname.startsWith('/bird/v1/')){
    result.blockedRequests.push({kind:'api',method:route.request().method(),path:url.pathname});
    return route.fulfill({status:200,contentType:'application/json',body:'[]'});
   }

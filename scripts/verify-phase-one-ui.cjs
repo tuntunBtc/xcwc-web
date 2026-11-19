@@ -19,21 +19,21 @@ async function readyImage(frame,route){
  await image.evaluate(im=>Promise.race([im.decode(),new Promise((_,reject)=>setTimeout(()=>reject(Error('Key image decode timed out: '+im.getAttribute('src'))),5000))]));
 }
 async function fixture(context,result){
- await context.route('**/api/**',async route=>{
+ await context.route('**/bird/v1/**',async route=>{
   const request=route.request(),url=new URL(request.url()),p=url.pathname;
   if(request.method()!=='GET'){result.writes.push(p);return route.fulfill({status:405,json:{code:'READ_ONLY_FIXTURE',message:'No backend writes in this verifier'}})}
-  if(p==='/api/checkin-catalog')return route.fulfill({json:[]});
-  if(ids.some(id=>p==='/api/birds/'+id))return route.fulfill({json:publicBird(p.slice('/api/birds/'.length))});
-  if(p==='/api/shop/banners')return route.fulfill({json:{items:catalogue.banners.filter(b=>b.enabled!==false)}});
+  if(p==='/bird/v1/checkin-catalog')return route.fulfill({json:[]});
+  if(ids.some(id=>p==='/bird/v1/birds/'+id))return route.fulfill({json:publicBird(p.slice('/bird/v1/birds/'.length))});
+  if(p==='/bird/v1/shop/banners')return route.fulfill({json:{items:catalogue.banners.filter(b=>b.enabled!==false)}});
   const items=catalogue.products.filter(p=>p.enabled!==false).map(({enabled,...p})=>p);
-  if(p==='/api/shop/products'){
+  if(p==='/bird/v1/shop/products'){
    const cities=[...new Map(items.map(p=>[p.cityCode,{code:p.cityCode,name:p.cityName}])).values()];
    let filtered=items.filter(p=>!url.searchParams.get('city')||p.cityCode===url.searchParams.get('city'));
    const sort=url.searchParams.get('sort');filtered.sort(sort==='priceAsc'?(a,b)=>a.price-b.price:sort==='priceDesc'?(a,b)=>b.price-a.price:(a,b)=>a.sortOrder-b.sortOrder);
    const page=Number(url.searchParams.get('page')||1),pageSize=Number(url.searchParams.get('pageSize')||20);
    return route.fulfill({json:{items:filtered.slice((page-1)*pageSize,page*pageSize),total:filtered.length,page,pageSize,cities}});
   }
-  if(p.startsWith('/api/shop/products/')){const product=items.find(x=>x.id===p.slice('/api/shop/products/'.length));if(product)return route.fulfill({json:product})}
+  if(p.startsWith('/bird/v1/shop/products/')){const product=items.find(x=>x.id===p.slice('/bird/v1/shop/products/'.length));if(product)return route.fulfill({json:product})}
   result.unexpectedApi.push(p);return route.fulfill({status:404,json:{code:'UNKNOWN_FIXTURE',message:p}});
  });
  await context.addInitScript(()=>{

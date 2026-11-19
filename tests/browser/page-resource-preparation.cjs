@@ -5,7 +5,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/tmp/xcwc-nest-browser-
 const base=process.env.XCWC_PREVIEW_URL||'http://127.0.0.1:8997',fixtureBase=process.env.XCWC_FIXTURE_URL||'http://127.0.0.1:8866';
 for(const value of [base,fixtureBase])if(!/^http:\/\/(?:127\.0\.0\.1|localhost):\d+$/.test(value))throw Error('Explicit local HTTP origin required');
 const fixture={id:'a'.repeat(32),birdCode:'HZ-HY-900000000000000001',active:true,typeId:'huangying',cityCode:'hangzhou',cityName:'杭州',skinId:'green',name:'小黄莺'};
-const publicPath='/api/birds/by-code/'+fixture.birdCode,adoptionUrl=base+'/register.html?birdCode='+fixture.birdCode;
+const publicPath='/bird/v1/birds/by-code/'+fixture.birdCode,adoptionUrl=base+'/register.html?birdCode='+fixture.birdCode;
 const out=path.resolve(process.env.XCWC_RESOURCE_REPORT_DIR||'output/page-resource-preparation-20261105');fs.mkdirSync(out,{recursive:true});
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const isHero=p=>/\/adopt-v1\/felt\/scene-v2-900(?:\.[a-f0-9]+)?\.webp$/.test(p);
@@ -28,8 +28,8 @@ async function run(browser,name,options,exercise){
  await context.route('**/*',async route=>{const request=route.request(),u=new URL(request.url());
   if(['about:','blob:','data:'].includes(u.protocol))return route.continue();
   if(u.origin!==base||!['GET','HEAD'].includes(request.method())){r.forbidden.push({url:request.url(),method:request.method()});return route.abort('blockedbyclient')}
-  if(u.pathname.startsWith('/api/')){
-   if(![publicPath,'/api/checkin-catalog'].includes(u.pathname)||request.method()!=='GET'){r.forbidden.push({url:request.url(),method:request.method()});return route.abort('blockedbyclient')}
+  if(u.pathname.startsWith('/bird/v1/')){
+   if(![publicPath,'/bird/v1/checkin-catalog'].includes(u.pathname)||request.method()!=='GET'){r.forbidden.push({url:request.url(),method:request.method()});return route.abort('blockedbyclient')}
    const response=await route.fetch({url:fixtureBase+u.pathname,maxRedirects:0});assert.equal(response.status(),200,'local synthetic public fixture must be available');const body=await response.json();if(u.pathname===publicPath){assert.equal(body.id,fixture.id);assert.equal(body.birdCode,fixture.birdCode)}else assert(Array.isArray(body));return route.fulfill({response});
   }
   const hold=gates.find(item=>!item.used&&item.match(u.pathname));if(hold){hold.capture(request);await hold.wait;}

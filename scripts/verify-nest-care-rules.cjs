@@ -35,11 +35,11 @@ async function verifyWidth(browser,width){
   // The media pipeline adds a content fingerprint while keeping the emotion name.
   if(request.url().includes('/emotions/'))requestedEmotions.add(path.basename(new URL(request.url()).pathname).replace(/\.[0-9a-f]{12}(?=\.webp$)/,''));
  });
- await page.route('**/api/**',route=>{
+ await page.route('**/bird/v1/**',route=>{
   const request=route.request(),url=new URL(request.url());
   report.api.push({width,path:url.pathname,method:request.method()});
   // Public metadata is not needed: birds below are entirely artificial fixtures.
-  return route.fulfill({status:url.pathname==='/api/checkin-catalog'?200:503,contentType:'application/json',body:JSON.stringify(url.pathname==='/api/checkin-catalog'?[]:{code:'FIXTURE_ONLY',message:'Browser verification blocks real APIs'})});
+  return route.fulfill({status:url.pathname==='/bird/v1/checkin-catalog'?200:503,contentType:'application/json',body:JSON.stringify(url.pathname==='/bird/v1/checkin-catalog'?[]:{code:'FIXTURE_ONLY',message:'Browser verification blocks real APIs'})});
  });
  const frame=page.frameLocator('iframe');
  const nest=frame.locator('#xcwc-nest');
@@ -353,7 +353,7 @@ async function verifyTimedReunion(browser){
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  const page=await context.newPage();page.setDefaultTimeout(10000);
  page.on('pageerror',error=>report.errors.push({width:390,message:error.message}));
- await page.route('**/api/**',route=>{
+ await page.route('**/bird/v1/**',route=>{
   const request=route.request();report.api.push({width:390,path:new URL(request.url()).pathname,method:request.method()});
   return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'FIXTURE_ONLY',message:'Real APIs blocked'})});
  });
@@ -407,7 +407,7 @@ async function verifyDelayedReads(browser){
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   const page=await context.newPage();page.setDefaultTimeout(10000);
   page.on('pageerror',error=>report.errors.push({width:390,message:error.message}));
-  await page.route('**/api/**',route=>{
+  await page.route('**/bird/v1/**',route=>{
    const request=route.request();report.api.push({width:390,path:new URL(request.url()).pathname,method:request.method()});
    return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'FIXTURE_ONLY',message:'Real APIs blocked'})});
   });
@@ -544,7 +544,7 @@ async function verifyDelayedReads(browser){
   await verifyTimedReunion(browser);
   await verifyDelayedReads(browser);
   assert.deepEqual(report.errors,[]);
-  assert(report.api.every(request=>request.method==='GET'&&request.path==='/api/checkin-catalog'),'unexpected API request, all API traffic was blocked by the fixture');
+  assert(report.api.every(request=>request.method==='GET'&&request.path==='/bird/v1/checkin-catalog'),'unexpected API request, all API traffic was blocked by the fixture');
   report.passed=true;
   console.log(JSON.stringify(report,null,2));
  }catch(error){

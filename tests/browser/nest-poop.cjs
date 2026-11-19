@@ -20,7 +20,7 @@ async function scenario(browser,result,width,name,body){
  const context=await browser.newContext({viewport:{width,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce',locale:'zh-CN',timezoneId:'Asia/Shanghai'});
  const page=await context.newPage();page.setDefaultTimeout(12000);
  context.on('page',p=>p.on('pageerror',error=>r.errors.push(error.message)));
- context.on('request',request=>{const url=new URL(request.url());if(url.pathname.startsWith('/api/'))r.requests.push({method:request.method(),path:url.pathname})});
+ context.on('request',request=>{const url=new URL(request.url());if(url.pathname.startsWith('/bird/v1/'))r.requests.push({method:request.method(),path:url.pathname})});
  await context.route('**/*',route=>{
   const request=route.request(),url=new URL(request.url());
   if(request.method()!=='GET'||(!['data:','blob:','about:'].includes(url.protocol)&&url.origin!==base)){

@@ -1,4 +1,5 @@
 'use strict';
+const { apiRoot } = require('../../utils/api-root');
 
 const store = require('../../utils/store');
 const entry = require('../../utils/entry');
@@ -147,13 +148,7 @@ Page(cloudUI.page({
             this.showLookupError(ERROR_TEXT.INVALID_CODE, false);
             return;
         }
-        const testBird = config.DEBUG_DEMO_BIRD;
-        if (config.DEVICE_SANDBOX_TEST === true && this.entryOptions.testBird === '1'
-            && code === config.DEBUG_DEMO_BIRD_CODE && testBird && testBird.id) {
-            this.showBird(code, testBird);
-            return;
-        }
-        const base = (config.API_BASE || '').replace(/\/+$/, '');
+        const base = apiRoot(config.API_BASE);
         if (!base) {
             this.showLookupError('实体资料服务暂未配置。', false);
             return;
@@ -166,7 +161,7 @@ Page(cloudUI.page({
         };
         try {
             this.lookupTask = wx.request({
-                url: base + '/api/birds/by-code/' + encodeURIComponent(code),
+                url: base + '/birds/by-code/' + encodeURIComponent(code),
                 method: 'GET',
                 timeout: 10000,
                 success: (response) => {

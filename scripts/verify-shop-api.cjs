@@ -12,7 +12,7 @@ const output=process.env.XCWC_SCREENSHOT_DIR||path.resolve('output/shop-api');fs
   const browser=await engine.launch({headless:true,...(engine===chromium?{executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
   try{
    const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage(),errors=[],writes=[];
-   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/api/')&&!['GET','HEAD'].includes(r.method()))writes.push(r.method()+' '+r.url())});
+   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/bird/v1/')&&!['GET','HEAD'].includes(r.method()))writes.push(r.method()+' '+r.url())});
    await page.goto(base+'/?page=shop',{waitUntil:'domcontentloaded'});const f=page.frameLocator('iframe'),shop=f.locator('#xcwc-shop');
    await shop.locator('.card').nth(expected.length-1).waitFor();assert.equal(await shop.locator('.card').count(),expected.length);
    assert.deepEqual(await shop.locator('.card h2').allTextContents(),expected.map(p=>p.title));
@@ -23,9 +23,9 @@ const output=process.env.XCWC_SCREENSHOT_DIR||path.resolve('output/shop-api');fs
    for(const im of await shop.locator('.photo img').all()){await im.scrollIntoViewIfNeeded();assert(await im.evaluate(el=>el.complete?el.naturalWidth===480:new Promise(resolve=>{el.addEventListener('load',()=>resolve(el.naturalWidth===480),{once:true});el.addEventListener('error',()=>resolve(false),{once:true})})));}console.log(engine.name()+': list/images');
    await shop.locator('#city').selectOption('hangzhou');await shop.locator('#resultCount').filter({hasText:'共 '+inCity('hangzhou').length+' 只'}).waitFor();assert.equal(await shop.locator('.card').count(),inCity('hangzhou').length);
    // A failed new filter must not expose a stale next-page action or old city rows.
-   await page.route('**/api/shop/products?**',r=>r.fulfill({status:503,json:{code:'SHOP_UNAVAILABLE',message:'隔离网络错误测试'}}));
+   await page.route('**/bird/v1/shop/products?**',r=>r.fulfill({status:503,json:{code:'SHOP_UNAVAILABLE',message:'隔离网络错误测试'}}));
    await shop.locator('#city').selectOption('suzhou');await shop.locator('#shopStatus').filter({hasText:'隔离网络错误测试'}).waitFor();assert.equal(await shop.locator('.card').count(),0);assert(await shop.locator('#loadMore').isHidden());
-   await page.unroute('**/api/shop/products?**');await shop.locator('#retry').click();await shop.locator('#resultCount').filter({hasText:'共 '+inCity('suzhou').length+' 只'}).waitFor();assert.deepEqual(await shop.locator('.card h2').allTextContents(),inCity('suzhou').map(p=>p.title));
+   await page.unroute('**/bird/v1/shop/products?**');await shop.locator('#retry').click();await shop.locator('#resultCount').filter({hasText:'共 '+inCity('suzhou').length+' 只'}).waitFor();assert.deepEqual(await shop.locator('.card h2').allTextContents(),inCity('suzhou').map(p=>p.title));
    await shop.locator('#city').selectOption('');await shop.locator('.card').nth(expected.length-1).waitFor();
    for(const item of expected){
     await shop.locator('.photo-button[data-id="'+item.id+'"]').click();await shop.locator('.detail-hotspot').waitFor({state:'attached'});

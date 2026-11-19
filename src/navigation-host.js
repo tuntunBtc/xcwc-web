@@ -15,7 +15,7 @@
     try{sessionStorage.setItem('xcwc.analytics.session.v1',sessionId)}catch{}
    }
    analyticsSessionId=sessionId;
-   fetch('/api/analytics/page-view',{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({page,sessionId})}).catch(()=>{});
+   fetch((window.xcwhBirdApiRoot || '/bird/v1')+'/analytics/page-view',{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({page,sessionId})}).catch(()=>{});
   }catch{}
  }
  function state(page,section,depth){return {xcwcNavigation:1,page,section:sectionFor(page,section),depth};}

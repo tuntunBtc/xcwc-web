@@ -9,7 +9,7 @@ const names=['osmanthus','peach','bamboo','sakura','scholar','moon','jade','pilg
  try{
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[],writes=[],assetErrors=[];
   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.url())});page.on('response',r=>{if(r.url().includes('/assets/')&&!r.ok())assetErrors.push(r.url())});
-  await page.route('**/api/**',r=>r.fulfill({json:[]}));fs.mkdirSync('output/wardrobe-skins/screenshots',{recursive:true});
+  await page.route('**/bird/v1/**',r=>r.fulfill({json:[]}));fs.mkdirSync('output/wardrobe-skins/screenshots',{recursive:true});
   await page.goto(base+'/?page=wardrobe');await page.waitForFunction(()=>!!window.xcwcGuest);
   await page.evaluate(()=>{for(const [id,name] of [['a','湖小叽'],['b','小团子']])window.xcwcGuest.adopt({id:id.repeat(32),cityName:'杭州',typeName:'小黄莺',active:true},name);window.xcwcGuest.select('a'.repeat(32));const s=window.xcwcGuest.read();s.balance=500;s.skins=['lake_glow'];localStorage.setItem('xcwc.guest.v1',JSON.stringify(s))});await page.reload();
   const frame=page.frameLocator('iframe'),wardrobe=frame.locator('.account-wardrobe-felt'),wear=id=>wardrobe.locator('[data-skin="'+id+'"]'),preview=id=>wardrobe.locator('[data-preview-skin="'+id+'"]');

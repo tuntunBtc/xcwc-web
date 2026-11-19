@@ -18,7 +18,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
    }});
   });
   const page=await context.newPage(),errors=[],uploads=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.method()==='POST')uploads.push(r.url())});
-  await page.route('**/api/**',r=>r.fulfill({json:[]}));
+  await page.route('**/bird/v1/**',r=>r.fulfill({json:[]}));
   await page.goto(base);await page.waitForFunction(()=>!!window.xcwcGuest);
   await page.evaluate(()=>window.xcwcGuest.adopt({id:'a'.repeat(32),cityCode:'hangzhou',cityName:'杭州',typeId:'hy',skinId:'default',active:true},'测试小鸟'));
   await page.goto(base+'/?page=photo');const frame=page.frameLocator('iframe');

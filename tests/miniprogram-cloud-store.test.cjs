@@ -5,21 +5,21 @@ const { createCloudStore, SESSION_KEY, compare } = require('../miniprogram/utils
 const { platform } = require('./cloud-platform.cjs');
 const A = 'a'.repeat(32), B = 'b'.repeat(32), P = '1'.repeat(32), Q = '2'.repeat(32);
 const copy = value => structuredClone(value);
-function fixture() {
+function fixture(config = {}) {
     let identity = A, count = 0;
     const records = new Map(), users = new Map();
     function user(id) { if (!users.has(id)) users.set(id, { pets: [], wallet: { balance: 0, accountVersion: '0' } }); return users.get(id); }
     const response = (data, statusCode = 200) => ({ statusCode, data: copy(data) });
     const transport = async opts => {
         const path = new URL(opts.url).pathname;
-        if (path === '/api/auth/wx-login') return response({ token: identity.repeat(2), userId: identity, expiresAt: '2099-01-01T00:00:00Z' });
-        if (path === '/api/auth/logout') return response(null, 204);
+        if (path === '/bird/v1/auth/wx-login') return response({ token: identity.repeat(2), userId: identity, expiresAt: '2099-01-01T00:00:00Z' });
+        if (path === '/bird/v1/auth/logout') return response(null, 204);
         const id = (opts.header.Authorization || '').slice(7, 39), u = user(id);
-        if (path === '/api/auth/session') return response({ userId: id, expiresAt: '2099-01-01T00:00:00Z' });
-        if (path === '/api/me/pets') return response({ userId: id, items: u.pets, wallet: u.wallet, serverTime: new Date().toISOString() });
+        if (path === '/bird/v1/auth/session') return response({ userId: id, expiresAt: '2099-01-01T00:00:00Z' });
+        if (path === '/bird/v1/me/pets') return response({ userId: id, items: u.pets, wallet: u.wallet, serverTime: new Date().toISOString() });
         if (path.includes('/operations/')) return records.has(id + path.split('/').pop()) ? response(Object.assign({}, records.get(id + path.split('/').pop()), { replayed: true })) : response({ code: 'OPERATION_NOT_FOUND' }, 404);
         if (path.endsWith('/ledger') || path.endsWith('inventory-ledger') || path.endsWith('/supply-claims')) return response([]);
-        if (path === '/api/me/points') return response({ balance: u.wallet.balance, earnedToday: 0, dailyLimit: 10 });
+        if (path === '/bird/v1/me/points') return response({ balance: u.wallet.balance, earnedToday: 0, dailyLimit: 10 });
         if (opts.method === 'GET') { const p = u.pets.find(p => p.petId === path.split('/').pop()); return p ? response({ pet: p, wallet: u.wallet }) : response({ code: 'PET_NOT_FOUND' }, 404); }
         const b = opts.data, k = id + b.requestId;
         if (records.has(k)) return response(Object.assign({}, records.get(k), { replayed: true }));
@@ -29,7 +29,7 @@ function fixture() {
             p = { petId: b.birdId, birdId: b.birdId, birdCode: 'HZ-HY-' + (++count), nickname: b.nickname, active: true, version: '0', ruleVersion: 'normal-v1', serverTime, businessDate: '2026-11-11', care: { satiety: 60, hydration: 60, mood: 80, lastCompanionAt: serverTime }, inventory: { food: 3, water: 3 }, cleaning: { status: 'NONE', type: 'POOP', dueAt: null }, supplyClaimed: false };
             u.pets.push(p);
         } else {
-            p = u.pets.find(p => p.petId === path.split('/')[4]);
+            p = u.pets.find(p => p.petId === path.split('/')[5]);
             if (p.version !== b.expectedVersion) return response({ code: 'PET_VERSION_CONFLICT' }, 409);
             if (b.action === 'FEED') { p.inventory.food--; p.care.satiety = Math.min(100, p.care.satiety + 30); }
             if (b.action === 'RENAME') p.nickname = b.nickname;
@@ -42,11 +42,32 @@ function fixture() {
     };
     let intercept;
     const wx = platform(opts => intercept ? intercept(opts, transport) : transport(opts));
-    const store = createCloudStore(wx, { API_BASE: 'http://test.invalid' });
+    const store = createCloudStore(wx, { API_BASE: 'http://test.invalid/bird/v1', ...config });
     return { store, wx, user, records, transport, setIdentity: id => identity = id, intercept: fn => intercept = fn };
 }
 async function ready(f, birds = [P]) { assert.equal((await f.store.loginWithWechat()).error, null); for (const bird of birds) assert.equal((await f.store.adopt(bird, '小叽')).error, null); }
 const snap = s => s.snapshot().data.snapshot;
+test('旧测试库已提交的领养仅凭同一请求的查询回执恢复，正式环境仍校验 created', async () => {
+    for (const sandbox of [true, false]) {
+        const f = fixture({ DEVICE_SANDBOX_TEST: sandbox });
+        await ready(f, []);
+        f.intercept(async (o, next) => {
+            const result = await next(o);
+            if (o.url.endsWith('/adopt') || o.url.includes('/operations/')) delete result.data.created;
+            return result;
+        });
+        const receipt = await f.store.adopt(P, '测试鸟');
+        if (sandbox) {
+            const recovered = receipt.error ? await f.store.resume() : receipt;
+            assert.equal(recovered.error, null);
+            assert.equal(snap(f.store).pets.length, 1);
+        } else {
+            assert.equal(receipt.error, 'RESULT_PENDING');
+            assert(f.store.status().pending);
+        }
+        assert.equal(f.wx.calls.filter(c => c.path.endsWith('/adopt')).length, 1);
+    }
+});
 test('login restores without birdCode; old guest data survives; multiple pets isolate actions and cache', async () => {
     const f = fixture(); f.wx.memory.set('xcwc.mp.guest.v1', { points: 99999 });
     await ready(f, [P, Q]); await f.store.selectPet(P); await f.store.rename('一号'); await f.store.feed();
@@ -71,7 +92,7 @@ test('unconfirmed operation survives process restart; blocks new mutations and c
     const f = fixture(); await ready(f); f.intercept(async () => { throw Error('offline'); });
     assert.equal((await f.store.feed()).error, 'RESULT_PENDING'); assert.equal(f.store.reset().error, 'RESULT_PENDING');
     assert.equal((await f.store.water()).error, 'RESULT_PENDING');
-    const wx2 = platform(f.transport, f.wx.memory), s2 = createCloudStore(wx2, { API_BASE: 'http://test.invalid' });
+    const wx2 = platform(f.transport, f.wx.memory), s2 = createCloudStore(wx2, { API_BASE: 'http://test.invalid/bird/v1' });
     assert.equal((await s2.resume()).error, null); assert.equal(snap(s2).food, 2);
     assert.deepEqual(wx2.calls.find(c => c.path.endsWith('/actions')).data, f.wx.calls.find(c => c.path.endsWith('/actions')).data);
 });
@@ -114,7 +135,7 @@ test('large version strings compare exactly; replay never regresses wallet', asy
 test('legacy token acquires userId via authenticated session before restore', async () => {
     const f = fixture(); f.wx.memory.set('auth_token', A.repeat(2));
     assert.equal((await f.store.loginWithWechat()).error, null);
-    assert.equal(f.wx.calls[0].path, '/api/auth/session'); assert.equal(f.wx.calls[0].header.Authorization, 'Bearer ' + A.repeat(2));
+    assert.equal(f.wx.calls[0].path, '/bird/v1/auth/session'); assert.equal(f.wx.calls[0].header.Authorization, 'Bearer ' + A.repeat(2));
     assert.equal(snap(f.store).userId, A);
 });
 test('late login after logout cannot restore previous identity', async () => {
@@ -269,7 +290,7 @@ test('previously committed legacy receipt clears pending, refreshes confirmed sp
     const f = fixture(); await loseLegacyOperation(f);
     setSpark(f.user(A).pets[0], { effectiveToday: false }, '2026-11-17');
     const wx = platform(f.transport, f.wx.memory);
-    const upgraded = createCloudStore(wx, { API_BASE: 'http://test.invalid' });
+    const upgraded = createCloudStore(wx, { API_BASE: 'http://test.invalid/bird/v1' });
     const recovered = await upgraded.recover();
     assert.equal(recovered.error, null);
     assert.equal(recovered.data.replayed, true);

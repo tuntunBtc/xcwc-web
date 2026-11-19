@@ -31,7 +31,7 @@ function harness(name, config = {}) {
     const cache=new Map();
     function load(file) {
       if(file.endsWith('/utils/store.js')) return store;
-      if(file.endsWith('/utils/config.js')) return {API_BASE:'http://isolated.invalid',USE_LOCAL_FIXTURE:false,...config};
+      if(file.endsWith('/utils/config.js')) return {API_BASE:'http://isolated.invalid/bird/v1',USE_LOCAL_FIXTURE:false,...config};
       if(file.endsWith('/utils/nest-idle.js')) return {createNestIdle:()=>({sync(){},kick(){},dispose(){},stop(){}})};
       if(file.endsWith('/utils/collection-media.js')) return {load:async()=>({profileBackground:'/x.webp',citySprite:'/x.webp'})};
       if(cache.has(file))return cache.get(file).exports;
@@ -157,7 +157,10 @@ test('spark entry catches only its own tap and uses the existing sheet', () => {
     assert.match(xml, /class="sheet-primary spark-action" catchtap="onSparkAction"/);
 });
 test('adoption uses verified birdId, permits second bird, never adopts just by opening NFC link',async()=>{
- const h=harness('adopt');h.state.pets=h.state.pets.slice(0,1);h.page.onLoad({code:'HZ-HY-9000000000000000102'});h.page.onShow();await h.settle();
+ const code='HZ-HY-9000000000000000102';
+ const h=harness('adopt',{DEVICE_SANDBOX_TEST:true,DEBUG_DEMO_BIRD_CODE:code,DEBUG_DEMO_BIRD:{id:'obsolete',name:'旧示例'}});
+ h.state.pets=h.state.pets.slice(0,1);h.page.onLoad({code,testBird:'1'});h.page.onShow();await h.settle();
+ assert.equal(h.page.data.birdName,'公开实体');
  assert.equal(h.page.data.ready,true);assert.equal(h.page.data.alreadyHaveBird,false);assert.equal(h.calls.filter(c=>c[0]==='ADOPT').length,0);
  h.page.handleInput({detail:{value:'新伙伴'}});await h.page.handleAdopt();assert.deepEqual(h.calls.find(c=>c[0]==='ADOPT'),['ADOPT',h.Q,'新伙伴']);h.page.onUnload();
 });

@@ -22,7 +22,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
   await context.route('**/*',async route=>{
    const url=new URL(route.request().url());
    if(url.host!==new URL(base).host)return route.abort();
-   if(url.pathname.startsWith('/api/'))return route.fulfill({json:[]});
+   if(url.pathname.startsWith('/bird/v1/'))return route.fulfill({json:[]});
    if(url.pathname==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><meta name=viewport content="width=device-width,initial-scale=1"><script src="/photo-save.js"></script>'});
    const response=await context.request.get(base+url.pathname+url.search);await route.fulfill({response});
   });

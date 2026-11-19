@@ -19,7 +19,7 @@ async function ready(page,route){
 }
 async function seed(page){
  await page.goto(base+'/?page=home',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.xcwcGuest);
- const response=await page.request.get(base+'/api/birds/by-code/'+encodeURIComponent(birdCode));assert.equal(response.status(),200);const bird=await response.json();
+ const response=await page.request.get(base+'/bird/v1/birds/by-code/'+encodeURIComponent(birdCode));assert.equal(response.status(),200);const bird=await response.json();
  await page.evaluate(bird=>{xcwcGuest.adopt(bird,'历史验收');localStorage.setItem('yanji.cloud.session.v1',JSON.stringify({token:'e'.repeat(64),username:'history_fixture',expiresAt:'2099-01-01T00:00:00Z'}))},bird);
 }
 async function retained(page){const value=await page.evaluate(()=>({birds:xcwcGuest.read().birds.map(b=>({id:b.id,name:b.name})),balance:xcwcGuest.read().balance,session:xcwcSession.read()?.username}));assert.equal(value.birds.length,1);assert.equal(value.birds[0].name,'历史验收');assert.equal(value.balance,5);assert.equal(value.session,'history_fixture')}

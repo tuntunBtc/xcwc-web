@@ -18,7 +18,7 @@ const ASSET_ERROR = '合照素材暂时无法加载。照片会保留，请重�
 const LONG_PRESS_SAVE = '请长按合照，选择「存储图像」或「保存图片」。';
 const ALBUM_SAVE_HINT = '点击保存后会写入系统相册，也可以长按合照保存。';
 
-// 调试期无公开小鸟目录；H5 由 /api/checkin-catalog 提供未领取款式，这里用
+// 调试期无公开小鸟目录；H5 由 /bird/v1/checkin-catalog 提供未领取款式，这里用
 // 固定的「未领取」占位，明确不可选，不按编码前缀伪造实体。
 const LOCKED_BIRDS = [
     { id: 'catalog:xiaohuangying', name: '小黄莺', adopted: false },

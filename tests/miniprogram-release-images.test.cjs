@@ -111,7 +111,7 @@ test('strict release check matches both step supply states', t => {
     const generator = path.join(__dirname, '../scripts/prepare-miniprogram-candidate.cjs');
     const verifier = path.join(__dirname, '../scripts/verify-miniprogram-release.cjs');
     const appid = 'wx1234567890abcdef';
-    const origin = 'https://api.birdpartners.cn';
+    const origin = 'https://api.birdpartners.cn/bird/v1';
     for (const enabled of [false, true]) {
         const output = path.join(temporary, enabled ? 'enabled' : 'disabled');
         const flags = enabled ? ['--step-supply'] : [];
@@ -141,7 +141,8 @@ test('strict release check requires the approved AppID and public API origin', t
     const generator = path.join(__dirname, '../scripts/prepare-miniprogram-candidate.cjs');
     const verifier = path.join(__dirname, '../scripts/verify-miniprogram-release.cjs');
     const appid = 'wx1234567890abcdef';
-    const origin = 'https://api.birdpartners.cn';
+    const domain = 'https://api.birdpartners.cn';
+    const origin = domain + '/bird/v1';
     execFileSync(process.execPath, [generator, '--output', output, '--appid', appid, '--api-base', origin, '--step-supply'],
         { encoding: 'utf8' });
 
@@ -152,23 +153,23 @@ test('strict release check requires the approved AppID and public API origin', t
         assert.match(result.stderr, reason);
     };
 
-    assert.equal(strict(appid, origin + '/').status, 0);
+    assert.equal(strict(appid, origin).status, 0);
     reject(run('--release', '--api-base', origin), /正式校验需要.*--appid/);
     reject(run('--release', '--appid', appid), /正式校验需要.*--api-base/);
     reject(run('--appid', appid, '--api-base', origin), /需要与 --release 一起使用/);
     reject(strict('wxfedcba0987654321', origin), /AppID.*不一致/);
-    reject(strict(appid, origin + ':8443'), /API 根地址.*不一致/);
-    reject(strict(appid, origin + '/api'), /正式校验需要.*--api-base/);
+    reject(strict(appid, domain + ':8443/bird/v1'), /API 根地址.*不一致/);
+    reject(strict(appid, domain + '/api'), /正式校验需要.*--api-base/);
 
     const configFile = path.join(output, 'utils/config.js');
     const config = require(configFile);
     for (const placeholder of ['https://api.example.invalid', 'https://qa.example.com', 'https://api.birdpartners.test.']) {
-        fs.writeFileSync(configFile, 'module.exports = ' + JSON.stringify({ ...config, API_BASE: placeholder }), 'utf8');
+        fs.writeFileSync(configFile, 'module.exports = ' + JSON.stringify({ ...config, API_BASE: placeholder + '/bird/v1' }), 'utf8');
         assert.equal(run('--step-supply').status, 0);
-        reject(strict(appid, placeholder), /保留域名/);
+        reject(strict(appid, placeholder + '/bird/v1'), /保留域名/);
     }
     for (const nonPublic of ['https://127.0.0.1', 'https://api.local.', 'https://api.example.invalid..']) {
-        fs.writeFileSync(configFile, 'module.exports = ' + JSON.stringify({ ...config, API_BASE: nonPublic }), 'utf8');
+        fs.writeFileSync(configFile, 'module.exports = ' + JSON.stringify({ ...config, API_BASE: nonPublic + '/bird/v1' }), 'utf8');
         reject(run('--step-supply'), /缺少有效的 HTTPS API 域名根地址/);
     }
 });
@@ -180,7 +181,8 @@ test('release check protects required files from packaging exclusions', t => {
     const generator = path.join(__dirname, '../scripts/prepare-miniprogram-candidate.cjs');
     const verifier = path.join(__dirname, '../scripts/verify-miniprogram-release.cjs');
     const appid = 'wx1234567890abcdef';
-    const origin = 'https://api.birdpartners.cn';
+    const domain = 'https://api.birdpartners.cn';
+    const origin = domain + '/bird/v1';
     execFileSync(process.execPath, [generator, '--output', output, '--appid', appid, '--api-base', origin], { encoding: 'utf8' });
 
     const configFile = path.join(output, 'project.config.json');

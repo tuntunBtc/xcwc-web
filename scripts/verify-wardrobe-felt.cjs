@@ -5,7 +5,7 @@ const base=process.env.XCWC_PREVIEW_URL||'http://127.0.0.1:8815';
 if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local preview only');
 (async()=>{const browser=await chromium.launch({headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});try{
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),page=await context.newPage(),errors=[],writes=[];
- page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.url())});await page.route('**/api/**',r=>r.fulfill({json:[]}));
+ page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.url())});await page.route('**/bird/v1/**',r=>r.fulfill({json:[]}));
  fs.mkdirSync('output/wardrobe-felt',{recursive:true});await page.goto(base+'/?page=wardrobe');await page.waitForFunction(()=>!!window.xcwcGuest);
  const frame=page.frameLocator('iframe'),wardrobe=frame.locator('.account-wardrobe-felt'),button=(skin)=>wardrobe.locator('[data-skin="'+skin+'"]');
  await wardrobe.locator('.wardrobe-empty').waitFor();assert.equal(await button('lake_glow').isDisabled(),true);await page.screenshot({path:'output/wardrobe-felt/empty-390.png'});

@@ -14,13 +14,13 @@ const activeFor=route=>sections.includes(route)?route:'home';
 const routeUrl=route=>route==='adopt'?'/register.html?birdCode='+bird.birdCode:'/?page='+route;
 async function newCase(browser,width,name){
  const context=await browser.newContext({viewport:{width,height},isMobile:true,hasTouch:true,reducedMotion:'reduce',locale:'zh-CN',timezoneId:'Asia/Shanghai'});
- await context.route('**/api/**',async route=>{
+ await context.route('**/bird/v1/**',async route=>{
   const request=route.request(),endpoint=new URL(request.url()).pathname;report.apiCalls.push({name,endpoint,method:request.method()});let status=200,json=[];
   if(!['GET','HEAD'].includes(request.method())){status=405;json={code:'FIXTURE_READ_ONLY',message:'导航验收仅允许读取'}}
-  else if(endpoint==='/api/shop/products')json={items:[],total:0,cities:[],page:1,pageSize:20};
-  else if(endpoint==='/api/shop/banners')json={items:[]};
-  else if(endpoint==='/api/birds/by-code/'+bird.birdCode||endpoint==='/api/birds/'+bird.id)json=bird;
-  else if(!['/api/me/birds','/api/bird-types','/api/birds'].includes(endpoint)){status=404;json={code:'FIXTURE_EMPTY',message:'导航验收隔离空数据'}}
+  else if(endpoint==='/bird/v1/shop/products')json={items:[],total:0,cities:[],page:1,pageSize:20};
+  else if(endpoint==='/bird/v1/shop/banners')json={items:[]};
+  else if(endpoint==='/bird/v1/birds/by-code/'+bird.birdCode||endpoint==='/bird/v1/birds/'+bird.id)json=bird;
+  else if(!['/bird/v1/me/birds','/bird/v1/bird-types','/bird/v1/birds'].includes(endpoint)){status=404;json={code:'FIXTURE_EMPTY',message:'导航验收隔离空数据'}}
   await route.fulfill({status,json});
  });
  const page=await context.newPage();page.setDefaultTimeout(15000);

@@ -7,7 +7,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
  for(const engine of (process.env.XCWC_BROWSER==='webkit'?[webkit]:[chromium,...(fs.existsSync(webkit.executablePath())?[webkit]:[])])){
  const browser=await engine.launch({headless:true,...(engine===chromium?{executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{})});
  try{
- const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const errors=[],decoderRequests=[],photoNetwork=[];page.on('request',r=>{if(/\/api\/(?:me\/)?checkins(?:[/?]|$)/.test(r.url())||!['GET','HEAD'].includes(r.method()))photoNetwork.push(r.method()+' '+r.url());});page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/vendor/heic-to-'))decoderRequests.push(r.url());});
+ const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const errors=[],decoderRequests=[],photoNetwork=[];page.on('request',r=>{if(/\/bird\/v1\/(?:me\/)?checkins(?:[/?]|$)/.test(r.url())||!['GET','HEAD'].includes(r.method()))photoNetwork.push(r.method()+' '+r.url());});page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/vendor/heic-to-'))decoderRequests.push(r.url());});
  await page.addInitScript(()=>{HTMLImageElement.prototype.decode=()=>Promise.reject(Error('decode unavailable'));});
  await page.goto(base,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>!!window.xcwcGuest);

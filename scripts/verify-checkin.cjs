@@ -2,7 +2,7 @@ const {chromium}=require('playwright');
 const fs=require('node:fs'),assert=require('node:assert/strict');
 const base=process.env.CHECKIN_TEST_BASE||'http://127.0.0.1:8767';
 if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('此测试只允许本地隔离服务');
-async function api(path,{token,method='GET',body}={}){const res=await fetch(base+'/api'+path,{method,headers:{...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});if(!res.ok)throw Error(path+' '+res.status+' '+await res.text());return res.json();}
+async function api(path,{token,method='GET',body}={}){const res=await fetch(base+'/bird/v1'+path,{method,headers:{...(token?{Authorization:'Bearer '+token}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});if(!res.ok)throw Error(path+' '+res.status+' '+await res.text());return res.json();}
 (async()=>{
  console.log('stage: account and real ownership');const fixture=JSON.parse(fs.readFileSync('output/checkin-runtime/ui-fixture.json','utf8'));
  const username='ck_ui_'+Date.now().toString(36),password='checkin-ui-test-password';
@@ -28,7 +28,7 @@ async function api(path,{token,method='GET',body}={}){const res=await fetch(base
  await frame.locator('#ck-location').fill('第二站');await frame.locator('#ck-location').dispatchEvent('input');await frame.locator('#ck-generate').click();await frame.locator('#ck-albumCount').filter({hasText:'2'}).waitFor();assert.equal(await frame.locator('#ck-points').innerText(),'2');await closeGeneratedViewer();
  assert.equal(await frame.locator('.memory-body>strong').first().innerText(),'第二站');
  console.log('stage: lost acknowledgement retry');
- let dropped=false;await page.route('**/api/checkins',async route=>{if(route.request().method()==='POST'&&!dropped){dropped=true;await route.fetch();await route.abort('failed');}else await route.continue();});
+ let dropped=false;await page.route('**/bird/v1/checkins',async route=>{if(route.request().method()==='POST'&&!dropped){dropped=true;await route.fetch();await route.abort('failed');}else await route.continue();});
  await frame.locator('#ck-location').fill('断网重试');await frame.locator('#ck-generate').click();await page.locator('#xcwc-checkin-notice').filter({hasText:'原样重试'}).waitFor();
  await frame.locator('#ck-generate').waitFor({state:'visible'});await frame.locator('#ck-generate').click();await frame.locator('#ck-albumCount').filter({hasText:'3'}).waitFor();assert.equal((await api('/me/points',{token:session.token})).balance,3);assert.equal((await api('/me/checkins',{token:session.token})).total,3);await closeGeneratedViewer();
  await frame.locator('#ck-download').click();await page.locator('#xcwc-checkin-save').waitFor({state:'visible'});await page.locator('#xcwc-checkin-save summary').click();const downloaded=page.waitForEvent('download');await page.locator('#xcwc-checkin-save a').click();assert((await downloaded).suggestedFilename().endsWith('.jpg'));await page.locator('#xcwc-checkin-save [data-save-close]').click();console.log('stage: saved works');await frame.locator('.memory').first().click();await viewer.waitFor({state:'visible'});assert.equal(await page.locator('dialog[open]').count(),1);assert.equal(await frame.locator('#ck-viewer,.viewer-original').count(),0);await viewer.locator('[data-save-close]').click();

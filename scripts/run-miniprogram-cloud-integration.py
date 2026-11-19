@@ -17,13 +17,17 @@ import urllib.request
 WEB = Path(__file__).resolve().parents[1]
 ROOT = WEB.parent
 OUT = ROOT / 'output/miniprogram-cloud-20261111'
-JAR = ROOT / 'output/backend-cloud-pet-20261111/xcwc.jar'
-EXPECTED_SHA = '174ddcf5cc6b9a53461d7165a81f35b2703788381347dac02f27e93a8d696475'
+JAR_ENV = 'XCWH_TEST_API_JAR'
+SHA_ENV = 'XCWH_TEST_API_JAR_SHA256'
 
 def call(args, **kwargs):
     return subprocess.run(args, check=True, text=True, encoding='utf-8', capture_output=True, **kwargs).stdout.strip()
 
 def main():
+    if not os.environ.get(JAR_ENV) or not os.environ.get(SHA_ENV):
+        raise SystemExit(f'Set {JAR_ENV} and {SHA_ENV} to the new namespace test backend artifact')
+    JAR = Path(os.environ[JAR_ENV]).resolve()
+    EXPECTED_SHA = os.environ[SHA_ENV]
     assert hashlib.sha256(JAR.read_bytes()).hexdigest() == EXPECTED_SHA, 'Backend JAR changed: review its version before running'
     for port in (13387, 18097):
         with socket.socket() as sock:
@@ -66,7 +70,7 @@ def main():
             deadline = time.monotonic() + 90
             while True:
                 try:
-                    with urllib.request.urlopen('http://127.0.0.1:18097/api/me/pets', timeout=2):
+                    with urllib.request.urlopen('http://127.0.0.1:18097/bird/v1/me/pets', timeout=2):
                         pass
                 except urllib.error.HTTPError as error:
                     if error.code == 401:
@@ -97,7 +101,7 @@ def main():
                 (OUT / (script + '.log')).write_text(result + '\n', encoding='utf-8')
                 print(result, flush=True)
             (OUT / 'environment.json').write_text(json.dumps({
-                'jarSha256': EXPECTED_SHA, 'apiRoot': 'http://127.0.0.1:18097', 'database': 'disposable MySQL 8.4 mpcloud_test',
+                'jarSha256': EXPECTED_SHA, 'apiRoot': 'http://127.0.0.1:18097/bird/v1', 'database': 'disposable MySQL 8.4 mpcloud_test',
                 'migration': 12, 'wechat': 'synthetic debug exchange', 'phone': 'not tested', 'cleanup': 'owned containers/network removed in finally',
             }, indent=2) + '\n', encoding='utf-8')
     finally:

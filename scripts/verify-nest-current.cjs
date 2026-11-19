@@ -30,7 +30,7 @@ async function verifySlowFeedback(browser,engine,width,base){
   page.on('request',request=>{const match=new URL(request.url()).pathname.match(/\/emotions\/([^/]+)\.webp$/);if(match)entry.requestedEmotions.push(match[1].replace(/\.[0-9a-f]{12}$/,''))});
   await context.route('**/*',route=>{
    const url=new URL(route.request().url());
-   if(url.pathname.startsWith('/api/')){assert.equal(route.request().method(),'GET');return route.fulfill({json:[]})}
+   if(url.pathname.startsWith('/bird/v1/')){assert.equal(route.request().method(),'GET');return route.fulfill({json:[]})}
    assert(['data:','blob:','about:'].includes(url.protocol)||url.origin===base,'slow-image cases must remain local');
    return route.continue();
   });
@@ -121,7 +121,7 @@ async function run(browser,engine,width){
  page.on('pageerror',e=>r.errors.push(e.message));
  page.on('request',req=>{if(req.url().includes('/emotions/'))r.images.push(new URL(req.url()).pathname)});
  page.on('response',res=>{if(!res.ok())r.failedResources.push({url:res.url(),status:res.status()})});
- await context.route('**/*',route=>{const u=new URL(route.request().url());if(u.pathname.startsWith('/api/')){r.api.push({method:route.request().method(),path:u.pathname});return route.abort()}if(!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base)return route.abort();return route.continue()});
+ await context.route('**/*',route=>{const u=new URL(route.request().url());if(u.pathname.startsWith('/bird/v1/')){r.api.push({method:route.request().method(),path:u.pathname});return route.abort()}if(!['data:','blob:','about:'].includes(u.protocol)&&u.origin!==base)return route.abort();return route.continue()});
  const nest=()=>page.frameLocator('iframe').locator('#xcwc-nest'),image=()=>nest().locator('#bird img'),emotion=()=>image().getAttribute('data-emotion'),state=()=>page.evaluate(()=>xcwcGuest.read());
  const tick=async ms=>{await page.clock.runFor(ms);await page.evaluate(()=>0);await delay(20)};
  async function ready(expected){for(let i=0;i<150;i++){if(await image().count()&&await emotion()===expected){await image().evaluate(im=>im.decode());return}await tick(10)}throw Error('Expected '+expected+', got '+await emotion())}

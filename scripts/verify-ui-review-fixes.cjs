@@ -6,12 +6,12 @@ for(const value of [base,simulation])if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+
 const out=path.resolve(__dirname,'../output/ui-review-fixes');fs.mkdirSync(out,{recursive:true});
 const codes=['HZ-HY-900000000000000001','HZ-HY-900000000000000002'];
 const report={engines:[],limitations:['Synthetic public API responses, no production writes','Native NFC, phone gallery and WeChat remain device checks']};
-async function control(value){const response=await fetch(simulation+'/api/__control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});assert.equal(response.status,200)}
+async function control(value){const response=await fetch(simulation+'/bird/v1/__control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});assert.equal(response.status,200)}
 async function run(engine){
  const name=engine===chromium?'chromium':'webkit',result={engine:name,checks:[],errors:[],api:[],screenshots:[]};report.engines.push(result);
  const browser=await engine.launch(engine===chromium?{headless:true,executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'}:{headless:true});
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const page=await context.newPage();page.setDefaultTimeout(12000);
- page.on('pageerror',error=>result.errors.push(error.message));page.on('request',request=>{if(new URL(request.url()).pathname.startsWith('/api/'))result.api.push({method:request.method(),path:new URL(request.url()).pathname})});
+ page.on('pageerror',error=>result.errors.push(error.message));page.on('request',request=>{if(new URL(request.url()).pathname.startsWith('/bird/v1/'))result.api.push({method:request.method(),path:new URL(request.url()).pathname})});
  const frame=()=>page.frameLocator('iframe'),nest=()=>frame().locator('#xcwc-nest'),account=()=>frame().locator('#xcwc-account-page'),shop=()=>frame().locator('#xcwc-shop');
  const goto=route=>page.goto(base+route,{waitUntil:'domcontentloaded'}),state=()=>page.evaluate(()=>window.xcwcGuest.read());
  async function shot(label){const file=name+'-'+label+'.png';await page.screenshot({path:path.join(out,file)});result.screenshots.push(file)}

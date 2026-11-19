@@ -10,7 +10,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',r=>{if(!['GET','HEAD'].includes(r.method()))writes.push(r.url())});
   page.on('response',r=>{if(r.url().includes('/assets/')&&!r.ok())assetErrors.push(r.url())});
-  await page.route('**/api/**',r=>r.fulfill({json:[]}));
+  await page.route('**/bird/v1/**',r=>r.fulfill({json:[]}));
   fs.mkdirSync('output/wardrobe-felt/review',{recursive:true});
   await page.goto(base+'/?page=profile');await page.waitForFunction(()=>!!window.xcwcGuest);
   await page.evaluate(()=>{
@@ -87,7 +87,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
    const navContext=await browser.newContext({viewport:{width,height},isMobile:width<600,hasTouch:width<600});
    try{
     const navPage=await navContext.newPage();navPage.on('pageerror',e=>errors.push(e.message));
-    await navPage.route('**/api/**',r=>r.fulfill({json:[]}));await navPage.goto(base+'/?page=wardrobe');
+    await navPage.route('**/bird/v1/**',r=>r.fulfill({json:[]}));await navPage.goto(base+'/?page=wardrobe');
     await navPage.waitForFunction(()=>!!window.xcwcGuest);
     await navPage.evaluate(()=>window.xcwcGuest.adopt({id:'a'.repeat(32),active:true,cityName:'杭州',cityCode:'hangzhou'},'测试小叽'));
     await navPage.reload();const navFrame=navPage.frameLocator('iframe');

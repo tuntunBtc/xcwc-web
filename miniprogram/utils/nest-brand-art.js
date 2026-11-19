@@ -1,8 +1,9 @@
 'use strict';
+const { apiRoot, assetUrl } = require('./api-root');
 
 const REQUIRED = ['normal', 'happy', 'angry'];
 const OPTIONAL = ['hungry', 'thirsty', 'lonely'];
-const INDEX = 'xcwc.nest.brand.art.v1';
+const INDEX = 'xcwc.nest.brand.art.v2';
 const MAX_BYTES = 32 * 1024 * 1024;
 const MAX_ROLES = 8;
 const owned = /^bundle-[a-z0-9]+-[a-z0-9]+$/;
@@ -92,7 +93,7 @@ async function checkImage(platform, path, asset) {
 
 async function prepare(platform, base, role, previous, storage, current) {
     const response = await call(platform, 'request', {
-        url: base + '/api/content/characters/' + encodeURIComponent(role), timeout: 8000,
+        url: apiRoot(base) + '/content/characters/' + encodeURIComponent(role), timeout: 8000,
     });
     const doc = response.data;
     if (response.statusCode !== 200 || !doc?.releaseId || doc.character?.id !== role) throw Error('invalid character');
@@ -109,7 +110,7 @@ async function prepare(platform, base, role, previous, storage, current) {
     async function file(id, sound = false) {
         if (!current()) throw Error('selection changed');
         const asset = assets.get(id);
-        if (!asset || !/^[a-f0-9]{32}$/.test(id) || asset.url !== '/api/content/assets/' + id) throw Error('invalid asset');
+        if (!asset || !/^[a-f0-9]{32}$/.test(id) || asset.url !== '/bird/v1/content/assets/' + id) throw Error('invalid asset');
         const extension = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'audio/mp4': 'm4a' }[asset.mime];
         if (!extension || (extension === 'm4a') !== sound) throw Error('unexpected asset type');
         if (!files.has(id)) files.set(id, (async () => {
@@ -117,7 +118,7 @@ async function prepare(platform, base, role, previous, storage, current) {
             const existing = previousFiles.find(path => path.endsWith('/' + name));
             let source = existing;
             if (!source) {
-                const result = await call(platform, 'downloadFile', { url: base + asset.url, timeout: 12000 });
+                const result = await call(platform, 'downloadFile', { url: assetUrl(asset.url), timeout: 12000 });
                 if (result.statusCode !== 200 || !result.tempFilePath) throw Error('asset unavailable');
                 source = result.tempFilePath;
             }
@@ -171,7 +172,7 @@ function createBrandArt(platform, apiBase, onChange) {
     let key, ticket = 0, retryAt = 0, value = null;
     function select(pet, view) {
         const role = pet?.characterId;
-        const next = base && /^[a-zA-Z0-9_-]{1,32}$/.test(role || '') ? [view, pet.petId, role, pet.contentVersion || ''].join('|') : '';
+        const next = apiRoot(base) && /^[a-zA-Z0-9_-]{1,32}$/.test(role || '') ? [view, pet.petId, role, pet.contentVersion || ''].join('|') : '';
         if (next === key && Date.now() < retryAt) return value;
         const issued = ++ticket;
         key = next;

@@ -261,6 +261,7 @@
                     </view>
                 </scroll-view>
                 <text class="sheet-note">昵称、库存和养成按小鸟独立保存。</text>
+                <view wx:if="{{testBirdAdoption}}" class="sheet-primary test-bird-entry" catchtap="goAdopt">{{hasTestBird ? '查看测试小鸟' : '领取测试小鸟'}}</view>
             </block>
             <block wx:if="{{sheet.type === 'history'}}">
                 <view class="supply-history">

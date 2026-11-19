@@ -5,11 +5,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { createCloudStore, SESSION_KEY } = require('../miniprogram/utils/cloud-store');
 const { platform, http } = require('../tests/cloud-platform.cjs');
-const BASE = 'http://127.0.0.1:18097';
+const BASE = 'http://127.0.0.1:18097/bird/v1';
 const facts = [], snap = s => s.snapshot().data.snapshot;
 async function good(label, fn) { await fn(); facts.push(label); console.log('PASS ' + label); }
 async function api(path, body, token) {
- const r = await http({url:BASE+'/api'+path,method:body?'POST':'GET',data:body,header:Object.assign({'content-type':'application/json'},token?{Authorization:'Bearer '+token}:{})});
+ const r = await http({url:BASE+path,method:body?'POST':'GET',data:body,header:Object.assign({'content-type':'application/json'},token?{Authorization:'Bearer '+token}:{})});
  assert(r.statusCode<300, path+': '+JSON.stringify(r.data)); return r.data;
 }
 (async()=>{
@@ -28,7 +28,7 @@ async function api(path, body, token) {
  await good('wallet, inventory and supply histories use official endpoints',async()=>{for(const kind of ['points','inventory','claims']){const r=await a.history(kind);assert.equal(r.error,null);assert(r.data.items.length>0);if(kind==='claims'){assert.equal(r.data.items.length,1);assert.equal(r.data.items[0].petId,ids[0]);}}});
  await good('unknown request survives client restart, exact original operation retries',async()=>{blackout=true;const v=snap(a).pets.find(p=>p.petId===ids[1]).version;assert.equal((await a.rename('断线后名')).error,'RESULT_PENDING');assert.equal(snap(a).nickname,'伙伴');const restart=createCloudStore(platform(http,wx1.memory),{API_BASE:BASE});assert.equal((await restart.resume()).error,null);assert.equal(snap(restart).nickname,'断线后名');assert.equal(BigInt(snap(restart).pets.find(p=>p.petId===ids[1]).version),BigInt(v)+1n);blackout=false;await a.resume();});
  await good('cache clear and new-device login restore without entity codes',async()=>{const before=snap(a);assert.equal(a.reset().error,null);await a.resume();const fresh=createCloudStore(platform(http),{API_BASE:BASE});await fresh.loginWithWechat();assert.deepEqual(snap(fresh).pets.map(p=>[p.petId,p.nickname,p.inventory]),snap(a).pets.map(p=>[p.petId,p.nickname,p.inventory]));assert.equal(snap(fresh).points,before.points);});
- await good('second account isolated; same physical bird has independent binding',async()=>{const login=await api('/auth/register',{username:'mp_'+Date.now(),password:'isolated-test-password-42'});const identity=await api('/auth/session',null,login.token);const memory=new Map([[SESSION_KEY,{token:login.token,userId:identity.userId,expiresAt:login.expiresAt}]]);const other=createCloudStore(platform(http,memory),{API_BASE:BASE});await other.refresh();assert.equal(snap(other).pets.length,0);assert.equal((await other.adopt(birds[0].id,'独立伙伴')).error,null);assert.notEqual(snap(other).petId,ids[0]);assert.equal(snap(other).food,3);const denied=await http({url:BASE+'/api/me/pets/'+ids[0],method:'GET',header:{Authorization:'Bearer '+login.token}});assert.equal(denied.statusCode,404);await other.logoutWechat();assert.equal(snap(other).pets.length,0);});
- assert(wx1.calls.filter(c=>c.path.startsWith('/api/me/')).every(c=>/^Bearer [a-f0-9]{64}$/.test(c.header.Authorization)));
+ await good('second account isolated; same physical bird has independent binding',async()=>{const login=await api('/auth/register',{username:'mp_'+Date.now(),password:'isolated-test-password-42'});const identity=await api('/auth/session',null,login.token);const memory=new Map([[SESSION_KEY,{token:login.token,userId:identity.userId,expiresAt:login.expiresAt}]]);const other=createCloudStore(platform(http,memory),{API_BASE:BASE});await other.refresh();assert.equal(snap(other).pets.length,0);assert.equal((await other.adopt(birds[0].id,'独立伙伴')).error,null);assert.notEqual(snap(other).petId,ids[0]);assert.equal(snap(other).food,3);const denied=await http({url:BASE+'/bird/v1/me/pets/'+ids[0],method:'GET',header:{Authorization:'Bearer '+login.token}});assert.equal(denied.statusCode,404);await other.logoutWechat();assert.equal(snap(other).pets.length,0);});
+ assert(wx1.calls.filter(c=>c.path.startsWith('/bird/v1/me/')).every(c=>/^Bearer [a-f0-9]{64}$/.test(c.header.Authorization)));
  fs.writeFileSync(path.resolve(__dirname, '../../output/miniprogram-cloud-20261111/http-report.json'),JSON.stringify({passed:facts.length,facts,apiRoot:BASE,backend:'real supplied JAR + isolated MySQL 8.4 V12',wechat:'debug exchange only',phone:'not tested'},null,2)+'\n','utf8');
 })().catch(e=>{console.error(e);process.exitCode=1;});

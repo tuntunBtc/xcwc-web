@@ -2,6 +2,13 @@
 
 卜叽岛小鸟伙伴前端项目。当前第一期为免登录本机体验：实体资料与商城从后端读取，领取、养成、叽分、装扮和合照保存在当前浏览器。云端账号接口独立保留，不作为本期领取前置条件，不自动合并本机与云端数据。
 
+
+## API 根地址
+
+H5 正式构建默认请求同源 `/bird/v1`。独立测试构建使用 `XCWH_H5_BIRD_API_ROOT=/test/bird/v1 npm run build`。本地预览的 `API_TARGET` 填后端或网关源站，预览代理原样转发新路径。运营统计读取受保护的 `/admin/v1/bird/analytics`。
+
+小程序候选通过 `--api-base` 注入完整 HTTPS 业务根地址。独立测试号使用 `https://api.xinchengip.com/test/bird/v1`，正式候选使用 `https://api.xinchengip.com/bird/v1`。角色素材从 `assets.xinchengip.com` 的 `/bird/v1/content/assets/{id}` 读取。
+
 ## 构建与预览
 
 需要 Python 3 和 Node.js；构建使用 Python 标准库及仓库内的图标资料，不需要安装 npm 依赖。部署后的静态站点不需要 Node.js。
@@ -66,7 +73,7 @@ npm run media:check
 
 ## 商城 V1.0
 
-商城通过现有 shop 路由接入，共用“小窝、城市、商城、我的”底栏；打卡统一从小窝页面右侧的“合照打卡”入口进入，不提供认领页导航或入口。`/?page=shop` 可直达。源码位于 `src/shop/`：`products.js` 保存分页与轮播设置，`template.html`、`shop.css`、`shop.js` 分别负责结构、隔离样式和交互。商品列表、详情、轮播由 `/api/shop/` 只读接口提供；商品与媒体清单维护在 `../xcwh-api/src/main/resources/shop/catalog.json`，字段说明见 [商品清单维护](../xcwh-api/SHOP-CATALOG.md)。
+商城通过现有 shop 路由接入，共用“小窝、城市、商城、我的”底栏；打卡统一从小窝页面右侧的“合照打卡”入口进入，不提供认领页导航或入口。`/?page=shop` 可直达。源码位于 `src/shop/`：`products.js` 保存分页与轮播设置，`template.html`、`shop.css`、`shop.js` 分别负责结构、隔离样式和交互。商品列表、详情、轮播由 `/bird/v1/shop/` 只读接口提供；商品与媒体清单维护在 `../xcwh-api/src/main/resources/shop/catalog.json`，字段说明见 [商品清单维护](../xcwh-api/SHOP-CATALOG.md)。
 
 商城采用 Shadow DOM 隔离定稿样式，复用现有路由。购物车由宿主按匿名/用户名隔离，稳定商品 ID 的读取、去重、增删和 100 件上限均在同一个 IndexedDB 事务中处理，避免标签页互相覆盖；旧 `xcwc.shop.cart.v1:*` 记录首次读取时迁入，localStorage 继续保留兼容镜像。数据库为 `xcwc.shop.coordination.v1`，`mutex` store 同时保存购物车与重置代次；“清除缓存”通过已授权的共享 hook 一并清理，并拒绝重置前的排队加购。购物车只在本机保存，不代表已下单，不跨设备同步。购买路径为加购、购物车、去淘宝购买；宿主校验 HTTPS 淘宝域名后以 noopener/noreferrer 在新窗口打开。微信内是否唤起淘宝仍由容器决定；跳转后保留购物车，不自动发蛋。旧混用演示购物车不迁入账号，不自动合并匿名与登录购物车。购买链接为空时禁用购买入口。
 
@@ -117,7 +124,7 @@ API_TARGET=http://127.0.0.1:8080 npm run preview
 
 ### 三段式公开编码查询接入（2026-11-01）
 
-本轮已支持 城市-IP CODE-雪花ID 输入，调用 GET /api/birds/by-code/{birdCode}，以返回的内部 id 执行个人资源查询。保留旧 32 位 hex 查询。该修订仅补齐上文“完整 NFC 编码解析”的缺口，多账号绑定、发蛋、孵化仍未开放。前缀不用于前端自行推断资料或发放权益；验证见 tests/adoption-entry.test.mjs 和后端 BirdCodeTest。
+本轮已支持 城市-IP CODE-雪花ID 输入，调用 GET /bird/v1/birds/by-code/{birdCode}，以返回的内部 id 执行个人资源查询。保留旧 32 位 hex 查询。该修订仅补齐上文“完整 NFC 编码解析”的缺口，多账号绑定、发蛋、孵化仍未开放。前缀不用于前端自行推断资料或发放权益；验证见 tests/adoption-entry.test.mjs 和后端 BirdCodeTest。
 
 ## 第一期免登录本机体验（2026-11-02）
 

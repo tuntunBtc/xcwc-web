@@ -12,7 +12,7 @@ if(!/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(base))throw Error('Local prev
    await page.goto(base,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>!!window.xcwcGuest);
    await page.evaluate(()=>window.xcwcGuest.adopt({id:'a'.repeat(32),cityCode:'hangzhou',cityName:'杭州',typeId:'hy',skinId:'default',active:true},'测试小鸟'));
    let release;const gate=new Promise(resolve=>{release=resolve});
-   await page.route('**/api/checkin-catalog',async route=>{await gate;await route.fulfill({json:[]})});
+   await page.route('**/bird/v1/checkin-catalog',async route=>{await gate;await route.fulfill({json:[]})});
    await page.goto(base+'/?page=photo',{waitUntil:'domcontentloaded'});
    const red=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=c.height=200;const x=c.getContext('2d');x.fillStyle='red';x.fillRect(0,0,200,200);return c.toDataURL().split(',')[1]});
    const frame=page.frameLocator('iframe');await frame.locator('#ck-file').setInputFiles({name:'red.png',mimeType:'image/png',buffer:Buffer.from(red,'base64')});

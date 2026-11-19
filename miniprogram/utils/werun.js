@@ -1,4 +1,5 @@
 'use strict';
+const { apiRoot } = require('./api-root');
 
 // 微信步数兑换的「端侧」职责边界（与后端 WxRunService 对齐）：
 //   1) 隐私授权（wx.requirePrivacyAuthorize，以官方最新规范为准）→ 2) scope.werun 授权
@@ -32,7 +33,7 @@ function request(opts) {
 }
 
 function baseUrl() {
-    return (config.API_BASE || '').replace(/\/+$/, '');
+    return apiRoot(config.API_BASE);
 }
 
 // 微信登录：wx.login 拿 code → 后端 code2Session + 发令牌；前端只存 token，session_key 永远不下发。
@@ -47,13 +48,13 @@ function captureSessionGuard() {
 }
 
 async function requestLogin(generation) {
-    if (!config.API_BASE) throw { error: 'NO_ENDPOINT' };
+    if (!baseUrl()) throw { error: 'NO_ENDPOINT' };
     const login = await promisify(wx.login, {});
     assertCurrentSession(generation);
     const code = login && login.code;
     if (!code) throw { error: 'LOGIN_CODE_MISSING' };
     const res = await request({
-        url: baseUrl() + '/api/auth/wx-login',
+        url: baseUrl() + '/auth/wx-login',
         method: 'POST',
         timeout: 10000,
         header: { 'content-type': 'application/json' },
@@ -94,7 +95,7 @@ function withLogout(logout) {
 
 async function revokeToken(token) {
     const res = await request({
-        url: baseUrl() + '/api/auth/logout',
+        url: baseUrl() + '/auth/logout',
         method: 'POST',
         timeout: 10000,
         header: { Authorization: 'Bearer ' + token },
@@ -104,7 +105,7 @@ async function revokeToken(token) {
 
 async function checkServerSession(token) {
     const res = await request({
-        url: baseUrl() + '/api/auth/session',
+        url: baseUrl() + '/auth/session',
         method: 'GET',
         timeout: 5000,
         header: { Authorization: 'Bearer ' + token },
@@ -208,23 +209,23 @@ async function postSteps(token, endpoint, fields, checkExperience = () => {}) {
 
 function redeemSteps(token, checkExperience) {
     const requestId = String(Date.now()) + '-' + Math.random().toString(36).slice(2, 8);
-    return postSteps(token, config.STEPS_REDEEM_ENDPOINT || '/api/steps/redeem', { requestId }, checkExperience);
+    return postSteps(token, '/steps/redeem', { requestId }, checkExperience);
 }
 
 function previewStepPoints(token, checkExperience) {
-    return postSteps(token, '/api/steps/preview-v2', {}, checkExperience);
+    return postSteps(token, '/steps/preview-v2', {}, checkExperience);
 }
 
 function redeemStepPoints(token, expectedDate, requestId, checkExperience) {
-    return postSteps(token, '/api/steps/redeem-v2', { expectedDate, requestId }, checkExperience);
+    return postSteps(token, '/steps/redeem-v2', { expectedDate, requestId }, checkExperience);
 }
 
 function previewSupplies(token, fields, checkExperience) {
-    return postSteps(token, '/api/supplies/preview', fields, checkExperience);
+    return postSteps(token, '/supplies/preview', fields, checkExperience);
 }
 
 function claimSupplies(token, fields, checkExperience) {
-    return postSteps(token, '/api/supplies/claim', fields, checkExperience);
+    return postSteps(token, '/supplies/claim', fields, checkExperience);
 }
 
 module.exports = { TOKEN_KEY, captureSessionGuard, loginAndGetToken, withLogout, revokeToken, checkServerSession, sessionIsCurrent, withSession, redeemSteps, previewStepPoints, redeemStepPoints, previewSupplies, claimSupplies };

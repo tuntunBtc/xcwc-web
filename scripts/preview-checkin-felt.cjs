@@ -160,7 +160,7 @@ if (args.includes('--serve')) {
       // Inspect before URL normalization so encoded/raw traversal is rejected.
       pathname = decodeURIComponent(request.url.split('?')[0]);
     } catch { fail(400, 'Invalid path'); return; }
-    if (pathname.startsWith('/api/')) { fail(503, 'Visual preview has no backend.'); return; }
+    if (pathname.startsWith('/bird/v1/')) { fail(503, 'Visual preview has no backend.'); return; }
     if (!['GET', 'HEAD'].includes(request.method)) { fail(405, 'Read-only preview'); return; }
     if (pathname.includes('\\') || pathname.includes('\0') ||
         pathname.split('/').some(segment => segment === '..' || segment === '.')) {
