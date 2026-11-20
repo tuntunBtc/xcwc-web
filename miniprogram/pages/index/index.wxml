@@ -57,10 +57,11 @@
     </view>
 
     <!-- 右侧工具列 -->
-    <view class="tools {{layout.toolsCompact ? 'is-compact' : ''}}" style="top:{{layout.toolsTop}}rpx">
-        <view wx:for="{{tools}}" wx:key="key" class="tool" data-key="{{item.key}}" bindtap="onTool" hover-class="tool-hover">
+    <view class="tools" style="top:{{layout.toolsTop}}rpx">
+        <view wx:for="{{tools}}" wx:key="key" class="tool" data-key="{{item.key}}" bindtap="onTool" hover-class="tool-hover" aria-role="button" aria-label="{{item.label}}">
             <image class="tex-bg" src="/assets/nest/cloud.webp" mode="scaleToFill"></image>
-            <view class="clip tool-prop-clip"><image class="sprite {{item.propClass}}" src="/assets/nest/tools.webp" mode="scaleToFill"></image></view>
+            <view wx:if="{{item.key === 'video'}}" class="tool-prop-clip tool-play"><view class="tool-play-disc"><view class="tool-play-triangle"></view></view></view>
+            <view wx:else class="clip tool-prop-clip"><image class="sprite {{item.propClass}}" src="/assets/nest/tools.webp" mode="scaleToFill"></image></view>
             <text class="tool-label">{{item.label}}</text>
             <view wx:if="{{item.key === 'supply' && hasBird && !supplyClaimed}}" class="tool-dot"></view>
         </view>

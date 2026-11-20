@@ -128,13 +128,9 @@ function readNestLayout() {
     var actorHeight = Math.min(BIRD_HEIGHT_RPX, actorBottom - actorTop);
     var speechTop = inset + 330 + coreShift;
     var toolHeight = Math.max(TOOL_HEIGHT_RPX, Math.ceil(44 * 750 / width));
-    var toolsTop = hudTop + 262;
-    var toolsCompact = toolsTop + 4 * toolHeight + 3 * TOOL_GAP_RPX > dockTop;
-    // 短屏改用两行，尽量放在对话气泡和照料按钮之前。
-    if (toolsCompact) {
-        var toolsBottom = Math.min(speechTop, dockTop);
-        toolsTop = Math.max(hudTop + 222, Math.min(toolsTop, toolsBottom - 2 * toolHeight - TOOL_GAP_RPX));
-    }
+    // 清洁、补给、合照打卡、播放共用一列。短屏将整列上移，优先留出照料区。
+    var toolsHeight = 4 * toolHeight + 3 * TOOL_GAP_RPX;
+    var toolsTop = Math.max(hudTop + 222, Math.min(hudTop + 262, dockTop - toolsHeight - TOOL_GAP_RPX));
     return {
         inset: inset,
         tabBarHeight: tabBarHeight,
@@ -147,16 +143,13 @@ function readNestLayout() {
         // fixed 且 z-index:1000，必须把整条底栏高度加回来，否则 toast 会被底栏盖住。
         toastBottom: tabBarHeight + DOCK_GAP_RPX + DOCK_HEIGHT_RPX + 20,
         actorHeight: actorHeight,
-        // 顶部信息组（HUD / 状态条 / 需求气泡 / 工具列）作为一整组上移：
-        // 全部锚定 hudTop，彼此间距与旧版（inset+8 / +128 / +230 / +270）完全一致，
-        // 所以 HUD 抬到胶囊同排后不会出现「上面贴顶、下面脱节」的大空档。
+        // 顶部信息组锚定 hudTop，短屏允许工具列在组内上移避让 dock。
         // 对话气泡、领取入口、立绘与 dock 属场景主体，仍按 inset 定位保持不动。
         hudTop: hudTop,
         hudRight: hudRight,                    // 胶囊左边缘避让，内联覆盖 WXSS 的 right:12rpx
         statusTop: hudTop + 120,               // HUD 底(+91) 后再留 29rpx
         needsTop: hudTop + 222,
         toolsTop: toolsTop,
-        toolsCompact: toolsCompact,
         speechTop: speechTop,                  // 44cqw + core-shift
         claimTop: inset + 465 + coreShift,     // 62cqw + core-shift
         actorTop: actorTop,

@@ -3,7 +3,8 @@
     "pages/index/index",
     "pages/city/city",
     "pages/shop/shop",
-    "pages/profile/profile"
+    "pages/profile/profile",
+    "pages/nest-video/nest-video"
   ],
   "subpackages": [
     { "root": "pages/adopt", "pages": ["adopt"] },

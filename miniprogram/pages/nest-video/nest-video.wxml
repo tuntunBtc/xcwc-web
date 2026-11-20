@@ -1,0 +1,14 @@
+<video wx:if="{{src}}" id="bird-video" src="{{src}}" autoplay
+    object-fit="cover" controls="{{false}}" show-progress="{{false}}"
+    show-fullscreen-btn="{{false}}" show-play-btn="{{false}}" show-center-play-btn="{{false}}"
+    enable-progress-gesture="{{false}}"
+    bindended="returnToNest" binderror="onError">
+    <cover-view class="back" style="top:{{backTop + backHeight / 2 - 22}}px" catchtap="returnToNest" aria-role="button" aria-label="返回小窝" hover-class="back-pressed">
+        <cover-image class="back-pill" style="height:{{backHeight}}px; width:{{backHeight * 113 / 69}}px" src="/pages/nest-video/back-reference.png" />
+    </cover-view>
+</video>
+<view wx:else class="actions">
+    <text wx:if="{{error}}">{{error}}</text>
+    <button bindtap="play">重新播放</button>
+    <button bindtap="returnToNest">返回小窝</button>
+</view>

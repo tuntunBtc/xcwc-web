@@ -18,13 +18,13 @@ const STATUS_REFRESH_MS = 30000;
 const HAPPY_ART = '/assets/nest/emotion-happy.webp';
 const ANGRY_ART = '/assets/nest/emotion-angry.webp';
 
-// 与网页端 src/nest/template.html 的导航、工具、状态顺序一致。
-// 雪碧图格位对应 H5 的 .tools .p0~p3、cards-1200 三格、hud-icons 3×2。
+// 共用雪碧图格位对应 H5 的 .tools .p0~p3、cards-1200 三格、hud-icons 3×2。
 const TOOLS = Object.freeze([
     { key: 'clean', label: '清洁', propClass: 'prop-clean' },
     { key: 'supply', label: '补给', propClass: 'prop-supply' },
     { key: 'checkin', label: '合照打卡', propClass: 'prop-checkin' },
     { key: 'dress', label: '换装', propClass: 'prop-dress', hidden: true },
+    { key: 'video', label: '播放' },
 ]);
 const DOCK = Object.freeze([
     { key: 'feed', label: '喂食', cardClass: 'card-feed' },
@@ -142,7 +142,7 @@ Page(cloudUI.page({
         tabBar.syncSelected(this, 0);
         // 面板若仍打开（例如切走再切回），动画应保持暂停，不能与遮罩状态相反。
         this.setData({ motionPaused: !!this.data.sheet });
-        this.refresh();
+        // cloudUI.page 在 onShow 后统一刷新小窝。
         if (this.statusTimer === null) {
             this.statusTimer = setInterval(() => store.resume(), STATUS_REFRESH_MS);
         }
@@ -519,6 +519,10 @@ Page(cloudUI.page({
         if (key === 'checkin') {
             // 网页端从小窝右侧「合照打卡」直达 photo 路由；此处为同一入口。
             this.openToolPage('/pages/photo/photo', '合照打卡暂时打不开，请重试');
+            return;
+        }
+        if (key === 'video') {
+            this.openToolPage('/pages/nest-video/nest-video', '视频暂时打不开，请重试');
             return;
         }
         // 网页端小窝「换装」直达 wardrobe 路由；这里是同一个独立衣橱页。

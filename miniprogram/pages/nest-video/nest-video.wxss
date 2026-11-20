@@ -1,0 +1,16 @@
+page { background: #000; }
+video { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; }
+.actions { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 24rpx; color: #fff; }
+
+.back {
+    position: absolute;
+    left: 8px;
+    width: 52px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.back-pressed .back-pill {
+    opacity: 0.85;
+}

@@ -511,12 +511,6 @@ page {
     z-index: 5;
 }
 
-.tools.is-compact {
-    flex-flow: row wrap;
-    justify-content: flex-end;
-    width: max(218rpx, calc(88px + 10rpx));
-}
-
 .tool {
     position: relative;
     box-sizing: border-box;
@@ -573,6 +567,29 @@ page {
 .prop-dress {
     left: -100%;
     top: -100%;
+}
+
+.tool-play,
+.tool-play-disc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tool-play-disc {
+    width: 38rpx;
+    height: 38rpx;
+    border: 3rpx solid #f7edd2;
+    border-radius: 50%;
+    background: #657c4d;
+    box-shadow: 0 2rpx 3rpx rgba(78, 58, 34, 0.32);
+}
+
+.tool-play-triangle {
+    margin-left: 4rpx;
+    border-top: 9rpx solid transparent;
+    border-bottom: 9rpx solid transparent;
+    border-left: 13rpx solid #fff7e4;
 }
 
 .tool-label {
