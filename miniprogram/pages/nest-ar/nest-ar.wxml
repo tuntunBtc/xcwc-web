@@ -1,0 +1,54 @@
+<view class="ar-page">
+    <bird-xr wx:if="{{active}}" id="bird-xr" class="scene" disable-scroll
+        width="{{renderWidth}}" height="{{renderHeight}}" models="{{models}}"
+        bind:tracking="onTracking" bind:modelsloaded="onModelsLoaded" bind:plane="onPlane" bind:arfailure="fail" />
+    <view wx:if="{{placed}}" class="gesture" catchtouchstart="dragStart" catchtouchmove="dragMove" catchtouchend="dragEnd" catchtouchcancel="dragEnd"></view>
+    <button class="back" style="top:{{top}}px;height:{{menuHeight}}px" bindtap="goBack" aria-label="返回小窝">
+        <view class="back-chevron"></view>
+        <text>小窝</text>
+    </button>
+
+    <view wx:if="{{active}}" class="ar-tool-rail" style="top:{{top + menuHeight + 22}}px">
+        <button class="tool" open-type="share">
+            <view class="tool-icon"><view class="share-glyph"></view></view>
+            <text>分享</text>
+        </button>
+        <button wx:if="{{placed}}" class="tool" bindtap="capture">
+            <view class="tool-icon"><view class="camera-glyph"></view></view>
+            <text>截图</text>
+        </button>
+        <button class="tool" open-type="feedback" bindtap="holdForOverlay">
+            <view class="tool-icon"><view class="feedback-glyph">···</view></view>
+            <text>反馈</text>
+        </button>
+    </view>
+
+    <view wx:if="{{active && !placed && loaded && tracking}}" class="guide" aria-hidden="{{planeReady}}">
+        <view wx:if="{{planeReady}}" class="reticle"><view class="reticle-dot"></view></view>
+        <block wx:else>
+            <view class="scan-mark"><view class="scan-plane"></view><view class="scan-phone"></view></view>
+            <text class="scan-copy">将摄像头对准桌面或地面，缓慢移动手机。出现定位标记后即可放置场景。</text>
+        </block>
+    </view>
+
+    <view wx:if="{{!active}}" class="intro">
+        <text class="title">桂花鸟 AR</text>
+        <text>{{hint || '打开相机，把四只桂花鸟摆到桌上。'}}</text>
+        <button wx:if="{{stage === 'system-permission'}}" class="primary" bindtap="openSystemCameraSettings">前往系统设置</button>
+        <button wx:elif="{{stage === 'permission'}}" class="primary" bindtap="openCameraSettings">打开相机权限</button>
+        <button wx:else class="primary" bindtap="start" loading="{{preparing}}" disabled="{{preparing}}">{{preparing ? '加载模型中' : stage === 'intro' ? '开始 AR' : '重试'}}</button>
+    </view>
+
+    <view wx:elif="{{placed}}" class="controls">
+            <text>双指缩放整组 · 选中后单指移动</text>
+            <view class="choices">
+                <button wx:for="{{birds}}" wx:key="key" class="choice {{selected === item.key ? 'selected' : ''}}"
+                    data-key="{{item.key}}" bindtap="selectBird">{{item.label}}</button>
+            </view>
+            <button class="quiet" bindtap="reposition">重新放置</button>
+    </view>
+    <view wx:else class="placement">
+        <text wx:if="{{hint || !loaded || !tracking}}" class="placement-hint">{{hint || '正在准备相机和模型…'}}</text>
+        <button wx:if="{{loaded && tracking && planeReady}}" class="primary" bindtap="place">放置场景</button>
+    </view>
+</view>

@@ -1,0 +1,7 @@
+{
+  "navigationStyle": "custom",
+  "disableScroll": true,
+  "renderer": "webview",
+  "pageOrientation": "portrait",
+  "usingComponents": { "bird-xr": "./view/index" }
+}

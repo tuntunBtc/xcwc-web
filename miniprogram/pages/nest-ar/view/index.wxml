@@ -1,0 +1,16 @@
+<xr-scene id="scene" ar-system="modes:Plane;planeMode:1" bind:ready="onReady" bind:tick="onTick" bind:ar-ready="onARReady" bind:ar-error="onError">
+    <xr-assets />
+    <xr-node>
+        <xr-ar-tracker mode="Plane" bind:ar-tracker-state="onPlaneState">
+            <xr-mesh node-id="plane-marker" geometry="plane" rotation="-90 0 0" scale="0.08 0.08 1" uniforms="u_baseColorFactor:0.57 0.78 0.49 0.7" states="alphaMode:BLEND" />
+        </xr-ar-tracker>
+        <xr-node node-id="flock" visible="false">
+            <xr-shadow id="birds" node-id="birds" />
+        </xr-node>
+        <xr-camera id="camera" node-id="camera" background="ar" is-ar-camera />
+    </xr-node>
+    <xr-node>
+        <xr-light type="ambient" color="1 1 1" intensity="1.2" />
+        <xr-light type="directional" rotation="35 35 0" color="1 0.98 0.94" intensity="2" />
+    </xr-node>
+</xr-scene>

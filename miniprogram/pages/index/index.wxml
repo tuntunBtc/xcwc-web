@@ -61,6 +61,7 @@
         <view wx:for="{{tools}}" wx:key="key" class="tool" data-key="{{item.key}}" bindtap="onTool" hover-class="tool-hover" aria-role="button" aria-label="{{item.label}}">
             <image class="tex-bg" src="/assets/nest/cloud.webp" mode="scaleToFill"></image>
             <view wx:if="{{item.key === 'video'}}" class="tool-prop-clip tool-play"><view class="tool-play-disc"><view class="tool-play-triangle"></view></view></view>
+            <view wx:elif="{{item.key === 'ar'}}" class="tool-prop-clip tool-play"><view class="tool-play-disc"><view class="tool-ar-focus"></view></view></view>
             <view wx:else class="clip tool-prop-clip"><image class="sprite {{item.propClass}}" src="/assets/nest/tools.webp" mode="scaleToFill"></image></view>
             <text class="tool-label">{{item.label}}</text>
             <view wx:if="{{item.key === 'supply' && hasBird && !supplyClaimed}}" class="tool-dot"></view>

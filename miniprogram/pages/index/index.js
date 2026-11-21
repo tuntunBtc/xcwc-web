@@ -23,6 +23,7 @@ const TOOLS = Object.freeze([
     { key: 'clean', label: '清洁', propClass: 'prop-clean' },
     { key: 'supply', label: '补给', propClass: 'prop-supply' },
     { key: 'checkin', label: '合照打卡', propClass: 'prop-checkin' },
+    { key: 'ar', label: 'AR' },
     { key: 'dress', label: '换装', propClass: 'prop-dress', hidden: true },
     { key: 'video', label: '播放' },
 ]);
@@ -523,6 +524,10 @@ Page(cloudUI.page({
         }
         if (key === 'video') {
             this.openToolPage('/pages/nest-video/nest-video', '视频暂时打不开，请重试');
+            return;
+        }
+        if (key === 'ar') {
+            this.openToolPage('/pages/nest-ar/nest-ar', 'AR 暂时打不开，请重试');
             return;
         }
         // 网页端小窝「换装」直达 wardrobe 路由；这里是同一个独立衣橱页。

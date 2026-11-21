@@ -592,6 +592,15 @@ page {
     border-left: 13rpx solid #fff7e4;
 }
 
+.tool-ar-focus {
+    width: 19rpx;
+    height: 19rpx;
+    border: 2rpx solid #fff7e4;
+    border-radius: 5rpx;
+    box-shadow: inset 0 0 0 4rpx #657c4d, inset 0 0 0 7rpx #fff7e4;
+}
+
+
 .tool-label {
     position: relative;
     padding: 0 3rpx 6rpx;

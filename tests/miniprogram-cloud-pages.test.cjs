@@ -251,6 +251,15 @@ test('小窝游客可关闭登录提示，登录失败可重试，成功后返�
 });
 
 
+test('小窝 AR 入口位于合照下方并打开原生 AR 页', async () => {
+    const { page, wx } = harness('index');
+    const urls = [];
+    wx.navigateTo = options => { urls.push(options.url); options.complete(); };
+    assert.deepEqual(Array.from(page.data.tools, tool => tool.key), ['clean', 'supply', 'checkin', 'ar', 'video']);
+    await page.onTool({ currentTarget: { dataset: { key: 'ar' } } });
+    assert.deepEqual(urls, ['/pages/nest-ar/nest-ar']);
+});
+
 test('测试领养共用显示与跳转条件，普通小窝保留领取说明', () => {
     const code = 'HZ-HY-18679';
     const preview = harness('index', { DEVICE_SANDBOX_TEST: true, DEBUG_DEMO_BIRD_CODE: code });
