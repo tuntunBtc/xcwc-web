@@ -37,6 +37,27 @@ function fixture(t) {
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
+test('小窝背景优先读取当前 IP，未配置则读取公开的默认背景', async t => {
+    const { platform, pet, client, doc, look, ids } = fixture(t);
+    doc.character.backgroundAssetId = ids[3];
+    doc.pages = [{ id: 'nestDefault', backgroundAssetId: ids[0] }];
+    const urls = [];
+    const download = platform.downloadFile;
+    platform.downloadFile = options => { urls.push(options.url); return download(options); };
+    const art = client();
+    art.select(pet, 1);
+    await settle();
+    assert.ok(art.select(pet, 1).background.endsWith(ids[3] + '.png'));
+    assert.ok(urls.some(url => url === 'https://assets.xinchengip.com/bird/v1/content/assets/' + ids[3]));
+    delete doc.character.backgroundAssetId;
+    doc.character.id = 'other';
+    look.characterId = 'other';
+    const switched = { ...pet, characterId: 'other' };
+    assert.equal(art.select(switched, 1), null);
+    await settle();
+    assert.ok(art.select(switched, 1).background.endsWith(ids[0] + '.png'));
+});
+
 test('三态完整即可启用，选配状态复用正常图，断网冷启动恢复相同角色', async t => {
     const {platform, pet, client} = fixture(t);
     const a = client();

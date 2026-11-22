@@ -5,6 +5,9 @@
 
     <view class="scene">
         <image class="scene-art" src="/pages/adopt/assets/scene.webp" mode="scaleToFill" aria-hidden="true"></image>
+        <view wx:if="{{osmanthusAdoption}}" class="osmanthus-preview">
+            <image src="/assets/nest/osmanthus-preview.webp" mode="aspectFill" aria-label="桂花鸟"></image>
+        </view>
         <view class="scene-title">
             <text>领养你的</text>
             <text>城市小鸟</text>

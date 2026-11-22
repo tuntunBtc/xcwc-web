@@ -1,6 +1,7 @@
 'use strict';
 
 const { loadArModel, invalidateArModel } = require('./ar-models');
+const BIRD_VIDEO_URL = 'https://assets.xinchengip.com/mini/ar-video/e94942f757195749252d542e26ca590a98f2b09847fe6bda824cbf0e356cbc12.mp4';
 
 const BIRDS = [
     { key: 'original', label: '首轮', x: -0.13, z: 0.12 },
@@ -21,16 +22,20 @@ function systemCameraDenied() {
 
 Page({
     data: {
-        top: 24, renderWidth: 1, renderHeight: 1, models: [], birds: BIRDS, selected: 'original',
-        preparing: false, active: false, loaded: false, tracking: false, planeReady: false, placed: false,
+        top: 24, menuHeight: 32, renderWidth: 1, renderHeight: 1, models: [], birds: BIRDS, selected: 'original',
+        mode: 'models', videoUrl: '', preparing: false, active: false, loaded: false, tracking: false, planeReady: false, placed: false,
         stage: 'intro', hint: '',
     },
 
     onLoad() {
         this.visible = true;
         this.scale = 1;
-        const menu = wx.getMenuButtonBoundingClientRect();
-        const info = wx.getWindowInfo();
+        this.videoPosition = { x: 0, z: 0 };
+        let menu = {};
+        let info = {};
+        try { menu = wx.getMenuButtonBoundingClientRect?.() || {}; } catch { /* Use defaults. */ }
+        try { info = wx.getWindowInfo?.() || {}; } catch { /* Use defaults. */ }
+        info = { windowWidth: 1, windowHeight: 1, ...info };
         this.viewport = info;
         const ratio = Math.min(info.pixelRatio || 1, 1.5);
         this.setData({
@@ -44,10 +49,12 @@ Page({
 
     onShow() {
         this.visible = true;
+        if (this.data.videoUrl && this.data.placed) this.selectComponent('#bird-xr')?.resumeVideo();
         this.overlayDeadline = 0;
-        if (this.captureFailedWhileHidden) {
-            this.captureFailedWhileHidden = false;
-            wx.showToast({ title: '当前设备暂无法截图', icon: 'none' });
+        if (this.captureNotice) {
+            const { action, error } = this.captureNotice;
+            this.captureNotice = null;
+            this.showCaptureResult(action, error);
         }
         if (this.systemSettingsPending && !systemCameraDenied()) {
             this.systemSettingsPending = false;
@@ -63,6 +70,7 @@ Page({
 
     onHide() {
         this.visible = false;
+        if (this.data.videoUrl) this.selectComponent('#bird-xr')?.pauseVideo();
         this.drag = null;
         clearTimeout(this.startupTimer);
         if (this.data.active && (this.capturing || Date.now() <= this.overlayDeadline)) return;
@@ -71,16 +79,22 @@ Page({
     },
 
     onUnload() {
+        this.unloaded = true;
+        this.selectComponent('#bird-xr')?.pauseVideo();
         this.preparation = null;
         this.visible = false;
         clearTimeout(this.startupTimer);
     },
 
-    stop() {
+    stop(nextState = {}, callback) {
+        this.selectComponent('#bird-xr')?.pauseVideo();
         this.preparation = null;
         clearTimeout(this.startupTimer);
         this.drag = null;
-        this.setData({ preparing: false, active: false, loaded: false, tracking: false, planeReady: false, placed: false });
+        this.setData({
+            preparing: false, active: false, loaded: false, tracking: false, planeReady: false, placed: false,
+            ...nextState,
+        }, callback);
     },
 
     start() {
@@ -102,8 +116,22 @@ Page({
                 if (systemCameraDenied()) this.showSystemCameraSettings();
                 else this.setData({ stage: 'permission', hint: '请允许此小程序使用相机。' });
             },
-            complete: () => { this.requesting = false; },
+            complete: () => {
+                this.requesting = false;
+                if (this.visible && this.resume) { this.resume = false; this.start(); }
+            },
         });
+    },
+
+    chooseArMode(event) {
+        if (this.data.active || this.data.preparing || this.requesting) return;
+        const mode = event.currentTarget.dataset.mode === 'video' ? 'video' : 'models';
+        if (mode !== this.data.mode) {
+            this.scale = 1;
+            this.videoPosition = { x: 0, z: 0 };
+            this.positions = new Map(BIRDS.map(bird => [bird.key, { x: bird.x, z: bird.z }]));
+        }
+        this.setData({ mode, videoUrl: mode === 'video' ? BIRD_VIDEO_URL : '', stage: 'intro', hint: '' });
     },
 
     async mount() {
@@ -112,13 +140,14 @@ Page({
         this.preparation = preparation;
         this.setData({ preparing: true });
         try {
-            const sources = await Promise.all(BIRDS.map(bird => loadArModel(bird.key)));
+            const birds = this.data.videoUrl ? [] : BIRDS;
+            const sources = await Promise.all(birds.map(bird => loadArModel(bird.key)));
             if (this.preparation !== preparation) return;
             if (!this.visible) {
                 this.resume = true;
                 return;
             }
-            const models = BIRDS.map((bird, index) => {
+            const models = birds.map((bird, index) => {
                 const { x, z } = this.positions.get(bird.key);
                 return { key: bird.key, src: sources[index], x, z };
             });
@@ -170,7 +199,7 @@ Page({
     onModelsLoaded() { this.markReady('loaded'); },
     onPlane(event) {
         if (this.data.active && !this.data.placed) {
-            this.setData({ planeReady: event.detail.ready });
+            this.setData({ planeReady: event.detail.ready, ...(!event.detail.ready ? { hint: '' } : {}) });
         }
     },
 
@@ -191,6 +220,7 @@ Page({
         if (!this.data.active) return;
         const { kind, key, src } = event?.detail || {};
         if (kind === 'model') invalidateArModel(key, src);
+        if (!this.visible) { this.resume = true; this.stop(); return; }
         this.stop();
         if (systemCameraDenied()) {
             this.showSystemCameraSettings();
@@ -200,7 +230,7 @@ Page({
             ? '平面追踪中断了。请对准光线充足的桌面后重试。'
             : kind === 'model'
                 ? '模型无法读取，重试时会重新下载。'
-                : 'AR 相机或模型没能加载，请重试。';
+                : kind === 'video' ? 'AR 视频没能加载，请检查网络后重试。' : 'AR 相机或模型没能加载，请重试。';
         this.setData({ stage: 'error', hint });
     },
 
@@ -219,12 +249,19 @@ Page({
         }
         this.setData({ placed: true, hint: '' });
         scene.zoom(this.scale);
+        if (this.data.videoUrl) scene.moveVideo(this.videoPosition.x, this.videoPosition.z);
     },
 
     reposition() {
-        this.drag = null;
-        this.selectComponent('#bird-xr')?.reset();
-        this.setData({ placed: false, planeReady: false, hint: '' });
+        if (!this.data.placed || this.capturing) return;
+        const models = this.data.models.map(model => ({ ...model, ...this.positions.get(model.key) }));
+        this.stop({ stage: 'reposition', hint: '正在重新识别平面…' }, () => {
+            if (!this.visible) {
+                this.resume = true;
+                return;
+            }
+            this.setData({ models, active: true, stage: 'scan', hint: '' }, () => this.watchStartup());
+        });
     },
 
     selectBird(event) {
@@ -241,11 +278,12 @@ Page({
             return;
         }
         if (event.touches.length !== 1) return;
+        const video = Boolean(this.data.videoUrl);
         const key = this.data.selected;
-        const position = this.positions.get(key);
+        const position = video ? this.videoPosition : this.positions.get(key);
         if (!position) return;
         const touch = event.touches[0];
-        this.drag = { key, position, x: touch.clientX, y: touch.clientY };
+        this.drag = { key, video, position, x: touch.clientX, y: touch.clientY };
     },
 
     dragMove(event) {
@@ -261,32 +299,101 @@ Page({
             return;
         }
         const touch = event.touches[0];
-        const { key, position, x, y } = this.drag;
+        const { key, video, position, x, y } = this.drag;
         const next = scene?.dragPosition(position, touch.clientX - x, touch.clientY - y, this.viewport);
         if (!next || !Number.isFinite(next.x) || !Number.isFinite(next.z)) return;
         const moved = { x: clamp(next.x), z: clamp(next.z) };
-        if (scene?.move(key, moved.x, moved.z)) {
-            this.positions.set(key, moved);
-            this.drag = { key, position: moved, x: touch.clientX, y: touch.clientY };
+        if (video ? scene?.moveVideo(moved.x, moved.z) : scene?.move(key, moved.x, moved.z)) {
+            if (video) this.videoPosition = moved;
+            else this.positions.set(key, moved);
+            this.drag = { key, video, position: moved, x: touch.clientX, y: touch.clientY };
         }
     },
 
     dragEnd() { this.drag = null; },
 
-    async capture() {
+    photoActions() {
+        if (!this.data.placed || this.capturing) return;
+        this.holdForOverlay();
+        wx.showActionSheet({
+            itemList: ['保存到相册', '分享截图'],
+            success: ({ tapIndex }) => { this.overlayDeadline = 0; return this.capture(tapIndex === 0 ? 'album' : 'share'); },
+            fail: () => { this.overlayDeadline = 0; },
+        });
+    },
+
+    async capture(action = 'share') {
         if (!this.data.placed || this.capturing) return;
         this.capturing = true;
         this.holdForOverlay();
+        let error;
         try {
-            if (await this.selectComponent('#bird-xr')?.capture()) return;
-        } catch (error) {
-            console.warn('Nest AR capture failed', error?.message);
+            const scene = this.selectComponent('#bird-xr');
+            const success = action === 'album' ? await scene?.savePhoto() : await scene?.capture();
+            if (!success) throw new Error('当前场景无法拍照');
+        } catch (failure) {
+            error = failure || new Error('当前场景无法拍照');
+            console.warn('Nest AR capture failed', error.errMsg || error.message);
         } finally {
             this.capturing = false;
         }
-        this.overlayDeadline = 0;
-        if (this.visible) wx.showToast({ title: '当前设备暂无法截图', icon: 'none' });
-        else this.captureFailedWhileHidden = true;
+        if (this.unloaded) return;
+        if (action === 'album' || error) {
+            this.overlayDeadline = 0;
+            if (!this.visible && this.data.active) {
+                this.resume = true;
+                this.stop();
+            }
+            this.showCaptureResult(action, error);
+        }
+    },
+
+    showCaptureResult(action, error) {
+        if (!this.visible) {
+            this.captureNotice = { action, error };
+            return;
+        }
+        const message = String(error?.errMsg || error?.message || '').toLowerCase();
+        if (message.includes('cancel')) return;
+        const album = action === 'album';
+        if (album && (Number(error?.errno) === 112 || /privacy.*(?:not declared|not configured|api banned)|scope is not declared/.test(message))) {
+            wx.showToast({ title: '小程序暂未开通相册保存权限', icon: 'none' });
+            return;
+        }
+        if (album && /(?:auth|permission|system).*(?:deny|denied|not authorized)|not authorized/.test(message)) {
+            this.offerAlbumSettings(message);
+            return;
+        }
+        const privacy = album && message.includes('privacy');
+        const title = privacy ? '请按微信提示完成隐私授权'
+            : !error ? '已保存到手机相册'
+                : album ? '照片未保存，请重试' : '当前设备暂无法截图';
+        wx.showToast({ title, icon: 'none' });
+    },
+
+    offerAlbumSettings(message) {
+        let system = message.includes('system');
+        try { system ||= wx.getAppAuthorizeSetting?.()?.albumAuthorized === 'denied'; } catch { /* Use the error message. */ }
+        const open = system ? wx.openAppAuthorizeSetting : wx.openSetting;
+        const content = system ? '请在手机系统设置中允许微信访问相册。' : '请在小程序设置中允许保存到相册。';
+        this.holdForOverlay();
+        wx.showModal({
+            title: '需要相册权限',
+            content,
+            showCancel: typeof open === 'function',
+            confirmText: typeof open === 'function' ? '去设置' : '知道了',
+            success: result => {
+                this.overlayDeadline = 0;
+                if (!result.confirm || typeof open !== 'function') return;
+                this.resume = this.data.active || this.data.preparing;
+                this.stop();
+                open.call(wx, { fail: () => {
+                    wx.showToast({ title: '无法打开设置', icon: 'none' });
+                    if (this.visible && this.resume) { this.resume = false; this.start(); }
+                } });
+            },
+            fail: () => { this.overlayDeadline = 0; },
+        });
     },
 
     holdForOverlay() {

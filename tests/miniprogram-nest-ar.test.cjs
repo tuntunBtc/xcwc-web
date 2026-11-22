@@ -16,10 +16,16 @@ function xrMethods(wx = {}) {
     return component.methods;
 }
 
-function harness({ deny = false, systemDenied = false, placementError, captureError } = {}) {
+function harness({ deny = false, systemDenied = false, placementError, captureError, albumError, systemAlbumDenied = false } = {}) {
     const requests = [];
     const moves = [];
     const zooms = [];
+    const videoMoves = [];
+    const videoZooms = [];
+    const videoTransform = {
+        position: { x: 0, z: 0, setValue(x, y, z) { Object.assign(this, { x, y, z }); videoMoves.push([x, y, z]); } },
+        scale: { setValue: (...args) => videoZooms.push(args) },
+    };
     const toasts = [];
     const invalidations = [];
     let plane = false;
@@ -43,9 +49,15 @@ function harness({ deny = false, systemDenied = false, placementError, captureEr
         getMenuButtonBoundingClientRect: () => ({ top: 48 }),
         getWindowInfo: () => ({ pixelRatio: 3, windowWidth: 390, windowHeight: 844 }),
         getXrFrameSystem: () => ({}),
-        getAppAuthorizeSetting: () => ({ cameraAuthorized: systemDenied ? 'denied' : 'authorized' }),
+        getAppAuthorizeSetting: () => ({
+            cameraAuthorized: systemDenied ? 'denied' : 'authorized',
+            albumAuthorized: systemAlbumDenied ? 'denied' : 'authorized',
+        }),
         showToast: toast => toasts.push(toast),
         openSetting: handlers => { wx.settings = handlers; },
+        openAppAuthorizeSetting: handlers => { wx.systemSettings = handlers; },
+        showModal: modal => { wx.modal = modal; },
+        showActionSheet: sheet => { wx.sheet = sheet; },
         authorize: handlers => {
             (deny ? handlers.fail : handlers.success)();
             handlers.complete();
@@ -66,15 +78,24 @@ function harness({ deny = false, systemDenied = false, placementError, captureEr
         },
         wx, setTimeout, clearTimeout, console: { warn() {} },
     });
-    page.setData = patch => Object.assign(page.data, patch);
+    page.setData = (patch, callback) => {
+        Object.assign(page.data, patch);
+        callback?.();
+    };
     page.selectComponent = () => ({
         ...xrMethods(),
         scene: xr,
         meshesReady: true,
+        videoTransform: page.data.videoUrl ? videoTransform : null,
+        videoScale: page.scale,
         birds: new Map([['plush', { transform: { position: { setValue: (...args) => moves.push(args) } } }]]),
         dragPosition: (position, dx, dy) => ({ x: position.x + dx * 0.002, z: position.z + dy * 0.002 }),
         capture: async () => {
             if (captureError) throw captureError;
+            return true;
+        },
+        savePhoto: async () => {
+            if (albumError) throw albumError;
             return true;
         },
     });
@@ -82,7 +103,8 @@ function harness({ deny = false, systemDenied = false, placementError, captureEr
     const mount = page.mount.bind(page);
     page.mount = () => { loading = mount(); };
     page.onLoad();
-    return { page, requests, moves, zooms, nodes, toasts, invalidations, wx, waitForModels: () => loading, detectPlane: () => { plane = true; } };
+    return { page, requests, moves, zooms, videoMoves, videoZooms, nodes, toasts, invalidations, wx,
+        waitForModels: () => loading, detectPlane: () => { plane = true; } };
 }
 
 test('AR 等相机、模型与平面就绪后放置四鸟，拖动只改变选中模型', async () => {
@@ -121,10 +143,20 @@ test('AR 等相机、模型与平面就绪后放置四鸟，拖动只改变选�
         page.dragMove({ touches: [{ clientX: 30, clientY: 30 }, { clientX: 260, clientY: 30 }] });
         assert.deepEqual(zooms, [[1, 1, 1], [1.8, 1.8, 1.8]]);
         assert.equal(moves.length, 1);
+        const patches = [];
+        const setData = page.setData;
+        page.setData = (patch, callback) => {
+            patches.push(patch);
+            setData(patch, callback);
+        };
         page.reposition();
         assert.equal(page.data.placed, false);
-        assert.equal(nodes.get('flock').visible, false);
-        assert.equal(nodes.get('plane-marker').visible, true);
+        assert.equal(page.data.active, true);
+        assert.equal(page.data.tracking, false);
+        assert.equal(page.data.planeReady, false);
+        assert.equal(page.data.models.find(model => model.key === 'plush').x, 0.55);
+        assert.deepEqual(patches.map(patch => patch.active), [false, true]);
+        assert.equal(requests.length, 4);
         page.onHide();
         assert.equal(page.data.active, false);
     } finally {
@@ -198,6 +230,137 @@ test('拒绝相机权限时不挂载 AR 场景或读取模型', () => {
     assert.equal(requests.length, 0);
 });
 
+test('桂花鸟视频只使用素材域 URL，放置后才播放视频纹理', async t => {
+    const { page, requests, waitForModels } = harness();
+    t.after(() => page.onUnload());
+    page.chooseArMode({ currentTarget: { dataset: { mode: 'video' } } });
+    page.start();
+    await waitForModels();
+    assert.match(page.data.videoUrl, /^https:\/\/assets\.xinchengip\.com\/mini\/ar-video\/[a-f0-9]{64}\.mp4$/);
+    assert.equal(page.data.models.length, 0);
+    assert.deepEqual(requests, []);
+    const events = [];
+    const video = { texture: {}, play: () => events.push('play'), pause: () => events.push('pause') };
+    const flock = {};
+    const whiteKeyEffect = {};
+    const instance = {
+        ...xrMethods({ getXrFrameSystem: () => ({
+            XRMesh: 'mesh', Transform: 'transform', EBlendFactor: { SRC_ALPHA: 1, ONE_MINUS_SRC_ALPHA: 2 },
+        }) }), data: { videoUrl: page.data.videoUrl },
+        scene: {
+            assets: { loadAsset: async options => {
+                assert.equal(options.src, page.data.videoUrl);
+                return { value: video };
+            }, addAsset() {} },
+            createEffect(effect) {
+                assert.equal(effect.name, 'nest-video-white-key');
+                assert.equal(effect.passes[0].renderStates.blendOn, true);
+                assert.equal(effect.passes[0].renderStates.depthWrite, false);
+                assert.match(effect.shaders[1], /smoothstep\(0\.075, 0\.15, whiteDistance\)/);
+                assert.match(effect.shaders[1], /#ifdef WX_PP_ACTIVE\s+color = pow\(color, vec3\(2\.2\)\);\s+#endif\s+gl_FragData\[0\] = vec4\(color, alpha\);/);
+                return whiteKeyEffect;
+            },
+            createMaterial(effect, { u_videoMap }) {
+                assert.equal(effect, whiteKeyEffect);
+                assert.equal(u_videoMap, video.texture);
+            },
+            createElement: (_, options) => ({ ...options, getComponent: key => key === 'transform' ? {} : null }),
+            getElementById: () => ({ addChild: element => assert.equal(element.rotation, '90 0 0') }),
+            getNodeById: key => key === 'flock' ? flock : null,
+            ar: { placeHere: () => true },
+        },
+        triggerEvent: name => events.push(name),
+    };
+    await instance.loadVideo(instance.scene);
+    assert.deepEqual(events, ['modelsloaded']);
+    assert.equal(instance.place(), true);
+    instance.pauseVideo();
+    assert.deepEqual(events, ['modelsloaded', 'play', 'pause']);
+});
+
+test('桂花鸟视频缩放后须重新按下才开始单指移动', async t => {
+    const { page, waitForModels, detectPlane, videoMoves, videoZooms, moves, zooms } = harness();
+    t.after(() => page.onUnload());
+    page.chooseArMode({ currentTarget: { dataset: { mode: 'video' } } });
+    page.start();
+    await waitForModels();
+    page.onModelsLoaded();
+    page.onTracking();
+    detectPlane();
+    page.onPlane({ detail: { ready: true } });
+    page.place();
+    const finger = (x, y) => ({ clientX: x, clientY: y });
+    page.dragStart({ touches: [finger(100, 100)] });
+    page.dragMove({ touches: [finger(150, 110)] });
+    assert.deepEqual(videoMoves.at(-1), [0.1, 0.24, 0.02]);
+    page.dragStart({ touches: [finger(100, 100), finger(200, 100)] });
+    page.dragMove({ touches: [finger(75, 100), finger(225, 100)] });
+    assert.deepEqual(videoZooms.at(-1), [0.72, 1, 0.72]);
+    assert.deepEqual(videoMoves.at(-1), [0.1, 0.36, 0.02]);
+    page.dragMove({ touches: [finger(125, 100), finger(175, 100)] });
+    assert.deepEqual(videoZooms.at(-1), [0.24, 1, 0.24]);
+    assert.deepEqual(videoMoves.at(-1), [0.1, 0.12, 0.02]);
+    page.dragEnd();
+    page.dragMove({ touches: [finger(75, 90)] });
+    page.dragMove({ touches: [finger(25, 90)] });
+    assert.deepEqual(videoMoves.at(-1), [0.1, 0.12, 0.02]);
+    page.dragStart({ touches: [finger(75, 90)] });
+    page.dragMove({ touches: [finger(25, 90)] });
+    assert.deepEqual(videoMoves.at(-1), [0, 0.12, 0.02]);
+    assert.deepEqual(moves, []);
+    assert.deepEqual(zooms, []);
+});
+
+test('取消原生弹窗后切后台释放场景，进入设置后返回重新启动', async () => {
+    const { page, wx, waitForModels } = harness();
+    page.setData({ active: true, placed: true });
+    page.photoActions();
+    wx.sheet.fail({ errMsg: 'cancel' });
+    page.onHide();
+    assert.equal(page.data.active, false);
+    page.onShow();
+    await waitForModels();
+    page.setData({ placed: true });
+    page.offerAlbumSettings('permission denied');
+    wx.modal.success({ confirm: true });
+    assert.equal(page.data.active, false);
+    page.onHide();
+    page.onShow();
+    await waitForModels();
+    assert.equal(page.data.active, true);
+    page.onUnload();
+});
+
+test('平面丢失清除提示，切换模式重置位置和缩放', () => {
+    const { page } = harness();
+    page.setData({ active: true, hint: '请重试' });
+    page.onPlane({ detail: { ready: false } });
+    assert.equal(page.data.hint, '');
+    page.setData({ active: false });
+    page.scale = 1.8;
+    page.videoPosition = { x: 0.3, z: 0.2 };
+    page.positions.set('original', { x: 0.5, z: 0.5 });
+    page.chooseArMode({ currentTarget: { dataset: { mode: 'video' } } });
+    assert.equal(page.scale, 1);
+    assert.equal(page.videoPosition.x, 0);
+    assert.equal(page.positions.get('original').x, -0.13);
+});
+
+test('组件卸载暂停并释放视频纹理，页面停止时暂停播放', () => {
+    let component;
+    vm.runInNewContext(componentSource, { Component: value => { component = value; }, wx: {}, console });
+    const calls = [];
+    const instance = { ...component.methods, video: { pause: () => calls.push('pause') },
+        scene: { assets: { releaseAsset: (...args) => calls.push(args.join(':')) } } };
+    component.lifetimes.detached.call(instance);
+    assert.deepEqual(calls, ['pause', 'video-texture:nest-video']);
+    const { page } = harness();
+    page.selectComponent = () => ({ pauseVideo: () => calls.push('page pause') });
+    page.stop();
+    page.onUnload();
+    assert.deepEqual(calls.slice(-2), ['page pause', 'page pause']);
+});
+
 test('XR 截图等原生 Promise 返回，失败时由页面提示', async () => {
     const methods = xrMethods();
     const calls = [];
@@ -213,6 +376,44 @@ test('XR 截图等原生 Promise 返回，失败时由页面提示', async () =>
     page.setData({ placed: true });
     await page.capture();
     assert.equal(toasts[0].title, '当前设备暂无法截图');
+});
+
+test('拍照在 XR 临时文件有效期内等待保存到相册', async () => {
+    let pendingSave;
+    let released = false;
+    const methods = xrMethods({ saveImageToPhotosAlbum: options => { pendingSave = options; } });
+    const share = {
+        supported: true,
+        async captureToLocalPath(_, callback) {
+            try { await callback('wxfile://tmp/ar.jpg'); }
+            finally { released = true; }
+        },
+    };
+    const capture = methods.savePhoto.call({ scene: { share } });
+    assert.equal(pendingSave.filePath, 'wxfile://tmp/ar.jpg');
+    assert.equal(released, false);
+    pendingSave.success();
+    assert.equal(await capture, true);
+    assert.equal(released, true);
+    const { page, wx, toasts } = harness();
+    page.setData({ active: true, placed: true });
+    page.photoActions();
+    assert.equal(wx.sheet.itemList.join(','), '保存到相册,分享截图');
+    await wx.sheet.success({ tapIndex: 0 });
+    assert.equal(toasts[0].title, '已保存到手机相册');
+});
+
+test('相册被系统拒绝时引导到手机设置，未显示保存成功', async () => {
+    const { page, toasts, wx } = harness({
+        systemAlbumDenied: true,
+        albumError: { errMsg: 'saveImageToPhotosAlbum:fail auth deny' },
+    });
+    page.setData({ active: true, placed: true });
+    await page.capture('album');
+    assert.deepEqual(toasts, []);
+    assert.match(wx.modal.content, /手机系统设置/);
+    wx.modal.success({ confirm: true });
+    assert.ok(wx.systemSettings);
 });
 
 test('追踪已经就绪后报错，仍切换到可重试界面', async () => {
@@ -276,21 +477,92 @@ test('分享暂时隐藏页面时保留场景，解析失败时只废弃对应�
     }
 });
 
-test('AR 屏幕向右拖动随视角反转本地 X 方向', () => {
+test('AR 拖动随视角反转，近平视时保持横向响应且不跳位', () => {
     class Vector3 {
         setValue(x, y, z) { return Object.assign(this, { x, y, z }); }
         applyMatrix4() { return this; }
     }
     const { dragPosition } = xrMethods({ getXrFrameSystem: () => ({ Vector3, Camera: 'camera' }) });
     let facing = 1;
+    let verticalProjection = 1;
     const scene = {
         getNodeById: () => ({ worldMatrix: {} }),
         getElementById: () => ({ getComponent: () => ({
-            convertWorldPositionToClip: (world, clip) => clip.setValue(facing * world.x, world.z, 0),
+            convertWorldPositionToClip: (world, clip) => clip.setValue(facing * world.x, verticalProjection * world.z, 0),
         }) }),
     };
     const viewport = { windowWidth: 400, windowHeight: 800 };
     assert.ok(dragPosition.call({ scene }, { x: 0, z: 0 }, 20, 0, viewport).x > 0);
     facing = -1;
     assert.ok(dragPosition.call({ scene }, { x: 0, z: 0 }, 20, 0, viewport).x < 0);
+    facing = 1;
+    for (const projection of [0, 0.001, 0.006]) {
+        verticalProjection = projection;
+        const position = dragPosition.call({ scene }, { x: 0, z: 0 }, 20, 25, viewport);
+        assert.ok(position.x > 0 && position.x < 0.2);
+        assert.ok(Math.abs(position.z) < 0.2);
+    }
+});
+
+test('相册保存完成后切后台释放场景，保存中切后台则等保存结束再释放', async t => {
+    for (const hideWhileSaving of [false, true]) {
+        const { page, toasts } = harness();
+        t.after(() => page.onUnload());
+        let finishSave;
+        page.selectComponent = () => ({
+            pauseVideo() {},
+            savePhoto: () => new Promise(resolve => { finishSave = resolve; }),
+        });
+        page.setData({ active: true, placed: true });
+        const saving = page.capture('album');
+        if (hideWhileSaving) {
+            page.onHide();
+            assert.equal(page.data.active, true);
+        }
+        finishSave(true);
+        await saving;
+        if (!hideWhileSaving) page.onHide();
+        assert.equal(page.data.active, false);
+        assert.equal(page.data.placed, false);
+        if (hideWhileSaving) page.onShow();
+        assert.equal(toasts[0].title, '已保存到手机相册');
+    }
+});
+
+test('原生分享期间解析失败也会清除出错的模型缓存', t => {
+    const { page, invalidations } = harness();
+    t.after(() => page.onUnload());
+    page.setData({ active: true, placed: true });
+    page.onShareAppMessage();
+    page.onHide();
+    assert.equal(page.data.active, true);
+    const src = 'wxfile://usr/plush.glb';
+    page.fail({ detail: { kind: 'model', key: 'plush', src } });
+    assert.deepEqual(invalidations, [['plush', src]]);
+    assert.equal(page.data.active, false);
+    assert.equal(page.resume, true);
+});
+
+test('暂停后的旧播放失败不触发场景错误，当前播放失败仍会反馈', async () => {
+    const events = [];
+    const rejections = [];
+    const instance = {
+        ...xrMethods(),
+        video: {
+            play: () => new Promise((_, reject) => { rejections.push(reject); }),
+            pause() {},
+        },
+        triggerEvent: (name, detail) => events.push([name, detail.kind]),
+    };
+    const first = instance.resumeVideo();
+    await Promise.resolve();
+    const paused = instance.pauseVideo();
+    rejections[0](new Error('paused during native play'));
+    await Promise.all([first, paused]);
+    assert.deepEqual(events, []);
+    const current = instance.resumeVideo();
+    await Promise.resolve();
+    rejections[1](new Error('could not play current video'));
+    await current;
+    assert.deepEqual(events, [['arfailure', 'video']]);
 });

@@ -6,9 +6,11 @@ const entry = require('../../utils/entry');
 const safeArea = require('../../utils/safe-area');
 const config = require('../../utils/config');
 const cloudUI = require('../../utils/cloud-ui');
+const { isOsmanthus } = require('../../utils/bird-preview-art');
 
 const TRAITS = ['温柔治愈', '热爱旅行', '好奇探索'];
 const SUGGESTIONS = ['湖小叽', '西湖团团', '小桂', '啾啾', '慢慢'];
+const OSMANTHUS_NAMES = ['小桂', '桂花团团', '桂小叽', '啾啾', '慢慢'];
 
 const ERROR_TEXT = {
     INVALID_CODE: '实体编码不可用，请从标签链接重新进入',
@@ -42,6 +44,7 @@ Page(cloudUI.page({
         showBackLink: false,
         birdCode: '',
         ready: false,
+        osmanthusAdoption: false,
         alreadyMine: false,
         alreadyHaveBird: false,
         submitting: false,
@@ -130,11 +133,12 @@ Page(cloudUI.page({
     load() {
         this.cancelLookup();
         const version = this.lookupVersion;
-        const code = entry.readBirdCode(this.entryOptions);
+        const code = entry.readBirdCode(this.entryOptions) || '';
         const nicknameInput = this.data.birdCode === code ? this.data.nicknameInput : '';
         this.bird = null;
         this.setData({
             birdCode: code, ready: false, alreadyMine: false, alreadyHaveBird: false,
+            osmanthusAdoption: isOsmanthus(code),
             birdName: '等待识别', cityText: '—', styleText: '—', skinText: '—',
             nicknameInput: nicknameInput, validation: '', heading: '给小鸟取个名字吧～',
             buttonText: '正在读取资料…', buttonDisabled: true,
@@ -235,7 +239,7 @@ Page(cloudUI.page({
         if (!this.data.ready || this.data.alreadyMine || this.data.submitting) {
             return;
         }
-        const list = SUGGESTIONS;
+        const list = this.data.osmanthusAdoption ? OSMANTHUS_NAMES : SUGGESTIONS;
         const index = this.randomIndex || 0;
         this.randomIndex = index + 1;
         this.setData({ nicknameInput: list[index % list.length], validation: '' });

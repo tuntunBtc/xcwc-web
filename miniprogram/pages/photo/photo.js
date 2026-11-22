@@ -9,6 +9,8 @@ const album = require('../../utils/photo-album');
 const model = require('../../utils/photo-model');
 const safeArea = require('../../utils/safe-area');
 
+const { isOsmanthus } = require('../../utils/bird-preview-art');
+
 const ASSET = '/pages/photo/assets/';
 const PHOTO_FIT = ['cover', 'contain'];
 const PHOTO_FIT_NAMES = ['铺满画面', '完整显示'];
@@ -22,7 +24,7 @@ const ALBUM_SAVE_HINT = '点击保存后会写入系统相册，也可以长按�
 // 固定的「未领取」占位，明确不可选，不按编码前缀伪造实体。
 const LOCKED_BIRDS = [
     { id: 'catalog:xiaohuangying', name: '小黄莺', adopted: false },
-    { id: 'catalog:guihua', name: '桂花小鸟', adopted: false },
+    { id: 'catalog:guihua', name: '桂花小鸟', adopted: false, osmanthus: true },
     { id: 'catalog:fengyin', name: '枫音雀', adopted: false },
 ];
 
@@ -313,10 +315,10 @@ Page(cloudUI.page({
             this.ready = false;
             return;
         }
-        const birds = snap.pets.map(p => ({ id: p.petId, name: p.nickname, adopted: true }));
+        const birds = snap.pets.map(p => ({ id: p.petId, name: p.nickname, adopted: true, osmanthus: isOsmanthus(p.birdCode) }));
         for (let i = 0; i < LOCKED_BIRDS.length; i += 1) birds.push(LOCKED_BIRDS[i]);
         this.birds = birds;
-        const owned = birds.filter(function (bird) { return bird.adopted; });
+        const owned = birds.filter(function (bird) { return bird.adopted && !bird.osmanthus; });
         const ownerId = snap.userId + ':' + snap.petId;
         const firstLoad = this.selectionOwner === null;
         const ownerChanged = this.selectionOwner !== ownerId;
@@ -324,7 +326,7 @@ Page(cloudUI.page({
             return owned.some(function (bird) { return bird.id === id; });
         });
         // 同一只小鸟保持手动取消的空选择。只有首次读到或更换领养记录时默认选中。
-        this.selected = ownerChanged ? (snap.petId ? [snap.petId] : []) : previous;
+        this.selected = ownerChanged ? (owned.some(bird => bird.id === snap.petId) ? [snap.petId] : []) : previous;
         this.selectionOwner = ownerId;
         this.poses = model.reconcilePoses(this.selected, this.poses);
         this.active = this.selected.indexOf(this.active) >= 0 ? this.active : (this.selected[0] || null);
@@ -344,7 +346,7 @@ Page(cloudUI.page({
     birdCards() {
         const selected = this.selected;
         return this.birds.map(function (bird) {
-            return { id: bird.id, name: bird.name, adopted: bird.adopted, selected: selected.indexOf(bird.id) >= 0 };
+            return { id: bird.id, name: bird.name, adopted: bird.adopted, osmanthus: !!bird.osmanthus, selected: selected.indexOf(bird.id) >= 0 };
         });
     },
 
@@ -370,6 +372,10 @@ Page(cloudUI.page({
     onBirdTap(event) {
         if (this.busy) return;
         const id = event.currentTarget.dataset.id;
+        if (this.birds.some(bird => bird.id === id && bird.adopted && bird.osmanthus)) {
+            this.showToast('桂花鸟的合照素材还在准备中');
+            return;
+        }
         const result = model.chooseBird(this.selected, id, this.birds);
         if (result.error) { this.showToast(result.error); return; }
         this.selected = result.selected;
@@ -1030,7 +1036,7 @@ Page(cloudUI.page({
         try {
             if (!this.audio) {
                 this.audio = wx.createInnerAudioContext();
-                this.audio.src = ASSET + 'shutter.mp3';
+                this.audio.src = '/pages/photo/assets/shutter.mp3';
             }
             this.audio.stop();
             this.audio.play();
@@ -1460,7 +1466,7 @@ Page(cloudUI.page({
     restoreDraft() {
         const draft = album.readDraft();
         if (!draft) return;
-        const owned = this.birds.filter(function (bird) { return bird.adopted; });
+        const owned = this.birds.filter(function (bird) { return bird.adopted && !bird.osmanthus; });
         const selected = (draft.selected || []).filter(function (id) {
             return owned.some(function (bird) { return bird.id === id; });
         });

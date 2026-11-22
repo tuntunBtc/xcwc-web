@@ -63,13 +63,13 @@
                         <view wx:for="{{birds}}" wx:key="id" class="bird-card {{item.selected ? 'selected' : ''}} {{item.adopted ? '' : 'locked'}}"
                               data-id="{{item.id}}" bindtap="onBirdTap" hover-class="ui-hover">
                             <view class="bird-portrait">
-                                <image src="/pages/photo/assets/bird.webp" mode="aspectFit"></image>
+                                <image src="{{item.osmanthus ? '/assets/nest/osmanthus-preview.webp' : '/pages/photo/assets/bird.webp'}}" mode="aspectFit"></image>
                                 <view class="bird-badge">
                                     <image src="{{item.adopted ? '/pages/photo/assets/icon-check.png' : '/pages/photo/assets/icon-lock.png'}}" mode="aspectFit"></image>
                                 </view>
                             </view>
                             <text class="bird-name">{{item.name}}</text>
-                            <text class="bird-state">{{item.adopted ? '已领取' : '未领取'}}</text>
+                            <text class="bird-state">{{item.adopted ? (item.osmanthus ? '合照素材准备中' : '已领取') : '未领取'}}</text>
                         </view>
                     </scroll-view>
                     <view wx:else class="bird-empty">

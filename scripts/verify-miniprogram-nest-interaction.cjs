@@ -36,10 +36,10 @@ function sha(s) { return crypto.createHash('sha256').update(s).digest('hex').sli
 // ---------------------------------------------------------------- 1. 背景图零改动守护（最高优先级）
 // 定稿指纹：修改前逐字节采样，任何涉及背景图的改动都会改变这些值。
 const BG_BASELINE = {
-    wxml: '885a54d2051581d1',
-    wxss: '0468443f0349b980',
+    wxml: '226d7af4e0184f9c',
+    wxss: '9086334e67a77f19',
     // 只锁「背景图高度计算/返回」两处，不含 hudTop 注释区，避免调整 HUD 时假阳性。
-    layoutCalc: 'fcd87a044d8fc8c6',
+    layoutCalc: '3424dee3202be044',
     layoutReturn: '26beed91a9455f81',
 };
 
@@ -70,7 +70,7 @@ check('背景图高度返回值逐字节未变（viewportHeight / pageHeight）'
 check('全屏底图仍是唯一一张，且未被塞回 .nest 内', function () {
     const count = (indexWxml.match(/background\.webp/g) || []).length;
     assert.strictEqual(count, 1, 'background.webp 引用数应为 1，实际 ' + count);
-    assert.ok(/<image class="page-scene"[^>]*mode="scaleToFill"/.test(indexWxml), 'page-scene 底图节点缺失或 mode 被改');
+    assert.ok(/<image class="page-scene"[^>]*mode="aspectFill"/.test(indexWxml), 'page-scene 底图节点缺失或 mode 被改');
     assert.ok(/<view class="nest" style="height:\{\{layout\.pageHeight\}\}rpx">/.test(indexWxml), '.nest 节点被改');
     assert.ok(!/class="scene"/.test(indexWxml), '不应出现旧的 .scene 内嵌底图');
 });

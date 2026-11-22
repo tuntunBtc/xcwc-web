@@ -2,7 +2,7 @@
     <xr-assets />
     <xr-node>
         <xr-ar-tracker mode="Plane" bind:ar-tracker-state="onPlaneState">
-            <xr-mesh node-id="plane-marker" geometry="plane" rotation="-90 0 0" scale="0.08 0.08 1" uniforms="u_baseColorFactor:0.57 0.78 0.49 0.7" states="alphaMode:BLEND" />
+            <xr-mesh node-id="plane-marker" geometry="plane" scale="0.08 1 0.08" uniforms="u_baseColorFactor:0.57 0.78 0.49 0.7" states="alphaMode:BLEND" />
         </xr-ar-tracker>
         <xr-node node-id="flock" visible="false">
             <xr-shadow id="birds" node-id="birds" />

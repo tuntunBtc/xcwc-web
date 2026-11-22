@@ -8,4 +8,5 @@ module.exports = {
     USE_LOCAL_FIXTURE: false,
     ENABLE_WERUN_SUPPLIES: false,
     DEBUG_DEMO_BIRD_CODE: '',
+    DEBUG_OSMANTHUS_BIRD_CODE: '',
 };

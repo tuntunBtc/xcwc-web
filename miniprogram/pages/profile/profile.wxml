@@ -18,7 +18,8 @@
 
             <view class="profile-card">
                 <image class="card-tex" src="/assets/nest/felt/panel.webp" mode="scaleToFill"></image>
-                <image class="avatar" src="/assets/nest/avatar.webp" mode="aspectFit"></image>
+                <image wx:if="{{avatar}}" class="avatar" src="{{avatar}}" mode="aspectFit"></image>
+                <view wx:else class="avatar" aria-hidden="true"></view>
                 <view class="card-copy">
                     <text class="card-small">今天也有小鸟陪你</text>
                     <text class="card-name">{{displayName}}</text>
@@ -197,7 +198,8 @@
             <scroll-view class="sheet-body" scroll-y="true">
                 <text class="sheet-h2">我的小伙伴</text>
                 <view wx:for="{{pets}}" wx:key="petId" class="bird-row" data-id="{{item.petId}}" bindtap="onSelectPet">
-                    <image class="bird-avatar" src="/assets/nest/avatar.webp" mode="aspectFit"></image>
+                    <image wx:if="{{item.avatar}}" class="bird-avatar" src="{{item.avatar}}" mode="aspectFit"></image>
+                    <view wx:else class="bird-avatar" aria-hidden="true"></view>
                     <view class="bird-copy">
                         <text class="bird-name">{{item.nickname}}</text>
                         <text class="bird-code">实体编码 {{item.birdCode}}</text>

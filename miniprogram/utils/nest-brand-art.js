@@ -41,7 +41,7 @@ function disk(platform) {
             if (!entry) return null;
             const bundle = entry.bundle;
             try {
-                for (const path of new Set([...Object.values(bundle.paths), ...[bundle.animation?.path, bundle.animation?.audioPath].filter(Boolean)])) {
+                for (const path of new Set([...Object.values(bundle.paths), ...[bundle.background, bundle.animation?.path, bundle.animation?.audioPath].filter(Boolean)])) {
                     if (!path.startsWith(root + '/' + entry.dir + '/')) return null;
                     fs.accessSync(path);
                 }
@@ -97,11 +97,11 @@ async function prepare(platform, base, role, previous, storage, current) {
     });
     const doc = response.data;
     if (response.statusCode !== 200 || !doc?.releaseId || doc.character?.id !== role) throw Error('invalid character');
-    if (previous?.releaseId === doc.releaseId) return previous;
+    if (previous?.releaseId === doc.releaseId && previous.backgroundResolved) return previous;
     const look = doc.appearances.find(item => item.characterId === role && item.id === doc.character.defaultAppearanceId);
     const paths = {};
     const assets = new Map(doc.assets.map(asset => [asset.id, asset]));
-    const previousFiles = previous ? [...Object.values(previous.paths), previous.animation?.path, previous.animation?.audioPath].filter(Boolean) : [];
+    const previousFiles = previous ? [...Object.values(previous.paths), previous.background, previous.animation?.path, previous.animation?.audioPath].filter(Boolean) : [];
     const files = new Map();
     const dir = 'bundle-' + Date.now().toString(36) + '-' + (++sequence).toString(36);
     const folder = storage.root + '/' + dir;
@@ -157,7 +157,22 @@ async function prepare(platform, base, role, previous, storage, current) {
             animation = { path, audioPath, atlasHash: asset.sha256, columns, frames, fps, durationMs: durationMs || frames * 1000 / fps,
                 frameTimesMs, width: asset.width / columns, height: asset.height / rows };
         }
-        const bundle = { releaseId: doc.releaseId, paths, animation };
+        const configuredBackground = doc.character.backgroundAssetId;
+        const defaultBackground = doc.pages?.find(page => page.id === 'nestDefault')?.backgroundAssetId;
+        const backgroundId = configuredBackground || defaultBackground;
+        let background = '';
+        let backgroundResolved = true;
+        if (backgroundId) {
+            try {
+                background = await file(backgroundId);
+            } catch {
+                backgroundResolved = false;
+                if (configuredBackground && defaultBackground && defaultBackground !== configuredBackground) {
+                    background = await file(defaultBackground).catch(() => '');
+                }
+            }
+        }
+        const bundle = { releaseId: doc.releaseId, paths, animation, background, backgroundResolved };
         if (!current()) throw Error('selection changed');
         storage.install(base + '/' + role, dir, bytes, bundle);
         return bundle;
@@ -183,6 +198,7 @@ function createBrandArt(platform, apiBase, onChange) {
         value = storage ? storage.read(cacheKey) : null;
         if (storage) prepare(platform, base, role, value, storage, () => issued === ticket).then(bundle => {
             if (issued !== ticket) return;
+            if (!bundle.backgroundResolved) retryAt = Date.now() + 30000;
             if (value !== bundle) {
                 value = bundle;
                 onChange();

@@ -14,9 +14,14 @@ const { presentSpark, sparkNotice } = require('./spark');
 const { createButtonArt } = require('../../utils/nest-button-art');
 const { createBrandArt } = require('../../utils/nest-brand-art');
 const { createBrandIdle } = require('../../utils/nest-brand-idle');
+const { ORIOLE_AVATAR, birdAvatar, isOriole } = require('../../utils/bird-preview-art');
 const STATUS_REFRESH_MS = 30000;
 const HAPPY_ART = '/assets/nest/emotion-happy.webp';
 const ANGRY_ART = '/assets/nest/emotion-angry.webp';
+const TEST_ADOPTIONS = config.DEVICE_SANDBOX_TEST === true ? [
+    { key: 'oriole', name: '西湖小黄莺', code: config.DEBUG_DEMO_BIRD_CODE },
+    { key: 'osmanthus', name: '桂花鸟', code: config.DEBUG_OSMANTHUS_BIRD_CODE },
+].filter(item => entry.isManufacturingCode(item.code)) : [];
 
 // 共用雪碧图格位对应 H5 的 .tools .p0~p3、cards-1200 三格、hud-icons 3×2。
 const TOOLS = Object.freeze([
@@ -49,6 +54,8 @@ Page(cloudUI.page({
             speechTop: 506, claimTop: 641, actorTop: 750,
         },
         hasBird: false,
+        birdOffsetX: 0,
+        birdOffsetY: 0,
         nestLoginBusy: false,
         sparkDisplay: presentSpark(null, {}),
         storageUnavailable: false,
@@ -74,7 +81,9 @@ Page(cloudUI.page({
         testStepNeedsSetting: false,
         historyLoading: false,
         fixtureMode: config.USE_LOCAL_FIXTURE,
-        testBirdAdoption: config.DEVICE_SANDBOX_TEST === true && entry.isManufacturingCode(config.DEBUG_DEMO_BIRD_CODE),
+        testBirdAdoption: TEST_ADOPTIONS.length > 0,
+        testAdoptions: TEST_ADOPTIONS.map(({ key, name }) => ({ key, name })),
+        avatar: ORIOLE_AVATAR,
         ledger: [],
         stats: [],
         needs: [],
@@ -135,7 +144,8 @@ Page(cloudUI.page({
     },
 
     updateLayout() {
-        this.setData({ layout: nestLayout.readNestLayout() });
+        this.birdGesture = null;
+        this.setData({ layout: nestLayout.readNestLayout(), birdOffsetX: 0, birdOffsetY: 0 });
         this.recalcSheetMask();
     },
 
@@ -150,6 +160,7 @@ Page(cloudUI.page({
     },
 
     onHide() {
+        this.birdGesture = null;
         this.brandArt?.suspend();
         this.syncIdle(true);
         this.clearTimers();
@@ -249,7 +260,8 @@ Page(cloudUI.page({
         if (this.currentPetId !== s.petId) {
             const polling = this.statusTimer !== null;
             this.clearTimers(); this.currentPetId = s.petId;
-            this.setData({ happy: false, feedFxId: 0, waterFxId: 0 });
+            this.birdGesture = null;
+            this.setData({ happy: false, feedFxId: 0, waterFxId: 0, birdOffsetX: 0, birdOffsetY: 0 });
             if (polling && this.cloudVisible) this.statusTimer = setInterval(() => store.resume(), STATUS_REFRESH_MS);
         }
         this.currentBirdCode = code;
@@ -261,6 +273,8 @@ Page(cloudUI.page({
         }
         this.brandPetId = s.petId;
         this.brandRole = pet?.characterId;
+        const packagedIdle = s.hasBird && !this.brandBundle && isOriole(code);
+        const avatar = this.brandBundle?.paths.normal || (s.hasBird ? birdAvatar(code) : ORIOLE_AVATAR);
         const stateSlot = { happy: 'normal', unwell: 'lonely' }[state.emotion] || state.emotion;
         const slot = feedback ? (feedback.art === ANGRY_ART ? 'angry' : 'happy') : stateSlot;
         this.setData({
@@ -268,11 +282,14 @@ Page(cloudUI.page({
             sparkDisplay: presentSpark(s, store.status()),
             pets: (s.pets || []).map(pet => ({
                 ...pet,
+                avatar: pet.petId === s.petId ? avatar : birdAvatar(pet.birdCode),
                 sparkLevel: pet.spark?.level ?? null,
                 sparkLit: pet.spark?.status === 'ACTIVE',
             })).sort((a, b) => (b.sparkLevel ?? -1) - (a.sparkLevel ?? -1)),
             selectedPetId: s.petId, cleaning: s.cleaning,
-            hasTestBird: this.data.testBirdAdoption && s.pets.some(pet => pet.birdCode === config.DEBUG_DEMO_BIRD_CODE),
+            testAdoptions: TEST_ADOPTIONS.map(({ key, name, code }) => ({
+                key, name, owned: !!s.pets?.some(pet => pet.birdCode === code),
+            })),
             storageUnavailable: false,
             displayName: s.hasBird ? s.nickname : '等待小鸟入住',
             placeText: '⌖ 我的小窝',
@@ -291,9 +308,12 @@ Page(cloudUI.page({
             needs: needs,
             speech: feedback ? feedback.speech : state.speech,
             brandImage: this.brandBundle?.paths[slot] || '',
+            brandBackground: this.brandBundle?.background || '',
             hasBrandAnimation: !!this.brandBundle?.animation,
             brandRelease: this.brandBundle?.releaseId || '',
-            birdArt: feedback ? feedback.art : rules.emotionArt(state.emotion),
+            packagedIdle,
+            avatar,
+            birdArt: !s.hasBird || isOriole(code) ? (feedback ? feedback.art : rules.emotionArt(state.emotion)) : avatar,
             thirsty: state.emotion === 'thirsty',
         });
         // 先停旧播放器，再释放它仍在使用的文件。
@@ -329,7 +349,7 @@ Page(cloudUI.page({
         const birdId = hasBird ? this.currentBirdCode || 'local-bird' : null;
         const feedbacking = this.feedbackActive() || this.data.happy;
         this.brandIdle?.sync(this.brandBundle, this.currentPetId, suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking);
-        this.idle.sync(hasBird && !this.brandBundle, !!(suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking), birdId, hasBird && !this.brandBundle);
+        this.idle.sync(this.data.packagedIdle, !!(suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking), birdId, this.data.packagedIdle);
     },
 
     // 短鸟叫：与网页端 Web Audio 合成的轻量鸟叫等价，用 InnerAudioContext 播放。
@@ -385,7 +405,7 @@ Page(cloudUI.page({
         this.feedback = { until: Date.now() + keep, speech: speech, art: art };
         if (this.feedbackTimer) clearTimeout(this.feedbackTimer);
         if (this.happyTimer) clearTimeout(this.happyTimer);
-        this.setData({ speech: speech, birdArt: art, brandImage: this.brandBundle?.paths[art === ANGRY_ART ? 'angry' : 'happy'] || '', happy: false });
+        this.setData({ speech: speech, birdArt: isOriole(this.currentBirdCode) ? art : this.data.birdArt, brandImage: this.brandBundle?.paths[art === ANGRY_ART ? 'angry' : 'happy'] || '', happy: false });
         // 互动反馈一开始就让待机动画「让位」：暂停后 idle.stop() 会清空画布、停掉原声，
         // idlePlaying 变 false，静态开心海报重新可见——nest-happy 弹跳 / 爱心 / 谷粒 / 水滴
         // 这些画在海报那一层的动效才能被看见（否则全被待机画布盖住，表现为「动效没了」）。
@@ -475,7 +495,57 @@ Page(cloudUI.page({
         return data && !data.replayed ? sparkNotice(data.sparkEvent, this.data.sparkDisplay.spark) : '';
     },
 
+    onBirdTouchStart(event) {
+        if (event.touches?.length !== 1) {
+            this.onBirdTouchCancel();
+            return;
+        }
+        if (!this.data.hasBird || this.data.sheet) return;
+        const { identifier, clientX, clientY } = event.touches[0];
+        if (!Number.isFinite(clientX) || !Number.isFinite(clientY)) return;
+        this.suppressBirdTapUntil = 0;
+        this.birdGesture = {
+            identifier, clientX, clientY, dragging: false,
+            x: this.data.birdOffsetX, y: this.data.birdOffsetY,
+        };
+    },
+
+    onBirdTouchMove(event) {
+        const gesture = this.birdGesture;
+        if (!gesture) return;
+        if (event.touches?.length !== 1) {
+            this.onBirdTouchCancel();
+            return;
+        }
+        const touch = event.touches[0];
+        if (touch.identifier !== gesture.identifier) return;
+        const dx = touch.clientX - gesture.clientX;
+        const dy = touch.clientY - gesture.clientY;
+        if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+        if (!gesture.dragging && Math.hypot(dx, dy) < 8) return;
+        gesture.dragging = true;
+
+        const { rpxPerPixel, birdDragMinY, birdDragMaxY } = this.data.layout;
+        // 立绘占屏宽 52%，左右各有 180rpx 可移动余量。
+        const x = Math.round(Math.max(-180, Math.min(180, gesture.x + dx * rpxPerPixel)));
+        const y = Math.round(Math.max(birdDragMinY, Math.min(birdDragMaxY, gesture.y + dy * rpxPerPixel)));
+        if (x !== this.data.birdOffsetX || y !== this.data.birdOffsetY) {
+            this.setData({ birdOffsetX: x, birdOffsetY: y });
+        }
+    },
+
+    onBirdTouchEnd() {
+        if (this.birdGesture?.dragging) this.suppressBirdTapUntil = Date.now() + 350;
+        this.birdGesture = null;
+    },
+
+    onBirdTouchCancel() {
+        if (this.birdGesture) this.suppressBirdTapUntil = Date.now() + 350;
+        this.birdGesture = null;
+    },
+
     onPet(event) {
+        if (this.birdGesture?.dragging || Date.now() < (this.suppressBirdTapUntil || 0)) return;
         if (!this.requireBird()) return;
         const touch = event?.changedTouches?.[0];
         const x = touch?.clientX ?? event?.detail?.x;
@@ -487,6 +557,8 @@ Page(cloudUI.page({
         const art = this.data.birdArt;
         const brandFrame = this.brandIdle?.getVisibleFrame();
         const sameFootMasks = this.brandBundle?.animation?.atlasHash === nestFoot.idleAtlasHash;
+        // 包内脚区仅对应小黄莺原图和同源帧。
+        if (this.brandBundle ? (brandFrame == null || !sameFootMasks) : !this.data.packagedIdle) return this.pet();
         const idleFrame = brandFrame == null ? this.idle?.getVisibleFrame?.() : (sameFootMasks ? brandFrame : null);
         const selector = brandFrame != null ? '#brandCanvas' : (idleFrame == null ? '.bird-art' : '#idleCanvas');
         wx.createSelectorQuery().select(selector).boundingClientRect(rect => {
@@ -895,17 +967,20 @@ Page(cloudUI.page({
         }, 20);
     },
 
-    goAdopt() {
+    goAdopt(event) {
         if (!this.data.testBirdAdoption && !config.USE_LOCAL_FIXTURE) {
             this.onClaimHelp();
             return;
         }
-        if (!entry.isManufacturingCode(config.DEBUG_DEMO_BIRD_CODE)) {
+        const key = event?.currentTarget.dataset.key;
+        const selected = key ? TEST_ADOPTIONS.find(item => item.key === key) : TEST_ADOPTIONS[0];
+        const code = selected?.code || (config.USE_LOCAL_FIXTURE ? config.DEBUG_DEMO_BIRD_CODE : '');
+        if (!entry.isManufacturingCode(code)) {
             this.showToast('测试实体编码未配置，请检查测试环境');
             return;
         }
         this.setData({ sheet: null, motionPaused: false });
-        const url = entry.buildAdoptUrl(config.DEBUG_DEMO_BIRD_CODE);
+        const url = entry.buildAdoptUrl(code);
         this.openToolPage(url, '测试领养页暂时打不开，请重试');
     },
 }));

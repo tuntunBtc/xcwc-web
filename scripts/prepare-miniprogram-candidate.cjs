@@ -11,6 +11,7 @@ const RUNTIME = path.join(__dirname, 'miniprogram-release-images-runtime.js');
 const WXS = 'utils/release-images.wxs';
 const RUNTIME_MODULE = 'utils/release-images';
 const RUNTIME_FILES = /\.(?:js|json|wxml|wxss|wxs|webp|png|jpe?g|gif|svg|mp3|m4a|wav|aac|mp4)$/i;
+const PACKAGE_CODE_FILES = /\.(?:js|json|wxml|wxss|wxs)$/i;
 const PHOTO_ROUTE = 'pages/photo/photo';
 const SHOP_ROUTE = 'pages/shop/shop';
 const ADOPT_ROUTE = 'pages/adopt/adopt';
@@ -131,16 +132,24 @@ function createCandidate(output, args) {
         config.API_BASE = publicHttps(args['api-base']);
         config.USE_LOCAL_FIXTURE = false;
         config.DEBUG_DEMO_BIRD_CODE = '';
-        if (args['test-bird-code']) {
+        config.DEBUG_OSMANTHUS_BIRD_CODE = '';
+        const oriole = args['test-bird-code'];
+        const osmanthus = args['test-osmanthus-bird-code'];
+        if (oriole !== undefined || osmanthus !== undefined) {
+            const { isManufacturingCode } = require('../miniprogram/utils/entry');
             if (args.appid !== 'wx4f4b2df4a761b88d' || config.API_BASE !== 'https://api.xinchengip.com/test/bird/v1' ||
-                !require('../miniprogram/utils/entry').isManufacturingCode(args['test-bird-code'])) {
-                throw new Error('测试领养入口仅可用于已配置的独立测试小程序与已建档实体码');
+                (oriole !== undefined && !isManufacturingCode(oriole)) ||
+                (osmanthus !== undefined && (!isManufacturingCode(osmanthus) || osmanthus === oriole))) {
+                throw new Error('测试领养入口仅可用于已配置的独立测试小程序与不同的已建档实体码');
             }
             config.DEVICE_SANDBOX_TEST = true;
-            config.DEBUG_DEMO_BIRD_CODE = args['test-bird-code'];
+            config.DEBUG_DEMO_BIRD_CODE = oriole || '';
+            config.DEBUG_OSMANTHUS_BIRD_CODE = osmanthus || '';
         }
     } else {
-        if (args['test-bird-code']) throw new Error('测试领养入口需要独立测试 API');
+        if (args['test-bird-code'] !== undefined || args['test-osmanthus-bird-code'] !== undefined) {
+            throw new Error('测试领养入口需要独立测试 API');
+        }
         config.API_BASE = '';
         config.USE_LOCAL_FIXTURE = true;
         config.DEBUG_DEMO_BIRD_CODE = 'HZ-HY-9000000000000000001';
@@ -167,8 +176,27 @@ function createCandidate(output, args) {
     }
     scan();
 
+    const ossManifestPath = process.env.XCWH_MINI_MEDIA_MANIFEST;
+    const ossMedia = ossManifestPath ? JSON.parse(read(ossManifestPath)) : {};
+    for (const [route, entry] of Object.entries(ossMedia)) {
+        const local = all.get(route.slice(1));
+        if (!local) {
+            delete ossMedia[route];
+            continue;
+        }
+        const extension = path.extname(route).toLowerCase();
+        if (!route.startsWith('/') || entry.bytes !== local.length || entry.sha256 !== digest(local)
+            || entry.url !== 'https://assets.xinchengip.com/mini/media/' + entry.sha256 + extension) {
+            throw new Error('OSS 素材清单与本地文件不一致：' + route);
+        }
+    }
+    if (ossManifestPath) {
+        const missing = [...all.keys()].filter(name => !PACKAGE_CODE_FILES.test(name) && !Object.hasOwn(ossMedia, '/' + name));
+        if (missing.length) throw new Error('OSS 素材清单缺少以下文件：\n' + missing.sort().join('\n'));
+    }
     const files = {};
     const signatures = [];
+    let hasFullSizeNestBackground = false;
     for (const name of [...all.keys()].sort()) {
         if (!name.endsWith('.webp')) continue;
         const content = all.get(name);
@@ -177,21 +205,38 @@ function createCandidate(output, args) {
         }
         const hash = digest(content);
         // The city page already loads its collection subpackage. Keep its full-size scene there too.
-        const binaryPath = (name.startsWith('assets/city/') ? 'media/collection/' : '') + name + '.bin';
+        const remote = ossMedia['/' + name];
+        const largeNest = !remote && name === 'assets/nest/background.webp' && content.length > 500000;
+        hasFullSizeNestBackground ||= largeNest;
+        const binaryPath = (largeNest ? 'media/nest-background/' : name.startsWith('assets/city/') ? 'media/collection/' : '') + name + '.bin';
         if (all.has(binaryPath)) throw new Error(`二进制素材路径冲突：${binaryPath}`);
-        files['/' + name] = { source: binaryPath, name: hash.slice(0, 32) + '.webp', size: content.length, sha256: hash };
-        signatures.push(name + ':' + hash);
+        files['/' + name] = {
+            source: binaryPath, name: hash.slice(0, 32) + '.webp', size: content.length, sha256: hash,
+            ...(remote ? { url: remote.url } : {}),
+        };
+        signatures.push(name + ':' + hash + (remote ? ':oss' : ''));
         all.delete(name);
-        all.set(binaryPath, content);
+        if (!remote) all.set(binaryPath, content);
+    }
+    if (hasFullSizeNestBackground) {
+        app.subpackages.push({ root: 'media/nest-background', pages: ['anchor'] });
+        all.set('app.json', JSON.stringify(app, null, 2) + '\n');
+        all.set('media/nest-background/anchor.js', 'Page({});\n');
+        all.set('media/nest-background/anchor.json', '{}\n');
+        all.set('media/nest-background/anchor.wxml', '<view />\n');
+        all.set('media/nest-background/asset.js', 'module.exports = true;\n');
     }
     const version = (args.fixture ? 'fixture-' : '') + digest(signatures.join('\n')).slice(0, 20);
     const paths = Object.keys(files);
     if (!paths.length) throw new Error('未找到需要兼容打包的 WebP 素材');
     const under = prefix => paths.filter(name => name.startsWith(prefix));
+    const nestBackground = '/assets/nest/background.webp';
+    const remoteNestBackground = ossMedia[nestBackground]?.url;
     const firstBanner = require(path.join(SOURCE, 'utils/catalog.js')).BANNERS[0]?.image;
     const shopArtwork = Object.hasOwn(files, firstBanner) ? { 'hero-image': firstBanner } : null;
     const additions = {
-        'pages/index/index': under('/assets/nest/'),
+        'pages/index/index': under('/assets/nest/').filter(name => !remoteNestBackground || name !== nestBackground),
+        'pages/profile/profile': ['/assets/nest/avatar.webp', '/assets/nest/osmanthus-preview.webp'],
         'pages/shop/shop': under('/assets/shop/banners/'),
         'pages/photo/photo': under('/pages/photo/assets/'),
         'pages/wardrobe/wardrobe': under('/pages/wardrobe/assets/'),
@@ -204,7 +249,12 @@ function createCandidate(output, args) {
         const controller = route + '.js';
         const shop = route === SHOP_ROUTE && shopArtwork;
         const artwork = route === ADOPT_ROUTE ? ADOPT_ARTWORK : route === PHOTO_ROUTE ? PHOTO_ARTWORK : shop;
-        const converted = renderView(all.get(view).toString('utf8'), view, files, artwork, shop);
+        const viewSource = all.get(view).toString('utf8');
+        const converted = renderView(viewSource, view, files, artwork, shop);
+        if (route === 'pages/index/index' && remoteNestBackground) {
+            converted.text = converted.text.replace("'" + nestBackground + "'", "'" + remoteNestBackground + "'");
+            converted.paths.delete(nestBackground);
+        }
         if (converted.text === all.get(view).toString('utf8')) continue;
         for (const name of additions[route] || []) converted.paths.add(name);
         const kind = route === 'custom-tab-bar/index' ? 'Component' : 'Page';
@@ -325,12 +375,42 @@ module.exports = {
 
     all.set('utils/release-images-manifest.js', jsonModule({ version, files }));
     all.set('utils/release-images.js', fs.readFileSync(RUNTIME));
+    if (hasFullSizeNestBackground) {
+        const readBackground = "    let filePath = entry.source;";
+        edit('utils/release-images.js', readBackground,
+            "    if (entry.source.startsWith('media/nest-background/')) await require.async('../media/nest-background/asset.js');\n" + readBackground);
+    }
     const names = Object.fromEntries(paths.map(name => [name, files[name].name]));
     const lead = Object.fromEntries(Object.values({ ...PHOTO_ARTWORK, ...ADOPT_ARTWORK, ...shopArtwork }).map(name => [name, true]));
     all.set(WXS, `var names = ${JSON.stringify(names)};\nvar lead = ${JSON.stringify(lead)};\n` +
         "function resolve(src, root, state, leadReady) {\n  var name = names[src];\n  if (typeof name !== 'string') return src;\n  var usable = !state || state === 'ready' || (leadReady && lead[src] === true);\n  return root && usable ? root + '/' + name : '';\n}\nmodule.exports = {resolve: resolve};\n");
     all.set('project.config.json', JSON.stringify(project, null, 2) + '\n');
     all.set('utils/config.js', jsonModule(config));
+    if (ossManifestPath) {
+        if (app.tabBar?.custom) {
+            for (const tab of app.tabBar.list) {
+                if (ossMedia['/' + tab.iconPath]) delete tab.iconPath;
+                if (ossMedia['/' + tab.selectedIconPath]) delete tab.selectedIconPath;
+            }
+            all.set('app.json', JSON.stringify(app, null, 2) + '\n');
+        }
+        const direct = new Map(Object.entries(ossMedia).filter(([route]) => !route.endsWith('.webp')));
+        const imageOrSound = /(["'])(\/[\w/.-]+\.(?:png|jpe?g|gif|svg|mp3|m4a|wav|aac|mp4))\1/g;
+        for (const [name, value] of all) {
+            if (!/\.(js|wxml|wxss|wxs)$/.test(name)) continue;
+            const before = value.toString('utf8');
+            const after = before.replace(imageOrSound, (match, quote, route) => {
+                const remote = direct.get(route);
+                return remote ? quote + remote.url + quote : match;
+            });
+            if (after !== before) all.set(name, after);
+        }
+        const bundledReferences = [...all].filter(([name]) => /\.(js|wxml|wxss|wxs|json)$/.test(name))
+            .map(([, contents]) => contents.toString('utf8')).join('\n');
+        for (const route of direct.keys()) {
+            if (!bundledReferences.includes(path.posix.basename(route))) all.delete(route.slice(1));
+        }
+    }
 
     if (args.fixture) {
         for (const [name, value] of all) {
@@ -342,20 +422,28 @@ module.exports = {
         }
     }
 
+    if (ossManifestPath) {
+        const bundledMedia = [...all.keys()].filter(name => !PACKAGE_CODE_FILES.test(name));
+        if (bundledMedia.length) throw new Error('OSS 候选仍包含以下媒体文件：\n' + bundledMedia.sort().join('\n'));
+    }
+
     fs.mkdirSync(output);
     for (const [name, contents] of all) {
         const file = path.join(output, name);
         fs.mkdirSync(path.dirname(file), { recursive: true });
         fs.writeFileSync(file, contents, typeof contents === 'string' ? 'utf8' : undefined);
     }
-    console.log(`${output}\n${paths.length} 个 WebP 以可校验的二进制素材入包。${args.fixture ? '本地测试配置。' : '发行候选，仍需核验微信后台与真机。'}`);
+    const mediaSummary = ossManifestPath
+        ? `${paths.length} 个 WebP 使用 OSS 清单，候选包内没有媒体文件。`
+        : `${paths.length} 个 WebP 以可校验的二进制素材入包。`;
+    console.log(`${output}\n${mediaSummary}${args.fixture ? '本地测试配置。' : '发行候选，仍需核验微信后台与真机。'}`);
 }
 
 try {
     const args = parseArgs({
         options: {
             output: { type: 'string' }, fixture: { type: 'boolean' }, appid: { type: 'string' },
-            'api-base': { type: 'string' }, 'test-bird-code': { type: 'string' }, 'step-supply': { type: 'boolean' },
+            'api-base': { type: 'string' }, 'test-bird-code': { type: 'string' }, 'test-osmanthus-bird-code': { type: 'string' }, 'step-supply': { type: 'boolean' },
         },
     }).values;
     if (!args.output) throw new Error('用法：node scripts/prepare-miniprogram-candidate.cjs --output <新目录> [--fixture | --appid <小程序ID> --api-base <HTTPS地址> [--step-supply]]');

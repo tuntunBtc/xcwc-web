@@ -112,7 +112,7 @@ html,body{margin:0;padding:0;width:${width}px;height:${height}px;overflow:hidden
 .guide{position:fixed;border:2px solid #FFC400;z-index:60;pointer-events:none}
 ${css}
 </style></head><body>
-<img class="page-scene" src="${ASSET}/background.webp" style="object-fit:fill">
+<img class="page-scene" src="${ASSET}/background.webp" style="object-fit:cover">
 <div class="nest">
   <div class="scene-shade"></div>
   <div class="hud" style="top:${px(layout.hudTop)}px;right:${px(hudRight)}px">

@@ -8,6 +8,7 @@ const safeArea = require('../../utils/safe-area');
 const collectionMedia = require('../../utils/collection-media');
 const cloudUI = require('../../utils/cloud-ui');
 const { ERROR_TEXT } = require('../../utils/nest-rules');
+const { ORIOLE_AVATAR, birdAvatar } = require('../../utils/bird-preview-art');
 
 const LOCAL_NOTE = '宠物、昵称、养成、库存和叽分保存在微信账号，登录后可换手机恢复。合照仍留在当前设备；旧体验记录隔离保留，不自动导入。';
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -39,6 +40,7 @@ Page(cloudUI.page({
         displayName: '我的小伙伴',
         birdSubtitle: '等待第一位小伙伴',
         hasBird: false,
+        avatar: ORIOLE_AVATAR,
         birdCount: 0,
         birdCode: '',
         points: 0,
@@ -214,7 +216,8 @@ Page(cloudUI.page({
             displayName: snapshot.hasBird ? snapshot.nickname : '我的小伙伴',
             birdSubtitle: snapshot.hasBird ? '当前陪伴 · 云端存档' : '暂无云端宠物',
             birdCount: snapshot.pets.length,
-            pets: snapshot.pets, selectedPetId: snapshot.petId,
+            pets: snapshot.pets.map(pet => ({ ...pet, avatar: birdAvatar(pet.birdCode) })), selectedPetId: snapshot.petId,
+            avatar: snapshot.hasBird ? birdAvatar(snapshot.birdCode) : ORIOLE_AVATAR,
             birdCode: snapshot.birdCode || '',
             points: snapshot.points,
             todayPoints: snapshot.todayPoints,

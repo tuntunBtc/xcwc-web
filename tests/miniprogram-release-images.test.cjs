@@ -312,7 +312,9 @@ test('generated adoption artwork waits for mountable sources and tracks native i
         require: name => name === '../../utils/release-images' ? releaseImages :
             name === '../../utils/cloud-ui' ? { page: definition => definition } : {},
     });
-    assert.deepEqual(registrations, [{ paths: Object.values(slots).sort(), artwork: slots }]);
+    const osmanthus = '/assets/nest/osmanthus-preview.webp';
+    assert.equal(resolve(osmanthus, root, 'ready', true), `${root}/${manifest.files[osmanthus].name}`);
+    assert.deepEqual(registrations, [{ paths: [...Object.values(slots), osmanthus].sort(), artwork: slots }]);
 });
 
 test('generated shop retains good covers and retries only a failing cover', async t => {

@@ -38,9 +38,22 @@ async function verify(projectPath) {
     scan();
 
     const manifestPath = path.join(projectPath, 'utils/release-images-manifest.js');
+    const remoteAssets = new Set();
+    let remoteMedia = 0;
     if (fs.existsSync(manifestPath)) {
         const manifest = require(manifestPath);
-        for (const entry of Object.values(manifest.files)) {
+        for (const [route, entry] of Object.entries(manifest.files)) {
+            if (Object.hasOwn(entry, 'url')) {
+                const extension = path.posix.extname(route).toLowerCase();
+                if (extension !== '.webp' || !/^[0-9a-f]{64}$/.test(entry.sha256) ||
+                    entry.url !== 'https://assets.xinchengip.com/mini/media/' + entry.sha256 + extension) {
+                    throw new Error(`OSS 素材 URL 或 SHA-256 无效：${route}`);
+                }
+                remoteAssets.add(normalize(route));
+                remoteAssets.add(normalize(entry.source));
+                remoteMedia++;
+                continue;
+            }
             if (expected.get(entry.source) !== entry.sha256) throw new Error(`二进制素材与清单不一致：${entry.source}`);
         }
     }
@@ -72,6 +85,8 @@ async function verify(projectPath) {
         missingRuntimeFiles: [...runtime.files].filter(name => !compiled.has(normalize(name))),
         expectedMedia: expected.size,
         verifiedMedia: expected.size - missing.length - changed.length,
+        remoteMedia,
+        unexpectedlyBundledRemoteMedia: [...remoteAssets].filter(name => compiled.has(name)),
         missing,
         changed,
         invalidPackages: packages.filter(pkg => !pkg.files || pkg.validSize > LIMIT).map(pkg => pkg.root),
@@ -84,7 +99,8 @@ if (!project) {
     process.exit(1);
 }
 verify(path.resolve(project)).then(report => {
-    const failed = report.missingRuntimeFiles.length || report.missing.length || report.changed.length || report.invalidPackages.length;
+    const failed = report.missingRuntimeFiles.length || report.missing.length || report.changed.length ||
+        report.unexpectedlyBundledRemoteMedia.length || report.invalidPackages.length;
     process.stdout.write('OFFLINE_RELEASE_AUDIT ' + JSON.stringify(report) + '\n', () => process.exit(failed ? 1 : 0));
 }).catch(error => {
     process.stderr.write(String(error.message) + '\n', () => process.exit(1));

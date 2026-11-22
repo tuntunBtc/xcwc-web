@@ -273,3 +273,93 @@ test('测试领养共用显示与跳转条件，普通小窝保留领取说明',
     ordinary.page.goAdopt();
     assert.equal(ordinary.page.data.sheet.type, 'claim');
 });
+
+test('独立候选同时区分两只测试鸟，桂花鸟不会使用小黄莺立绘、动画或合照贴图', async () => {
+    const oriole = 'HZ-HY-9000000000000000101';
+    const osmanthus = 'HZ-GH-9000000000000000102';
+    const config = { DEVICE_SANDBOX_TEST: true, DEBUG_DEMO_BIRD_CODE: oriole, DEBUG_OSMANTHUS_BIRD_CODE: osmanthus };
+    const { page, state, wx, Q } = harness('index', config);
+    state.pets[1].birdCode = osmanthus;
+    state.pets[1].nickname = '桂花鸟';
+    const urls = [];
+    wx.navigateTo = opts => { urls.push(opts.url); opts.complete(); };
+    page.onLoad();
+    page.onShow();
+    try {
+        assert.deepEqual(Array.from(page.data.testAdoptions, item => [item.name, item.owned]), [['西湖小黄莺', true], ['桂花鸟', true]]);
+        page.goAdopt({ currentTarget: { dataset: { key: 'osmanthus' } } });
+        page.goAdopt({ currentTarget: { dataset: { key: 'oriole' } } });
+        assert.deepEqual(urls, ['/pages/adopt/adopt?code=' + osmanthus, '/pages/adopt/adopt?code=' + oriole]);
+        await page.onSelectPet({ currentTarget: { dataset: { id: Q } } });
+        state.birdCode = osmanthus;
+        page.refresh();
+        assert.equal(page.data.displayName, '桂花鸟');
+        assert.equal(page.data.packagedIdle, false);
+        assert.match(page.data.birdArt, /osmanthus-preview/);
+        assert.match(page.data.avatar, /osmanthus-preview/);
+        page.showFeedback('桂花鸟开心了');
+        assert.match(page.data.birdArt, /osmanthus-preview/);
+    } finally {
+        page.onHide();
+        page.onUnload();
+    }
+
+    const photo = harness('photo', config);
+    photo.state.pets[0].birdCode = osmanthus;
+    photo.page.onLoad();
+    photo.page.loadBirds();
+    assert.equal(photo.page.data.birds.find(item => item.id === photo.P).osmanthus, true);
+    assert.equal(photo.page.data.selectedCount, 0);
+    photo.page.onBirdTap({ currentTarget: { dataset: { id: photo.P } } });
+    assert.equal(photo.page.data.selectedCount, 0);
+    photo.page.onUnload();
+});
+
+test('小窝拖动只移动当前小鸟，轻点仍走原摸摸入口', () => {
+    const { page, state, Q } = harness('index');
+    page.onLoad();
+    page.onShow();
+    try {
+        let taps = 0;
+        page.requireBird = () => true;
+        page.pet = () => { taps++; };
+        const touch = (x, y, identifier = 1) => ({
+            touches: [{ clientX: x, clientY: y, identifier }],
+        });
+
+        page.onBirdTouchStart(touch(150, 400));
+        page.onBirdTouchMove(touch(154, 400));
+        page.onBirdTouchEnd();
+        page.onPet();
+        assert.equal(taps, 1);
+        assert.equal(page.data.birdOffsetX, 0);
+
+        page.onBirdTouchStart(touch(150, 400));
+        page.onBirdTouchMove(touch(180, 380, 2));
+        assert.equal(page.data.birdOffsetX, 0);
+        page.onBirdTouchMove(touch(180, 380));
+        assert.deepEqual([page.data.birdOffsetX, page.data.birdOffsetY], [60, -40]);
+        page.onBirdTouchMove(touch(900, -900));
+        assert.equal(page.data.birdOffsetX, 180);
+        assert.ok(page.data.birdOffsetY >= page.data.layout.birdDragMinY);
+        page.onBirdTouchEnd();
+        page.onPet();
+        assert.equal(taps, 1);
+
+        page.onBirdTouchStart(touch(200, 390));
+        page.onBirdTouchMove({ touches: [...touch(190, 380).touches, ...touch(195, 375, 2).touches] });
+        page.onPet();
+        assert.equal(taps, 1);
+        page.onBirdTouchStart(touch(200, 390));
+        page.onBirdTouchEnd();
+        page.onPet();
+        assert.equal(taps, 2);
+
+        state.petId = Q;
+        page.refresh();
+        assert.deepEqual([page.data.birdOffsetX, page.data.birdOffsetY], [0, 0]);
+    } finally {
+        page.onHide();
+        page.onUnload();
+    }
+});

@@ -118,10 +118,18 @@ async function extract(root, entry, refresh) {
     const target = root + '/' + entry.name;
     if (!refresh && await isValid(target, entry.size)) return target;
 
-    if (entry.source.startsWith('media/collection/assets/city/')) {
+    if (!entry.url && entry.source.startsWith('media/collection/assets/city/')) {
         await require.async('../media/collection/files.js');
     }
-    const { data } = await fsCall('readFile', { filePath: entry.source });
+    let filePath = entry.source;
+    if (entry.url) {
+        const downloaded = await new Promise((resolve, reject) => wx.downloadFile({
+            url: entry.url, timeout: 30000, success: resolve, fail: reject,
+        }));
+        if (downloaded.statusCode !== 200 || !downloaded.tempFilePath) throw new Error('素材域图片下载失败');
+        filePath = downloaded.tempFilePath;
+    }
+    const { data } = await fsCall('readFile', { filePath });
     const bytes = new Uint8Array(data);
     if (bytes.length !== entry.size || !isWebp(bytes, entry.size)) throw new Error('小程序图片包校验失败');
 
@@ -146,6 +154,8 @@ function readEntry(root, path, priority, refresh = false) {
     if (!entry || !/^[a-z0-9_-]+\.webp$/i.test(entry.name) ||
         typeof entry.source !== 'string' || !/^[a-z0-9_./-]+\.bin$/i.test(entry.source) ||
         entry.source.split('/').some(part => !part || part === '.' || part === '..') ||
+        (entry.url && (!/^[a-f0-9]{64}$/.test(entry.sha256)
+            || entry.url !== 'https://assets.xinchengip.com/mini/media/' + entry.sha256 + '.webp')) ||
         !Number.isSafeInteger(entry.size) || entry.size < 12) {
         throw new Error('小程序图片清单无效');
     }

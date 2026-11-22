@@ -10,6 +10,7 @@ const { values: flags, positionals } = parseArgs({
     options: {
         release: { type: 'boolean' },
         'test-bird-code': { type: 'string' },
+        'test-osmanthus-bird-code': { type: 'string' },
         'step-supply': { type: 'boolean' },
         appid: { type: 'string' },
         'api-base': { type: 'string' },
@@ -100,14 +101,18 @@ function isReservedHost(api) {
 const api = apiRoot(config.API_BASE);
 if (!api) failures.push('缺少有效的 HTTPS API 域名根地址');
 if (config.USE_LOCAL_FIXTURE !== false) failures.push('仍启用调试数据');
-if (flags['test-bird-code']) {
+const oriole = flags['test-bird-code'];
+const osmanthus = flags['test-osmanthus-bird-code'];
+if (oriole !== undefined || osmanthus !== undefined) {
+    const { isManufacturingCode } = require('../miniprogram/utils/entry');
     if (!flags.release || project.appid !== 'wx4f4b2df4a761b88d' ||
         api?.base !== 'https://api.xinchengip.com/test/bird/v1' || config.DEVICE_SANDBOX_TEST !== true ||
-        config.DEBUG_DEMO_BIRD_CODE !== flags['test-bird-code'] ||
-        !require('../miniprogram/utils/entry').isManufacturingCode(config.DEBUG_DEMO_BIRD_CODE)) {
+        config.DEBUG_DEMO_BIRD_CODE !== (oriole || '') || (config.DEBUG_OSMANTHUS_BIRD_CODE || '') !== (osmanthus || '') ||
+        (oriole !== undefined && !isManufacturingCode(oriole)) ||
+        (osmanthus !== undefined && (!isManufacturingCode(osmanthus) || osmanthus === oriole))) {
         failures.push('测试领养入口必须匹配独立测试包配置');
     }
-} else if (config.DEBUG_DEMO_BIRD_CODE || config.DEVICE_SANDBOX_TEST) {
+} else if (config.DEBUG_DEMO_BIRD_CODE || config.DEBUG_OSMANTHUS_BIRD_CODE || config.DEVICE_SANDBOX_TEST) {
     failures.push('发布配置仍带调试领养码');
 }
 if (flags['step-supply'] && config.ENABLE_WERUN_SUPPLIES !== true) failures.push('候选包尚未开启微信步数补给');

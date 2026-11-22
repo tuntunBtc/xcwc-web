@@ -3,7 +3,7 @@
 <!-- 全屏底图：自定义 tabBar 是透明毛绒底板，背景必须铺满整个视口（含底栏区域），
      否则内容区在底栏上沿截断，底栏附近会露出纯色空缺。整页只保留这一张图，
      不另在 .nest 内重复拉伸一份，避免底栏上沿出现接缝。 -->
-<image class="page-scene" src="/assets/nest/background.webp" mode="scaleToFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx"></image>
+<image class="page-scene" src="{{brandBackground || '/assets/nest/background.webp'}}" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx"></image>
 <view class="nest" style="height:{{layout.pageHeight}}rpx">
 
     <view class="scene-shade"></view>
@@ -12,7 +12,7 @@
     <view class="hud" style="top:{{layout.hudTop}}rpx;right:{{layout.hudRight}}rpx">
         <view class="identity" bindtap="onSwitch" hover-class="ui-hover">
             <image class="tex-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
-            <view class="avatar" role="button" aria-label="切换小鸟" catchtap="onSwitch"><image src="/assets/nest/avatar.webp" mode="aspectFill"></image></view>
+            <view class="avatar" role="button" aria-label="切换小鸟" catchtap="onSwitch"><image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill"></image></view>
             <view class="identity-text" catchtap="onRename">
                 <view class="name"><text class="name-text">{{displayName}}</text><text class="pen">✎</text></view>
                 <text class="place">{{placeText}}</text>
@@ -75,24 +75,24 @@
     </view>
 
     <!-- 空态领取入口 -->
-    <view wx:if="{{!hasBird && testBirdAdoption}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="goAdopt" hover-class="ui-hover" role="button">领取测试小鸟</view>
+    <view wx:if="{{!hasBird && testBirdAdoption}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover" role="button">领取测试小鸟</view>
     <view wx:elif="{{!hasBird}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover">如何领取小鸟</view>
 
     <view wx:if="{{cleaning.status === 'PRESENT'}}" class="cloud-poop" style="top:{{layout.actorTop + layout.actorHeight - 25}}rpx" data-key="clean" bindtap="onTool">💩</view>
     <!-- 小鸟立绘 -->
-    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}}" style="top:{{layout.actorTop}}rpx;height:{{layout.actorHeight}}rpx">
+    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}}" style="top:{{layout.actorTop}}rpx;height:{{layout.actorHeight}}rpx;transform:translate({{birdOffsetX}}rpx, {{birdOffsetY}}rpx)" catchtouchmove="onBirdTouchMove" bindtouchend="onBirdTouchEnd" bindtouchcancel="onBirdTouchCancel">
         <view class="shadow {{hasBird ? '' : 'is-hidden'}}"></view>
         <view class="grass {{hasBird ? '' : 'is-hidden'}}">
             <view class="blade b1"></view><view class="blade b2"></view>
             <view class="blade b3"></view><view class="blade b4"></view>
         </view>
-        <view class="bird-hit" bindtap="onPet" hover-class="none">
+        <view class="bird-hit" bindtouchstart="onBirdTouchStart" bindtap="onPet" hover-class="none">
             <!-- 待机动画播放时隐藏静态表情海报，避免动画小鸟与表情海报重叠（动画画布覆盖在立绘之上）。 -->
-            <image wx:if="{{!(brandRelease ? brandPlaying : idlePlaying)}}" class="bird-art" src="{{brandImage || birdArt}}" mode="aspectFit"></image>
+            <image wx:if="{{(brandImage || birdArt) && !(brandRelease ? brandPlaying : idlePlaying)}}" class="bird-art" src="{{brandImage || birdArt}}" mode="aspectFit"></image>
         </view>
         <!-- 画布支持穿透时由 bird-hit 接收，画布直接命中时也触发同一个摸摸动作。 -->
-        <canvas wx:if="{{hasBird && !brandRelease}}" type="2d" id="idleCanvas" class="idle-canvas {{idlePlaying ? '' : 'canvas-rest'}}" bindtap="onPet"></canvas>
-        <canvas wx:elif="{{hasBrandAnimation}}" type="2d" id="brandCanvas" class="idle-canvas {{brandPlaying ? '' : 'canvas-rest'}}" bindtap="onPet"></canvas>
+        <canvas wx:if="{{packagedIdle}}" type="2d" id="idleCanvas" class="idle-canvas {{idlePlaying ? '' : 'canvas-rest'}}" bindtouchstart="onBirdTouchStart" bindtap="onPet"></canvas>
+        <canvas wx:elif="{{hasBrandAnimation}}" type="2d" id="brandCanvas" class="idle-canvas {{brandPlaying ? '' : 'canvas-rest'}}" bindtouchstart="onBirdTouchStart" bindtap="onPet"></canvas>
         <!-- 首次自动播放被系统策略拦截时，给出手动入口（仅在已加载成功但被拦截时出现）。 -->
         <view wx:if="{{showIdleButton || (brandBlocked && !motionPaused)}}" class="idle-retry" catchtap="onIdleRetry">▶ 播放动画</view>
         <view wx:if="{{feedFxId > 0}}" class="feed-fx">🌾</view>
@@ -252,7 +252,8 @@
             <block wx:if="{{sheet.type === 'switch'}}">
                 <scroll-view scroll-y="true" style="max-height:420rpx">
                     <view class="bird-choice" wx:for="{{pets}}" wx:key="petId" data-id="{{item.petId}}" catchtap="onSelectPet">
-                        <image src="/assets/nest/avatar.webp" mode="aspectFit"></image>
+                        <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFit"></image>
+                        <view wx:else class="bird-choice-avatar" aria-hidden="true"></view>
                         <view><text class="choice-name">{{item.nickname}}</text><text>{{item.petId === selectedPetId ? '当前陪伴' : '切换陪伴'}}</text></view>
                         <view class="bird-choice-spark">
                             <view class="spark-icon spark-tier-1 {{item.sparkLit ? '' : 'spark-dim'}}" aria-hidden="true">
@@ -263,7 +264,7 @@
                     </view>
                 </scroll-view>
                 <text class="sheet-note">昵称、库存和养成按小鸟独立保存。</text>
-                <view wx:if="{{testBirdAdoption}}" class="sheet-primary test-bird-entry" catchtap="goAdopt">{{hasTestBird ? '查看测试小鸟' : '领取测试小鸟'}}</view>
+                <view wx:for="{{testAdoptions}}" wx:key="key" class="sheet-primary test-bird-entry" data-key="{{item.key}}" catchtap="goAdopt">{{item.owned ? '查看测试鸟 · ' : '领取测试鸟 · '}}{{item.name}}</view>
             </block>
             <block wx:if="{{sheet.type === 'history'}}">
                 <view class="supply-history">
@@ -294,8 +295,8 @@
                 <text class="sheet-desc">1. 用支持 NFC 的手机碰一碰实体小鸟，打开系统弹出的链接；或扫描小鸟的小程序码。</text>
                 <text class="sheet-desc">2. 在领取页确认资料与昵称，免费孵化后回到小窝。</text>
                 <text class="sheet-desc">微信登录可恢复云端小鸟与叽分，合照仅保存在本机。</text>
-                <view wx:if="{{!hasBird && testBirdAdoption}}" class="sheet-primary" catchtap="goAdopt">领取测试小鸟</view>
-                <view wx:elif="{{fixtureMode}}" class="sheet-primary" catchtap="goAdopt">查看领养页（调试示例编码）</view>
+                <view wx:for="{{testAdoptions}}" wx:key="key" class="sheet-primary test-bird-entry" data-key="{{item.key}}" catchtap="goAdopt">{{item.owned ? '查看测试鸟 · ' : '领取测试鸟 · '}}{{item.name}}</view>
+                <view wx:if="{{fixtureMode}}" class="sheet-primary" catchtap="goAdopt">查看领养页（调试示例编码）</view>
             </block>
 
             <block wx:if="{{sheet.type === 'info'}}">

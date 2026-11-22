@@ -50,6 +50,23 @@
     height: 100%;
 }
 
+.osmanthus-preview {
+    position: absolute;
+    left: 10%;
+    top: 38%;
+    width: 53%;
+    height: 52%;
+    background: #bdd99b;
+    border-radius: 24rpx;
+    overflow: hidden;
+}
+
+.osmanthus-preview image {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
 .scene-title {
     position: absolute;
     left: 29%;
