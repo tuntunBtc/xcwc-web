@@ -14,8 +14,10 @@ const { presentSpark, sparkNotice } = require('./spark');
 const { createButtonArt } = require('../../utils/nest-button-art');
 const { createBrandArt } = require('../../utils/nest-brand-art');
 const { createBrandIdle } = require('../../utils/nest-brand-idle');
-const { ORIOLE_AVATAR, birdAvatar, isOriole } = require('../../utils/bird-preview-art');
+const { ORIOLE_AVATAR, birdAvatar, isOriole, isOsmanthus } = require('../../utils/bird-preview-art');
 const STATUS_REFRESH_MS = 30000;
+const DIARY_FADE_MS = 900;
+const DIARY_LOAD_TIMEOUT_MS = 45000;
 const HAPPY_ART = '/assets/nest/emotion-happy.webp';
 const ANGRY_ART = '/assets/nest/emotion-angry.webp';
 const TEST_ADOPTIONS = config.DEVICE_SANDBOX_TEST === true ? [
@@ -29,6 +31,7 @@ const TOOLS = Object.freeze([
     { key: 'supply', label: '补给', propClass: 'prop-supply' },
     { key: 'checkin', label: '合照打卡', propClass: 'prop-checkin' },
     { key: 'ar', label: 'AR' },
+    { key: 'diary', label: '日记' },
     { key: 'dress', label: '换装', propClass: 'prop-dress', hidden: true },
     { key: 'video', label: '播放' },
 ]);
@@ -87,11 +90,16 @@ Page(cloudUI.page({
         ledger: [],
         stats: [],
         needs: [],
+        needImageErrors: {},
+        needFoodUrl: 'https://assets.xinchengip.com/mini/media/8eafcd32ac21c9635d1ee32d3e8fed3ddae9a6013f9ed743647b1f478712e65f.webp',
+        needWaterUrl: 'https://assets.xinchengip.com/mini/media/571b68b9b59f49eafff430bf795cf527323bdc4fa05dcdec3214bcd04ffbcbdb.webp',
         speech: '',
         birdArt: '/assets/nest/poster.webp',
         thirsty: false,
         happy: false,
         motionPaused: false,
+        diaryVideoVisible: false,
+        diaryVideoPlaying: false,
         idleReady: false,
         idlePlaying: false,
         showIdleButton: false,
@@ -105,6 +113,22 @@ Page(cloudUI.page({
         tools: TOOLS.filter(tool => !tool.hidden),
         dock: DOCK,
         dockRemoteImage: '',
+        previewBackgroundIndex: 0,
+        lavenderBackgroundUrl: 'https://assets.xinchengip.com/mini/media/83477c3a0ac691ba7ff57a683c5ce6587bdcb2c1a9e3dd03f8230828e372d248.webp',
+    },
+
+    onSwitchBackgroundPreview() {
+        const previewBackgroundIndex = (this.data.previewBackgroundIndex + 1) % 4;
+        this.setData({ previewBackgroundIndex });
+        const labels = ['暖阳卧室', '桂花鸟小屋', '当前配置', '紫色桂花鸟小屋'];
+        wx.showToast({ title: labels[previewBackgroundIndex], icon: 'none' });
+    },
+
+    onPreviewBackgroundError() {
+        if (this.data.previewBackgroundIndex !== 2) {
+            this.setData({ previewBackgroundIndex: 2 });
+            wx.showToast({ title: '新背景加载失败', icon: 'none' });
+        }
     },
 
     onLoad() {
@@ -161,6 +185,7 @@ Page(cloudUI.page({
 
     onHide() {
         this.birdGesture = null;
+        this.stopDiaryVideo();
         this.brandArt?.suspend();
         this.syncIdle(true);
         this.clearTimers();
@@ -172,6 +197,7 @@ Page(cloudUI.page({
     },
 
     onUnload() {
+        this.stopDiaryVideo();
         this.nestUnloaded = true;
         this.brandIdle?.stop();
         this.brandArt?.display(null);
@@ -279,6 +305,7 @@ Page(cloudUI.page({
         const slot = feedback ? (feedback.art === ANGRY_ART ? 'angry' : 'happy') : stateSlot;
         this.setData({
             hasBird: s.hasBird,
+            hideGrass: isOsmanthus(code),
             sparkDisplay: presentSpark(s, store.status()),
             pets: (s.pets || []).map(pet => ({
                 ...pet,
@@ -348,8 +375,8 @@ Page(cloudUI.page({
         const hasBird = this.data.hasBird;
         const birdId = hasBird ? this.currentBirdCode || 'local-bird' : null;
         const feedbacking = this.feedbackActive() || this.data.happy;
-        this.brandIdle?.sync(this.brandBundle, this.currentPetId, suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking);
-        this.idle.sync(this.data.packagedIdle, !!(suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking), birdId, this.data.packagedIdle);
+        this.brandIdle?.sync(this.brandBundle, this.currentPetId, suspended || this.data.diaryVideoVisible || this.data.motionPaused || this.data.storageUnavailable || feedbacking);
+        this.idle.sync(this.data.packagedIdle, !!(suspended || this.data.diaryVideoVisible || this.data.motionPaused || this.data.storageUnavailable || feedbacking), birdId, this.data.packagedIdle);
     },
 
     // 短鸟叫：与网页端 Web Audio 合成的轻量鸟叫等价，用 InnerAudioContext 播放。
@@ -576,6 +603,20 @@ Page(cloudUI.page({
     // ---------- 右侧工具 ----------
     async onTool(event) {
         const key = event.currentTarget.dataset.key;
+        if (key === 'diary') {
+            if (this.data.diaryVideoVisible) return;
+            this.syncIdle(true);
+            if (this.chirpAudio) { try { this.chirpAudio.stop(); } catch (e) {} }
+            this.diaryReturning = false;
+            this.diaryPhase = 'loading';
+            this.setData({ diaryVideoVisible: true }, () => {
+                if (this.data.diaryVideoVisible) wx.createVideoContext('diaryOriginalVideo', this).play();
+            });
+            this.diaryLoadTimer = setTimeout(() => {
+                if (this.data.diaryVideoVisible && !this.data.diaryVideoPlaying) this.onDiaryVideoError();
+            }, DIARY_LOAD_TIMEOUT_MS);
+            return;
+        }
         if (key === 'clean') {
             if (!this.requireBird()) return;
             const result = await cloudUI.run(this, () => store.clean());
@@ -609,6 +650,86 @@ Page(cloudUI.page({
         }
     },
 
+    fadeOutDiaryVideo() {
+        if (!this.data.diaryVideoVisible || this.diaryReturning) return;
+        this.diaryReturning = true;
+        this.diaryPhase = 'returning';
+        clearTimeout(this.diaryFrameTimer);
+        clearTimeout(this.diaryStartTimer);
+        this.diaryFrameTimer = this.diaryStartTimer = null;
+        this.setData({ diaryVideoPlaying: false });
+        this.diaryReturnTimer = setTimeout(() => {
+            this.stopDiaryVideo();
+            this.syncIdle(false);
+        }, DIARY_FADE_MS + 1000);
+    },
+
+    stopDiaryVideo() {
+        clearTimeout(this.diaryLoadTimer);
+        clearTimeout(this.diaryReturnTimer);
+        clearTimeout(this.diaryStartTimer);
+        clearTimeout(this.diaryFrameTimer);
+        this.diaryStartTimer = this.diaryFrameTimer = null;
+        this.diaryPhase = null;
+        this.diaryLoadTimer = null;
+        this.diaryReturnTimer = null;
+        this.diaryReturning = false;
+        if (!this.data.diaryVideoVisible) return;
+        try { wx.createVideoContext('diaryOriginalVideo', this).stop(); } catch (error) {}
+        this.setData({ diaryVideoVisible: false, diaryVideoPlaying: false });
+    },
+
+    // First decode a real video frame, then pause and return to its first frame.
+    // Fade while that frame is held before letting motion begin.
+    onDiaryVideoPlay() {
+        if (!this.data.diaryVideoVisible || this.diaryReturning) return;
+        if (this.diaryPhase === 'loading') this.diaryPhase = 'priming';
+    },
+
+    onDiaryVideoTimeUpdate(event) {
+        const detail = event.detail || {};
+        if (this.diaryPhase === 'priming' && detail.currentTime >= 0) {
+            this.diaryPhase = 'holding';
+            clearTimeout(this.diaryLoadTimer);
+            this.diaryLoadTimer = null;
+            const video = wx.createVideoContext('diaryOriginalVideo', this);
+            video.pause();
+            video.seek(0);
+            this.diaryFrameTimer = setTimeout(() => this.revealDiaryFirstFrame(), 1500);
+            return;
+        }
+        if (this.diaryPhase === 'playing' && detail.duration > 1 && detail.currentTime >= detail.duration - 0.45 && !this.diaryReturning) this.fadeOutDiaryVideo();
+    },
+
+    onDiaryVideoSeekComplete() {
+        if (this.diaryPhase !== 'holding') return;
+        clearTimeout(this.diaryFrameTimer);
+        this.diaryFrameTimer = setTimeout(() => this.revealDiaryFirstFrame(), 120);
+    },
+
+    revealDiaryFirstFrame() {
+        if (!this.data.diaryVideoVisible || this.diaryPhase !== 'holding') return;
+        clearTimeout(this.diaryFrameTimer);
+        this.diaryFrameTimer = null;
+        this.setData({ diaryVideoPlaying: true });
+        this.diaryStartTimer = setTimeout(() => {
+            if (!this.data.diaryVideoVisible || this.diaryPhase !== 'holding') return;
+            this.diaryPhase = 'playing';
+            wx.createVideoContext('diaryOriginalVideo', this).play();
+        }, DIARY_FADE_MS + 120);
+    },
+
+    onDiaryVideoEnded() {
+        if (!this.data.diaryVideoVisible) return;
+        if (!this.diaryReturning) this.fadeOutDiaryVideo();
+    },
+
+    onDiaryVideoError() {
+        if (this.data.diaryVideoPlaying) this.fadeOutDiaryVideo();
+        else { this.stopDiaryVideo(); this.syncIdle(false); }
+        wx.showToast({ title: '日记动画暂时无法播放', icon: 'none' });
+    },
+
     openToolPage(url, errorText) {
         if (this.toolNavigationPending) return;
         this.toolNavigationPending = true;
@@ -617,6 +738,11 @@ Page(cloudUI.page({
             fail: () => this.showToast(errorText),
             complete: () => { this.toolNavigationPending = false; },
         });
+    },
+
+    onNeedImageError(event) {
+        const key = event.currentTarget.dataset.key;
+        if (key === 'food' || key === 'water') this.setData({ ['needImageErrors.' + key]: true });
     },
 
     onNeed(event) {

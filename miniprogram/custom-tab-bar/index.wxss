@@ -69,6 +69,7 @@
 
 .tab-bar-text {
     display: block;
+    visibility: hidden;
     margin-top: 4rpx;
     color: #80502c;
     font-size: 26rpx;
@@ -83,3 +84,23 @@
 .tab-bar-text.is-active {
     color: #4e8c4c;
 }
+
+.tab-bar-compact {
+    pointer-events: none;
+}
+
+.compact-item {
+    position: absolute;
+    bottom: 28rpx;
+    width: 100rpx;
+    height: 100rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.compact-left { left: 32rpx; }
+.compact-right { right: 32rpx; }
+.compact-icon { width: 68rpx; height: 68rpx; }
+.tab-bar-nest .compact-item { bottom: 52rpx; }

@@ -44,7 +44,7 @@ const DAY = new Date(NOW + 8 * 3600 * 1000).toISOString().slice(0, 10);
 
 check('guest-store: 本地 mock 6800 步 -> 5 叽分（封顶 5）', function () {
     const g = guestStore.createGuestStore(memoryStorage(), {});
-    g.adopt('HZ-HY-2116909225920720901', '燕叽', NOW);
+    g.adopt('HZ-HY-9000000000000000001', '燕叽', NOW);
     const r = g.redeemSteps(6800, NOW);
     assert.strictEqual(r.error, null, 'error 应为 null');
     assert.strictEqual(r.data.snapshot.todayStepClaimed, true, '当日应标记为已兑换');
@@ -54,7 +54,7 @@ check('guest-store: 本地 mock 6800 步 -> 5 叽分（封顶 5）', function ()
 
 check('guest-store: 同日二次兑换 -> ALREADY_CLAIMED，不重复发分', function () {
     const g = guestStore.createGuestStore(memoryStorage(), {});
-    g.adopt('HZ-HY-2116909225920720901', '燕叽', NOW);
+    g.adopt('HZ-HY-9000000000000000001', '燕叽', NOW);
     g.redeemSteps(6800, NOW);
     const r2 = g.redeemSteps(6800, NOW);
     assert.strictEqual(r2.error, 'ALREADY_CLAIMED');
@@ -63,7 +63,7 @@ check('guest-store: 同日二次兑换 -> ALREADY_CLAIMED，不重复发分', fu
 
 check('guest-store: 999 步不足 1000 -> 发放 0', function () {
     const g = guestStore.createGuestStore(memoryStorage(), {});
-    g.adopt('HZ-HY-2116909225920720901', '燕叽', NOW);
+    g.adopt('HZ-HY-9000000000000000001', '燕叽', NOW);
     const r = g.redeemSteps(999, NOW);
     assert.strictEqual(r.error, 'NO_REWARD');
     assert.strictEqual(r.data.snapshot.points, 0);
@@ -71,7 +71,7 @@ check('guest-store: 999 步不足 1000 -> 发放 0', function () {
 
 check('guest-store: applyServerReward 严格镜像服务端 granted=5', function () {
     const g = guestStore.createGuestStore(memoryStorage(), {});
-    g.adopt('HZ-HY-2116909225920720901', '燕叽', NOW);
+    g.adopt('HZ-HY-9000000000000000001', '燕叽', NOW);
     const r = g.applyServerReward(5, 6800, DAY, NOW, false);
     assert.strictEqual(r.error, null);
     assert.strictEqual(r.data.snapshot.points, 5);
@@ -80,7 +80,7 @@ check('guest-store: applyServerReward 严格镜像服务端 granted=5', function
 
 check('guest-store: applyServerReward 幂等（同日期二次 -> ALREADY_CLAIMED）', function () {
     const g = guestStore.createGuestStore(memoryStorage(), {});
-    g.adopt('HZ-HY-2116909225920720901', '燕叽', NOW);
+    g.adopt('HZ-HY-9000000000000000001', '燕叽', NOW);
     g.applyServerReward(5, 6800, DAY, NOW, false);
     const r2 = g.applyServerReward(5, 6800, DAY, NOW, true);
     assert.strictEqual(r2.error, 'ALREADY_CLAIMED', '应识别为已领取');
@@ -88,14 +88,14 @@ check('guest-store: applyServerReward 幂等（同日期二次 -> ALREADY_CLAIME
 
 check('guest-store: applyServerReward 不按步数重算（granted=0 仍记录 claimed）', function () {
     const g = guestStore.createGuestStore(memoryStorage(), {});
-    g.adopt('HZ-HY-2116909225920720901', '燕叽', NOW);
+    g.adopt('HZ-HY-9000000000000000001', '燕叽', NOW);
     const r = g.applyServerReward(0, 6800, DAY, NOW, true);
     assert.strictEqual(r.data.snapshot.todayStepClaimed, true, 'claimed 状态仍应写入');
 });
 
 check('guest-store: 跨日可再次兑换（不同 target 日期）', function () {
     const g = guestStore.createGuestStore(memoryStorage(), {});
-    g.adopt('HZ-HY-2116909225920720901', '燕叽', NOW);
+    g.adopt('HZ-HY-9000000000000000001', '燕叽', NOW);
     g.applyServerReward(5, 6800, '2026-11-09', NOW, false);
     const r = g.applyServerReward(3, 3000, '2026-11-10', NOW, false);
     assert.strictEqual(r.error, null);

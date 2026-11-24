@@ -68,6 +68,8 @@ function readMenuRect() {
             topRpx: Math.round(top * scale),
             heightRpx: Math.round(height * scale),
             leftRpx: Math.round(left * scale),
+            rightInsetRpx: typeof menu.right === 'number' && menu.right <= width && menu.right > left
+                ? Math.round((width - menu.right) * scale) : null,
         };
     } catch (error) {
         return null;
@@ -92,6 +94,9 @@ function readNestLayout() {
         hudTop = inset + HUD_FALLBACK_TOP;
         hudRight = HUD_FALLBACK_RIGHT;
     }
+    // 仅移动顶部信息与状态行；其余锚点沿用原布局，避免牵动工具列等元素。
+    var alignedHudTop = menu ? Math.max(0, menu.topRpx - Math.round((HUD_HEIGHT_RPX - menu.heightRpx) / 2)) : hudTop;
+    var statusAnchorTop = menu ? Math.max(menu.statusBarRpx, menu.topRpx - Math.round((HUD_HEIGHT_RPX - menu.heightRpx) / 2)) : hudTop;
     var viewportRpx = DESIGN_HEIGHT_RPX;
     var screenViewportRpx = 0;
     var bottomInset = 0;
@@ -142,12 +147,19 @@ function readNestLayout() {
         // toast 是 position:fixed，坐标系是「视口」而非 .nest；自定义 tabBar 也是
         // fixed 且 z-index:1000，必须把整条底栏高度加回来，否则 toast 会被底栏盖住。
         toastBottom: tabBarHeight + DOCK_GAP_RPX + DOCK_HEIGHT_RPX + 20,
+        // Match the original 1080x1920 video first frame for the lavender room.
+        // Video and scene both use aspect-fill; account for side/top cropping.
+        diaryActorLeft: Math.round((750 - 1080 * Math.max(750 / 1080, sceneHeight / 1920)) / 2 + 280 * Math.max(750 / 1080, sceneHeight / 1920)),
+        diaryActorTop: Math.round((sceneHeight - 1920 * Math.max(750 / 1080, sceneHeight / 1920)) / 2 + 1008 * Math.max(750 / 1080, sceneHeight / 1920)),
+        diaryActorWidth: Math.round(520 * Math.max(750 / 1080, sceneHeight / 1920)),
+        diaryActorHeight: Math.round(422 * Math.max(750 / 1080, sceneHeight / 1920)),
         actorHeight: actorHeight,
         // 顶部信息组锚定 hudTop，短屏允许工具列在组内上移避让 dock。
         // 对话气泡、领取入口、立绘与 dock 属场景主体，仍按 inset 定位保持不动。
-        hudTop: hudTop,
+        hudTop: alignedHudTop,
+        hudLeft: menu && menu.rightInsetRpx !== null ? Math.max(0, menu.rightInsetRpx - 8) : 12,
         hudRight: hudRight,                    // 胶囊左边缘避让，内联覆盖 WXSS 的 right:12rpx
-        statusTop: hudTop + 120,               // HUD 底(+91) 后再留 29rpx
+        statusTop: statusAnchorTop + 100,        // 状态行贴近顶部信息组
         needsTop: hudTop + 222,
         toolsTop: toolsTop,
         speechTop: speechTop,                  // 44cqw + core-shift

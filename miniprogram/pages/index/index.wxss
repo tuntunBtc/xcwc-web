@@ -15,13 +15,27 @@ page {
     left: 0;
     width: 100%;
     min-height: 100vh;
-    z-index: 0;
+    z-index: 1;
     pointer-events: none;
+    transition: opacity 400ms ease-in-out;
 }
+.diary-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 400ms ease-in-out;
+}
+.diary-canvas-visible { opacity: 1; }
+.diary-actor-hidden { pointer-events: none; }
+.actor { transition: opacity 400ms ease-in-out; }
 
 .nest {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     width: 100%;
     overflow: hidden;
     /* 透出 .page-scene；page 的苔绿底色仍作为图片未就绪时的兜底。 */
@@ -434,7 +448,6 @@ page {
 
 .stat-value {
     font-size: 17rpx;
-    margin-left: auto;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -544,6 +557,16 @@ page {
     z-index: 1;
 }
 
+.diary-icon { position: relative; box-sizing: border-box; width: 36rpx; height: 43rpx; border: 4rpx solid white; border-radius: 6rpx; }
+.diary-ring { position: absolute; left: -7rpx; width: 9rpx; height: 4rpx; border-radius: 3rpx; background: white; }
+.ring-one { top: 6rpx; }
+.ring-two { top: 17rpx; }
+.ring-three { top: 28rpx; }
+.diary-line { position: absolute; left: 6rpx; height: 3rpx; border-radius: 2rpx; background: white; }
+.line-one { top: 7rpx; width: 17rpx; }
+.line-two { top: 14rpx; width: 12rpx; }
+.diary-pencil { position: absolute; left: 16rpx; top: 17rpx; box-sizing: border-box; width: 7rpx; height: 17rpx; border: 2rpx solid white; border-radius: 3rpx 3rpx 1rpx 1rpx; transform: rotate(43deg); }
+
 /* tools-512.webp = 2 列 × 2 行，背景 200% × 200% */
 .tool-prop-clip .sprite {
     width: 200%;
@@ -627,8 +650,8 @@ page {
 .speech {
     position: absolute;
     left: 28%;
-    width: 48%;
-    padding: 31rpx 47rpx 41rpx;
+    width: 38%;
+    padding: 20rpx 28rpx 22rpx;
     z-index: 3;
 }
 
@@ -1482,3 +1505,117 @@ page {
     font-size: 19rpx;
     color: #765F40;
 }
+
+/* 小窝页面文字统一为白色；只作用于本页，不改变其他页面。 */
+page, view, text, button, input, textarea {
+    color: #fff !important;
+}
+
+.claim-sheet .sheet-title { color: #403b2f !important; }
+.claim-sheet .sheet-desc { color: #655c4a !important; }
+.claim-sheet .sheet-close { color: #655c4a !important; }
+
+/* 小窝状态与叽分采用无底图的轻量展示。 */
+.wallet { min-height: 44px; }
+.feather-clip { width: 34rpx; height: 38rpx; flex: none; }
+.stat { padding: 14rpx 5rpx 17rpx; }
+.stat-icon-clip { width: 30rpx; height: 30rpx; flex: none; }
+.stat-track { height: 8rpx; border: 0; background: rgba(255, 255, 255, 0.4); }
+.stat-fill { background: #fff; }
+
+/* 头像信息透出场景，火花与等级横排；灰色继续表示未点亮或恢复中。 */
+.companion { flex-direction: row; width: auto; gap: 2rpx; }
+.companion-text { font-size: 19rpx; }
+.switch { width: 0; }
+.spark-flame, .spark-tier-4 .spark-flame { border-color: #ff8a00; background: #ff8a00; box-shadow: none; }
+.spark-dim .spark-flame { background: #aaa69b; border-color: #ddd5c5; box-shadow: none; }
+.spark-dot, .spark-orbit { display: none; }
+.feather-clip { width: 41rpx; height: 46rpx; }
+
+/* 与参考图一致：镜像笔尖，并用细分隔线区分火花与叽分。 */
+.pen { display: inline-block; transform: scaleX(-1); }
+.wallet { padding-left: 15rpx; }
+.wallet::before { content: ""; position: absolute; left: 0; top: 50%; width: 2rpx; height: 34rpx; transform: translateY(-50%); background: rgba(255, 255, 255, 0.8); }
+.spark-icon { flex: none; width: 40rpx; height: 43rpx; }
+
+/* 登录入口位于底部两项导航之间，不改变两侧导航热区。 */
+.nest-login-entry { position: fixed; left: 50%; bottom: 96rpx; transform: translateX(-50%); width: 230rpx; box-sizing: border-box; z-index: 1001; }
+
+/* 头像玻璃底及信息组分隔，仅作用于小窝页。 */
+.avatar { background: rgba(70, 70, 70, 0.32); border-color: rgba(255, 255, 255, 0.45); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.wallet::before { display: none; }
+.companion::before { content: ""; width: 2rpx; height: 34rpx; margin-left: 8rpx; margin-right: 8rpx; flex: none; background: rgba(255, 255, 255, 0.8); }
+
+/* 对话背景使用半透明玻璃；不改变文字和定位。 */
+.speech { background: rgba(45, 45, 45, 0.14); border: 1rpx solid rgba(255, 255, 255, 0.35); border-radius: 48rpx; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+
+/* 领养入口及照料按钮文字采用胶囊式半透明玻璃底。 */
+.claim-help { background: rgba(57, 57, 57, 0.38); border-color: rgba(255, 255, 255, 0.24); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.dock-label { left: 15%; right: 15%; border-radius: 30rpx; background: rgba(57, 57, 57, 0.38); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+
+/* 顶部信息视觉高度收紧至约胶囊高度；保留原有点击热区。 */
+.avatar { width: 52rpx; height: 52rpx; }
+.name { height: 29rpx; }
+.name-text { font-size: 22rpx; }
+.pen { font-size: 23rpx; }
+.place { font-size: 16rpx; line-height: 1.25; }
+
+/* 顶部信息组的实际高度与胶囊对齐计算使用的 91rpx 一致。 */
+.hud { height: 91rpx; }
+.identity, .wallet { box-sizing: border-box; }
+
+/* 小窝顶部：昵称优先使用剩余空间，火花和叽分保持独立入口。 */
+.hud { justify-content: flex-start; gap: 8rpx; }
+.identity { flex: 0 1 auto; max-width: none; min-width: 0; padding-right: 0; }
+.identity-text { flex: 0 1 auto; min-width: 0; }
+.pen { flex: none; }
+.companion { flex: none; min-width: 44px; }
+.companion-text { max-width: 88rpx; overflow: hidden; text-overflow: ellipsis; }
+.wallet { min-width: 44px; padding-left: 0; padding-right: 0; }
+.wallet-plus, .switch { display: none; }
+
+/* 登录入口：微信绿半透明玻璃，并避开底部导航图标。 */
+.nest-login-entry { bottom: 152rpx; width: 210rpx; background: rgba(7, 193, 96, 0.58); border: 1rpx solid rgba(255, 255, 255, 0.4); border-radius: 44rpx; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.nest-login-entry::after { border: 0; }
+
+.background-preview-switch {
+    width: 64rpx;
+    height: 64rpx;
+    margin: 8rpx auto 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1rpx solid rgba(255, 255, 255, 0.55);
+    border-radius: 50%;
+    background: rgba(45, 45, 45, 0.38);
+    font-size: 16rpx;
+    white-space: nowrap;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+/* 顶部信息与状态按确认的 B 方案适度放大，保留现有布局与交互。 */
+.avatar { width: 62rpx; height: 62rpx; }
+.name { height: 34rpx; }
+.name-text { font-size: 26rpx; }
+.pen { font-size: 25rpx; }
+.place { font-size: 19rpx; }
+.companion-text { font-size: 23rpx; }
+.spark-icon { width: 44rpx; height: 47rpx; }
+.feather-clip { width: 45rpx; height: 50rpx; }
+.points { font-size: 32rpx; }
+.unit { font-size: 20rpx; }
+.stat-icon-clip { width: 40rpx; height: 40rpx; }
+.stat-label { font-size: 27rpx; line-height: 38rpx; }
+.stat-value { font-size: 26rpx; }
+
+/* 当前小鸟需求：透明想象气泡，不遮挡小鸟本身。 */
+.need-thought { position: absolute; left: 68%; width: 126rpx; height: 105rpx; z-index: 4; display: flex; align-items: center; justify-content: center; border: 1rpx solid rgba(255,255,255,.45); border-radius: 48%; background: rgba(255,255,255,.16); }
+.need-thought::after { content: ""; position: absolute; left: -14rpx; bottom: -14rpx; width: 22rpx; height: 22rpx; border-radius: 50%; background: rgba(255,255,255,.25); border: 1rpx solid rgba(255,255,255,.4); pointer-events: none; }
+.need-thought-image { width: 72%; height: 76%; }
+.need-thought-fallback { font-size: 23rpx; font-weight: 600; }
+
+/* Full-frame diary video is above the static scene, below controls. */
+.diary-original-video { position: fixed; top: 0; left: 0; width: 100%; z-index: 3; opacity: 0; pointer-events: none; transition: opacity 900ms ease-in-out; }
+.diary-original-video.diary-canvas-visible { opacity: 1; }
+.status, .speech { z-index: 4; }

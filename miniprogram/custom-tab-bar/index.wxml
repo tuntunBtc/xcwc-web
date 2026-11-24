@@ -3,15 +3,27 @@
      底板保持 960×195 原始比例贴在窗口物理底边，两个可见入口对称排列；
      上方多出的 Home Indicator 安全区不画底板、也不拦截页面点击。 -->
 <view class="tab-bar-space" style="height: {{barHeight}}rpx"></view>
-<view class="tab-bar" style="height: {{artHeight}}rpx">
-    <image class="tab-bar-art" src="/assets/navigation/plush/nav-background.webp" mode="scaleToFill"></image>
+<view wx:if="{{selected === 0 || selected === 2}}" class="tab-bar tab-bar-compact {{selected === 0 ? 'tab-bar-nest' : ''}}" style="height: {{artHeight}}rpx">
+    <view wx:if="{{selected === 0}}" class="compact-item compact-left" aria-label="功能入口">
+        <image class="compact-icon" src="/assets/navigation/nest-navigation/grid.png" mode="aspectFit"></image>
+    </view>
+    <view wx:else class="compact-item compact-left" role="button" aria-label="小窝"
+          data-path="/pages/index/index" bindtap="switchTab" hover-class="tab-bar-item-hover" hover-stay-time="80">
+        <image class="compact-icon" src="/assets/navigation/nest-navigation/home-approved.png" mode="aspectFit"></image>
+    </view>
+    <view wx:if="{{selected === 0}}" class="compact-item compact-right" role="button" aria-label="商城"
+          data-path="/pages/shop/shop" bindtap="switchTab" hover-class="tab-bar-item-hover" hover-stay-time="80">
+        <image class="compact-icon" src="/assets/navigation/nest-navigation/shop.png" mode="aspectFit"></image>
+    </view>
+</view>
+<view wx:else class="tab-bar" style="height: {{artHeight}}rpx">
     <view class="tab-bar-items">
         <block wx:for="{{list}}" wx:key="pagePath">
             <view wx:if="{{item.pagePath === '/pages/index/index' || item.pagePath === '/pages/shop/shop'}}"
-                  class="tab-bar-item"
+                  class="tab-bar-item" role="button" aria-label="{{item.text}}"
                   data-path="{{item.pagePath}}" data-index="{{index}}"
                   bindtap="switchTab" hover-class="tab-bar-item-hover" hover-stay-time="80">
-                <image class="tab-bar-icon" src="{{selected === index ? item.activeIcon : item.icon}}" mode="aspectFit"></image>
+                <image class="tab-bar-icon" src="{{selected === 0 ? (item.pagePath === '/pages/index/index' ? '/assets/nest/line-icons/home.png' : '/assets/nest/line-icons/shop.png') : (selected === index ? item.activeIcon : item.icon)}}" mode="aspectFit"></image>
                 <text class="tab-bar-text {{selected === index ? 'is-active' : ''}}">{{item.text}}</text>
             </view>
         </block>

@@ -3,74 +3,67 @@
 <!-- 全屏底图：自定义 tabBar 是透明毛绒底板，背景必须铺满整个视口（含底栏区域），
      否则内容区在底栏上沿截断，底栏附近会露出纯色空缺。整页只保留这一张图，
      不另在 .nest 内重复拉伸一份，避免底栏上沿出现接缝。 -->
-<image class="page-scene" src="{{brandBackground || '/assets/nest/background.webp'}}" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx"></image>
+<image class="page-scene" src="{{previewBackgroundIndex === 0 ? '/assets/nest/background-preview-room.webp' : (previewBackgroundIndex === 1 ? '/assets/nest/background-preview-osmanthus.webp' : (previewBackgroundIndex === 3 ? lavenderBackgroundUrl : (brandBackground || '/assets/nest/background.webp')))}}" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" binderror="onPreviewBackgroundError"></image>
+
 <view class="nest" style="height:{{layout.pageHeight}}rpx">
+    <video wx:if="{{diaryVideoVisible}}" id="diaryOriginalVideo" class="diary-original-video {{diaryVideoPlaying ? 'diary-canvas-visible' : ''}}" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" src="https://assets.xinchengip.com/bird/v1/oss/uploads/8e5c20d972284aa88de579a00460eee6.mp4" object-fit="cover" autoplay="{{true}}" controls="{{false}}" show-center-play-btn="{{false}}" show-play-btn="{{false}}" enable-progress-gesture="{{false}}" playsinline="{{true}}" bindplay="onDiaryVideoPlay" bindtimeupdate="onDiaryVideoTimeUpdate" bindseekcomplete="onDiaryVideoSeekComplete" bindended="onDiaryVideoEnded" binderror="onDiaryVideoError"></video>
 
     <view class="scene-shade"></view>
 
     <!-- 顶部 HUD：头像 / 名字 / 城市 / 火花 / 切换 / 叽分钱包 -->
-    <view class="hud" style="top:{{layout.hudTop}}rpx;right:{{layout.hudRight}}rpx">
+    <view class="hud" style="top:{{layout.hudTop}}rpx;left:{{layout.hudLeft}}rpx;right:{{layout.hudRight}}rpx">
         <view class="identity" bindtap="onSwitch" hover-class="ui-hover">
-            <image class="tex-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
             <view class="avatar" role="button" aria-label="切换小鸟" catchtap="onSwitch"><image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill"></image></view>
             <view class="identity-text" catchtap="onRename">
                 <view class="name"><text class="name-text">{{displayName}}</text><text class="pen">✎</text></view>
                 <text class="place">{{placeText}}</text>
             </view>
             <view class="companion spark-entry" role="button" aria-label="{{'陪伴火花，' + sparkDisplay.badge}}" catchtap="onOpenSpark" hover-class="ui-hover">
-                <view class="spark-icon spark-tier-{{sparkDisplay.tier}} {{sparkDisplay.dim ? 'spark-dim' : ''}}" aria-hidden="true">
-                    <view class="spark-flame"></view>
-                    <view wx:if="{{sparkDisplay.tier >= 2}}" class="spark-core"></view>
-                    <view wx:if="{{sparkDisplay.tier >= 2}}" class="spark-dot"></view>
-                    <view wx:if="{{sparkDisplay.tier >= 3}}" class="spark-dot spark-dot-small"></view>
-                    <view wx:if="{{sparkDisplay.tier >= 4}}" class="spark-orbit"></view>
-                </view>
+                <image class="spark-icon" src="{{sparkDisplay.dim ? '/assets/nest/line-icons/spark-dim.png' : '/assets/nest/line-icons/spark-active.png'}}" mode="aspectFit" aria-hidden="true"></image>
                 <text class="companion-text">{{sparkDisplay.badge}}</text>
             </view>
             <text class="switch">›</text>
         </view>
         <view class="wallet" bindtap="onWallet" hover-class="ui-hover">
-            <image class="tex-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
-            <view class="clip feather-clip"><image class="sprite icon-feather" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image></view>
+            <image class="feather-clip" src="/assets/nest/line-icons/feather.png" mode="aspectFit"></image>
             <view class="wallet-num"><text class="points">{{points}}</text><text class="unit">叽分</text></view>
             <text class="wallet-plus">＋</text>
         </view>
     </view>
 
-    <!-- 三条状态进度 -->
+    <!-- 三组状态 -->
     <view class="status" style="top:{{layout.statusTop}}rpx">
         <view class="stat" wx:for="{{stats}}" wx:key="key">
-            <image class="tex-bg" src="/assets/nest/felt/pill.webp" mode="scaleToFill"></image>
             <view class="stat-line">
-                <view class="clip stat-icon-clip"><image class="sprite {{item.iconClass}}" src="/assets/nest/hud-icons.webp" mode="scaleToFill"></image></view>
+                <image class="stat-icon-clip" src="/assets/nest/line-icons/{{item.key}}.png" mode="aspectFit"></image>
                 <text class="stat-label">{{item.label}}</text>
                 <text class="stat-value">{{item.text}}</text>
             </view>
-            <view class="stat-track"><view class="stat-fill" style="width:{{item.percent}}%"></view></view>
         </view>
     </view>
 
     <!-- 需求气泡 -->
-    <view class="needs" style="top:{{layout.needsTop}}rpx" wx:if="{{needs.length > 0 || (cloudStatus && !cloudStatus.signedIn)}}">
-        <button wx:if="{{cloudStatus && !cloudStatus.signedIn}}" class="nest-login-entry" catchtap="onNestLogin" loading="{{nestLoginBusy}}" disabled="{{nestLoginBusy}}">微信登录</button>
-        <view wx:for="{{needs}}" wx:key="key" class="need {{item.isCurrent ? 'is-current' : ''}}" data-key="{{item.key}}" bindtap="onNeed" hover-class="ui-hover">{{item.label}}</view>
+    <view class="needs" style="top:{{layout.needsTop}}rpx" wx:if="{{needs.length > 0}}">
+        <block wx:for="{{needs}}" wx:key="key"><view wx:if="{{item.key === 'company'}}" class="need {{item.isCurrent ? 'is-current' : ''}}" data-key="{{item.key}}" bindtap="onNeed" hover-class="ui-hover">{{item.label}}</view></block>
     </view>
 
     <!-- 右侧工具列 -->
     <view class="tools" style="top:{{layout.toolsTop}}rpx">
         <view wx:for="{{tools}}" wx:key="key" class="tool" data-key="{{item.key}}" bindtap="onTool" hover-class="tool-hover" aria-role="button" aria-label="{{item.label}}">
-            <image class="tex-bg" src="/assets/nest/cloud.webp" mode="scaleToFill"></image>
-            <view wx:if="{{item.key === 'video'}}" class="tool-prop-clip tool-play"><view class="tool-play-disc"><view class="tool-play-triangle"></view></view></view>
-            <view wx:elif="{{item.key === 'ar'}}" class="tool-prop-clip tool-play"><view class="tool-play-disc"><view class="tool-ar-focus"></view></view></view>
-            <view wx:else class="clip tool-prop-clip"><image class="sprite {{item.propClass}}" src="/assets/nest/tools.webp" mode="scaleToFill"></image></view>
-            <text class="tool-label">{{item.label}}</text>
+            <view wx:if="{{item.key === 'diary'}}" class="diary-icon"><view class="diary-ring ring-one"></view><view class="diary-ring ring-two"></view><view class="diary-ring ring-three"></view><view class="diary-line line-one"></view><view class="diary-line line-two"></view><view class="diary-pencil"></view></view>
+            <image wx:elif="{{item.key === 'clean' || item.key === 'supply' || item.key === 'checkin' || item.key === 'ar' || item.key === 'video'}}" class="tool-prop-clip" src="/assets/nest/line-icons/{{item.key}}.png" mode="aspectFit"></image>
+            <block wx:else>
+                <image class="tex-bg" src="/assets/nest/cloud.webp" mode="scaleToFill"></image>
+                <view class="clip tool-prop-clip"><image class="sprite {{item.propClass}}" src="/assets/nest/tools.webp" mode="scaleToFill"></image></view>
+                <text class="tool-label">{{item.label}}</text>
+            </block>
             <view wx:if="{{item.key === 'supply' && hasBird && !supplyClaimed}}" class="tool-dot"></view>
         </view>
+        <view class="background-preview-switch" bindtap="onSwitchBackgroundPreview" role="button" aria-label="切换背景预览">背景 {{previewBackgroundIndex + 1}}/4</view>
     </view>
 
     <!-- 对话气泡 -->
     <view class="speech" style="top:{{layout.speechTop}}rpx">
-        <image class="tex-bg" src="/assets/nest/bubble.webp" mode="scaleToFill"></image>
         <text class="speech-text">{{speech}}</text>
     </view>
 
@@ -79,33 +72,38 @@
     <view wx:elif="{{!hasBird}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover">如何领取小鸟</view>
 
     <view wx:if="{{cleaning.status === 'PRESENT'}}" class="cloud-poop" style="top:{{layout.actorTop + layout.actorHeight - 25}}rpx" data-key="clean" bindtap="onTool">💩</view>
+    <block wx:for="{{needs}}" wx:key="key">
+        <view wx:if="{{item.isCurrent && (item.key === 'food' || item.key === 'water')}}" class="need-thought" style="top:{{layout.actorTop - 65}}rpx" data-key="{{item.key}}" bindtap="onNeed" role="button" aria-label="{{item.key === 'food' ? '喂食' : '喂水'}}">
+            <image wx:if="{{!needImageErrors[item.key]}}" class="need-thought-image" src="{{item.key === 'food' ? needFoodUrl : needWaterUrl}}" mode="aspectFit" data-key="{{item.key}}" binderror="onNeedImageError"></image>
+            <text wx:else class="need-thought-fallback">{{item.key === 'food' ? '喂食' : '喂水'}}</text>
+        </view>
+    </block>
     <!-- 小鸟立绘 -->
-    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}}" style="top:{{layout.actorTop}}rpx;height:{{layout.actorHeight}}rpx;transform:translate({{birdOffsetX}}rpx, {{birdOffsetY}}rpx)" catchtouchmove="onBirdTouchMove" bindtouchend="onBirdTouchEnd" bindtouchcancel="onBirdTouchCancel">
+    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}} {{diaryVideoPlaying ? 'diary-actor-hidden' : ''}}" style="top:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorTop : layout.actorTop}}rpx;height:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorHeight : layout.actorHeight}}rpx;{{hideGrass && previewBackgroundIndex === 3 ? 'left:' + layout.diaryActorLeft + 'rpx;width:' + layout.diaryActorWidth + 'rpx;' : ''}}">
         <view class="shadow {{hasBird ? '' : 'is-hidden'}}"></view>
-        <view class="grass {{hasBird ? '' : 'is-hidden'}}">
+        <view wx:if="{{!hideGrass}}" class="grass {{hasBird ? '' : 'is-hidden'}}">
             <view class="blade b1"></view><view class="blade b2"></view>
             <view class="blade b3"></view><view class="blade b4"></view>
         </view>
-        <view class="bird-hit" bindtouchstart="onBirdTouchStart" bindtap="onPet" hover-class="none">
+        <view class="bird-hit" bindtap="onPet" hover-class="none">
             <!-- 待机动画播放时隐藏静态表情海报，避免动画小鸟与表情海报重叠（动画画布覆盖在立绘之上）。 -->
             <image wx:if="{{(brandImage || birdArt) && !(brandRelease ? brandPlaying : idlePlaying)}}" class="bird-art" src="{{brandImage || birdArt}}" mode="aspectFit"></image>
         </view>
         <!-- 画布支持穿透时由 bird-hit 接收，画布直接命中时也触发同一个摸摸动作。 -->
-        <canvas wx:if="{{packagedIdle}}" type="2d" id="idleCanvas" class="idle-canvas {{idlePlaying ? '' : 'canvas-rest'}}" bindtouchstart="onBirdTouchStart" bindtap="onPet"></canvas>
-        <canvas wx:elif="{{hasBrandAnimation}}" type="2d" id="brandCanvas" class="idle-canvas {{brandPlaying ? '' : 'canvas-rest'}}" bindtouchstart="onBirdTouchStart" bindtap="onPet"></canvas>
+        <canvas wx:if="{{packagedIdle}}" type="2d" id="idleCanvas" class="idle-canvas {{idlePlaying ? '' : 'canvas-rest'}}" bindtap="onPet"></canvas>
+        <canvas wx:elif="{{hasBrandAnimation}}" type="2d" id="brandCanvas" class="idle-canvas {{brandPlaying ? '' : 'canvas-rest'}}" bindtap="onPet"></canvas>
         <!-- 首次自动播放被系统策略拦截时，给出手动入口（仅在已加载成功但被拦截时出现）。 -->
         <view wx:if="{{showIdleButton || (brandBlocked && !motionPaused)}}" class="idle-retry" catchtap="onIdleRetry">▶ 播放动画</view>
         <view wx:if="{{feedFxId > 0}}" class="feed-fx">🌾</view>
-        <!-- 添水动效：三滴水滴错峰落下（配合 wx:if 重挂载重复触发）；与口渴状态的静态 💧 互不干扰。 -->
+        <!-- 添水动效：三滴水滴错峰落下（配合 wx:if 重挂载重复触发）。 -->
         <view wx:if="{{waterFxId > 0}}" class="water-fx">
             <view class="drop d1"></view><view class="drop d2"></view><view class="drop d3"></view>
         </view>
         <text class="hearts">♡</text>
-        <text wx:if="{{thirsty}}" class="drops">💧</text>
     </view>
 
     <!-- 底部三按钮 dock -->
-    <view class="dock {{cloudStatus.canOperate ? '' : 'cloud-disabled'}}" style="bottom:{{layout.dockBottom}}rpx">
+    <view wx:if="{{false}}" class="dock {{cloudStatus.canOperate ? '' : 'cloud-disabled'}}" style="bottom:{{layout.dockBottom}}rpx">
         <view wx:for="{{dock}}" wx:key="key" class="dock-btn" data-key="{{item.key}}" bindtap="onDock" hover-class="dock-hover">
             <image class="dock-sheet {{item.cardClass}}" src="{{dockRemoteImage || '/assets/nest/cards.webp'}}" mode="scaleToFill" binderror="onDockImageError"></image>
             <text class="dock-label">{{item.label}}</text>
@@ -115,13 +113,16 @@
     </view>
 </view>
 
+<!-- 未登录时将登录入口放在底部导航两项之间。 -->
+<button wx:if="{{cloudStatus && !cloudStatus.signedIn && !sheet}}" class="nest-login-entry" catchtap="onNestLogin" loading="{{nestLoginBusy}}" disabled="{{nestLoginBusy}}">微信登录</button>
+
 <!-- 浮层放在场景容器之外，避免被 .nest 的 overflow:hidden 裁剪 -->
 <!-- 轻提示 -->
 <view wx:if="{{toast}}" class="toast" style="bottom:{{layout.toastBottom}}rpx">{{toast}}</view>
 
     <!-- 底部弹出面板（网页端 <dialog> 的等价实现） -->
     <view wx:if="{{sheet}}" class="sheet-mask" style="bottom:{{sheetMaskBottom}}rpx;padding-top:{{layout.inset}}rpx" bindtap="closeSheet">
-        <view class="sheet" catchtap="noop">
+        <view class="sheet {{sheet.type === 'claim' ? 'claim-sheet' : ''}}" catchtap="noop">
             <view class="sheet-handle"></view>
             <view class="sheet-close" catchtap="closeSheet">×</view>
             <text class="sheet-title">{{sheet.title}}</text>

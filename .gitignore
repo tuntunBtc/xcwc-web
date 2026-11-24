@@ -20,3 +20,5 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+.workbuddy/
+miniprogram/project.private.config.json

@@ -208,7 +208,8 @@ function createCandidate(output, args) {
         const remote = ossMedia['/' + name];
         const largeNest = !remote && name === 'assets/nest/background.webp' && content.length > 500000;
         hasFullSizeNestBackground ||= largeNest;
-        const binaryPath = (largeNest ? 'media/nest-background/' : name.startsWith('assets/city/') ? 'media/collection/' : '') + name + '.bin';
+        const collectionAsset = name.startsWith('assets/city/') || name.startsWith('assets/nest/background-preview-');
+        const binaryPath = (largeNest ? 'media/nest-background/' : collectionAsset ? 'media/collection/' : '') + name + '.bin';
         if (all.has(binaryPath)) throw new Error(`二进制素材路径冲突：${binaryPath}`);
         files['/' + name] = {
             source: binaryPath, name: hash.slice(0, 32) + '.webp', size: content.length, sha256: hash,
@@ -395,6 +396,22 @@ module.exports = {
             all.set('app.json', JSON.stringify(app, null, 2) + '\n');
         }
         const direct = new Map(Object.entries(ossMedia).filter(([route]) => !route.endsWith('.webp')));
+        // 这些图标按 item.key 动态拼接，普通字面量替换无法处理。
+        // 在 OSS 候选中使用白名单映射，避免发布包不含图片时仍指向本地路径。
+        const dynamicIconKeys = ['hunger', 'water', 'mood', 'clean', 'supply', 'checkin', 'ar', 'video'];
+        const iconUrls = Object.fromEntries(dynamicIconKeys.map(key => {
+            const route = `/assets/nest/line-icons/${key}.png`;
+            const entry = direct.get(route);
+            if (!entry) throw new Error('OSS 素材清单缺少动态小窝图标：' + route);
+            return [key, entry.url];
+        }));
+        const dynamicIconPath = '/assets/nest/line-icons/{{item.key}}.png';
+        const nestView = 'pages/index/index.wxml';
+        const nestText = all.get(nestView).toString('utf8');
+        if (nestText.split(dynamicIconPath).length !== 3) throw new Error('动态小窝图标引用发生变化，请核对 OSS 转换');
+        all.set(nestView, '<wxs module="nestOssIcons" src="../../utils/nest-oss-icons.wxs" />\n' +
+            nestText.split(dynamicIconPath).join('{{nestOssIcons.url(item.key)}}'));
+        all.set('utils/nest-oss-icons.wxs', `var urls = ${JSON.stringify(iconUrls)};\nfunction url(key) { return urls[key] || ''; }\nmodule.exports = { url: url };\n`);
         const imageOrSound = /(["'])(\/[\w/.-]+\.(?:png|jpe?g|gif|svg|mp3|m4a|wav|aac|mp4))\1/g;
         for (const [name, value] of all) {
             if (!/\.(js|wxml|wxss|wxs)$/.test(name)) continue;
@@ -404,6 +421,11 @@ module.exports = {
                 return remote ? quote + remote.url + quote : match;
             });
             if (after !== before) all.set(name, after);
+        }
+        for (const [name, value] of all) {
+            if (!name.endsWith('.wxml')) continue;
+            const unresolved = value.toString('utf8').match(/\bsrc\s*=\s*["']\/(?:assets|media|pages)\/[^"']*\{\{[^"']*["']/);
+            if (unresolved) throw new Error('OSS 候选仍有动态本地图片地址：' + name + ' ' + unresolved[0]);
         }
         const bundledReferences = [...all].filter(([name]) => /\.(js|wxml|wxss|wxs|json)$/.test(name))
             .map(([, contents]) => contents.toString('utf8')).join('\n');

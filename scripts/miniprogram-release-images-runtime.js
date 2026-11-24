@@ -118,7 +118,8 @@ async function extract(root, entry, refresh) {
     const target = root + '/' + entry.name;
     if (!refresh && await isValid(target, entry.size)) return target;
 
-    if (!entry.url && entry.source.startsWith('media/collection/assets/city/')) {
+    if (!entry.url && (entry.source.startsWith('media/collection/assets/city/') ||
+        entry.source.startsWith('media/collection/assets/nest/background-preview-'))) {
         await require.async('../media/collection/files.js');
     }
     let filePath = entry.source;
