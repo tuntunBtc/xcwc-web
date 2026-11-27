@@ -38,6 +38,12 @@ test('OSS candidate maps dynamic nest icons and includes no packaged images', t 
         assert.ok(view.includes(route), `背景切换未引用 ${route}`);
         assert.ok(controller.includes(route), `背景未加入预加载 ${route}`);
     }
+    for (const name of ['background-preview-lavender-tall.webp', 'background-preview-lavender-foreground.webp']) {
+        const route = '/assets/nest/' + name;
+        assert.equal(releaseManifest.files[route].url, manifest[route].url);
+        assert.ok(view.includes(manifest[route].url), `切换时未读取 OSS 图片 ${route}`);
+        assert.ok(!controller.includes(route), `第五张图片进入首屏预加载 ${route}`);
+    }
     const walk = directory => fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
         const name = path.join(directory, entry.name);
         return entry.isDirectory() ? walk(name) : [name];

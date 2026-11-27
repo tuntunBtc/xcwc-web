@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在小程序后台点下「游戏」那一秒，这个账号就回不去了</title>
+<style>
+  :root{--ink:#2b2b2b;--sub:#6b6b6b;--line:#e8e8e8;--accent:#c8553d;--accent-soft:#fdf3f0;--quote:#f7f7f5;--blue:#2f6db3;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#f2f2f0;padding:32px 12px 80px;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--ink)}
+  .toolbar{max-width:680px;margin:0 auto 18px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .toolbar span{font-size:13px;color:var(--sub)}
+  .copy{background:#fff;border:1px solid #d6d6d2;color:var(--ink);border-radius:6px;padding:8px 16px;font-size:13px;cursor:pointer}
+  .copy:hover{border-color:var(--accent);color:var(--accent)}
+  .paper{max-width:680px;margin:0 auto;background:#fff;border:1px solid #e5e5e1;border-radius:4px;padding:48px 40px 56px;box-shadow:0 2px 20px rgba(0,0,0,.04);line-height:1.85;font-size:16px}
+  h1{font-size:27px;line-height:1.45;margin:0 0 14px;letter-spacing:.3px;font-weight:700}
+  .deck{font-size:14px;color:var(--sub);border-left:3px solid var(--accent);padding-left:14px;margin:0 0 30px;line-height:1.8}
+  .lead{background:var(--accent-soft);border-radius:6px;padding:18px 20px;margin:0 0 34px;font-size:15px;color:#7a3b2c;line-height:1.85}
+  h2{font-size:20px;margin:44px 0 18px;padding-left:13px;border-left:4px solid var(--accent);line-height:1.5;font-weight:700}
+  h3{font-size:17px;margin:30px 0 12px;font-weight:700;color:#1f1f1f}
+  p{margin:0 0 17px}
+  strong{font-weight:700;color:#111}
+  em{font-style:normal;background:linear-gradient(transparent 62%,#ffe9a8 62%);padding:0 1px}
+  blockquote{margin:20px 0;padding:15px 18px;background:var(--quote);border-left:3px solid #cfcfc9;color:#444;font-size:15px;line-height:1.85}
+  blockquote p:last-child{margin:0}
+  .rule{background:#f4f8fd;border-left-color:var(--blue);color:#2a4a70}
+  table{width:100%;border-collapse:collapse;margin:20px 0 24px;font-size:14px;line-height:1.7}
+  th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+  th{background:#faf9f7;font-weight:700;white-space:nowrap}
+  td:first-child{font-weight:600;white-space:nowrap}
+  ul,ol{margin:0 0 20px;padding-left:24px}
+  li{margin:0 0 9px}
+  .note{font-size:13px;color:var(--sub);background:#fafaf8;border:1px dashed #deded8;border-radius:5px;padding:12px 15px;margin:18px 0;line-height:1.75}
+  .divider{border:0;border-top:1px solid var(--line);margin:44px 0}
+  .foot{font-size:13px;color:var(--sub);line-height:1.8;border-top:1px solid var(--line);padding-top:20px;margin-top:40px}
+  .kicker{display:inline-block;background:var(--accent);color:#fff;font-size:12px;padding:3px 9px;border-radius:3px;margin-bottom:16px;letter-spacing:1px}
+  @media(max-width:600px){.paper{padding:32px 20px 40px;font-size:15.5px}h1{font-size:23px}table{font-size:13px}th,td{padding:8px}}
+</style>
+</head>
+<body>
+<div class="toolbar"><span>排版预览 · 全选正文可粘贴进公众号编辑器</span><button class="copy" onclick="cp()">复制正文</button></div>
+<div class="paper" id="article">
+
+<span class="kicker">小程序合规 · 实操复盘</span>
+<h1>在小程序后台点下「游戏」那一秒，这个账号就回不去了</h1>
+<p class="deck">写给所有在「游戏类目」和「微信小游戏」之间反复纠结、迟迟不敢点提交的人<br>一次注销重注册之后，我们把官方规则翻了个底朝天。这篇讲清三件事：两个词到底差在哪、点错的真实代价、以及一条合法的类目选型路径。</p>
+
+<h2>先讲一个真实的卡点</h2>
+<p>注销、重新注册、填完主体资料，流程走到「服务类目」这一步，停住了。</p>
+<p>类目列表里有一项：<code>游戏 → 休闲游戏</code>。产品里确实有互动、有喂食、有成长数值、有动画和 AR，看起来选它最贴切。手指悬在提交按钮上，心里不踏实——于是去搜，搜到的答案一半说「这就是个普通类目」，一半说「选了就变小游戏」，越看越乱。</p>
+<div class="lead"><strong>这种纠结非常普遍，而且它值钱：因为这一下点下去，可能是这个账号做的最后一个「可撤销」决定。</strong></div>
+<p>我们后来把这件事完整走了一遍：注销重注册、重新定类目、备案、隐私指引、提审前的口径统一，中间还推翻过几次自己的判断。这篇文章是那次复盘的脱敏版。</p>
+<p>两点约定：文中的案例来自我们经手的一个<strong>实体潮玩 IP 配套小程序</strong>（下称「数字伙伴」），已做匿名化处理，不出现任何 AppID、营业执照信息、真实领养码；平台类目、资质、审核规范会调整，<strong>文中所有规则以微信官方最新规则为准</strong>，关键处附了官方入口，建议自己再核一遍原文。</p>
+
+<h2>一、先把三个词拆开，90% 的纠结来自这里</h2>
+<p>大多数人卡住，是因为把三个不同层级的东西混成了一个词。</p>
+<table>
+<tr><th>词</th><th>它到底是什么</th><th>关键特征</th></tr>
+<tr><td>微信小游戏</td><td>一种<strong>账号类型 / 产品形态</strong></td><td>独立开发框架（<code>game.js</code> / <code>game.json</code>，不走 WXML/WXSS，以 Canvas / WebGL 渲染）、独立审核与资质体系（软著、版号等）、独立的后台与数据</td></tr>
+<tr><td>「游戏」一级服务类目</td><td>普通小程序后台<strong>类目列表里的一个一级类目</strong></td><td>看起来只是一个「标签」，实际是<strong>账号类型转换开关</strong></td></tr>
+<tr><td>服务类目 / 主营类目</td><td>描述「你提供什么服务」的配置</td><td>服务类目可有多个；<strong>主营类目有且只有一个</strong>，用于审核与展示</td></tr>
+</table>
+<p>一句话记住：</p>
+<blockquote><p><strong>小游戏是「另一种小程序」，而普通小程序里的「游戏」一级类目，是把你这个账号变成那种小程序的开关。</strong></p></blockquote>
+<p>官方在类目选择处的原文措辞是：</p>
+<blockquote class="rule"><p>「选择游戏类目后，该账号即为小游戏账号（无法更改一级类目，谨慎选择）」</p></blockquote>
+<p>注意「<strong>谨慎选择</strong>」四个字是官方自己加的。它出现在<strong>普通小程序后台</strong>，却不是在描述一个普通标签。这就是为什么「游戏 → 休闲游戏」这一项特别容易骗人：名字长得像一个二级类目，作用是换账号。</p>
+<div class="note">📌 自查入口：微信公众平台 → 设置 → 基本设置 → 服务类目；官方文档《小程序运营规范》《服务类目》章节。以官方最新规则为准。</div>
+
+<h2>二、为什么这一步这么贵</h2>
+<p>如果只是「选错类目改回来」，那不值得写篇文章。真实代价是连锁的：</p>
+<p><strong>1. 一级类目不可逆。</strong> 不是「改一下就好」，是改不了。我们走的路径就是注销 → 重新注册 → 全部重来。</p>
+<p><strong>2. 名称、备案、隐私指引、代码上传配置全部跟着重做。</strong> 注销有冻结期；备案重新提交；隐私指引审核通常要 1–3 个工作日；开发者工具里的 AppID、项目配置、体验成员、合法域名，一个都不能沿用。</p>
+<p><strong>3. 资质门槛完全换了一套。</strong> 小游戏账号对应的是软著、版号、文化类材料那一整套体系。一个只想做「实体玩偶配套的记录与互动工具」的轻量产品，没有任何理由去背这套成本。</p>
+<p><strong>4. 最隐蔽的一点：很多人不是被审核驳回，是被自己第一次点击锁死的。</strong> 驳回还有整改机会；账号类型转换没有。</p>
+<p>所以这件事的判断顺序应该是反过来的：<em>先花十分钟确认「我到底是不是游戏」，再决定点不点那个类目</em>。而不是先点、再看审核怎么说。</p>
+
+<h2>三、把问题问对：不是「怎么避开游戏类目」，而是「我的产品是不是游戏」</h2>
+<p>这是全文最想留给你的一句话。</p>
+<p>「怎么避开游戏类目」这个问法，隐含了一个危险前提：我的产品其实是游戏，只是想挂个别的类目过审。<strong>这条路走不通，也不该走。</strong> 微信《小程序平台运营规范》里对此写得很直白：实际服务需与简介一致、<strong>不得存在隐藏类目</strong>；<strong>核心功能必须在首页得到体现</strong>；另有专门条款处理「类目与实际服务不符」。</p>
+<p>把核心玩法藏起来、首页改成工具页、类目挂「工具」，属于典型的类目不符。审核能看到首页、能点到每个页面，代价是驳回，反复了还可能影响账号信用。</p>
+<p>那到底怎么判断？看<strong>有没有「游戏性规则」</strong>，而不是看「有没有互动」：</p>
+<table>
+<tr><th>观察点</th><th>更接近「游戏」</th><th>更接近「工具 / 服务」</th></tr>
+<tr><td>胜负 / 对战 / 竞技 / 排行</td><td>有明确判定</td><td>无</td></tr>
+<tr><td>驱动方式</td><td>随机奖励、闯关、数值对抗驱动留存</td><td>记录、展示、生成、查询等明确用途驱动</td></tr>
+<tr><td>核心付费</td><td>为玩法、道具、复活、抽卡付费</td><td>为实物商品或服务付费</td></tr>
+<tr><td>互动 / 养成 / 动画 / AR / 积分 / 等级</td><td>——</td><td><strong>这些本身不构成游戏</strong></td></tr>
+</table>
+<p>第四行是关键：<strong>有养成、有等级、有虚拟积分、有 AR 合照，不等于「在线游戏」。</strong> 一个实体玩偶的配套小程序，用户领养后喂食、看状态、用步数换点积分跟小鸟互动，没有胜负、没有对战、没有排行榜，它就仍然是一个工具属性产品——<strong>前提是你诚实地把它当成工具来做，也当成工具来对外描述。</strong></p>
+<p>但要提醒一句实在话：<strong>这是一片灰区。</strong> 我们翻遍官方材料，没有找到针对「实体玩偶配套养成互动」的明确裁定；官方对类目选错的表述也只是「可能影响代码审核结果，具体以代码审核结果为准」。所以别把「没找到禁止」当成「已经允许」——做法是让首页、简介、备案备注、提审说明全部指向同一个定位，把解释成本降到最低。</p>
+<div class="lead"><strong>红线给死</strong>：如果产品确实有胜负规则的在线游戏，别绕。老实另开一个小游戏账号、按那套资质走。省下的那点时间，远不够赔一次注销重注册。</div>
+
+<h2>四、合法的类目选型路径（前提：你的产品真不是游戏）</h2>
+<p>这一节是可以直接照着做的部分。</p>
+
+<h3>4.1 用「工具」下的真实二级类目去装功能模块</h3>
+<p>「工具」一级下面有一批细分类目，各有明确的官方适用边界。把产品拆成功能模块，逐个对应，比凭感觉挑一个「看着安全的」靠谱得多。我们最终落在三项：</p>
+<table>
+<tr><th>类目</th><th>官方适用边界（要点）</th><th>对应我们的模块</th></tr>
+<tr><td>工具 &gt; 图片处理</td><td>提供图片 / 音频 / 视频的<strong>本地制作、剪辑</strong>等服务；相关内容<strong>不适用于传播分享、公开访问</strong></td><td>本机图片合成合照、AR 场景截图，只存本机、不上传不公开</td></tr>
+<tr><td>工具 &gt; 健康管理</td><td>记录 / 测试与健康相关内容，如身高、体重、个人身体管理<strong>记录</strong></td><td>读取微信运动步数</td></tr>
+<tr><td>工具 &gt; 报价 / 比价</td><td>提供<strong>商品价格展示 / 价格对比</strong>等服务</td><td>商城只展示周边价格，不下单、不支付</td></tr>
+</table>
+<p>三个容易踩的「看起来对」的选项：</p>
+<ul>
+<li><strong>工具 &gt; 信息查询</strong>：不选。用二维码 / NFC 带一个编码进来、内部解析后完成领养，这是业务流程的一步，不是面向用户提供的独立查询服务。</li>
+<li><strong>「其他」不是兜底项</strong>：一级「其他」下面只有极少数特定项（如宗教信息、咨询广场），千万别当成「不知道选啥就选它」。真正带兜底性质的，是各一级类目下的「XX - 其他」，那才需要单独判断。</li>
+<li><strong>生活服务 &gt; 宠物（非医院类）</strong>：指向真实宠物的美容预约、资讯，虚拟玩偶 / 数字伙伴不适用，别被「宠物」两个字带跑。</li>
+</ul>
+<div class="note">一条经验：<strong>类目贵精不贵多。</strong> 我们一度想多勾几个「看起来更保险」的，后来发现每多一个类目，就多一份「实际服务必须与该服务类目相符」的举证责任。勾三个能说清楚，勾六个反而处处是口径漏洞。</div>
+
+<h3>4.2 真正的信息差在「主营类目」</h3>
+<p>服务类目选完，还有一步最容易被忽略、也最容易选错：<strong>设置主营类目</strong>。</p>
+<p>先把硬规则摆出来（出自官方《关于小程序上线主营类目功能的公告》，以官方最新规则为准）：</p>
+<ul>
+<li><strong>2022 年 6 月 8 日后，未设置主营类目的帐号将无法提交代码审核。</strong> 也就是说，前面所有工作做完，会精准地卡在这一步；</li>
+<li><strong>有且只有一个，选择即生效，不可删除，每年只有 5 次修改机会</strong>；</li>
+<li>官方定义：主营 = 小程序内<strong>实际运营的主要服务类型</strong>；选错「可能会影响代码审核结果，具体以代码审核结果为准」；</li>
+<li>当多个已通过类目同属一个一级时，设置弹窗会额外冒出一个「<strong>综合类</strong>」候选，但官方限定它「<strong>仅供主要提供综合服务的小程序选择</strong>」。</li>
+</ul>
+<p><strong>我们在这里推翻过自己一次，值得单独写出来。</strong></p>
+<p>最初的建议是「主营选 <code>工具 &gt; 图片处理</code>」，理由是它覆盖的页面最多、和提审话术首句最贴。后来按官方口径逐条复核，发现这个理由站不住：<strong>官方标准是「主要服务」，不是「覆盖页面最广」。</strong> 如果产品的核心体验是「领养之后持续照料与小窝互动」，那图片处理就只是附属功能；把一个辅助模块设为主营，恰恰构成「主营与实际主要服务不符」，反而给审核递了把柄。</p>
+<p>于是有了一个更诚实、也更麻烦的结论：</p>
+<blockquote><p><strong>如果拆完功能发现「核心服务在类目库里没有直接对应项」，别硬套一个。</strong></p></blockquote>
+<p>「领养 + 持续照料 + 小窝互动」这类体验，既不属于「工具」下任何细分，也不属于真实宠物服务，邻接的只有「游戏」，但那是不能碰的小游戏账号。官方类目库里确实没有「虚拟养成工具」这一格。遇到这种情况，只有两条路：</p>
+<table>
+<tr><th>路径</th><th>做法</th><th>代价</th></tr>
+<tr><td>A（推荐）先统一对外定位</td><td>把核心表述收敛成「实体玩偶配套的记录与互动工具」，让首页首屏、简介、备案备注、提审说明与之一致，再据此设主营</td><td>需要动文案和首页呈现，但不留口径矛盾</td></tr>
+<tr><td>B 按现状四选一</td><td>在现有候选项里挑一个直接设</td><td>零改动，但要承担「主营与实际主要服务不符」的审核不确定性</td></tr>
+</table>
+<p><em>别拿每年只有 5 次机会的主营去试错。</em> 它不是「先随便点一个，被驳回再改」的开关。</p>
+<div class="note">设置路径：微信公众平台 → 设置 → 基本设置 → 服务类目详情 → 设置主营类目。</div>
+
+<h2>五、选完类目，还有五处必须跟它同口径</h2>
+<p>类目不是填完就结束的一格，它是一根主线。这一节是免费教程基本不会写、但决定你能不能一次过的部分。</p>
+<p><strong>1. 备案的「服务内容」只勾与主要服务对应的那一项。</strong> 工具型产品就勾「生活服务 &gt; 工具」，别为了「覆盖全」多勾。前置审批保持「以上都不涉及」。</p>
+<p>如果营业执照经营范围里带「文艺创作」「工艺美术品」「版权代理」这类字样，备案可能触发「文化」前置审批关键字自检。<strong>正确动作是：点「开始修改」，在备注里说明实际经营与小程序功能，并按官方模板提交盖章的《不涉及前置审批承诺书》；不要点「继续提交」硬闯，不要把前置审批项改选成「文化」，更不要真去办《网络文化经营许可证》</strong>——经营范围里的字样不是你的实际经营，一旦认领，就要拿出对应的许可证，直接把自己卡死。</p>
+<p><strong>2. 隐私指引按代码实际调用的接口填。</strong> 微信运动数据、摄像头、相册（读 / 写）、手机号……用到什么填什么。<strong>千万别图省事选「未以任何方式处理用户的任何信息」</strong>：错选之后，生产版里对应的隐私接口会被回收、调用直接报错，而<strong>体验版往往还是正常的</strong>——这是最容易漏测、也最容易上线后才炸的一类问题。改选之后还要等审核（1–3 工作日），别留到提审当天。</p>
+<p><strong>3. 六处同一套话术。</strong> 名称 / 简介 / 备案备注 / 提审说明 / 已通过的服务类目 / 营业执照经营范围，讲同一件事。不要照抄经营范围，也不要各处各写一句漂亮的。</p>
+<p><strong>4. 简介避开会被要求补类目或判「描述模糊」的词。</strong> 分享、城市旅行、养成、游戏、竞技、「奇妙生活」「惊喜」这类营销词都是雷。名称里带「旅行」但主体没有旅游资质，就在备注里明确写「仅记录旅行手账，不提供旅游服务」。</p>
+<p><strong>5. 虚拟积分守住三条线。</strong> 免费获取、仅用于产品内互动、<strong>不可购买、不可兑现、不可兑换实物</strong>。措辞用「步数换算叽分」，别写「兑换商品」——一个动词之差，可能把「工具」推到「电商平台 / 商家自营」那一侧。</p>
+<div class="lead">一句话总结这节：<strong>类目、备案、隐私、文案是一条链，任何一环单独「写得漂亮」而与其他环不一致，都是驳回理由。</strong></div>
+
+<h2>六、什么时候必须改类目，或者另开一个号</h2>
+<p>产品会长，别指望一次类目配置管一辈子。下面每个动作都会触发新的类目 / 资质要求，<strong>改动前先看这张表</strong>：</p>
+<table>
+<tr><th>你打算做什么</th><th>连带要求</th></tr>
+<tr><td>接入微信支付卖<strong>实物</strong>周边</td><td>补「商家自营」类目 + 商户号 + 备案增「批发和零售业 - 自主售卖」</td></tr>
+<tr><td>付费买虚拟积分 / 解锁滤镜装扮</td><td>命中虚拟支付相关限制，各终端均有约束，iOS 另有规则；商业化优先只走实物</td></tr>
+<tr><td>合照支持上传 / 公开 / 分享</td><td>补「社交 - 笔记」+ 内容安全检测 + 举报入口；同时回头改「图片处理」的适用边界（该类目明确「不适用于传播分享、公开访问」）</td></tr>
+<tr><td>真做一个有胜负规则的小游戏</td><td><strong>另开小游戏账号</strong>；绝不在现有账号上加「游戏」一级类目</td></tr>
+<tr><td>服务号年审</td><td>小程序认证状态随主体，年审过期会连带影响</td></tr>
+</table>
+<p>特别注意第二行和第三行：它们是<strong>从「工具」滑向「游戏 / 社交 / 电商」最常见的两个拐点</strong>，也是当初精心选好的类目配置突然失效的时刻。</p>
+
+<h2>七、提审前 8 条自检清单</h2>
+<p>按这个顺序过一遍，比临提交时慌乱强：</p>
+<ol>
+<li>账号类型是<strong>普通小程序</strong>，从未选过「游戏」一级类目；</li>
+<li>服务类目只保留能说清对应功能的少数几项，每项都能指出首页 / 页面里的实际功能；</li>
+<li><strong>主营类目已设置</strong>，且与首页核心功能、对外定位一致（不是「覆盖页面最多」的那个）；</li>
+<li>备案服务内容只勾主要服务一项，前置审批「以上都不涉及」，备注口径与简介一致；</li>
+<li>隐私指引按实际调用接口填写，已通过审核，体验版与正式版都验证过相关功能可用；</li>
+<li>名称 / 简介 / 备案备注 / 提审说明 / 类目 / 经营范围六处同口径，无禁用词；</li>
+<li>首页首屏能直接看到核心功能，不存在「藏起来的玩法」；</li>
+<li>AppID、后端环境、体验版与正式版一致（别用测试号的配置提审正式环境）。</li>
+</ol>
+
+<h2>写在最后</h2>
+<p>类目选择的本质，不是找一个「审核最容易过」的格子。</p>
+<p>它是逼你诚实地回答一个问题：<strong>我到底在提供什么服务？</strong></p>
+<p>答对了，备案、隐私、文案、审核会一路顺下去，因为大家看到的是同一个东西。答错了，注销重注册都只是最小的代价——更贵的是产品做了一半，才发现账号类型从第一天就选反了。</p>
+<p><em>那个「悬在提交按钮上」的十分钟，是整件事里性价比最高的十分钟。</em></p>
+
+<div class="foot">本文基于截至 2026 年 11 月的一次完整实操复盘，案例已脱敏。平台类目、资质与审核规范会调整，<strong>一切以微信官方最新规则为准</strong>；涉及具体账号的判断，建议提交前再核对官方原文或直接咨询微信客服。</div>
+
+</div>
+<script>
+function cp(){
+  var el=document.getElementById('article'), r=document.createRange(); r.selectNodeContents(el);
+  var s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  try{ document.execCommand('copy'); var b=document.querySelector('.copy'); b.textContent='已复制 ✓'; setTimeout(function(){b.textContent='复制正文'},1800); }catch(e){ alert('请手动全选正文复制'); }
+  s.removeAllRanges();
+}
+</script>
+</body>
+</html>

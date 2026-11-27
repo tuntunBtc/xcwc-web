@@ -3,12 +3,13 @@
 <!-- 全屏底图：自定义 tabBar 是透明毛绒底板，背景必须铺满整个视口（含底栏区域），
      否则内容区在底栏上沿截断，底栏附近会露出纯色空缺。整页只保留这一张图，
      不另在 .nest 内重复拉伸一份，避免底栏上沿出现接缝。 -->
-<image class="page-scene" src="{{previewBackgroundIndex === 0 ? '/assets/nest/background-preview-room.webp' : (previewBackgroundIndex === 1 ? '/assets/nest/background-preview-osmanthus.webp' : (previewBackgroundIndex === 3 ? lavenderBackgroundUrl : (brandBackground || '/assets/nest/background.webp')))}}" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" binderror="onPreviewBackgroundError"></image>
+<image wx:if="{{previewBackgroundIndex === 4}}" class="page-scene" src="/assets/nest/background-preview-lavender-tall.webp" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" binderror="onPreviewBackgroundError"></image>
+<image wx:else class="page-scene" src="{{previewBackgroundIndex === 0 ? '/assets/nest/background-preview-room.webp' : (previewBackgroundIndex === 1 ? '/assets/nest/background-preview-osmanthus.webp' : (previewBackgroundIndex === 3 ? lavenderBackgroundUrl : (brandBackground || '/assets/nest/background.webp')))}}" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" binderror="onPreviewBackgroundError"></image>
 
 <view class="nest" style="height:{{layout.pageHeight}}rpx">
     <video wx:if="{{diaryVideoVisible}}" id="diaryOriginalVideo" class="diary-original-video {{diaryVideoPlaying ? 'diary-canvas-visible' : ''}}" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" src="https://assets.xinchengip.com/bird/v1/oss/uploads/8e5c20d972284aa88de579a00460eee6.mp4" object-fit="cover" autoplay="{{true}}" controls="{{false}}" show-center-play-btn="{{false}}" show-play-btn="{{false}}" enable-progress-gesture="{{false}}" playsinline="{{true}}" bindplay="onDiaryVideoPlay" bindtimeupdate="onDiaryVideoTimeUpdate" bindseekcomplete="onDiaryVideoSeekComplete" bindended="onDiaryVideoEnded" binderror="onDiaryVideoError"></video>
 
-    <view class="scene-shade"></view>
+    <view wx:if="{{previewBackgroundIndex !== 4}}" class="scene-shade"></view>
 
     <!-- 顶部 HUD：头像 / 名字 / 城市 / 火花 / 切换 / 叽分钱包 -->
     <view class="hud" style="top:{{layout.hudTop}}rpx;left:{{layout.hudLeft}}rpx;right:{{layout.hudRight}}rpx">
@@ -59,7 +60,7 @@
             </block>
             <view wx:if="{{item.key === 'supply' && hasBird && !supplyClaimed}}" class="tool-dot"></view>
         </view>
-        <view class="background-preview-switch" bindtap="onSwitchBackgroundPreview" role="button" aria-label="切换背景预览">背景 {{previewBackgroundIndex + 1}}/4</view>
+        <view class="background-preview-switch" bindtap="onSwitchBackgroundPreview" role="button" aria-label="切换背景预览">背景 {{previewBackgroundIndex + 1}}/{{previewBackgroundCount}}</view>
     </view>
 
     <!-- 对话气泡 -->
@@ -79,15 +80,16 @@
         </view>
     </block>
     <!-- 小鸟立绘 -->
-    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}} {{diaryVideoPlaying ? 'diary-actor-hidden' : ''}}" style="top:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorTop : layout.actorTop}}rpx;height:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorHeight : layout.actorHeight}}rpx;{{hideGrass && previewBackgroundIndex === 3 ? 'left:' + layout.diaryActorLeft + 'rpx;width:' + layout.diaryActorWidth + 'rpx;' : ''}}">
-        <view class="shadow {{hasBird ? '' : 'is-hidden'}}"></view>
+    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}} {{diaryVideoPlaying ? 'diary-actor-hidden' : ''}}" style="top:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorTop : layout.actorTop}}rpx;height:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorHeight : layout.actorHeight}}rpx;{{hideGrass && previewBackgroundIndex === 3 ? 'left:' + layout.diaryActorLeft + 'rpx;width:' + layout.diaryActorWidth + 'rpx;' : (hideGrass && previewBackgroundIndex === 4 ? layout.tallOsmanthusStyle : '')}}">
+        <view class="shadow {{hasBird && !(previewBackgroundIndex === 4 && useFinalNestPoster && (!brandImage || brandImage === avatar) && !(brandRelease ? brandPlaying : idlePlaying)) ? '' : 'is-hidden'}}"></view>
         <view wx:if="{{!hideGrass}}" class="grass {{hasBird ? '' : 'is-hidden'}}">
             <view class="blade b1"></view><view class="blade b2"></view>
             <view class="blade b3"></view><view class="blade b4"></view>
         </view>
         <view class="bird-hit" bindtap="onPet" hover-class="none">
             <!-- 待机动画播放时隐藏静态表情海报，避免动画小鸟与表情海报重叠（动画画布覆盖在立绘之上）。 -->
-            <image wx:if="{{(brandImage || birdArt) && !(brandRelease ? brandPlaying : idlePlaying)}}" class="bird-art" src="{{brandImage || birdArt}}" mode="aspectFit"></image>
+            <image wx:if="{{previewBackgroundIndex === 4 && useFinalNestPoster && (!brandImage || brandImage === avatar) && !(brandRelease ? brandPlaying : idlePlaying)}}" class="bird-art tall-osmanthus" src="/assets/nest/background-preview-lavender-foreground.webp" mode="aspectFit"></image>
+            <image wx:elif="{{(brandImage || birdArt) && !(brandRelease ? brandPlaying : idlePlaying)}}" class="bird-art {{useFinalNestPoster && (!brandImage || brandImage === avatar) && previewBackgroundIndex === 3 ? 'registered-osmanthus' : ''}}" src="{{useFinalNestPoster && (!brandImage || brandImage === avatar) ? '/assets/nest/osmanthus-idle-final.webp' : (brandImage || birdArt)}}" mode="aspectFit"></image>
         </view>
         <!-- 画布支持穿透时由 bird-hit 接收，画布直接命中时也触发同一个摸摸动作。 -->
         <canvas wx:if="{{packagedIdle}}" type="2d" id="idleCanvas" class="idle-canvas {{idlePlaying ? '' : 'canvas-rest'}}" bindtap="onPet"></canvas>

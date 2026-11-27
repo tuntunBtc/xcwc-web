@@ -15,6 +15,9 @@ const { createButtonArt } = require('../../utils/nest-button-art');
 const { createBrandArt } = require('../../utils/nest-brand-art');
 const { createBrandIdle } = require('../../utils/nest-brand-idle');
 const { ORIOLE_AVATAR, birdAvatar, isOriole, isOsmanthus } = require('../../utils/bird-preview-art');
+// Replace just the published legacy normal pose in the nest. New brand artwork takes precedence.
+const OSMANTHUS_LEGACY_NORMAL = '/ccff4d24b61965127a42f0e6a2921e1a.png';
+const BACKGROUND_LABELS = ['暖阳卧室', '桂花鸟小屋', '当前配置', '紫色桂花鸟小屋', '紫色小窝·近景地毯'];
 const STATUS_REFRESH_MS = 30000;
 const DIARY_FADE_MS = 900;
 const DIARY_LOAD_TIMEOUT_MS = 45000;
@@ -113,15 +116,15 @@ Page(cloudUI.page({
         tools: TOOLS.filter(tool => !tool.hidden),
         dock: DOCK,
         dockRemoteImage: '',
-        previewBackgroundIndex: 0,
+        previewBackgroundIndex: 3,
+        previewBackgroundCount: BACKGROUND_LABELS.length,
         lavenderBackgroundUrl: 'https://assets.xinchengip.com/mini/media/83477c3a0ac691ba7ff57a683c5ce6587bdcb2c1a9e3dd03f8230828e372d248.webp',
     },
 
     onSwitchBackgroundPreview() {
-        const previewBackgroundIndex = (this.data.previewBackgroundIndex + 1) % 4;
+        const previewBackgroundIndex = (this.data.previewBackgroundIndex + 1) % BACKGROUND_LABELS.length;
         this.setData({ previewBackgroundIndex });
-        const labels = ['暖阳卧室', '桂花鸟小屋', '当前配置', '紫色桂花鸟小屋'];
-        wx.showToast({ title: labels[previewBackgroundIndex], icon: 'none' });
+        wx.showToast({ title: BACKGROUND_LABELS[previewBackgroundIndex], icon: 'none' });
     },
 
     onPreviewBackgroundError() {
@@ -306,6 +309,8 @@ Page(cloudUI.page({
         this.setData({
             hasBird: s.hasBird,
             hideGrass: isOsmanthus(code),
+            useFinalNestPoster: s.hasBird && isOsmanthus(code) &&
+                (!this.brandBundle || avatar.endsWith(OSMANTHUS_LEGACY_NORMAL)),
             sparkDisplay: presentSpark(s, store.status()),
             pets: (s.pets || []).map(pet => ({
                 ...pet,

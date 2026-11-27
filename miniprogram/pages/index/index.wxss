@@ -689,6 +689,16 @@ page {
     height: 100%;
 }
 
+/* 桂花鸟在第 4 张背景的角色框内保留素材留白，呼吸动画以脚底中心为支点。 */
+.bird-art.registered-osmanthus {
+    position: absolute;
+    left: 11.826923%;
+    top: 9.952607%;
+    width: 76.346154%;
+    height: 87.677725%;
+    transform-origin: center bottom;
+}
+
 /* 待机动画画布：与立绘同框，逐帧 contain 居中绘制（见 utils/nest-idle.js），
    pointer-events:none 让摸摸点击穿透到 bird-hit；透明区域不挡海报。 */
 .idle-canvas {
@@ -728,6 +738,17 @@ page {
 
 .actor.is-happy .bird-art {
     animation: nest-happy 0.5s ease-in-out 2;
+}
+
+/* 透明图裁过四边。人物在图里的左偏移为 72.25px，底部留给毯面和投影。 */
+.actor.has-bird .bird-art.tall-osmanthus {
+    position: absolute;
+    top: 0;
+    left: -12.132662%;
+    width: 112.174643%;
+    height: 120.360360%;
+    animation: none;
+    pointer-events: none;
 }
 
 .actor.motion-paused .bird-art,

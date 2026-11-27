@@ -231,12 +231,16 @@ function createCandidate(output, args) {
     const paths = Object.keys(files);
     if (!paths.length) throw new Error('未找到需要兼容打包的 WebP 素材');
     const under = prefix => paths.filter(name => name.startsWith(prefix));
-    const nestBackground = '/assets/nest/background.webp';
-    const remoteNestBackground = ossMedia[nestBackground]?.url;
+    // 由对应的 image 在实际显示时加载，避免切到第五张之前下载扩展房间和前景。
+    const directNestImages = new Set([
+        '/assets/nest/background.webp',
+        '/assets/nest/background-preview-lavender-tall.webp',
+        '/assets/nest/background-preview-lavender-foreground.webp',
+    ].filter(name => ossMedia[name]?.url));
     const firstBanner = require(path.join(SOURCE, 'utils/catalog.js')).BANNERS[0]?.image;
     const shopArtwork = Object.hasOwn(files, firstBanner) ? { 'hero-image': firstBanner } : null;
     const additions = {
-        'pages/index/index': under('/assets/nest/').filter(name => !remoteNestBackground || name !== nestBackground),
+        'pages/index/index': under('/assets/nest/').filter(name => !directNestImages.has(name)),
         'pages/profile/profile': ['/assets/nest/avatar.webp', '/assets/nest/osmanthus-preview.webp'],
         'pages/shop/shop': under('/assets/shop/banners/'),
         'pages/photo/photo': under('/pages/photo/assets/'),
@@ -252,9 +256,11 @@ function createCandidate(output, args) {
         const artwork = route === ADOPT_ROUTE ? ADOPT_ARTWORK : route === PHOTO_ROUTE ? PHOTO_ARTWORK : shop;
         const viewSource = all.get(view).toString('utf8');
         const converted = renderView(viewSource, view, files, artwork, shop);
-        if (route === 'pages/index/index' && remoteNestBackground) {
-            converted.text = converted.text.replace("'" + nestBackground + "'", "'" + remoteNestBackground + "'");
-            converted.paths.delete(nestBackground);
+        if (route === 'pages/index/index') {
+            for (const name of directNestImages) {
+                converted.text = converted.text.replaceAll("'" + name + "'", "'" + ossMedia[name].url + "'");
+                converted.paths.delete(name);
+            }
         }
         if (converted.text === all.get(view).toString('utf8')) continue;
         for (const name of additions[route] || []) converted.paths.add(name);

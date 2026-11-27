@@ -119,6 +119,12 @@ function readNestLayout() {
     }
     var tabBarHeight = TAB_BAR_ART_RPX + bottomInset;
     var sceneHeight = Math.max(viewportRpx, screenViewportRpx);
+    var lavenderScale = Math.max(750 / 1080, sceneHeight / 1920);
+    // 1080 × 2400 空房中，定稿鸟的脚底为 (540, 1770)，立绘 595.5 × 555。
+    // 跟随底图 aspectFill 的缩放与居中裁切，长屏、短屏共用同一块地毯落点。
+    var tallScale = Math.max(750 / 1080, sceneHeight / 2400);
+    var tallLeft = (750 - 1080 * tallScale) / 2 + (540 - 595.5 / 2) * tallScale;
+    var tallTop = (sceneHeight - 2400 * tallScale) / 2 + (1770 - 555) * tallScale;
     // custom-tab-bar 会在文档流末尾注入一个等高 spacer；页面高度需扣掉它，
     // 否则 .nest + spacer 会多出整条底栏高度，出现无谓滚动。
     var pageHeight = Math.max(inset + DESIGN_HEIGHT_RPX, viewportRpx - tabBarHeight);
@@ -147,12 +153,13 @@ function readNestLayout() {
         // toast 是 position:fixed，坐标系是「视口」而非 .nest；自定义 tabBar 也是
         // fixed 且 z-index:1000，必须把整条底栏高度加回来，否则 toast 会被底栏盖住。
         toastBottom: tabBarHeight + DOCK_GAP_RPX + DOCK_HEIGHT_RPX + 20,
-        // Match the original 1080x1920 video first frame for the lavender room.
-        // Video and scene both use aspect-fill; account for side/top cropping.
-        diaryActorLeft: Math.round((750 - 1080 * Math.max(750 / 1080, sceneHeight / 1920)) / 2 + 280 * Math.max(750 / 1080, sceneHeight / 1920)),
-        diaryActorTop: Math.round((sceneHeight - 1920 * Math.max(750 / 1080, sceneHeight / 1920)) / 2 + 1008 * Math.max(750 / 1080, sceneHeight / 1920)),
-        diaryActorWidth: Math.round(520 * Math.max(750 / 1080, sceneHeight / 1920)),
-        diaryActorHeight: Math.round(422 * Math.max(750 / 1080, sceneHeight / 1920)),
+        // 第 4 张背景的桂花鸟按标注圈定位，脚底约在 1080 × 1920 场景的 (546, 1439)。
+        // 立绘、触摸区域和脚下投影随房间的 aspectFill 裁切同步缩放。
+        diaryActorLeft: Math.round((750 - 1080 * lavenderScale) / 2 + 247 * lavenderScale),
+        diaryActorTop: Math.round((sceneHeight - 1920 * lavenderScale) / 2 + 965 * lavenderScale),
+        diaryActorWidth: Math.round(598 * lavenderScale),
+        diaryActorHeight: Math.round(485 * lavenderScale),
+        tallOsmanthusStyle: 'left:' + tallLeft + 'rpx;top:' + tallTop + 'rpx;width:' + (595.5 * tallScale) + 'rpx;height:' + (555 * tallScale) + 'rpx;',
         actorHeight: actorHeight,
         // 顶部信息组锚定 hudTop，短屏允许工具列在组内上移避让 dock。
         // 对话气泡、领取入口、立绘与 dock 属场景主体，仍按 inset 定位保持不动。
