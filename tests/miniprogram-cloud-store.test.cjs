@@ -75,6 +75,21 @@ test('login restores without birdCode; old guest data survives; multiple pets is
     assert.equal(snap(f.store).nickname, '小叽'); assert.deepEqual(f.wx.memory.get('xcwc.mp.guest.v1'), { points: 99999 });
     assert(f.wx.calls.filter(c => c.path.includes('/me/')).every(c => c.header.Authorization === 'Bearer ' + A.repeat(2)));
 });
+test('手账请求沿用云端会话，不能读取不在当前账号列表的小鸟', async () => {
+    const f = fixture();
+    await ready(f);
+    const today = '2026-11-27';
+    const diaryPath = '/bird/v1/me/pets/' + P + '/diary';
+    f.intercept((options, next) => options.url.includes('/diary')
+        ? { statusCode: 200, data: { today, days: [] } }
+        : next(options));
+    assert.equal((await f.store.diaryCalendar(Q, today, today)).error, 'PET_NOT_FOUND');
+    assert.equal((await f.store.diaryDay(P, '2026-11-31')).error, 'INVALID_INPUT');
+    assert.deepEqual((await f.store.diaryCalendar(P, today, today)).data, { today, days: [] });
+    const [calendar] = f.wx.calls.filter(call => call.path.startsWith(diaryPath));
+    assert.equal(calendar.path, diaryPath);
+    assert.equal(calendar.header.Authorization, 'Bearer ' + A.repeat(2));
+});
 test('lost commit response queries receipt, no second settlement, zero reward still succeeds', async () => {
     const f = fixture(); await ready(f); let lost = true;
     f.intercept(async (o, next) => { const r = await next(o); if (lost && o.url.endsWith('/actions')) { lost = false; throw Error('lost'); } return r; });

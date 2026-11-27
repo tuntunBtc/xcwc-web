@@ -7,8 +7,6 @@
 <image wx:else class="page-scene" src="{{previewBackgroundIndex === 0 ? '/assets/nest/background-preview-room.webp' : (previewBackgroundIndex === 1 ? '/assets/nest/background-preview-osmanthus.webp' : (previewBackgroundIndex === 3 ? lavenderBackgroundUrl : (brandBackground || '/assets/nest/background.webp')))}}" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" binderror="onPreviewBackgroundError"></image>
 
 <view class="nest" style="height:{{layout.pageHeight}}rpx">
-    <video wx:if="{{diaryVideoVisible}}" id="diaryOriginalVideo" class="diary-original-video {{diaryVideoPlaying ? 'diary-canvas-visible' : ''}}" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" src="https://assets.xinchengip.com/bird/v1/oss/uploads/8e5c20d972284aa88de579a00460eee6.mp4" object-fit="cover" autoplay="{{true}}" controls="{{false}}" show-center-play-btn="{{false}}" show-play-btn="{{false}}" enable-progress-gesture="{{false}}" playsinline="{{true}}" bindplay="onDiaryVideoPlay" bindtimeupdate="onDiaryVideoTimeUpdate" bindseekcomplete="onDiaryVideoSeekComplete" bindended="onDiaryVideoEnded" binderror="onDiaryVideoError"></video>
-
     <view wx:if="{{previewBackgroundIndex !== 4}}" class="scene-shade"></view>
 
     <!-- 顶部 HUD：头像 / 名字 / 城市 / 火花 / 切换 / 叽分钱包 -->
@@ -50,8 +48,11 @@
 
     <!-- 右侧工具列 -->
     <view class="tools" style="top:{{layout.toolsTop}}rpx">
-        <view wx:for="{{tools}}" wx:key="key" class="tool" data-key="{{item.key}}" bindtap="onTool" hover-class="tool-hover" aria-role="button" aria-label="{{item.label}}">
-            <view wx:if="{{item.key === 'diary'}}" class="diary-icon"><view class="diary-ring ring-one"></view><view class="diary-ring ring-two"></view><view class="diary-ring ring-three"></view><view class="diary-line line-one"></view><view class="diary-line line-two"></view><view class="diary-pencil"></view></view>
+        <view wx:for="{{tools}}" wx:key="key" class="tool {{item.key === 'diary' ? 'tool-diary' : ''}}" data-key="{{item.key}}" bindtap="onTool" hover-class="tool-hover" aria-role="button" aria-label="{{item.label}}">
+            <view wx:if="{{item.key === 'diary'}}" class="diary-icon" aria-hidden="true">
+                <view class="diary-ring ring-one"></view><view class="diary-ring ring-two"></view><view class="diary-ring ring-three"></view>
+                <view class="diary-line line-one"></view><view class="diary-line line-two"></view>
+            </view>
             <image wx:elif="{{item.key === 'clean' || item.key === 'supply' || item.key === 'checkin' || item.key === 'ar' || item.key === 'video'}}" class="tool-prop-clip" src="/assets/nest/line-icons/{{item.key}}.png" mode="aspectFit"></image>
             <block wx:else>
                 <image class="tex-bg" src="/assets/nest/cloud.webp" mode="scaleToFill"></image>
@@ -80,7 +81,7 @@
         </view>
     </block>
     <!-- 小鸟立绘 -->
-    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}} {{diaryVideoPlaying ? 'diary-actor-hidden' : ''}}" style="top:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorTop : layout.actorTop}}rpx;height:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorHeight : layout.actorHeight}}rpx;{{hideGrass && previewBackgroundIndex === 3 ? 'left:' + layout.diaryActorLeft + 'rpx;width:' + layout.diaryActorWidth + 'rpx;' : (hideGrass && previewBackgroundIndex === 4 ? layout.tallOsmanthusStyle : '')}}">
+    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}}" style="top:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorTop : layout.actorTop}}rpx;height:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorHeight : layout.actorHeight}}rpx;{{hideGrass && previewBackgroundIndex === 3 ? 'left:' + layout.diaryActorLeft + 'rpx;width:' + layout.diaryActorWidth + 'rpx;' : (hideGrass && previewBackgroundIndex === 4 ? layout.tallOsmanthusStyle : '')}}">
         <view class="shadow {{hasBird && !(previewBackgroundIndex === 4 && useFinalNestPoster && (!brandImage || brandImage === avatar) && !(brandRelease ? brandPlaying : idlePlaying)) ? '' : 'is-hidden'}}"></view>
         <view wx:if="{{!hideGrass}}" class="grass {{hasBird ? '' : 'is-hidden'}}">
             <view class="blade b1"></view><view class="blade b2"></view>

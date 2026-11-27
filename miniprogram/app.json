@@ -8,6 +8,7 @@
   ],
   "subpackages": [
     { "root": "pages/nest-ar", "pages": ["nest-ar"] },
+    { "root": "pages/diary", "pages": ["diary"] },
     { "root": "pages/adopt", "pages": ["adopt"] },
     { "root": "pages/photo", "pages": ["photo"] },
     { "root": "pages/wardrobe", "pages": ["wardrobe"] },

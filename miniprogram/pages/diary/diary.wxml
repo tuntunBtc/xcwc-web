@@ -1,0 +1,156 @@
+<template name="face">
+  <view class="day-mood mood-{{mood}}" data-mood="{{mood}}" aria-hidden="true">
+    <view class="mood-eyes"></view><view class="mood-mouth"></view>
+  </view>
+</template>
+
+<view class="diary-page mood-page-{{mood}}">
+  <view class="diary-nav" style="margin-top:{{navTop}}px;height:{{navHeight}}px;margin-right:{{navRight}}px;">
+    <button class="diary-back" aria-label="返回小窝" hover-class="pressed" bindtap="goBack">
+      <view class="chevron chevron-left" aria-hidden="true"></view>
+    </button>
+    <view class="diary-title">小鸟手账</view>
+  </view>
+
+  <scroll-view class="diary-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="diary-body">
+      <view class="content-top">
+        <view class="content-date">{{dateLabel}} · {{weekday}}</view>
+        <picker wx:if="{{birdOptions.length}}" mode="selector" range="{{birdOptions}}" range-key="label"
+          value="{{birdIndex}}" disabled="{{birdOptions.length < 2}}" bindchange="onBirdChange">
+          <view class="bird-picker" aria-label="{{birdOptions.length > 1 ? '切换小鸟，当前' + birdName : '当前小鸟，' + birdName}}">
+            <image wx:if="{{avatar}}" mode="aspectFit" class="bird-avatar" src="{{avatar}}" />
+            <image wx:else mode="aspectFit" class="bird-avatar bird-avatar-placeholder" src="{{avatarPlaceholder}}" />
+            <text class="bird-name">{{birdName}}</text>
+            <view wx:if="{{birdOptions.length > 1}}" class="chevron chevron-down" aria-hidden="true"></view>
+          </view>
+        </picker>
+      </view>
+
+      <view class="calendar-panel">
+        <view class="calendar-top">
+          <view class="calendar-label">{{periodLabel}}</view>
+          <view class="view-switch">
+            <button id="week-view" class="{{view === 'week' ? 'active' : ''}}" hover-class="pressed" data-view="week" bindtap="onViewChange">周历</button>
+            <button id="month-view" class="{{view === 'month' ? 'active' : ''}}" hover-class="pressed" data-view="month" bindtap="onViewChange">月历</button>
+          </view>
+        </view>
+        <view class="calendar-controls">
+          <button class="period-button" id="prev-period" aria-label="{{view === 'month' ? '上个月' : '上一周'}}" data-offset="-1" bindtap="onPeriodChange">
+            <view class="chevron chevron-left"></view>
+          </button>
+          <button class="today-button" id="today-button" bindtap="onToday">今天</button>
+          <button class="period-button" id="next-period" aria-label="{{view === 'month' ? '下个月' : '下一周'}}" disabled="{{noNextPeriod}}" data-offset="1" bindtap="onPeriodChange">
+            <view class="chevron chevron-right"></view>
+          </button>
+        </view>
+        <view class="calendar-grid weekday-grid">
+          <view wx:for="{{weekLabels}}" wx:key="*this" class="weekday">{{item}}</view>
+        </view>
+        <view id="calendar-grid" class="calendar-grid dates-grid dates-{{view}}">
+          <button
+            wx:for="{{dates}}" wx:key="key" class="day-cell {{item.active ? 'is-selected' : ''}} {{item.today ? 'is-today' : ''}} {{item.outside ? 'outside-month' : ''}}"
+            data-date="{{item.key}}" aria-label="{{item.label}}" disabled="{{item.disabled}}" bindtap="onDaySelect"
+          >
+            <text class="day-number">{{item.number}}</text>
+            <image
+              class="day-mood calendar-mood {{item.markers.length ? 'calendar-mood-marked' : ''}}"
+              data-mood="{{item.mood}}" src="{{item.moodSrc}}"
+              mode="aspectFit" aria-hidden="true"
+            />
+            <text
+              wx:for="{{item.markers}}" wx:for-item="mark" wx:for-index="markIndex" wx:key="kind"
+              class="day-mark day-mark-{{mark.kind}} {{item.markers.length > 1 ? 'day-mark-paired' : ''}} {{markIndex ? 'day-mark-extra' : ''}}"
+            >{{mark.icon}}</text>
+            <view wx:if="{{item.unread}}" class="day-unread"></view>
+          </button>
+        </view>
+        <view class="calendar-legend">
+          <view><text class="legend-travel">旅</text>旅行</view>
+          <view><text class="legend-study">学</text>学习</view>
+          <view><view class="legend-unread"></view>未读回信</view>
+        </view>
+      </view>
+      <view wx:if="{{calendarError}}" class="diary-inline-status" role="status">
+        <text>日历未能更新。{{calendarError}}</text>
+        <button class="diary-retry" bindtap="onRetryDiary">重试</button>
+      </view>
+
+      <view class="diary-day-heading">
+        <view class="diary-date">{{dateLabel}}<text>{{weekday}}{{isToday ? ' · 今天' : ''}}</text></view>
+        <view class="day-navigation">
+          <button id="previous-day" class="period-button" aria-label="前一天" data-offset="-1" bindtap="onStepDay"><view class="chevron chevron-left"></view></button>
+          <button id="following-day" class="period-button" aria-label="后一天" disabled="{{noNextDay}}" data-offset="1" bindtap="onStepDay"><view class="chevron chevron-right"></view></button>
+        </view>
+      </view>
+
+      <view
+        wx:if="{{record}}" class="diary-card mood-card-{{mood}}" data-kind="{{record.kind}}"
+        bindtouchstart="onCardTouchStart" bindtouchcancel="onCardTouchCancel" bindtouchend="onCardTouchEnd"
+      >
+        <view class="diary-card-top">
+          <view class="card-mood"><template is="face" data="{{mood: mood}}"/><text>{{moodLabel}}</text></view>
+          <view class="diary-kicker">{{kindLabel}}</view>
+        </view>
+        <view class="diary-card-title">{{record.title}}</view>
+        <view class="diary-copy">{{record.text}}</view>
+        <view wx:for="{{activities}}" wx:key="key" class="diary-activity" data-kind="{{item.kind}}">
+          <view class="diary-activity-type day-mark-{{item.kind}}">{{item.label}}</view>
+          <view class="diary-activity-title">{{item.title}}</view>
+          <view class="diary-copy">{{item.text}}</view>
+        </view>
+      </view>
+      <view wx:elif="{{dayLoading || dayError}}" class="diary-empty" role="status">
+        <view>{{dayLoading ? '正在打开小鸟手账…' : '日记暂时无法查看'}}</view>
+        <text wx:if="{{dayError}}">{{dayError}}</text>
+        <button wx:if="{{dayError}}" class="diary-retry" bindtap="onRetryDiary">重试</button>
+      </view>
+      <view
+        wx:else class="diary-empty"
+        bindtouchstart="onCardTouchStart" bindtouchcancel="onCardTouchCancel" bindtouchend="onCardTouchEnd"
+      >
+        <template is="face" data="{{mood: 'empty'}}"/>
+        <view>{{birdName ? '这一天没有日记' : signedIn ? '还没有小鸟入住' : '小鸟手账'}}</view>
+        <text wx:if="{{birdName}}">小鸟写下日记后，会在对应日期显示。</text>
+        <text wx:elif="{{signedIn}}">有了小鸟后，可以在这里查看它的日记。</text>
+        <text wx:else>回到小窝登录微信，就能查看你的小鸟日记。</text>
+      </view>
+      <view wx:if="{{record && dayError}}" class="diary-inline-status" role="status">
+        <text>{{dayError}}</text>
+        <button class="diary-retry" bindtap="onRetryDiary">重试</button>
+      </view>
+      <view wx:if="{{record}}" class="note-card">
+        <view class="note-title">给小鸟留言</view>
+        <textarea
+          id="diary-note-input" class="note-input" maxlength="500" value="{{noteText}}"
+          disabled="{{sendingNote}}" placeholder="写一句想告诉小鸟的话" bindinput="onNoteInput"
+        />
+        <view class="note-footer">
+          <text wx:if="{{noteFeedback}}" class="note-feedback {{noteFailed ? 'note-failed' : ''}}" role="status">{{noteFeedback}}</text>
+          <button
+            id="diary-send-letter" class="note-submit" disabled="{{!noteReady || sendingNote || !canSendNote}}"
+            hover-class="pressed" bindtap="onSendLetter"
+          >{{sendingNote ? '送信中…' : '送出留言'}}</button>
+        </view>
+      </view>
+      <view wx:if="{{dayFeedback}}" class="diary-inline-status" role="status">{{dayFeedback}}</view>
+      <view wx:for="{{letters}}" wx:key="id" class="reply-card" data-letter-id="{{item.id}}">
+        <view class="reply-owner"><text>你的留言</text><view>{{item.text}}</view></view>
+        <button
+          wx:if="{{item.reply}}" class="reply-open" hover-class="pressed"
+          aria-label="{{expandedLetterId === item.id ? '收起回信' : '拆开回信'}}"
+          data-letter-id="{{item.id}}" disabled="{{!!readingLetterId || sendingNote}}" bindtap="onLetter"
+        >
+          <view class="reply-icon" aria-hidden="true"></view>
+          <view class="reply-caption">
+            <view>{{birdName}}给你的回信</view>
+            <text wx:if="{{!item.readAt}}" class="reply-unread">未读</text>
+            <text wx:else class="reply-read">已读</text>
+          </view>
+          <view class="reply-action">{{expandedLetterId === item.id ? '收起' : readingLetterId === item.id ? '拆信中…' : '拆信'}}</view>
+        </button>
+        <view wx:if="{{expandedLetterId === item.id}}" class="reply-body">{{item.reply}}</view>
+      </view>
+    </view>
+  </scroll-view>
+</view>

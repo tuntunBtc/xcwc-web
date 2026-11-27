@@ -19,18 +19,6 @@ page {
     pointer-events: none;
     transition: opacity 400ms ease-in-out;
 }
-.diary-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 2;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 400ms ease-in-out;
-}
-.diary-canvas-visible { opacity: 1; }
-.diary-actor-hidden { pointer-events: none; }
 .actor { transition: opacity 400ms ease-in-out; }
 
 .nest {
@@ -557,15 +545,31 @@ page {
     z-index: 1;
 }
 
-.diary-icon { position: relative; box-sizing: border-box; width: 36rpx; height: 43rpx; border: 4rpx solid white; border-radius: 6rpx; }
-.diary-ring { position: absolute; left: -7rpx; width: 9rpx; height: 4rpx; border-radius: 3rpx; background: white; }
-.ring-one { top: 6rpx; }
-.ring-two { top: 17rpx; }
-.ring-three { top: 28rpx; }
-.diary-line { position: absolute; left: 6rpx; height: 3rpx; border-radius: 2rpx; background: white; }
-.line-one { top: 7rpx; width: 17rpx; }
-.line-two { top: 14rpx; width: 12rpx; }
-.diary-pencil { position: absolute; left: 16rpx; top: 17rpx; box-sizing: border-box; width: 7rpx; height: 17rpx; border: 2rpx solid white; border-radius: 3rpx 3rpx 1rpx 1rpx; transform: rotate(43deg); }
+.tool-diary {
+    align-self: center;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 12px;
+    background: transparent;
+}
+.diary-icon {
+    position: relative;
+    box-sizing: border-box;
+    width: 18px;
+    height: 22px;
+    border: 1.6px solid white;
+    border-radius: 3px;
+}
+.diary-ring, .diary-line { position: absolute; height: 1.6px; border-radius: 2px; background: white; }
+.diary-ring { left: -3.5px; width: 4.7px; }
+.diary-ring.ring-one { top: 3px; }
+.diary-ring.ring-two { top: 8.5px; }
+.diary-ring.ring-three { top: 14px; }
+.diary-line { left: 4px; }
+.diary-line.line-one { top: 5px; width: 8px; }
+.diary-line.line-two { top: 9px; width: 6px; }
 
 /* tools-512.webp = 2 列 × 2 行，背景 200% × 200% */
 .tool-prop-clip .sprite {
@@ -1636,7 +1640,4 @@ page, view, text, button, input, textarea {
 .need-thought-image { width: 72%; height: 76%; }
 .need-thought-fallback { font-size: 23rpx; font-weight: 600; }
 
-/* Full-frame diary video is above the static scene, below controls. */
-.diary-original-video { position: fixed; top: 0; left: 0; width: 100%; z-index: 3; opacity: 0; pointer-events: none; transition: opacity 900ms ease-in-out; }
-.diary-original-video.diary-canvas-visible { opacity: 1; }
 .status, .speech { z-index: 4; }

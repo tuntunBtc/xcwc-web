@@ -404,6 +404,47 @@ function createCloudStore(platform, config) {
             save(); emit(); return { error: null, data: { items: clone(data.histories[name]), hasMore: rows.length === 50 } };
         } catch (e) { return failure(e); }
     }
+    async function diaryRequest(petId, resource, method = 'GET', body = null) {
+        const c = ctx();
+        if (!signedIn()) return { error: 'LOGIN_REQUIRED' };
+        if (!data.items.some(pet => pet.petId === petId)) return { error: 'PET_NOT_FOUND' };
+        try {
+            const result = await request('/me/pets/' + petId + '/diary' + resource, method, body, c);
+            guard(c);
+            return { error: null, data: result };
+        } catch (error) {
+            return failure(error);
+        }
+    }
+    async function diaryRequestId() {
+        if (!signedIn()) return { error: 'LOGIN_REQUIRED' };
+        const c = ctx();
+        try {
+            const requestId = await randomId();
+            guard(c);
+            return { error: null, data: { requestId } };
+        } catch (error) {
+            return failure(error);
+        }
+    }
+    function diaryCalendar(petId, from, to) {
+        if (!dateOnly(from) || !dateOnly(to)) return Promise.resolve({ error: 'INVALID_INPUT' });
+        return diaryRequest(petId, '?from=' + from + '&to=' + to);
+    }
+    function diaryDay(petId, day) {
+        if (!dateOnly(day)) return Promise.resolve({ error: 'INVALID_INPUT' });
+        return diaryRequest(petId, '/' + day);
+    }
+    function diaryWriteLetter(petId, day, requestId, text) {
+        if (!dateOnly(day)) return Promise.resolve({ error: 'INVALID_INPUT' });
+        return diaryRequest(petId, '/' + day + '/letters', 'POST', { requestId, text });
+    }
+    function diaryReadLetter(petId, day, letterId) {
+        if (!dateOnly(day) || typeof letterId !== 'string' || !letterId) {
+            return Promise.resolve({ error: 'INVALID_INPUT' });
+        }
+        return diaryRequest(petId, '/' + day + '/letters/' + encodeURIComponent(letterId) + '/read', 'POST');
+    }
     function reset() {
         if (pending || busy) return { error: 'RESULT_PENDING' };
         if (!session) return { error: null };
@@ -413,6 +454,8 @@ function createCloudStore(platform, config) {
     function setOnline(value) { online = value; if (!value) synced = false; emit(); }
     return {
         snapshot, status, refresh, resume, recover, history, selectPet, loginWithWechat, loginWithPhone, logoutWechat, reset, setOnline,
+        diaryCalendar, diaryDay, diaryRequestId, diaryWriteLetter, diaryReadLetter,
+        diaryToday: petId => diaryRequest(petId, '/today', 'POST'),
         subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
         readWechatSignedIn: signedIn, getToken: () => session && session.token || '',
         getExperienceGeneration: () => epoch,

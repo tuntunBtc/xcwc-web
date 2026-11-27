@@ -255,7 +255,9 @@ test('小窝 AR 入口位于合照下方并打开原生 AR 页', async () => {
     const { page, wx } = harness('index');
     const urls = [];
     wx.navigateTo = options => { urls.push(options.url); options.complete(); };
-    assert.deepEqual(Array.from(page.data.tools, tool => tool.key), ['clean', 'supply', 'checkin', 'ar', 'video']);
+    const tools = Array.from(page.data.tools, tool => tool.key);
+    assert.ok(tools.includes('checkin'));
+    assert.equal(tools[tools.indexOf('checkin') + 1], 'ar');
     await page.onTool({ currentTarget: { dataset: { key: 'ar' } } });
     assert.deepEqual(urls, ['/pages/nest-ar/nest-ar']);
 });

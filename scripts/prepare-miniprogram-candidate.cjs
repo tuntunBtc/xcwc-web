@@ -241,6 +241,7 @@ function createCandidate(output, args) {
     const shopArtwork = Object.hasOwn(files, firstBanner) ? { 'hero-image': firstBanner } : null;
     const additions = {
         'pages/index/index': under('/assets/nest/').filter(name => !directNestImages.has(name)),
+        'pages/diary/diary': ['/assets/nest/avatar.webp', '/assets/nest/osmanthus-preview.webp'],
         'pages/profile/profile': ['/assets/nest/avatar.webp', '/assets/nest/osmanthus-preview.webp'],
         'pages/shop/shop': under('/assets/shop/banners/'),
         'pages/photo/photo': under('/pages/photo/assets/'),
