@@ -28,7 +28,6 @@ const TEST_ADOPTIONS = config.DEVICE_SANDBOX_TEST === true ? [
 
 // 共用雪碧图格位对应 H5 的 .tools .p0~p3、cards-1200 三格、hud-icons 3×2。
 const TOOLS = Object.freeze([
-    { key: 'clean', label: '清洁', propClass: 'prop-clean' },
     { key: 'supply', label: '补给', propClass: 'prop-supply' },
     { key: 'checkin', label: '合照打卡', propClass: 'prop-checkin' },
     { key: 'ar', label: 'AR' },

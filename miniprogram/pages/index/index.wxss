@@ -1,3 +1,5 @@
+@import "./nest-sheets.wxss";
+
 /* 小窝页：网页端 src/nest/nest.css 的 480px 容器换算为 750rpx（1px = 1.5625rpx，1cqw = 7.5rpx）。
    平台差异处理：
    - WXSS 不能可靠引用本地 background-image → 纹理与雪碧图用 <image> + .clip 裁切框；

@@ -35,7 +35,7 @@ test('日记是播放下方最后一个工具并打开独立日记页', async ()
     const { page, navigation } = harness();
     assert.deepEqual(
         Array.from(page.data.tools, item => item.key),
-        ['clean', 'supply', 'checkin', 'ar', 'video', 'diary'],
+        ['supply', 'checkin', 'ar', 'video', 'diary'],
     );
     assert.ok(app.subpackages.some(item =>
         item.root === 'pages/diary' && item.pages.includes('diary') && !item.independent,

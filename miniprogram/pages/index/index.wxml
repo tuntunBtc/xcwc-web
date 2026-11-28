@@ -53,7 +53,7 @@
                 <view class="diary-ring ring-one"></view><view class="diary-ring ring-two"></view><view class="diary-ring ring-three"></view>
                 <view class="diary-line line-one"></view><view class="diary-line line-two"></view>
             </view>
-            <image wx:elif="{{item.key === 'clean' || item.key === 'supply' || item.key === 'checkin' || item.key === 'ar' || item.key === 'video'}}" class="tool-prop-clip" src="/assets/nest/line-icons/{{item.key}}.png" mode="aspectFit"></image>
+            <image wx:elif="{{item.key === 'supply' || item.key === 'checkin' || item.key === 'ar' || item.key === 'video'}}" class="tool-prop-clip" src="/assets/nest/line-icons/{{item.key}}.png" mode="aspectFit"></image>
             <block wx:else>
                 <image class="tex-bg" src="/assets/nest/cloud.webp" mode="scaleToFill"></image>
                 <view class="clip tool-prop-clip"><image class="sprite {{item.propClass}}" src="/assets/nest/tools.webp" mode="scaleToFill"></image></view>
@@ -124,8 +124,8 @@
 <view wx:if="{{toast}}" class="toast" style="bottom:{{layout.toastBottom}}rpx">{{toast}}</view>
 
     <!-- 底部弹出面板（网页端 <dialog> 的等价实现） -->
-    <view wx:if="{{sheet}}" class="sheet-mask" style="bottom:{{sheetMaskBottom}}rpx;padding-top:{{layout.inset}}rpx" bindtap="closeSheet">
-        <view class="sheet {{sheet.type === 'claim' ? 'claim-sheet' : ''}}" catchtap="noop">
+    <view wx:if="{{sheet}}" class="sheet-mask {{sheet.type === 'supply' || sheet.type === 'spark' || sheet.type === 'wallet' || sheet.type === 'history' || sheet.type === 'switch' || sheet.type === 'rename' ? 'glass-mask' : ''}}" style="bottom:{{sheetMaskBottom}}rpx;padding-top:{{layout.inset}}rpx" bindtap="closeSheet">
+        <view class="sheet {{sheet.type === 'claim' ? 'claim-sheet' : ''}} {{sheet.type === 'supply' || sheet.type === 'spark' || sheet.type === 'wallet' || sheet.type === 'history' || sheet.type === 'switch' || sheet.type === 'rename' ? 'nest-glass' : ''}} {{sheet.type}}-glass" catchtap="noop">
             <view class="sheet-handle"></view>
             <view class="sheet-close" catchtap="closeSheet">×</view>
             <text class="sheet-title">{{sheet.title}}</text>
@@ -177,21 +177,31 @@
             </block>
 
             <block wx:if="{{sheet.type === 'rename'}}">
-                <input class="sheet-input" value="{{renameValue}}" bindinput="onRenameInput" maxlength="12" adjust-position="{{false}}" placeholder="1–6 个字" />
+                <input class="sheet-input" value="{{renameValue}}" bindinput="onRenameInput" maxlength="12" adjust-position="{{false}}" placeholder="1–6 个字" placeholder-style="color:#c8c4be" />
                 <button class="sheet-primary" disabled="{{!cloudStatus.canOperate}}" catchtap="onSaveRename">保存昵称</button>
             </block>
 
             <block wx:if="{{sheet.type === 'wallet'}}">
-                <view class="sheet-row"><text>当前余额</text><text>{{points}} 叽分</text></view>
-                <view class="sheet-row"><text>今日获得</text><text>{{todayPoints}} / {{dailyLimit}}</text></view>
+                <view class="wallet-overview">
+                    <view class="wallet-current">
+                        <text class="wallet-label">当前余额</text>
+                        <view class="wallet-balance"><text class="wallet-amount">{{points}}</text><text class="wallet-unit">叽分</text></view>
+                    </view>
+                    <view class="wallet-daily">
+                        <text class="wallet-label">今日获得</text>
+                        <text class="wallet-daily-amount">{{todayPoints}} / {{dailyLimit}}</text>
+                    </view>
+                </view>
                 <text class="sheet-subtitle">叽分记录</text>
                 <view wx:if="{{ledger.length > 0}}" class="ledger">
-                    <view class="sheet-row" wx:for="{{ledger}}" wx:key="id"><text>{{item.note}} · {{item.day}}</text><text>{{item.amountText}}</text></view>
+                    <view class="sheet-row" wx:for="{{ledger}}" wx:key="id">
+                        <view class="wallet-record"><text class="wallet-note">{{item.note}}</text><text class="wallet-date">{{item.day}}</text></view>
+                        <text class="wallet-change">{{item.amountText}}</text>
+                    </view>
                 </view>
                 <text wx:else class="sheet-desc">还没有叽分记录</text>
                 <text wx:if="{{historyError}}" class="sheet-note">{{historyError}}</text>
                 <view wx:if="{{historyMore}}" class="sheet-secondary" catchtap="onMoreHistory">加载更多</view>
-
             </block>
 
             <block wx:if="{{sheet.type === 'supply'}}">
@@ -255,10 +265,13 @@
 
             <block wx:if="{{sheet.type === 'switch'}}">
                 <scroll-view scroll-y="true" style="max-height:420rpx">
-                    <view class="bird-choice" wx:for="{{pets}}" wx:key="petId" data-id="{{item.petId}}" catchtap="onSelectPet">
+                    <view class="bird-choice {{item.petId === selectedPetId ? 'is-current' : ''}}" aria-role="button" wx:for="{{pets}}" wx:key="petId" data-id="{{item.petId}}" catchtap="onSelectPet">
                         <image wx:if="{{item.avatar}}" src="{{item.avatar}}" mode="aspectFit"></image>
                         <view wx:else class="bird-choice-avatar" aria-hidden="true"></view>
-                        <view><text class="choice-name">{{item.nickname}}</text><text>{{item.petId === selectedPetId ? '当前陪伴' : '切换陪伴'}}</text></view>
+                        <view class="choice-info">
+                            <text class="choice-name">{{item.nickname}}</text>
+                            <view class="choice-status"><view wx:if="{{item.petId === selectedPetId}}" class="choice-check" aria-hidden="true"></view>{{item.petId === selectedPetId ? '当前陪伴' : '切换陪伴'}}</view>
+                        </view>
                         <view class="bird-choice-spark">
                             <view class="spark-icon spark-tier-1 {{item.sparkLit ? '' : 'spark-dim'}}" aria-hidden="true">
                                 <view class="spark-flame"></view>

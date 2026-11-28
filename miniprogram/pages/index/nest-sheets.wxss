@@ -1,0 +1,464 @@
+/* 小窝玻璃面板。半透明底本身保证文字对比，支持模糊的机型再透出小窝颜色。 */
+.sheet-mask.glass-mask {
+    background: rgba(19, 17, 15, .16);
+}
+.sheet.nest-glass {
+    width: calc(100% - 32rpx);
+    margin-bottom: 12rpx;
+    padding: 45rpx 30rpx 14rpx;
+    border: 1px solid rgba(255, 255, 255, .34);
+    border-radius: 44rpx;
+    background: rgba(36, 33, 30, .73);
+    -webkit-backdrop-filter: blur(19px) saturate(118%);
+    backdrop-filter: blur(19px) saturate(118%);
+    box-shadow: 0 10rpx 34rpx rgba(18, 14, 12, .22), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.nest-glass .sheet-handle {
+    top: 13rpx;
+    width: 42rpx;
+    height: 5rpx;
+    margin-left: -21rpx;
+    border-radius: 10rpx;
+    background: rgba(255, 255, 255, .36);
+}
+.nest-glass .sheet-title {
+    margin: 3rpx 78rpx 24rpx 4rpx;
+    line-height: 1.25;
+    font: 600 40rpx/1.25 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    color: #fff !important;
+}
+.nest-glass .sheet-close {
+    top: 22rpx;
+    right: 16rpx;
+    z-index: 1;
+    font: 400 38rpx/44px -apple-system, BlinkMacSystemFont, sans-serif;
+    background: radial-gradient(circle closest-side, rgba(255,255,255,.13) 62%, transparent 65%);
+    color: #fff !important;
+}
+.nest-glass .sheet-desc { color: #edeae5 !important; }
+.supply-glass .supply-card {
+    padding: 20rpx 22rpx;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 28rpx;
+    background: rgba(255, 255, 255, .08);
+}
+.supply-glass .supply-card-title {
+    font-size: 29rpx;
+    font-weight: 600;
+    color: #fff !important;
+}
+.supply-glass .supply-card-meta {
+    color: #f3eee6 !important;
+    font-size: 21rpx;
+}
+.supply-glass .supply-steps .supply-card-meta {
+    padding: 4rpx 14rpx;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 99rpx;
+    background: rgba(0, 0, 0, .10);
+}
+.supply-glass .supply-hint, .history-glass .supply-hint {
+    margin-top: 13rpx;
+    color: #f0ece6 !important;
+    font-size: 23rpx;
+    line-height: 1.5;
+}
+.supply-glass .supply-message, .history-glass .supply-message { color: #ffdfaa !important; }
+.supply-glass .supply-inventory {
+    margin-top: 14rpx;
+    background: rgba(0, 0, 0, .10);
+    border-color: rgba(255, 255, 255, .14);
+}
+.supply-glass .supply-stock, .supply-glass .supply-metrics {
+    margin-top: 14rpx;
+    background: rgba(0, 0, 0, .14);
+    border-radius: 15rpx;
+    gap: 0;
+}
+.supply-glass .supply-stock-item {
+    padding: 12rpx 17rpx;
+    border-radius: 0;
+    background: transparent;
+    font-size: 23rpx;
+}
+.supply-glass .supply-stock-item + .supply-stock-item,
+.supply-glass .supply-metric + .supply-metric { border-left: 1px solid rgba(255,255,255,.17); }
+.supply-glass .supply-stock-value, .supply-glass .supply-metric-value { color: #fff !important; }
+.supply-glass .supply-metric-label, .supply-glass .supply-metric-unit { color: #e8e5df !important; }
+.supply-glass .supply-metric-primary .supply-metric-value { font-size: 36rpx; }
+.supply-glass .supply-button, .history-glass .supply-button {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 14rpx 0 0;
+    border-radius: 99rpx;
+    font-size: 25rpx;
+}
+.supply-glass .supply-button-primary {
+    background: rgba(255, 255, 255, .95);
+    color: #282624 !important;
+    font-weight: 600;
+}
+.supply-glass .supply-button-text, .supply-glass .supply-button-quiet,
+.history-glass .supply-button-quiet {
+    background: rgba(255, 255, 255, .10);
+    color: #fff !important;
+}
+.supply-glass .supply-button[disabled], .history-glass .supply-button[disabled] {
+    background: rgba(0, 0, 0, .18);
+    color: #c5c1bb !important;
+    border: 1px solid rgba(255,255,255,.12);
+}
+.supply-glass .supply-history-links, .history-glass .supply-history-links {
+    margin-top: 4rpx;
+    gap: 0;
+}
+.supply-glass .supply-history-links .supply-button, .history-glass .supply-history-links .supply-button {
+    position: relative;
+    flex: 1;
+    width: auto;
+    margin: 0;
+    background: transparent;
+    color: #f1ede8 !important;
+    font-size: 23rpx;
+}
+.supply-glass .supply-history-links .supply-button + .supply-button::before,
+.history-glass .supply-history-links .supply-button + .supply-button::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 35%;
+    height: 30%;
+    border-left: 1px solid rgba(255,255,255,.26);
+}
+.history-glass .supply-history-row { border-bottom-color: rgba(255,255,255,.20); }
+.history-glass .supply-history-detail { color: #ede9e2 !important; }
+.spark-glass .spark-summary {
+    margin: 16rpx 0 0;
+    padding: 24rpx 26rpx;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1rpx solid rgba(255, 255, 255, 0.22);
+    border-radius: 30rpx;
+}
+
+.spark-glass .spark-bird {
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #fff !important;
+}
+
+.spark-glass .spark-today {
+    border: 1rpx solid rgba(255, 255, 255, 0.24);
+    border-radius: 999rpx;
+    padding: 5rpx 16rpx;
+    background: rgba(255, 247, 231, 0.10);
+    color: #fff7e7 !important;
+    font-size: 22rpx;
+    line-height: 1.4;
+}
+
+.spark-glass .spark-metrics {
+    margin-top: 24rpx;
+    gap: 0;
+}
+
+.spark-glass .spark-metric + .spark-metric {
+    margin-left: 16rpx;
+    padding-left: 20rpx;
+    border-left: 1rpx solid rgba(255, 255, 255, 0.22);
+}
+
+.spark-glass .spark-metric-label {
+    color: #ebe7e2 !important;
+    font-size: 22rpx;
+}
+
+.spark-glass .spark-metric-value {
+    margin-top: 6rpx;
+    font-size: 34rpx;
+    line-height: 1.22;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: #fff !important;
+}
+
+.spark-glass .spark-metric:first-child .spark-metric-value {
+    color: #ffe0a6 !important;
+}
+
+.spark-glass .spark-recovery {
+    margin-top: 23rpx;
+    padding-top: 20rpx;
+    border-top: 1rpx solid rgba(255, 255, 255, 0.20);
+}
+
+.spark-glass .spark-recovery-label text {
+    color: #f6f3ed !important;
+    font-size: 23rpx;
+    line-height: 1.45;
+}
+
+.spark-glass .spark-progress {
+    gap: 8rpx;
+    margin: 12rpx 0;
+}
+
+.spark-glass .spark-progress-day {
+    height: 8rpx;
+    border-radius: 999rpx;
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.spark-glass .spark-progress-day.is-done {
+    background: #ffda96;
+}
+
+.spark-glass .spark-deadline {
+    color: #e5e0db !important;
+    font-size: 22rpx;
+    line-height: 1.5;
+}
+
+.spark-glass .spark-message {
+    margin: 22rpx 2rpx 0;
+    color: #faf7f2 !important;
+    font-size: 26rpx;
+    line-height: 1.55;
+}
+
+.spark-glass .spark-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    margin: 20rpx 0 0;
+    padding: 16rpx 24rpx;
+    border-radius: 999rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.6);
+    background: #f8f5ef;
+    color: #312c27 !important;
+    font-size: 27rpx;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.spark-glass .spark-action::after {
+    border: 0;
+}
+
+.spark-glass .spark-action[disabled] {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.09);
+    color: #ded8d2 !important;
+}
+.wallet-glass .wallet-overview {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20rpx;
+    margin-top: 18rpx;
+    padding: 24rpx 28rpx;
+    border: 1px solid rgba(255, 255, 255, .19);
+    border-radius: 28rpx;
+    background: linear-gradient(115deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .055));
+}
+.wallet-glass .wallet-label,
+.wallet-glass .wallet-date {
+    display: block;
+    color: rgba(255, 255, 255, .80) !important;
+    font-size: 23rpx;
+    line-height: 1.5;
+}
+.wallet-glass .wallet-balance {
+    display: flex;
+    align-items: baseline;
+    gap: 9rpx;
+    margin-top: 5rpx;
+}
+.wallet-glass .wallet-amount {
+    font-size: 62rpx;
+    line-height: 1.1;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1rpx;
+}
+.wallet-glass .wallet-unit {
+    font-size: 25rpx;
+    font-weight: 500;
+}
+.wallet-glass .wallet-daily {
+    flex-shrink: 0;
+    padding-left: 22rpx;
+    text-align: right;
+}
+.wallet-glass .wallet-daily-amount {
+    display: block;
+    margin-top: 6rpx;
+    font-size: 32rpx;
+    line-height: 1.3;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+.wallet-glass .sheet-subtitle {
+    margin: 24rpx 4rpx 9rpx;
+    color: #fff !important;
+    font-size: 28rpx;
+    font-weight: 600;
+}
+.wallet-glass .ledger {
+    max-height: 30vh;
+    overflow-y: auto;
+    margin-top: 0;
+    padding: 0 4rpx;
+}
+.wallet-glass .sheet-row {
+    gap: 18rpx;
+    padding: 15rpx 0;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .15);
+}
+.wallet-glass .sheet-row:last-child {
+    border-bottom: 0;
+}
+.wallet-glass .wallet-record {
+    min-width: 0;
+}
+.wallet-glass .wallet-note {
+    display: block;
+    font-size: 27rpx;
+    font-weight: 500;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+.wallet-glass .wallet-date {
+    margin-top: 2rpx;
+    font-size: 22rpx;
+    font-variant-numeric: tabular-nums;
+}
+.wallet-glass .wallet-change {
+    flex-shrink: 0;
+    font-weight: 600;
+    font-size: 29rpx;
+    font-variant-numeric: tabular-nums;
+}
+.wallet-glass .sheet-desc,
+.wallet-glass .sheet-note {
+    color: rgba(255, 255, 255, .82) !important;
+    font-size: 24rpx;
+    line-height: 1.55;
+}
+.wallet-glass .sheet-secondary {
+    display: flex;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    margin: 16rpx 0 0;
+    padding: 10rpx 20rpx;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 999rpx;
+    background: rgba(255, 255, 255, .08);
+    color: #fff !important;
+}
+
+.switch-glass .bird-choice {
+    box-sizing: border-box;
+    min-height: 112rpx;
+    gap: 18rpx;
+    padding: 15rpx 19rpx;
+    margin: 0 0 12rpx;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 26rpx;
+    background: rgba(255, 255, 255, .055);
+}
+.switch-glass .bird-choice.is-current {
+    background: rgba(255, 255, 255, .15);
+    border-color: rgba(255, 255, 255, .45);
+}
+.switch-glass .bird-choice image, .switch-glass .bird-choice-avatar {
+    flex: none;
+    width: 85rpx;
+    height: 85rpx;
+    border-radius: 18rpx;
+    background: rgba(255, 255, 255, .09);
+}
+.switch-glass .choice-info { flex: 1; min-width: 0; }
+.switch-glass .choice-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #fff !important;
+    font-size: 30rpx;
+    font-weight: 600;
+}
+.switch-glass .choice-status {
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    margin-top: 5rpx;
+    color: #e3dfda !important;
+    font-size: 22rpx;
+    line-height: 1.45;
+}
+.switch-glass .is-current .choice-status { color: #fff !important; }
+.switch-glass .choice-check {
+    width: 12rpx;
+    height: 6rpx;
+    margin-right: 2rpx;
+    border-left: 1.5px solid #fff;
+    border-bottom: 1.5px solid #fff;
+    transform: translateY(-1px) rotate(-45deg);
+}
+.switch-glass .bird-choice-spark {
+    padding: 4rpx 12rpx 4rpx 6rpx;
+    border-radius: 99rpx;
+    background: rgba(0, 0, 0, .18);
+    font-size: 22rpx;
+}
+.switch-glass .sheet-note {
+    margin: 3rpx 3rpx 15rpx;
+    color: #ede9e2 !important;
+    font-size: 22rpx;
+    line-height: 1.55;
+}
+.switch-glass .test-bird-entry {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    margin: 9rpx 0;
+    padding: 9rpx 18rpx;
+    border: 1px solid rgba(255, 255, 255, .20);
+    border-radius: 99rpx;
+    background: rgba(255, 255, 255, .09);
+    color: #fff !important;
+    font-size: 24rpx;
+    line-height: 1.4;
+}
+
+.rename-glass .sheet-input {
+    box-sizing: border-box;
+    height: 48px;
+    padding: 0 24rpx;
+    border: 1px solid rgba(255,255,255,.36);
+    border-radius: 24rpx;
+    background: rgba(0,0,0,.22);
+    color: #fff !important;
+    font-size: 30rpx;
+}
+.rename-glass .sheet-primary {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    margin: 18rpx 0 12rpx;
+    padding: 16rpx;
+    border-radius: 99rpx;
+    background: #f8f5ef;
+    color: #312c27 !important;
+    font-weight: 600;
+}
+.rename-glass .sheet-desc { font-size: 24rpx; }
