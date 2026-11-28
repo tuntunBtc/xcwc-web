@@ -220,7 +220,7 @@ test('release check protects required files from packaging exclusions', t => {
     assert.match(ignoredBridge.stderr, /打包规则排除了必需文件：utils\/cloud-store\.js/);
     assert.equal(run([bridge], [bridge]).status, 0);
 
-    const runtimeDependencies = ['media/collection/files.js', 'media/nest-idle/files.js', 'utils/release-images.wxs'];
+    const runtimeDependencies = ['media/collection/files.js', 'utils/nest-interactions.js', 'utils/corgi-media-base.js', 'utils/release-images.wxs'];
     for (const value of runtimeDependencies) {
         const module = { type: 'file', value };
         const ignored = run([module]);

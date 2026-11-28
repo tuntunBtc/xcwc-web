@@ -4,7 +4,7 @@
      上方多出的 Home Indicator 安全区不画底板、也不拦截页面点击。 -->
 <view class="tab-bar-space" style="height: {{barHeight}}rpx"></view>
 <view wx:if="{{selected === 0 || selected === 2}}" class="tab-bar tab-bar-compact {{selected === 0 ? 'tab-bar-nest' : ''}}" style="height: {{artHeight}}rpx">
-    <view wx:if="{{selected === 0}}" class="compact-item compact-left" aria-label="功能入口">
+    <view wx:if="{{selected === 0}}" hidden="{{corgiMenuOpen}}" id="corgi-open" class="compact-item compact-left" role="button" aria-label="柯基互动" bindtap="openCorgiMenu">
         <image class="compact-icon" src="/assets/navigation/nest-navigation/grid.png" mode="aspectFit"></image>
     </view>
     <view wx:else class="compact-item compact-left" role="button" aria-label="小窝"

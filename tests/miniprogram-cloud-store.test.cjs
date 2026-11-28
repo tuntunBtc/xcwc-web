@@ -90,6 +90,26 @@ test('手账请求沿用云端会话，不能读取不在当前账号列表的�
     assert.equal(calendar.path, diaryPath);
     assert.equal(calendar.header.Authorization, 'Bearer ' + A.repeat(2));
 });
+test('按日日记试写只发送已有小鸟及有效日期，沿用认证并允许较慢的生成响应', async () => {
+    const f = fixture();
+    await ready(f);
+    let requests = 0;
+    const date = '2026-11-28';
+    f.intercept(options => {
+        requests++;
+        assert.equal(new URL(options.url).pathname, '/bird/v1/me/pets/' + P + '/diary/' + date + '/ai-preview');
+        assert.equal(options.method, 'POST');
+        assert.equal(options.timeout, 35000);
+        assert.equal(options.header.Authorization, 'Bearer ' + A.repeat(2));
+        assert.equal(options.data, null);
+        return { statusCode: 200, data: { text: '小鸟的试写' } };
+    });
+    assert.equal((await f.store.diaryAiPreview(P, '2026-11-31')).error, 'INVALID_INPUT');
+    assert.equal((await f.store.diaryAiPreview(Q, date)).error, 'PET_NOT_FOUND');
+    assert.equal(requests, 0);
+    assert.equal((await f.store.diaryAiPreview(P, date)).data.text, '小鸟的试写');
+    assert.equal(requests, 1);
+});
 test('lost commit response queries receipt, no second settlement, zero reward still succeeds', async () => {
     const f = fixture(); await ready(f); let lost = true;
     f.intercept(async (o, next) => { const r = await next(o); if (lost && o.url.endsWith('/actions')) { lost = false; throw Error('lost'); } return r; });

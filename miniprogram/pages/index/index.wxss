@@ -21,6 +21,18 @@ page {
     pointer-events: none;
     transition: opacity 400ms ease-in-out;
 }
+.diary-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 400ms ease-in-out;
+}
+.diary-canvas-visible { opacity: 1; }
+.diary-actor-hidden { pointer-events: none; }
 .actor { transition: opacity 400ms ease-in-out; }
 
 .nest {
@@ -1642,4 +1654,74 @@ page, view, text, button, input, textarea {
 .need-thought-image { width: 72%; height: 76%; }
 .need-thought-fallback { font-size: 23rpx; font-weight: 600; }
 
+/* Full-frame diary video is above the static scene, below controls. */
+.diary-original-video { position: fixed; top: 0; left: 0; width: 100%; z-index: 3; opacity: 0; pointer-events: none; transition: opacity 900ms ease-in-out; }
+.diary-original-video.diary-canvas-visible { opacity: 1; }
 .status, .speech { z-index: 4; }
+
+page { background: #946c4d; }
+.corgi-player { z-index: 1; opacity: 0; transition: none; }
+.corgi-player.is-playing { opacity: 1; }
+.osmanthus-scene-touch { position: absolute; inset: 0; z-index: 0; }
+.bird-pass-through { pointer-events: none; }
+.corgi-shade { position: fixed; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to bottom, rgba(48,28,14,.29), transparent 25%, transparent 80%, rgba(48,26,10,.13)); }
+.corgi-avatar image { transform: scale(2.3); }
+.corgi-menu-backdrop { position: fixed; inset: 0; z-index: 24; background: linear-gradient(to top, rgba(52,28,12,.26), transparent 50%); }
+.corgi-menu { position: fixed; z-index: 25; left: 8rpx; bottom: 32rpx; width: 592rpx; max-width: 91vw; display: flex; flex-wrap: wrap; align-items: flex-end; }
+.corgi-choice { width: 25%; height: 136rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; }
+.corgi-disc { width: 85rpx; height: 85rpx; border-radius: 50%; background: #fffdf8; box-shadow: 0 4rpx 12rpx rgba(59,34,14,.22); display: flex; align-items: center; justify-content: center; }
+.corgi-disc-close { background: #ff906e; }
+.corgi-symbol { width: 43rpx; height: 43rpx; background-size: contain; background-position: center; background-repeat: no-repeat; }
+.corgi-label { max-width: 130rpx; margin-top: 6rpx; padding: 2rpx 13rpx 3rpx; border-radius: 24rpx; color: #fff; font-size: 22rpx; line-height: 1.25; font-weight: 600; background-color: rgba(63,41,29,.67); }
+.corgi-pressed { transform: scale(.94); }
+.ci-wagging-tail { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/2e689a6dcc224032858fd8c8a89ef4b7.png"); }
+.ci-touch_response { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/91a675d01a8940009cd4f6a6bd86eeae.png"); }
+.ci-play_ball { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/e3d45f08849a4999a4a6bba81ad70541.png"); }
+.ci-belly_up { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/863da7cc0d7248c98bb6e6180d95c1df.png"); }
+.ci-shake { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/7d3b7ede223e4efaa445c55b4642ab65.png"); }
+.ci-bow { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/c6e991f4f59743c7baeb3fa374bcd09f.png"); }
+.ci-speak { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/746ca762f2344e8b8922b1ad0f8a3153.png"); }
+.ci-spin { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/b5a895cc44b94228adfaec43474836ae.png"); }
+.ci-close { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/1daed2d064c04779b11ddfb4aa3e8b42.png"); }
+.ci-roll_over { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/10b04f3cbd4040adab2a4e18c963dd3a.png"); }
+.ci-beg { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/bed7898889f949e69364eb582e7e0381.png"); }
+.ci-play_dead { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/6e3ae388392643e29360613b421044f1.png"); }
+
+.corgi-grid { width: 100%; display: flex; flex-wrap: wrap; }
+.corgi-tabs { display: flex; align-items: center; max-width: 95%; margin: 0 0 8rpx 20rpx; padding: 4rpx; background: rgba(66,43,32,.78); border-radius: 40rpx; }
+.corgi-tab { display: flex; align-items: center; justify-content: center; height: 68rpx; min-width: 68rpx; padding: 0 8rpx; box-sizing: border-box; border-radius: 36rpx; color: #fff; font-size: 25rpx; font-weight: 600; white-space: nowrap; }
+.corgi-tab.is-active { color: #503729 !important; background: #fffaf0; }
+@media (max-height: 700px) {
+    .corgi-choice { height: 110rpx; }
+    .corgi-disc { width: 70rpx; height: 70rpx; }
+    .corgi-symbol { width: 38rpx; height: 38rpx; }
+}
+.ci-enter { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/77d2dea5c4b5438ba22d3a4f874be73c.png"); }
+.ci-leave { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/a775b7357bde458296fa8a256b45aa81.png"); }
+.ci-idle { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/866110b28a654eb1b6eb9b33cfe62482.png"); }
+.ci-eating { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/39b5d59b0a9a4268b02fe089f0989058.png"); }
+.ci-bath { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/a57ad1488556455da1e0b49b69e6ea22.png"); }
+.ci-walk_dog { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/cfa82b2a23ec4408b7caaaf5dfb42e91.png"); }
+.ci-speaking { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/9e6d6f6af85f4951b8bfa522c230d38b.png"); }
+.ci-thinking_0 { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/f94cd355db414405b1e71133ba7a1846.png"); }
+.ci-thinking_1 { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/522a6ab31de0411e8e4f3925b33ab350.png"); }
+.ci-bird-doze, .ci-go-to-sleep { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/36e47bd0f9fb4eb58484a5bbcb2d7132.png"); }
+.ci-idle_sleeping { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/0acb9485113c412cb3e1979da204f23f.png"); }
+.ci-get_up { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/29f9b9798f6c47b7a1103b94b8a4af4e.png"); }
+.ci-unboxing { background-image: url("https://assets.xinchengip.com/bird/v1/oss/uploads/3fa87d9218ce49219bfe7c3568e319e9.png"); }
+
+.corgi-jobs { display: flex; flex-wrap: wrap; width: 100%; padding-left: 20rpx; gap: 14rpx; box-sizing: border-box; }
+.corgi-job-card { width: calc(50% - 7rpx); overflow: hidden; border-radius: 20rpx; background: #fff9ee; box-shadow: 0 4rpx 13rpx rgba(55,36,21,.25); }
+.corgi-job-thumb { display: block; width: 100%; height: 154rpx; background: #674c3a; }
+.corgi-job-name { display: block; padding: 10rpx 16rpx 12rpx; font-size: 25rpx; font-weight: 600; color: #503729 !important; text-shadow: none; }
+.corgi-job-dismiss { padding: 10rpx 25rpx; border-radius: 40rpx; font-size: 24rpx; background: rgba(66,43,32,.84); }
+.corgi-work-view { position: fixed; left: 0; right: 0; z-index: 26; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.corgi-work-album { pointer-events: auto; width: 710rpx; border-radius: 28rpx; overflow: hidden; background: #fff9ee; box-shadow: 0 10rpx 45rpx rgba(52,32,21,.28); }
+.corgi-work-toolbar, .corgi-work-footer { display: flex; align-items: center; justify-content: space-between; padding: 0 20rpx 0 24rpx; }
+.corgi-work-heading, .corgi-work-close, .corgi-work-back, .corgi-work-count { color: #503729 !important; text-shadow: none; }
+.corgi-work-heading { font-size: 31rpx; font-weight: 650; }
+.corgi-work-close { width: 80rpx; height: 80rpx; text-align: center; line-height: 80rpx; font-size: 40rpx; }
+.corgi-work-swiper { width: 710rpx; height: 399.375rpx; background: #48372d; }
+.corgi-work-photo { width: 100%; height: 100%; display: block; }
+.corgi-work-back { line-height: 78rpx; padding-right: 30rpx; font-size: 25rpx; font-weight: 600; }
+.corgi-work-count { font-size: 23rpx; }

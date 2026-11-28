@@ -109,6 +109,13 @@ Component({
     },
 
     methods: {
+        openCorgiMenu() {
+            const pages = getCurrentPages();
+            const page = pages[pages.length - 1];
+            if (page && page.route === 'pages/index/index' && typeof page.toggleCorgiMenu === 'function') {
+                page.toggleCorgiMenu();
+            }
+        },
         switchTab: function (event) {
             const dataset = event.currentTarget.dataset;
             const url = dataset.path;

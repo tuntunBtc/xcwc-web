@@ -6,19 +6,20 @@ const config = require('../../utils/config');
 const tabBar = require('../../utils/tab-bar');
 const rules = require('../../utils/nest-rules');
 const nestLayout = require('../../utils/nest-layout');
-const nestIdle = require('../../utils/nest-idle');
+const mediaBase = require('../../utils/corgi-media-base');
+const nestInteractions = require('../../utils/nest-interactions');
 const nestFoot = require('../../utils/nest-foot');
 const cloudUI = require('../../utils/cloud-ui');
 const werun = require('../../utils/werun');
 const { presentSpark, sparkNotice } = require('./spark');
 const { createButtonArt } = require('../../utils/nest-button-art');
-const { createBrandArt } = require('../../utils/nest-brand-art');
-const { createBrandIdle } = require('../../utils/nest-brand-idle');
 const { ORIOLE_AVATAR, birdAvatar, isOriole, isOsmanthus } = require('../../utils/bird-preview-art');
 // Replace just the published legacy normal pose in the nest. New brand artwork takes precedence.
 const OSMANTHUS_LEGACY_NORMAL = '/ccff4d24b61965127a42f0e6a2921e1a.png';
 const BACKGROUND_LABELS = ['暖阳卧室', '桂花鸟小屋', '当前配置', '紫色桂花鸟小屋', '紫色小窝·近景地毯'];
 const STATUS_REFRESH_MS = 30000;
+const DIARY_FADE_MS = 900;
+const DIARY_LOAD_TIMEOUT_MS = 45000;
 const HAPPY_ART = '/assets/nest/emotion-happy.webp';
 const ANGRY_ART = '/assets/nest/emotion-angry.webp';
 const TEST_ADOPTIONS = config.DEVICE_SANDBOX_TEST === true ? [
@@ -46,8 +47,62 @@ const STAT_META = Object.freeze([
     { key: 'mood', label: '心情', iconClass: 'icon-mood' },
 ]);
 
+const CORGI_ACTIONS = [
+    ['wagging-tail', '摇尾巴'], ['touch_response', '抚摸'], ['play_ball', '玩球'], ['belly_up', '翻肚皮'],
+    ['shake', '握手'], ['bow', '鞠躬'], ['speak', '汪汪叫'], ['spin', '转圈'],
+    ['close', '互动'], ['roll_over', '打滚'], ['beg', '拜拜'], ['play_dead', '装死'],
+].map(([key, label]) => ({ key, label }));
+
+const CORGI_STATES = [
+    ['enter', '入场'], ['idle', '待机'], ['eating', '进食'], ['bath', '洗澡'],
+    ['walk_dog', '遛狗'], ['speaking', '说话'], ['thinking_0', '思考一'], ['thinking_1', '思考二'],
+    ['go-to-sleep', '入睡'], ['idle_sleeping', '睡眠待机'], ['get_up', '起床'], ['unboxing', '开箱'],
+    ['close', '收起'], ['leave', '离场'],
+].map(([key, label]) => ({ key, label }));
+
+const BIRD_SLEEP_DELAY_MS = 30000;
+const CORGI_LOAD_TIMEOUT_MS = 12000;
+const CORGI_LOOP_STALL_MS = 4000;
+const CORGI_CLIP_STALL_MS = 8000;
+const CORGI_LOOP_MAX_RETRIES = 2;
+const corgiMediaUrl = filename => typeof mediaBase === 'string' ? mediaBase + '/' + filename : mediaBase[filename];
+const birdPosterUrl = filename => corgiMediaUrl(filename);
+const BIRD_AWAKE_POSTER = birdPosterUrl('bird-awake.webp');
+const BIRD_SLEEPING_POSTER = birdPosterUrl('bird-sleeping.webp');
+
+const BIRD_ACTIONS = [
+    { key: 'bird-doze', label: '小鸟瞌睡' },
+];
+
+const MENU_ACTIONS = { actions: CORGI_ACTIONS, states: CORGI_STATES, bird: BIRD_ACTIONS, work: [] };
+
+const CORGI_JOBS = [
+    { key: 'cafe', label: '鸟咖帮忙' },
+    { key: 'model', label: '宠物模特' },
+].map(job => {
+    const photos = [1, 2, 3].map(frame => {
+        const filename = 'work-' + job.key + '-' + frame + '.webp';
+        return corgiMediaUrl(filename);
+    });
+    return { ...job, photos };
+});
+
 Page(cloudUI.page({
     data: {
+        corgiCategory: 'actions',
+        corgiActions: CORGI_ACTIONS,
+        corgiPoster: corgiMediaUrl('poster.jpg'),
+        osmanthusBackdropUrl: corgiMediaUrl('osmanthus-living-room.webp'),
+        osmanthusBackdropActive: true,
+        birdAwakePoster: BIRD_AWAKE_POSTER,
+        birdScenePoster: BIRD_AWAKE_POSTER,
+        corgiAction: 'bird-awake',
+        corgiClips: [],
+        corgiPlaying: false,
+        corgiMenuOpen: false,
+        corgiJobs: CORGI_JOBS,
+        corgiJob: null,
+        corgiWorkIndex: 0,
         // 静态兜底：onLoad 算出真实机型数值前，首帧也能正确布局。
         layout: {
             pageHeight: 1279, viewportHeight: 1428, tabBarHeight: 149, dockBottom: 9, toastBottom: 340, actorHeight: 322,
@@ -98,6 +153,8 @@ Page(cloudUI.page({
         thirsty: false,
         happy: false,
         motionPaused: false,
+        diaryVideoVisible: false,
+        diaryVideoPlaying: false,
         idleReady: false,
         idlePlaying: false,
         showIdleButton: false,
@@ -116,22 +173,440 @@ Page(cloudUI.page({
         lavenderBackgroundUrl: 'https://assets.xinchengip.com/mini/media/83477c3a0ac691ba7ff57a683c5ce6587bdcb2c1a9e3dd03f8230828e372d248.webp',
     },
 
-    onSwitchBackgroundPreview() {
-        const previewBackgroundIndex = (this.data.previewBackgroundIndex + 1) % BACKGROUND_LABELS.length;
-        this.setData({ previewBackgroundIndex });
-        wx.showToast({ title: BACKGROUND_LABELS[previewBackgroundIndex], icon: 'none' });
+    toggleCorgiMenu() {
+        if (!this.cloudVisible || this.data.sheet) return;
+        if (this.data.corgiJob) {
+            this.closeCorgiWork();
+            return;
+        }
+        this.setCorgiMenu(!this.data.corgiMenuOpen);
     },
 
-    onPreviewBackgroundError() {
-        if (this.data.previewBackgroundIndex !== 2) {
-            this.setData({ previewBackgroundIndex: 2 });
-            wx.showToast({ title: '新背景加载失败', icon: 'none' });
+    setCorgiMenu(open) {
+        this.setData({ corgiMenuOpen: open });
+        const bar = this.getTabBar && this.getTabBar();
+        if (bar) bar.setData({ corgiMenuOpen: open });
+        if (!open && this.cloudVisible && this.data.osmanthusBackdropActive) {
+            this.birdSleepAnchorAt = Date.now();
+        }
+        this.scheduleBirdSleep();
+    },
+
+    toggleOsmanthusBackdrop() {
+        if (!this.cloudVisible || !this.data.corgiMenuOpen) return;
+        const nextBird = !this.data.osmanthusBackdropActive;
+        this.setCorgiMenu(false);
+        if (nextBird) {
+            this.birdSleepAnchorAt = Date.now();
+            this.showBirdClip('bird-awake');
+        } else {
+            this.showCorgiClip('idle');
         }
     },
 
+    recordBirdTouch(reschedule = false) {
+        this.birdSleepAnchorAt = Date.now();
+        if (reschedule) this.scheduleBirdSleep();
+    },
+
+    onNestTouch() {
+        if (!this.cloudVisible || !this.data.osmanthusBackdropActive || this.data.corgiMenuOpen || this.data.sheet) return;
+        if (this.data.corgiAction === 'bird-awake') this.recordBirdTouch(true);
+    },
+
+    scheduleBirdSleep() {
+        clearTimeout(this.birdSleepTimer);
+        this.birdSleepTimer = null;
+        if (!this.cloudVisible || !this.data.osmanthusBackdropActive || this.data.corgiMenuOpen || this.data.sheet || this.data.corgiAction !== 'bird-awake') return;
+        if (this.nestPet && !['bird-doze','bird-sleeping','bird-wake'].every(key => this.publishedAction(key))) return;
+        const anchor = this.birdSleepAnchorAt || (this.birdSleepAnchorAt = Date.now());
+        const delay = Math.max(0, BIRD_SLEEP_DELAY_MS - (Date.now() - anchor));
+        this.birdSleepTimer = setTimeout(() => {
+            this.birdSleepTimer = null;
+            if (!this.cloudVisible || !this.data.osmanthusBackdropActive || this.data.corgiMenuOpen || this.data.sheet || this.data.corgiAction !== 'bird-awake') return;
+            this.showBirdClip('bird-doze');
+        }, delay);
+    },
+
+    touchBirdScene() {
+        if (!this.cloudVisible || !this.data.osmanthusBackdropActive || this.data.corgiMenuOpen || this.data.sheet) return;
+        const phase = this.data.corgiAction;
+        if (phase === 'bird-doze') {
+            if (!this.birdWakePending) {
+                this.birdWakePending = true;
+                this.recordBirdTouch(false);
+            }
+            return;
+        }
+        if (phase === 'bird-sleeping') {
+            this.recordBirdTouch(false);
+            this.showBirdClip('bird-wake');
+            return;
+        }
+        if (phase === 'bird-awake' && (!this.nestPet || this.publishedAction('bird-pet'))) {
+            this.recordBirdTouch(false);
+            this.showBirdClip('bird-pet');
+        }
+    },
+
+    publishedAction(key) {
+        const code = nestInteractions.codes[key] || (key.startsWith('bird-extra-') ? key.slice('bird-extra-'.length) : '');
+        return this.nestBindings?.[code];
+    },
+
+    birdMenu() {
+        if (!this.nestPet) return BIRD_ACTIONS;
+        const menu = [{key:'bird-eat',label:'喂食',icon:'eating'}, {key:'bird-drink',label:'喂水',icon:'eating'}];
+        if (this.publishedAction('bird-doze') && this.publishedAction('bird-sleeping') && this.publishedAction('bird-wake')) {
+            menu.unshift(BIRD_ACTIONS[0]);
+        }
+        for (const action of Object.values(this.nestBindings || {})) {
+            if (!Object.values(nestInteractions.codes).includes(action.code)) menu.push({key:'bird-extra-'+action.code,label:action.label,icon:'speak'});
+        }
+        return menu;
+    },
+
+    staticBird() {
+        this.pauseCorgiVideo();
+        clearTimeout(this.corgiLoadTimer);
+        clearTimeout(this.birdSleepTimer);
+        this.corgiToken = (this.corgiToken || 0) + 1;
+        this.birdWakePending = false;
+        this.setData({osmanthusBackdropActive:true,corgiClips:[],corgiPlaying:false,corgiAction:'bird-awake',
+            birdScenePoster:this.nestPoster || BIRD_AWAKE_POSTER});
+    },
+
+    syncNestBindings(pet, avatar, force = false) {
+        if (!this.cloudVisible) return;
+        const petId = pet?.petId || '';
+        const role = pet?.characterId || '';
+        const key = [this.cloudView,petId,role].join('|');
+        this.nestPoster = avatar || this.data.osmanthusBackdropUrl;
+        if (this.nestSelection !== key) {
+            this.nestSelection = key;
+            this.nestToken = (this.nestToken || 0) + 1;
+            this.nestPet = petId;
+            this.nestBindings = null;
+            this.nestRequest = null;
+            this.nestRefreshAt = 0;
+            if (this.data.osmanthusBackdropActive) {
+                if (petId) this.staticBird();
+                else this.showBirdClip('bird-awake');
+            }
+            if (this.data.corgiCategory === 'bird') this.setData({corgiActions:this.birdMenu()});
+        }
+        if (!petId || !role || this.nestRequest || (!force && Date.now() < this.nestRefreshAt)) return this.nestRequest;
+        this.nestRefreshAt = Date.now() + STATUS_REFRESH_MS;
+        const ticket = this.nestToken;
+        this.nestRequest = nestInteractions.read(wx, config.API_BASE, role).then(actions => {
+            if (!this.cloudVisible || this.nestToken !== ticket) return;
+            this.nestRequest = null;
+            this.nestBindings = actions;
+            if (this.data.corgiCategory === 'bird') this.setData({corgiActions:this.birdMenu()});
+            if (!this.data.osmanthusBackdropActive || this.data.corgiJob) return;
+            const clip = this.data.corgiClips[0], current = this.publishedAction(this.data.corgiAction);
+            if (clip && current?.url === clip.url && current.sound === clip.sound) return;
+            if (this.publishedAction('bird-awake')) this.showBirdClip('bird-awake');
+            else this.staticBird();
+        });
+        return this.nestRequest;
+    },
+
+    showBirdClip(key) {
+        if (this.nestPet && !this.publishedAction(key)) {
+            if (key !== 'bird-awake' && this.publishedAction('bird-awake')) return this.showBirdClip('bird-awake');
+            this.staticBird();
+            return;
+        }
+        this.showCorgiClip(key, key === 'bird-awake' || key === 'bird-sleeping', true);
+    },
+
+    onOsmanthusBackdropError(event) {
+        if (!this.data.osmanthusBackdropActive || event.currentTarget.dataset.src !== this.data.birdScenePoster) return;
+        if (this.nestPet && this.nestPoster && this.data.birdScenePoster !== this.nestPoster) {
+            this.setData({birdScenePoster:this.nestPoster});
+            return;
+        }
+        if (!this.nestPet && this.data.birdScenePoster !== this.data.osmanthusBackdropUrl) {
+            this.setData({ birdScenePoster: this.data.osmanthusBackdropUrl });
+        }
+    },
+
+    selectCorgiCategory(event) {
+        const category = event.currentTarget.dataset.category;
+        if (!this.cloudVisible || !this.data.corgiMenuOpen || category === this.data.corgiCategory) return;
+        if (!Object.prototype.hasOwnProperty.call(MENU_ACTIONS, category)) return;
+        this.setData({ corgiCategory: category, corgiActions: category === 'bird' ? this.birdMenu() : MENU_ACTIONS[category] });
+    },
+
+    selectCorgiJob(event) {
+        if (!this.cloudVisible || !this.data.corgiMenuOpen || this.data.corgiCategory !== 'work') return;
+        const job = CORGI_JOBS.find(item => item.key === event.currentTarget.dataset.job);
+        if (!job) return;
+        clearTimeout(this.corgiLoadTimer);
+        this.corgiLoadTimer = null;
+        clearTimeout(this.birdSleepTimer);
+        this.birdSleepTimer = null;
+        this.birdWakePending = false;
+        this.corgiDeferredOutcome = null;
+        this.corgiRetryCount = 0;
+        this.corgiLastCurrentTime = null;
+        this.corgiToken = (this.corgiToken || 0) + 1;
+        this.setData({ corgiJob: job, corgiWorkIndex: 0, corgiClips: [], corgiPlaying: false });
+    },
+
+    changeCorgiWorkPhoto(event) {
+        if (this.data.corgiJob?.key !== event.currentTarget.dataset.job) return;
+        this.setData({ corgiWorkIndex: event.detail.current });
+    },
+
+    leaveCorgiJob() {
+        this.setData({ corgiJob: null, corgiWorkIndex: 0 });
+        if (!this.cloudVisible) return;
+        if (this.data.osmanthusBackdropActive) this.showBirdClip('bird-awake');
+        else this.showCorgiClip('idle');
+    },
+
+    closeCorgiWork() {
+        this.leaveCorgiJob();
+        this.setCorgiMenu(false);
+    },
+
+    playCorgiAction(event) {
+        const key = event.currentTarget.dataset.key;
+        if (!this.cloudVisible || !this.data.corgiMenuOpen) return;
+        if (!this.data.corgiActions.some(action => action.key === key)) return;
+        this.setCorgiMenu(false);
+        if (key === 'close') return;
+        if (key === 'bird-eat' || (key === 'eating' && this.nestPet && this.data.osmanthusBackdropActive)) {
+            return this.doCare('feed', false);
+        }
+        if (key === 'bird-drink') return this.doCare('water', false);
+        if (key.startsWith('bird-extra-')) {
+            if (this.publishedAction(key)) this.showBirdClip(key);
+            return;
+        }
+        if (key === 'bird-doze' && this.data.osmanthusBackdropActive) {
+            if (this.data.corgiAction !== 'bird-sleeping' && this.data.corgiAction !== key) this.showBirdClip(key);
+            return;
+        }
+        this.showCorgiClip(key, false);
+        if (key === 'idle') wx.showToast({ title: '待机', icon: 'none', duration: 800 });
+    },
+
+    pauseCorgiVideo() {
+        if (!this.data.corgiClips.length) return;
+        try { wx.createVideoContext('corgi-player', this).pause(); } catch (error) { /* ignore */ }
+    },
+
+    playCorgiVideo() {
+        if (!this.data.corgiClips.length) return;
+        try { wx.createVideoContext('corgi-player', this).play(); } catch (error) { /* ignore */ }
+    },
+
+    armCorgiWatchdog(token, timeoutMs) {
+        clearTimeout(this.corgiLoadTimer);
+        this.corgiLoadTimer = null;
+        if (!this.cloudVisible || this.data.sheet || token !== this.corgiToken || !this.data.corgiClips.length) return;
+        this.corgiLoadTimer = setTimeout(() => {
+            this.corgiLoadTimer = null;
+            this.recoverCorgiClip(token);
+        }, timeoutMs);
+    },
+
+    suspendCorgiForSheet() {
+        this.corgiPausedBySheet = true;
+        clearTimeout(this.corgiLoadTimer);
+        this.corgiLoadTimer = null;
+        clearTimeout(this.birdSleepTimer);
+        this.birdSleepTimer = null;
+        this.pauseCorgiVideo();
+    },
+
+    resumeCorgiAfterSheet() {
+        if (!this.cloudVisible || this.data.sheet) return;
+        this.corgiPausedBySheet = false;
+        if (this.data.osmanthusBackdropActive) this.birdSleepAnchorAt = Date.now();
+        const deferred = this.corgiDeferredOutcome;
+        this.corgiDeferredOutcome = null;
+        if (deferred && deferred.token === this.corgiToken) {
+            if (deferred.type === 'ended') {
+                this.restoreCorgiScene();
+                return;
+            }
+            if (deferred.type === 'error') {
+                this.recoverCorgiClip(deferred.token);
+                return;
+            }
+        }
+        const clip = this.data.corgiClips[0];
+        if (clip) {
+            if (!this.data.corgiPlaying) {
+                this.armCorgiWatchdog(clip.token, CORGI_LOAD_TIMEOUT_MS);
+            } else if (clip.loop || this.data.osmanthusBackdropActive) {
+                this.armCorgiWatchdog(clip.token, clip.loop ? CORGI_LOOP_STALL_MS : CORGI_CLIP_STALL_MS);
+            }
+            this.playCorgiVideo();
+        }
+        this.scheduleBirdSleep();
+    },
+
+    showCorgiClip(key, loop = key === 'idle', bird = false) {
+        this.birdWakePending = false;
+        this.mountCorgiClip(key, loop, bird, 0);
+    },
+
+    mountCorgiClip(key, loop, bird, retryCount) {
+        this.corgiToken = (this.corgiToken || 0) + 1;
+        const token = this.corgiToken;
+        this.corgiRetryCount = retryCount;
+        this.corgiLastCurrentTime = null;
+        this.corgiDeferredOutcome = null;
+        this.corgiPausedBySheet = !!this.data.sheet;
+        clearTimeout(this.corgiLoadTimer);
+        this.corgiLoadTimer = null;
+        const published = bird && this.nestPet ? this.publishedAction(key) : null;
+        if (bird && this.nestPet && !published) return this.staticBird();
+        this.setData({
+            corgiAction: key,
+            osmanthusBackdropActive: bird,
+            birdScenePoster: published ? (published.poster || this.nestPoster) : (key === 'bird-sleeping' || key === 'bird-wake' ? BIRD_SLEEPING_POSTER : BIRD_AWAKE_POSTER),
+            corgiPlaying: false,
+            corgiClips: [{ key, token, loop, url: published ? published.url : corgiMediaUrl(key + '.mp4'), sound: published ? published.sound : !['idle','bird-sleeping'].includes(key) }],
+        });
+        if (!this.data.sheet) {
+            this.armCorgiWatchdog(token, CORGI_LOAD_TIMEOUT_MS);
+        }
+        this.scheduleBirdSleep();
+    },
+
+    onCorgiPlay(event) {
+        const token = Number(event.currentTarget.dataset.token);
+        if (token !== this.corgiToken || !this.cloudVisible) return;
+        if (this.data.sheet) this.pauseCorgiVideo();
+    },
+
+    onCorgiFrame(event) {
+        const token = Number(event.currentTarget.dataset.token);
+        if (token !== this.corgiToken || !this.cloudVisible) return;
+        if (this.data.sheet) {
+            this.pauseCorgiVideo();
+            return;
+        }
+        const clip = this.data.corgiClips[0];
+        if (!clip) return;
+        const currentTime = Number(event.detail?.currentTime);
+        const hasTime = Number.isFinite(currentTime);
+        const prevTime = this.corgiLastCurrentTime;
+        const firstFrame = !this.data.corgiPlaying;
+        const wrapped = clip.loop && prevTime !== null && prevTime > 0.2 && currentTime < prevTime - 0.1;
+        const advanced = hasTime && (prevTime === null || currentTime > prevTime + 0.01 || wrapped);
+        if (!firstFrame && !advanced) return;
+        if (hasTime) this.corgiLastCurrentTime = currentTime;
+        if (firstFrame) this.setData({ corgiPlaying: true });
+        if (clip.loop || this.data.osmanthusBackdropActive) {
+            this.armCorgiWatchdog(token, clip.loop ? CORGI_LOOP_STALL_MS : CORGI_CLIP_STALL_MS);
+        } else {
+            clearTimeout(this.corgiLoadTimer);
+            this.corgiLoadTimer = null;
+        }
+    },
+
+    onCorgiEnded(event) {
+        const token = Number(event.currentTarget.dataset.token);
+        if (token !== this.corgiToken || !this.cloudVisible || this.data.corgiClips[0]?.loop) return;
+        if (this.data.sheet) {
+            this.corgiDeferredOutcome = { token, type: 'ended' };
+            return;
+        }
+        this.restoreCorgiScene();
+    },
+
+    restoreCorgiScene() {
+        if (this.data.osmanthusBackdropActive) {
+            if (this.data.corgiAction === 'bird-doze') {
+                const wakeAfterDoze = !!this.birdWakePending;
+                this.birdWakePending = false;
+                this.showBirdClip(wakeAfterDoze ? 'bird-wake' : 'bird-sleeping');
+                return;
+            }
+            this.showBirdClip('bird-awake');
+            return;
+        }
+        this.showCorgiClip('idle');
+    },
+
+    onCorgiError(event) {
+        const token = Number(event.currentTarget.dataset.token);
+        if (token !== this.corgiToken || !this.cloudVisible) return;
+        if (this.data.sheet) {
+            this.corgiDeferredOutcome = { token, type: 'error' };
+            return;
+        }
+        this.recoverCorgiClip(token);
+    },
+
+    recoverCorgiClip(token) {
+        if (token !== this.corgiToken || !this.cloudVisible) return;
+        clearTimeout(this.corgiLoadTimer);
+        this.corgiLoadTimer = null;
+        if (this.data.sheet) return;
+        const clip = this.data.corgiClips[0];
+        if (clip?.loop) {
+            if ((this.corgiRetryCount || 0) < CORGI_LOOP_MAX_RETRIES) {
+                this.mountCorgiClip(clip.key, true, this.data.osmanthusBackdropActive, (this.corgiRetryCount || 0) + 1);
+                return;
+            }
+            this.corgiToken++;
+            if (this.nestPet && this.data.osmanthusBackdropActive) return this.staticBird();
+            const poster = this.data.osmanthusBackdropActive
+                ? (clip.key === 'bird-sleeping' ? BIRD_SLEEPING_POSTER : BIRD_AWAKE_POSTER)
+                : this.data.birdScenePoster;
+            this.setData({ birdScenePoster: poster, corgiClips: [], corgiPlaying: false });
+            return;
+        }
+        wx.showToast({ title: '动作加载失败，请再试一次', icon: 'none' });
+        if (this.data.osmanthusBackdropActive && this.data.corgiAction === 'bird-doze' && this.birdWakePending) {
+            const started = this.data.corgiPlaying;
+            this.birdWakePending = false;
+            this.showBirdClip(started ? 'bird-wake' : 'bird-awake');
+            return;
+        }
+        this.restoreCorgiScene();
+    },
+
+    stopCorgiScene() {
+        clearTimeout(this.corgiLoadTimer);
+        this.corgiLoadTimer = null;
+        clearTimeout(this.birdSleepTimer);
+        this.birdSleepTimer = null;
+        this.birdWakePending = false;
+        this.corgiPausedBySheet = false;
+        this.corgiDeferredOutcome = null;
+        this.corgiRetryCount = 0;
+        this.corgiLastCurrentTime = null;
+        if (this.data.corgiClips.length) this.pauseCorgiVideo();
+        if (this.data.corgiClips.length) {
+            try { wx.createVideoContext('corgi-player', this).stop(); } catch (error) { /* ignore */ }
+        }
+        this.corgiToken = (this.corgiToken || 0) + 1;
+        this.setCorgiMenu(false);
+        const asleep = ['bird-doze', 'bird-sleeping'].includes(this.data.corgiAction);
+        const resumedAction = asleep ? 'bird-sleeping' : 'bird-awake';
+        const nextPoster = this.data.osmanthusBackdropActive
+            ? (asleep ? BIRD_SLEEPING_POSTER : BIRD_AWAKE_POSTER)
+            : this.data.birdScenePoster;
+        this.setData({
+            corgiAction: this.data.osmanthusBackdropActive ? resumedAction : 'idle',
+            birdScenePoster: nextPoster,
+            corgiClips: [],
+            corgiPlaying: false,
+            corgiJob: null,
+            corgiWorkIndex: 0,
+        });
+    },
+
     onLoad() {
-        this.brandIdle = createBrandIdle(this, wx, () => this.refresh());
-        this.brandArt = createBrandArt(wx, config.API_BASE, () => this.refresh());
         this.buttonArt = createButtonArt(this, wx, config.NEST_BUTTONS_IMAGE_URL);
         this.statusTimer = null;
         this.currentBirdCode = '';
@@ -146,15 +621,6 @@ Page(cloudUI.page({
         // 互动鸟叫 + 待机动画原声：与网页端一致，首次用户手势后自动播放待机动画并带原声，
         // 照料 / 摸摸等互动播放短鸟叫（InnerAudioContext，小程序无 Web Audio）。
         this.chirpAudio = null;
-        this.idle = nestIdle.createNestIdle(this, {
-            loadFiles: () => require.async('../../media/nest-idle/files.js'),
-            canvasId: '#idleCanvas',
-            isEligible: () => !this.feedbackActive() && !this.data.happy,
-            onCycleEnd: () => this.syncIdle(false),
-            onStarted: () => {},
-            onBlocked: () => {},
-        });
-        // 改名弹框含输入框，需随键盘抬升面板；用箭头函数绑定 this 以便卸载时 off 注销（E-09）。
         this.onKeyboardHeightChange = (e) => this.handleKeyboardChange(e);
         try { wx.onKeyboardHeightChange(this.onKeyboardHeightChange); } catch (err) { /* 老基础库无此 API，忽略 */ }
         this.updateLayout();
@@ -172,6 +638,10 @@ Page(cloudUI.page({
     },
 
     onShow() {
+        this.birdSleepAnchorAt = Date.now();
+        this.refresh();
+        if (this.data.osmanthusBackdropActive) this.showBirdClip(this.data.corgiAction);
+        else this.showCorgiClip('idle');
         tabBar.syncSelected(this, 0);
         // 面板若仍打开（例如切走再切回），动画应保持暂停，不能与遮罩状态相反。
         this.setData({ motionPaused: !!this.data.sheet });
@@ -182,7 +652,9 @@ Page(cloudUI.page({
     },
 
     onHide() {
+        this.stopCorgiScene();
         this.birdGesture = null;
+        this.stopDiaryVideo();
         this.brandArt?.suspend();
         this.syncIdle(true);
         this.clearTimers();
@@ -194,6 +666,8 @@ Page(cloudUI.page({
     },
 
     onUnload() {
+        this.stopCorgiScene();
+        this.stopDiaryVideo();
         this.nestUnloaded = true;
         this.brandIdle?.stop();
         this.brandArt?.display(null);
@@ -246,7 +720,7 @@ Page(cloudUI.page({
 
     // 单次 setData 只提交展示字段，不把整个状态对象塞进视图层（E-02）。
     refresh() {
-        this.syncNestLoginPrompt();
+        if (config.DEVICE_SANDBOX_TEST !== true) this.syncNestLoginPrompt();
         const result = store.snapshot();
         const s = result.data ? result.data.snapshot : null;
         if (!s) {
@@ -297,6 +771,7 @@ Page(cloudUI.page({
         this.brandRole = pet?.characterId;
         const packagedIdle = s.hasBird && !this.brandBundle && isOriole(code);
         const avatar = this.brandBundle?.paths.normal || (s.hasBird ? birdAvatar(code) : ORIOLE_AVATAR);
+        this.syncNestBindings(pet, avatar);
         const stateSlot = { happy: 'normal', unwell: 'lonely' }[state.emotion] || state.emotion;
         const slot = feedback ? (feedback.art === ANGRY_ART ? 'angry' : 'happy') : stateSlot;
         this.setData({
@@ -373,9 +848,8 @@ Page(cloudUI.page({
         const hasBird = this.data.hasBird;
         const birdId = hasBird ? this.currentBirdCode || 'local-bird' : null;
         const feedbacking = this.feedbackActive() || this.data.happy;
-        const pauseIdle = suspended || this.data.motionPaused || this.data.storageUnavailable || feedbacking;
-        this.brandIdle?.sync(this.brandBundle, this.currentPetId, pauseIdle);
-        this.idle.sync(this.data.packagedIdle, !!pauseIdle, birdId, this.data.packagedIdle);
+        this.brandIdle?.sync(this.brandBundle, this.currentPetId, suspended || this.data.diaryVideoVisible || this.data.motionPaused || this.data.storageUnavailable || feedbacking);
+        this.idle.sync(this.data.packagedIdle, !!(suspended || this.data.diaryVideoVisible || this.data.motionPaused || this.data.storageUnavailable || feedbacking), birdId, this.data.packagedIdle);
     },
 
     // 短鸟叫：与网页端 Web Audio 合成的轻量鸟叫等价，用 InnerAudioContext 播放。
@@ -418,7 +892,7 @@ Page(cloudUI.page({
         const notice = [fallbackSpeech, sparkFeedback].filter(Boolean).join(' · ');
         if (notice) this.showToast(notice);
         if (closeSheetOnSuccess) {
-            this.setData({ sheet: null, motionPaused: false });
+            this.dismissSheet();
         }
         return true;
     },
@@ -453,15 +927,26 @@ Page(cloudUI.page({
 
     async doCare(action, closeSheetOnSuccess) {
         if (!this.requireBird()) return;
+        const petId = this.currentPetId, selection = this.nestToken;
         const result = await cloudUI.run(this, () => action === 'feed' ? store.feed() : store.water());
         if (!result) return;
+        if (this.currentPetId !== petId || selection !== this.nestToken) return;
         const ok = this.applyResult(result, action, closeSheetOnSuccess);
         if (ok) {
             // 按动作给专属反馈动效：喂食谷粒、添水水滴；摸一摸走 showFeedback 的开心弹跳 + 爱心。
             if (action === 'water') this.triggerWaterFx();
             else this.triggerFeedFx();
             this.playChirp();
-            this.idle.kick();
+            this.idle?.kick();
+            if (result.data?.outcome !== 'SUCCEEDED' || !result.data.changed || result.data.replayed || result.data.pet?.petId !== petId) return;
+            const pet = this.data.pets.find(item => item.petId === petId);
+            await this.syncNestBindings(pet, this.data.avatar, true);
+            const key = action === 'feed' ? 'bird-eat' : 'bird-drink';
+            if (this.cloudVisible && this.nestToken === selection && this.currentPetId === petId &&
+                !this.data.corgiJob && !this.data.sheet && this.publishedAction(key)) {
+                this.recordBirdTouch(false);
+                this.showBirdClip(key);
+            }
         }
     },
 
@@ -508,7 +993,7 @@ Page(cloudUI.page({
         const angry = this.feedbackActive() && this.feedback.art === ANGRY_ART;
         this.showFeedback(speech, 1600);
         this.playChirp();
-        this.idle.kick();
+        this.idle?.kick();
         this.refresh();
         const granted = result.data && result.data.granted;
         const notice = [angry ? speech : '', this.confirmedSparkNotice(result), granted > 0 ? '叽分 +' + granted : '']
@@ -611,7 +1096,7 @@ Page(cloudUI.page({
             const result = await cloudUI.run(this, () => store.clean());
             if (result && this.applyResult(result, 'clean', false)) {
                 this.playChirp();
-                this.idle.kick();
+                this.idle?.kick();
             }
             return;
         }
@@ -639,12 +1124,95 @@ Page(cloudUI.page({
         }
     },
 
-    openToolPage(url, errorText) {
+    fadeOutDiaryVideo() {
+        if (!this.data.diaryVideoVisible || this.diaryReturning) return;
+        this.diaryReturning = true;
+        this.diaryPhase = 'returning';
+        clearTimeout(this.diaryFrameTimer);
+        clearTimeout(this.diaryStartTimer);
+        this.diaryFrameTimer = this.diaryStartTimer = null;
+        this.setData({ diaryVideoPlaying: false });
+        this.diaryReturnTimer = setTimeout(() => {
+            this.stopDiaryVideo();
+            this.syncIdle(false);
+        }, DIARY_FADE_MS + 1000);
+    },
+
+    stopDiaryVideo() {
+        clearTimeout(this.diaryLoadTimer);
+        clearTimeout(this.diaryReturnTimer);
+        clearTimeout(this.diaryStartTimer);
+        clearTimeout(this.diaryFrameTimer);
+        this.diaryStartTimer = this.diaryFrameTimer = null;
+        this.diaryPhase = null;
+        this.diaryLoadTimer = null;
+        this.diaryReturnTimer = null;
+        this.diaryReturning = false;
+        if (!this.data.diaryVideoVisible) return;
+        try { wx.createVideoContext('diaryOriginalVideo', this).stop(); } catch (error) {}
+        this.setData({ diaryVideoVisible: false, diaryVideoPlaying: false });
+    },
+
+    // First decode a real video frame, then pause and return to its first frame.
+    // Fade while that frame is held before letting motion begin.
+    onDiaryVideoPlay() {
+        if (!this.data.diaryVideoVisible || this.diaryReturning) return;
+        if (this.diaryPhase === 'loading') this.diaryPhase = 'priming';
+    },
+
+    onDiaryVideoTimeUpdate(event) {
+        const detail = event.detail || {};
+        if (this.diaryPhase === 'priming' && detail.currentTime >= 0) {
+            this.diaryPhase = 'holding';
+            clearTimeout(this.diaryLoadTimer);
+            this.diaryLoadTimer = null;
+            const video = wx.createVideoContext('diaryOriginalVideo', this);
+            video.pause();
+            video.seek(0);
+            this.diaryFrameTimer = setTimeout(() => this.revealDiaryFirstFrame(), 1500);
+            return;
+        }
+        if (this.diaryPhase === 'playing' && detail.duration > 1 && detail.currentTime >= detail.duration - 0.45 && !this.diaryReturning) this.fadeOutDiaryVideo();
+    },
+
+    onDiaryVideoSeekComplete() {
+        if (this.diaryPhase !== 'holding') return;
+        clearTimeout(this.diaryFrameTimer);
+        this.diaryFrameTimer = setTimeout(() => this.revealDiaryFirstFrame(), 120);
+    },
+
+    revealDiaryFirstFrame() {
+        if (!this.data.diaryVideoVisible || this.diaryPhase !== 'holding') return;
+        clearTimeout(this.diaryFrameTimer);
+        this.diaryFrameTimer = null;
+        this.setData({ diaryVideoPlaying: true });
+        this.diaryStartTimer = setTimeout(() => {
+            if (!this.data.diaryVideoVisible || this.diaryPhase !== 'holding') return;
+            this.diaryPhase = 'playing';
+            wx.createVideoContext('diaryOriginalVideo', this).play();
+        }, DIARY_FADE_MS + 120);
+    },
+
+    onDiaryVideoEnded() {
+        if (!this.data.diaryVideoVisible) return;
+        if (!this.diaryReturning) this.fadeOutDiaryVideo();
+    },
+
+    onDiaryVideoError() {
+        if (this.data.diaryVideoPlaying) this.fadeOutDiaryVideo();
+        else { this.stopDiaryVideo(); this.syncIdle(false); }
+        wx.showToast({ title: '日记动画暂时无法播放', icon: 'none' });
+    },
+
+    openToolPage(url, errorText, onFail) {
         if (this.toolNavigationPending) return;
         this.toolNavigationPending = true;
         wx.navigateTo({
             url: url,
-            fail: () => this.showToast(errorText),
+            fail: () => {
+                this.showToast(errorText);
+                if (typeof onFail === 'function') onFail();
+            },
             complete: () => { this.toolNavigationPending = false; },
         });
     },
@@ -670,6 +1238,18 @@ Page(cloudUI.page({
         this.recalcSheetMask(sheet);
         // 面板打开时暂停待机动画与音效（框架层 tabBar 在下，面板在上，动画不应穿透遮罩）。
         this.syncIdle(false);
+        this.suspendCorgiForSheet();
+    },
+
+    dismissSheet(extra = {}) {
+        const hadSheet = !!this.data.sheet || !!this.corgiPausedBySheet;
+        this.setData({ sheet: null, motionPaused: false, ...extra }, () => {
+            if (hadSheet && this.cloudVisible && !this.data.sheet && this.data.corgiClips.length) {
+                this.playCorgiVideo();
+            }
+        });
+        this.recalcSheetMask(null);
+        if (hadSheet) this.resumeCorgiAfterSheet();
     },
 
     // 弹框遮罩要停靠在自定义 tabBar 上沿：框架层 tabBar 的 z-index:1000 盖不住，
@@ -698,8 +1278,7 @@ Page(cloudUI.page({
     },
 
     closeSheet() {
-        this.setData({ sheet: null, motionPaused: false, keyboardHeightRpx: 0 });
-        this.recalcSheetMask(null);
+        this.dismissSheet({ keyboardHeightRpx: 0 });
         this.refresh();
     },
 
@@ -707,7 +1286,7 @@ Page(cloudUI.page({
         if (!this.cloudVisible) return;
         if (store.status().signedIn) {
             this.loginPromptOffered = false;
-            if (this.data.sheet?.type === 'login') this.setData({ sheet: null, motionPaused: false });
+            if (this.data.sheet?.type === 'login') this.dismissSheet();
         } else if (!this.loginPromptOffered && !this.data.sheet) {
             this.loginPromptOffered = true;
             this.openSheet({ type: 'login', title: '登录你的小窝', desc: '用微信登录，找回已领养的小鸟和陪伴记录。' });
@@ -744,8 +1323,7 @@ Page(cloudUI.page({
             return;
         }
         this.showToast('昵称已保存');
-        this.setData({ sheet: null, motionPaused: false, keyboardHeightRpx: 0 });
-        this.recalcSheetMask();
+        this.dismissSheet({ keyboardHeightRpx: 0 });
         this.showFeedback('新名字真好听呀～', 1600);
         this.refresh();
     },
@@ -780,9 +1358,9 @@ Page(cloudUI.page({
         if (action === 'login') return this.onCloudLogin();
         if (action === 'retry') return this.onCloudRetry();
         if (action === 'pet' && (!store.status().canOperate || this.cloudActionBusy)) return;
+        if (action === 'adopt') return this.onClaimHelp();
         this.closeSheet();
         if (action === 'pet') return this.pet();
-        if (action === 'adopt') return this.onClaimHelp();
     },
 
     onClaimHelp() {
@@ -927,7 +1505,7 @@ Page(cloudUI.page({
     onFeed() { return this.doCare('feed', false); },
     async onSelectPet(event) {
         this.feedback = null;
-        this.setData({ sheet: null, motionPaused: false });
+        this.dismissSheet();
         await store.selectPet(event.currentTarget.dataset.id);
         this.refresh();
     },
@@ -1015,7 +1593,8 @@ Page(cloudUI.page({
             return;
         }
         this.setData({ sheet: null, motionPaused: false });
+        this.recalcSheetMask(null);
         const url = entry.buildAdoptUrl(code);
-        this.openToolPage(url, '测试领养页暂时打不开，请重试');
+        this.openToolPage(url, '测试领养页暂时打不开，请重试', () => this.resumeCorgiAfterSheet());
     },
 }));

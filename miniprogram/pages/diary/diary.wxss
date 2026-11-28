@@ -63,6 +63,20 @@ button, view, image, text { box-sizing: border-box; }
 .chevron-down { transform: rotate(45deg); width: 9rpx; height: 9rpx; margin-top: -4rpx; }
 .pressed { opacity: .72; }
 
+.diary-page .ai-sample-toggle {
+  display: block;
+  color: var(--accent);
+  margin: 12rpx 0 0 auto;
+  padding: 12rpx 18rpx;
+  font-size: 24rpx;
+  background: rgba(255, 252, 249, .70);
+  border: 1rpx solid var(--line);
+  border-radius: 20rpx;
+}
+.ai-sample-card { margin: 14rpx 0 24rpx; }
+.ai-sample-art { display: block; width: 100%; border-radius: 18rpx; margin: 16rpx 0; }
+.ai-sample-source { margin-top: 14rpx; font-size: 21rpx; color: var(--muted); }
+
 .diary-scroll { flex: 1; height: 0; width: 100%; }
 .diary-body { padding: 1rpx 28rpx 37rpx; padding-bottom: calc(37rpx + env(safe-area-inset-bottom)); }
 .content-top { display: flex; align-items: center; justify-content: space-between; min-height: 64rpx; margin-bottom: 15rpx; }

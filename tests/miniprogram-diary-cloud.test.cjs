@@ -134,3 +134,24 @@ test('切换账号后丢弃相同宠物索引上迟到的日历和正文', async
     assert.equal(page.data.noteText, '');
     page.onHide();
 });
+
+test('试读桂花鸟样稿只展开图文，不调用按日生成或替换该鸟的日记', async () => {
+    let aiRequests = 0;
+    const { page } = harness({
+        diaryCalendar: async () => ok({ today, days: [entry()] }),
+        diaryToday: async () => ok(entry()),
+        diaryAiPreview: async () => { aiRequests++; return ok({ text: '实时生成的内容' }); },
+    });
+    await settle();
+    assert.equal(page.data.showAiSample, false);
+    assert.equal(page.data.aiPreviewEnabled, false);
+    page.toggleAiSample();
+    assert.equal(page.data.showAiSample, true);
+    assert.equal(page.data.record.title, '今天的小鸟');
+    await page.onAiWrite();
+    assert.equal(aiRequests, 0);
+    assert.equal(page.data.aiText, '');
+    page.toggleAiSample();
+    assert.equal(page.data.showAiSample, false);
+    page.onHide();
+});

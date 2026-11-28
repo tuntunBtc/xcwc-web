@@ -11,6 +11,18 @@
         "type": "file"
       },
       {
+        "value": "assets/nest/background-preview-lavender-foreground.webp",
+        "type": "file"
+      },
+      {
+        "value": "assets/nest/background-preview-lavender-tall.webp",
+        "type": "file"
+      },
+      {
+        "value": "assets/nest/osmanthus-idle-final.webp",
+        "type": "file"
+      },
+      {
         "value": "assets/nest/pill.webp",
         "type": "file"
       },

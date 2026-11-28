@@ -1,20 +1,20 @@
-<!-- 小窝：按网页端 src/nest/template.html + nest.css 的叠层结构复刻。
-     WXSS 不能可靠引用本地 background-image，故所有纹理与雪碧图改用 <image> + 裁切框。 -->
-<!-- 全屏底图：自定义 tabBar 是透明毛绒底板，背景必须铺满整个视口（含底栏区域），
-     否则内容区在底栏上沿截断，底栏附近会露出纯色空缺。整页只保留这一张图，
-     不另在 .nest 内重复拉伸一份，避免底栏上沿出现接缝。 -->
-<image wx:if="{{previewBackgroundIndex === 4}}" class="page-scene" src="/assets/nest/background-preview-lavender-tall.webp" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" binderror="onPreviewBackgroundError"></image>
-<image wx:else class="page-scene" src="{{previewBackgroundIndex === 0 ? '/assets/nest/background-preview-room.webp' : (previewBackgroundIndex === 1 ? '/assets/nest/background-preview-osmanthus.webp' : (previewBackgroundIndex === 3 ? lavenderBackgroundUrl : (brandBackground || '/assets/nest/background.webp')))}}" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" binderror="onPreviewBackgroundError"></image>
-
-<view class="nest" style="height:{{layout.pageHeight}}rpx">
-    <view wx:if="{{previewBackgroundIndex !== 4}}" class="scene-shade"></view>
-
+<image wx:if="{{osmanthusBackdropActive}}" id="osmanthus-backdrop" class="page-scene" src="{{birdScenePoster}}" data-src="{{birdScenePoster}}" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" binderror="onOsmanthusBackdropError"></image>
+<image wx:else class="page-scene corgi-poster" src="{{corgiPoster}}" mode="aspectFill" style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx"></image>
+<video wx:for="{{corgiClips}}" wx:key="token" id="corgi-player" class="page-scene corgi-player {{corgiPlaying ? 'is-playing' : ''}}"
+    style="height:{{layout.sceneHeight || layout.viewportHeight}}rpx" data-token="{{item.token}}" src="{{item.url}}"
+    muted="{{!!sheet || item.sound === false}}" autoplay="{{!sheet}}" loop="{{item.loop}}" controls="{{false}}"
+    object-fit="cover" show-center-play-btn="{{false}}" show-play-btn="{{false}}" show-fullscreen-btn="{{false}}"
+    enable-progress-gesture="{{false}}" show-mute-btn="{{false}}" bindplay="onCorgiPlay" bindtimeupdate="onCorgiFrame"
+    bindended="onCorgiEnded" binderror="onCorgiError"></video>
+<view class="corgi-shade"></view>
+<view class="nest" style="height:{{layout.pageHeight}}rpx" capture-bind:touchstart="onNestTouch">
+    <view wx:if="{{osmanthusBackdropActive}}" id="osmanthus-scene-touch" class="osmanthus-scene-touch" aria-role="button" aria-label="与桂花鸟互动" catchtap="touchBirdScene"></view>
     <!-- 顶部 HUD：头像 / 名字 / 城市 / 火花 / 切换 / 叽分钱包 -->
     <view class="hud" style="top:{{layout.hudTop}}rpx;left:{{layout.hudLeft}}rpx;right:{{layout.hudRight}}rpx">
         <view class="identity" bindtap="onSwitch" hover-class="ui-hover">
-            <view class="avatar" role="button" aria-label="切换小鸟" catchtap="onSwitch"><image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill"></image></view>
+            <view class="avatar corgi-avatar" role="button" aria-label="切换小鸟" catchtap="onSwitch"><image src="{{hasBird && avatar ? avatar : (osmanthusBackdropActive ? birdAwakePoster : corgiPoster)}}" mode="aspectFill"></image></view>
             <view class="identity-text" catchtap="onRename">
-                <view class="name"><text class="name-text">{{displayName}}</text><text class="pen">✎</text></view>
+                <view class="name"><text class="name-text">{{hasBird ? displayName : (osmanthusBackdropActive ? '桂花鸟' : '柯基')}}</text><text class="pen">✎</text></view>
                 <text class="place">{{placeText}}</text>
             </view>
             <view class="companion spark-entry" role="button" aria-label="{{'陪伴火花，' + sparkDisplay.badge}}" catchtap="onOpenSpark" hover-class="ui-hover">
@@ -31,7 +31,7 @@
     </view>
 
     <!-- 三组状态 -->
-    <view class="status" style="top:{{layout.statusTop}}rpx">
+    <view class="status {{osmanthusBackdropActive ? 'bird-pass-through' : ''}}" style="top:{{layout.statusTop}}rpx">
         <view class="stat" wx:for="{{stats}}" wx:key="key">
             <view class="stat-line">
                 <image class="stat-icon-clip" src="/assets/nest/line-icons/{{item.key}}.png" mode="aspectFit"></image>
@@ -41,13 +41,8 @@
         </view>
     </view>
 
-    <!-- 需求气泡 -->
-    <view class="needs" style="top:{{layout.needsTop}}rpx" wx:if="{{needs.length > 0}}">
-        <block wx:for="{{needs}}" wx:key="key"><view wx:if="{{item.key === 'company'}}" class="need {{item.isCurrent ? 'is-current' : ''}}" data-key="{{item.key}}" bindtap="onNeed" hover-class="ui-hover">{{item.label}}</view></block>
-    </view>
-
     <!-- 右侧工具列 -->
-    <view class="tools" style="top:{{layout.toolsTop}}rpx">
+    <view wx:if="{{!corgiMenuOpen}}" class="tools" style="top:{{layout.toolsTop}}rpx">
         <view wx:for="{{tools}}" wx:key="key" class="tool {{item.key === 'diary' ? 'tool-diary' : ''}}" data-key="{{item.key}}" bindtap="onTool" hover-class="tool-hover" aria-role="button" aria-label="{{item.label}}">
             <view wx:if="{{item.key === 'diary'}}" class="diary-icon" aria-hidden="true">
                 <view class="diary-ring ring-one"></view><view class="diary-ring ring-two"></view><view class="diary-ring ring-three"></view>
@@ -61,63 +56,55 @@
             </block>
             <view wx:if="{{item.key === 'supply' && hasBird && !supplyClaimed}}" class="tool-dot"></view>
         </view>
-        <view class="background-preview-switch" bindtap="onSwitchBackgroundPreview" role="button" aria-label="切换背景预览">背景 {{previewBackgroundIndex + 1}}/{{previewBackgroundCount}}</view>
-    </view>
-
-    <!-- 对话气泡 -->
-    <view class="speech" style="top:{{layout.speechTop}}rpx">
-        <text class="speech-text">{{speech}}</text>
-    </view>
-
-    <!-- 空态领取入口 -->
-    <view wx:if="{{!hasBird && testBirdAdoption}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover" role="button">领取测试小鸟</view>
-    <view wx:elif="{{!hasBird}}" class="claim-help" style="top:{{layout.claimTop}}rpx" bindtap="onClaimHelp" hover-class="ui-hover">如何领取小鸟</view>
-
-    <view wx:if="{{cleaning.status === 'PRESENT'}}" class="cloud-poop" style="top:{{layout.actorTop + layout.actorHeight - 25}}rpx" data-key="clean" bindtap="onTool">💩</view>
-    <block wx:for="{{needs}}" wx:key="key">
-        <view wx:if="{{item.isCurrent && (item.key === 'food' || item.key === 'water')}}" class="need-thought" style="top:{{layout.actorTop - 65}}rpx" data-key="{{item.key}}" bindtap="onNeed" role="button" aria-label="{{item.key === 'food' ? '喂食' : '喂水'}}">
-            <image wx:if="{{!needImageErrors[item.key]}}" class="need-thought-image" src="{{item.key === 'food' ? needFoodUrl : needWaterUrl}}" mode="aspectFit" data-key="{{item.key}}" binderror="onNeedImageError"></image>
-            <text wx:else class="need-thought-fallback">{{item.key === 'food' ? '喂食' : '喂水'}}</text>
-        </view>
-    </block>
-    <!-- 小鸟立绘 -->
-    <view class="actor {{hasBird ? 'has-bird' : ''}} {{happy ? 'is-happy' : ''}} {{motionPaused ? 'motion-paused' : ''}}" style="top:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorTop : layout.actorTop}}rpx;height:{{hideGrass && previewBackgroundIndex === 3 ? layout.diaryActorHeight : layout.actorHeight}}rpx;{{hideGrass && previewBackgroundIndex === 3 ? 'left:' + layout.diaryActorLeft + 'rpx;width:' + layout.diaryActorWidth + 'rpx;' : (hideGrass && previewBackgroundIndex === 4 ? layout.tallOsmanthusStyle : '')}}">
-        <view class="shadow {{hasBird && !(previewBackgroundIndex === 4 && useFinalNestPoster && (!brandImage || brandImage === avatar) && !(brandRelease ? brandPlaying : idlePlaying)) ? '' : 'is-hidden'}}"></view>
-        <view wx:if="{{!hideGrass}}" class="grass {{hasBird ? '' : 'is-hidden'}}">
-            <view class="blade b1"></view><view class="blade b2"></view>
-            <view class="blade b3"></view><view class="blade b4"></view>
-        </view>
-        <view class="bird-hit" bindtap="onPet" hover-class="none">
-            <!-- 待机动画播放时隐藏静态表情海报，避免动画小鸟与表情海报重叠（动画画布覆盖在立绘之上）。 -->
-            <image wx:if="{{previewBackgroundIndex === 4 && useFinalNestPoster && (!brandImage || brandImage === avatar) && !(brandRelease ? brandPlaying : idlePlaying)}}" class="bird-art tall-osmanthus" src="/assets/nest/background-preview-lavender-foreground.webp" mode="aspectFit"></image>
-            <image wx:elif="{{(brandImage || birdArt) && !(brandRelease ? brandPlaying : idlePlaying)}}" class="bird-art {{useFinalNestPoster && (!brandImage || brandImage === avatar) && previewBackgroundIndex === 3 ? 'registered-osmanthus' : ''}}" src="{{useFinalNestPoster && (!brandImage || brandImage === avatar) ? '/assets/nest/osmanthus-idle-final.webp' : (brandImage || birdArt)}}" mode="aspectFit"></image>
-        </view>
-        <!-- 画布支持穿透时由 bird-hit 接收，画布直接命中时也触发同一个摸摸动作。 -->
-        <canvas wx:if="{{packagedIdle}}" type="2d" id="idleCanvas" class="idle-canvas {{idlePlaying ? '' : 'canvas-rest'}}" bindtap="onPet"></canvas>
-        <canvas wx:elif="{{hasBrandAnimation}}" type="2d" id="brandCanvas" class="idle-canvas {{brandPlaying ? '' : 'canvas-rest'}}" bindtap="onPet"></canvas>
-        <!-- 首次自动播放被系统策略拦截时，给出手动入口（仅在已加载成功但被拦截时出现）。 -->
-        <view wx:if="{{showIdleButton || (brandBlocked && !motionPaused)}}" class="idle-retry" catchtap="onIdleRetry">▶ 播放动画</view>
-        <view wx:if="{{feedFxId > 0}}" class="feed-fx">🌾</view>
-        <!-- 添水动效：三滴水滴错峰落下（配合 wx:if 重挂载重复触发）。 -->
-        <view wx:if="{{waterFxId > 0}}" class="water-fx">
-            <view class="drop d1"></view><view class="drop d2"></view><view class="drop d3"></view>
-        </view>
-        <text class="hearts">♡</text>
-    </view>
-
-    <!-- 底部三按钮 dock -->
-    <view wx:if="{{false}}" class="dock {{cloudStatus.canOperate ? '' : 'cloud-disabled'}}" style="bottom:{{layout.dockBottom}}rpx">
-        <view wx:for="{{dock}}" wx:key="key" class="dock-btn" data-key="{{item.key}}" bindtap="onDock" hover-class="dock-hover">
-            <image class="dock-sheet {{item.cardClass}}" src="{{dockRemoteImage || '/assets/nest/cards.webp'}}" mode="scaleToFill" binderror="onDockImageError"></image>
-            <text class="dock-label">{{item.label}}</text>
-            <!-- 喂食按钮右上角：剩余食物份数角标（红底白字，0 份转灰） -->
-            <view wx:if="{{item.key === 'feed'}}" class="dock-badge {{food === 0 ? 'is-empty' : ''}}">{{food}}</view>
-        </view>
     </view>
 </view>
 
 <!-- 未登录时将登录入口放在底部导航两项之间。 -->
-<button wx:if="{{cloudStatus && !cloudStatus.signedIn && !sheet}}" class="nest-login-entry" catchtap="onNestLogin" loading="{{nestLoginBusy}}" disabled="{{nestLoginBusy}}">微信登录</button>
+<button wx:if="{{cloudStatus && !cloudStatus.signedIn && !sheet && !corgiMenuOpen}}" class="nest-login-entry" catchtap="onNestLogin" loading="{{nestLoginBusy}}" disabled="{{nestLoginBusy}}">微信登录</button>
+
+<block wx:if="{{corgiMenuOpen}}">
+    <view class="corgi-menu-backdrop" catchtap="toggleCorgiMenu"></view>
+    <view wx:if="{{!corgiJob}}" class="corgi-menu" style="bottom:{{(layout.tabBarHeight || 149) + 8}}rpx">
+        <view class="corgi-tabs">
+            <view id="corgi-tab-actions" class="corgi-tab {{corgiCategory === 'actions' ? 'is-active' : ''}}" aria-role="button" data-category="actions" catchtap="selectCorgiCategory">互动</view>
+            <view id="corgi-tab-states" class="corgi-tab {{corgiCategory === 'states' ? 'is-active' : ''}}" aria-role="button" data-category="states" catchtap="selectCorgiCategory">养成与状态</view>
+            <view id="corgi-tab-work" class="corgi-tab {{corgiCategory === 'work' ? 'is-active' : ''}}" aria-role="button" data-category="work" catchtap="selectCorgiCategory">打工</view>
+            <view id="corgi-tab-bird" class="corgi-tab {{corgiCategory === 'bird' ? 'is-active' : ''}}" aria-role="button" data-category="bird" catchtap="selectCorgiCategory">小鸟互动</view>
+            <view id="osmanthus-backdrop-toggle" class="corgi-tab" aria-role="button" catchtap="toggleOsmanthusBackdrop" hover-class="corgi-pressed">{{osmanthusBackdropActive ? '切回柯基' : '桂花鸟背景'}}</view>
+        </view>
+        <view wx:if="{{corgiCategory === 'work'}}" class="corgi-jobs">
+            <view wx:for="{{corgiJobs}}" wx:key="key" id="corgi-job-{{item.key}}" class="corgi-job-card" data-job="{{item.key}}" aria-role="button" aria-label="{{item.label}}" catchtap="selectCorgiJob" hover-class="corgi-pressed">
+                <image class="corgi-job-thumb" src="{{item.photos[0]}}" mode="aspectFit"></image>
+                <text class="corgi-job-name">{{item.label}}</text>
+            </view>
+            <view id="corgi-work-menu-close" class="corgi-job-dismiss" aria-role="button" catchtap="toggleCorgiMenu">收起</view>
+        </view>
+        <view wx:else class="corgi-grid">
+            <view wx:for="{{corgiActions}}" wx:key="key" id="corgi-{{item.key}}" class="corgi-choice" role="button"
+                aria-label="{{item.key === 'close' ? '收起互动' : item.label}}" data-key="{{item.key}}" catchtap="playCorgiAction" hover-class="corgi-pressed">
+                <view class="corgi-disc {{item.key === 'close' ? 'corgi-disc-close' : ''}}"><view class="corgi-symbol ci-{{item.icon || item.key}}"></view></view>
+                <text class="corgi-label">{{item.label}}</text>
+            </view>
+        </view>
+    </view>
+    <view wx:else class="corgi-work-view" style="bottom:{{(layout.tabBarHeight || 149) + 8}}rpx;top:{{layout.hudTop || 124}}rpx">
+        <view class="corgi-work-album">
+            <view class="corgi-work-toolbar">
+                <text class="corgi-work-heading">{{corgiJob.label}}</text>
+                <view id="corgi-work-close" class="corgi-work-close" aria-role="button" aria-label="关闭打工相册" catchtap="closeCorgiWork">×</view>
+            </view>
+            <swiper id="corgi-work-swiper" class="corgi-work-swiper" circular autoplay interval="3000" duration="330" data-job="{{corgiJob.key}}" bindchange="changeCorgiWorkPhoto">
+                <swiper-item wx:for="{{corgiJob.photos}}" wx:key="*this">
+                    <image class="corgi-work-photo" src="{{item}}" mode="aspectFit"></image>
+                </swiper-item>
+            </swiper>
+            <view class="corgi-work-footer">
+                <view id="corgi-work-back" class="corgi-work-back" aria-role="button" catchtap="leaveCorgiJob">‹ 选择岗位</view>
+                <text class="corgi-work-count">{{corgiWorkIndex + 1}} / {{corgiJob.photos.length}}</text>
+            </view>
+        </view>
+    </view>
+</block>
 
 <!-- 浮层放在场景容器之外，避免被 .nest 的 overflow:hidden 裁剪 -->
 <!-- 轻提示 -->

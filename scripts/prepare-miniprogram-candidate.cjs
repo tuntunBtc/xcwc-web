@@ -178,9 +178,12 @@ function createCandidate(output, args) {
 
     const ossManifestPath = process.env.XCWH_MINI_MEDIA_MANIFEST;
     const ossMedia = ossManifestPath ? JSON.parse(read(ossManifestPath)) : {};
+    // The independent test build ships these seven images in the diary subpackage.
+    const localDiaryArt = name => config.DEVICE_SANDBOX_TEST === true &&
+        /^pages\/diary\/assets\/(?:ai-lakeside-sample\.jpg|calendar-mood-(?:calm|content|curious|empty|happy|proud)\.png)$/.test(name);
     for (const [route, entry] of Object.entries(ossMedia)) {
         const local = all.get(route.slice(1));
-        if (!local) {
+        if (!local || localDiaryArt(route.slice(1))) {
             delete ossMedia[route];
             continue;
         }
@@ -191,7 +194,7 @@ function createCandidate(output, args) {
         }
     }
     if (ossManifestPath) {
-        const missing = [...all.keys()].filter(name => !PACKAGE_CODE_FILES.test(name) && !Object.hasOwn(ossMedia, '/' + name));
+        const missing = [...all.keys()].filter(name => !PACKAGE_CODE_FILES.test(name) && !localDiaryArt(name) && !Object.hasOwn(ossMedia, '/' + name));
         if (missing.length) throw new Error('OSS 素材清单缺少以下文件：\n' + missing.sort().join('\n'));
     }
     const files = {};
@@ -376,8 +379,6 @@ module.exports = {
     },
 };`);
     all.set(collectionFile, injectRequire(all.get(collectionFile), collectionFile));
-    edit('pages/index/index.js', "loadFiles: () => require.async('../../media/nest-idle/files.js'),",
-        "loadFiles: () => require.async('../../media/nest-idle/files.js').then(async files => ({\n                ...files, atlasSrc: await releaseImages.resolve(files.atlasSrc),\n            })),");
     edit('pages/photo/photo.js', '    loadCanvasImage(canvas, path, direct) {',
         '    async loadCanvasImage(canvas, path, direct) {\n        path = await releaseImages.resolve(path);');
 
@@ -452,7 +453,7 @@ module.exports = {
     }
 
     if (ossManifestPath) {
-        const bundledMedia = [...all.keys()].filter(name => !PACKAGE_CODE_FILES.test(name));
+        const bundledMedia = [...all.keys()].filter(name => !PACKAGE_CODE_FILES.test(name) && !localDiaryArt(name));
         if (bundledMedia.length) throw new Error('OSS 候选仍包含以下媒体文件：\n' + bundledMedia.sort().join('\n'));
     }
 
@@ -463,7 +464,7 @@ module.exports = {
         fs.writeFileSync(file, contents, typeof contents === 'string' ? 'utf8' : undefined);
     }
     const mediaSummary = ossManifestPath
-        ? `${paths.length} 个 WebP 使用 OSS 清单，候选包内没有媒体文件。`
+        ? `${paths.length} 个 WebP 使用 OSS 清单，包内保留 ${[...all.keys()].filter(localDiaryArt).length} 张日记图片。`
         : `${paths.length} 个 WebP 以可校验的二进制素材入包。`;
     console.log(`${output}\n${mediaSummary}${args.fixture ? '本地测试配置。' : '发行候选，仍需核验微信后台与真机。'}`);
 }

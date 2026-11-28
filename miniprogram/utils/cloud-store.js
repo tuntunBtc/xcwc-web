@@ -129,7 +129,7 @@ function createCloudStore(platform, config) {
         return new Promise((resolve, reject) => {
             platform.request({
                 url: apiRoot(config.API_BASE) + path, method: method || 'GET', data: body,
-                timeout: path === '/auth/wx-phone-login' ? 45000 : 10000,
+                timeout: path.endsWith('/ai-preview') && method === 'POST' ? 35000 : (path === '/auth/wx-phone-login' ? 45000 : 10000),
                 header: Object.assign({ 'content-type': 'application/json' }, anonymous ? {} : { Authorization: 'Bearer ' + (tokenOverride || c.token) }),
                 success(res) {
                     if (c && !c.detached && !current(c)) return reject({ error: 'CONTEXT_CHANGED' });
@@ -435,6 +435,10 @@ function createCloudStore(platform, config) {
         if (!dateOnly(day)) return Promise.resolve({ error: 'INVALID_INPUT' });
         return diaryRequest(petId, '/' + day);
     }
+    function diaryAiPreview(petId, day) {
+        if (!dateOnly(day)) return Promise.resolve({ error: 'INVALID_INPUT' });
+        return diaryRequest(petId, '/' + day + '/ai-preview', 'POST');
+    }
     function diaryWriteLetter(petId, day, requestId, text) {
         if (!dateOnly(day)) return Promise.resolve({ error: 'INVALID_INPUT' });
         return diaryRequest(petId, '/' + day + '/letters', 'POST', { requestId, text });
@@ -454,7 +458,7 @@ function createCloudStore(platform, config) {
     function setOnline(value) { online = value; if (!value) synced = false; emit(); }
     return {
         snapshot, status, refresh, resume, recover, history, selectPet, loginWithWechat, loginWithPhone, logoutWechat, reset, setOnline,
-        diaryCalendar, diaryDay, diaryRequestId, diaryWriteLetter, diaryReadLetter,
+        diaryCalendar, diaryDay, diaryAiPreview, diaryRequestId, diaryWriteLetter, diaryReadLetter,
         diaryToday: petId => diaryRequest(petId, '/today', 'POST'),
         subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
         readWechatSignedIn: signedIn, getToken: () => session && session.token || '',

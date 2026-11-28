@@ -104,3 +104,5 @@
 .compact-right { right: 32rpx; }
 .compact-icon { width: 68rpx; height: 68rpx; }
 .tab-bar-nest .compact-item { bottom: 52rpx; }
+
+.compact-item[hidden] { display: none; }

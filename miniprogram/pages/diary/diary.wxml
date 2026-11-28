@@ -71,6 +71,16 @@
           <view><view class="legend-unread"></view>未读回信</view>
         </view>
       </view>
+      <button id="diary-ai-sample" class="ai-sample-toggle" hover-class="pressed" bindtap="toggleAiSample">
+        {{showAiSample ? '收起桂花鸟样稿' : '试读桂花鸟看船样稿'}}
+      </button>
+      <view wx:if="{{showAiSample}}" id="diary-ai-sample-card" class="diary-card ai-sample-card">
+        <view class="diary-kicker">桂花鸟 · 看船样稿</view>
+        <view class="diary-card-title">船记得我吗</view>
+        <image class="ai-sample-art" src="/pages/diary/assets/ai-lakeside-sample.jpg" mode="widthFix" lazy-load aria-label="桂花鸟在湖边看船的日记配图" />
+        <view class="diary-copy">今天在湖边看了船。我把船写进了日记。你说，船会不会也记得我呀？</view>
+        <view class="ai-sample-source">正文为试读编辑稿，配图由腾讯混元参考桂花鸟三视图生成。</view>
+      </view>
       <view wx:if="{{calendarError}}" class="diary-inline-status" role="status">
         <text>日历未能更新。{{calendarError}}</text>
         <button class="diary-retry" bindtap="onRetryDiary">重试</button>
@@ -98,6 +108,15 @@
           <view class="diary-activity-type day-mark-{{item.kind}}">{{item.label}}</view>
           <view class="diary-activity-title">{{item.title}}</view>
           <view class="diary-copy">{{item.text}}</view>
+        </view>
+        <view wx:if="{{aiPreviewEnabled}}" class="diary-activity">
+          <button wx:if="{{!aiText}}" id="diary-ai-live" class="diary-retry" hover-class="pressed"
+            disabled="{{dayLoading || dayError || aiWriting}}" loading="{{aiWriting}}" bindtap="onAiWrite">
+            {{aiWriting ? '小鸟在写…' : '用这天的记录试写'}}
+          </button>
+          <text wx:if="{{aiFeedback}}" class="ai-sample-source" role="status">{{aiFeedback}}</text>
+          <view wx:if="{{aiText}}" class="ai-sample-source">AI 试写 · 本次阅读</view>
+          <view wx:if="{{aiText}}" class="diary-copy" id="diary-ai-generated">{{aiText}}</view>
         </view>
       </view>
       <view wx:elif="{{dayLoading || dayError}}" class="diary-empty" role="status">

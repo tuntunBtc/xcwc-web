@@ -30,19 +30,14 @@ test('OSS candidate maps dynamic nest icons and includes no packaged images', t 
     assert.equal((view.match(/nestOssIcons\.url\(item\.key\)/g) || []).length, 2);
     assert.doesNotMatch(view, /line-icons\/\{\{item\.key\}\}/);
     const releaseManifest = require(path.join(candidate, 'utils/release-images-manifest.js'));
-    const controller = fs.readFileSync(path.join(candidate, 'pages/index/index.js'), 'utf8');
-    for (const name of ['background-preview-room.webp', 'background-preview-osmanthus.webp']) {
-        const route = `/assets/nest/${name}`;
-        assert.equal(releaseManifest.files[route].url, manifest[route].url);
-        assert.equal(releaseManifest.files[route].sha256, manifest[route].sha256);
-        assert.ok(view.includes(route), `背景切换未引用 ${route}`);
-        assert.ok(controller.includes(route), `背景未加入预加载 ${route}`);
+    const scenes = require(path.join(candidate, 'utils/corgi-media-base.js'));
+    for (const poster of ['bird-awake.webp', 'bird-sleeping.webp', 'poster.jpg']) {
+        assert.match(scenes[poster], /^https:\/\/assets\.xinchengip\.com\/bird\/v1\/oss\/uploads\//);
     }
-    for (const name of ['background-preview-lavender-tall.webp', 'background-preview-lavender-foreground.webp']) {
-        const route = '/assets/nest/' + name;
-        assert.equal(releaseManifest.files[route].url, manifest[route].url);
-        assert.ok(view.includes(manifest[route].url), `切换时未读取 OSS 图片 ${route}`);
-        assert.ok(!controller.includes(route), `第五张图片进入首屏预加载 ${route}`);
+    assert.match(view, /src="{{releaseArt.resolve\(\(birdScenePoster\)/);
+    assert.match(view, /src="{{releaseArt.resolve\(\(corgiPoster\)/);
+    for (const name of ['background-preview-lavender-tall.webp', 'background-preview-lavender-foreground.webp', 'osmanthus-idle-final.webp']) {
+        assert.equal(releaseManifest.files['/assets/nest/' + name], undefined);
     }
     const walk = directory => fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
         const name = path.join(directory, entry.name);

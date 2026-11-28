@@ -3,6 +3,8 @@
 const store = require('../../utils/store');
 const diaryAccount = require('./diary-data');
 
+// 按日试写需测试后端开放对应能力，当前版本仅开放已生成的图文样稿。
+const AI_PREVIEW_ENABLED = false;
 const DAY_MS = 86400000;
 const SHANGHAI_OFFSET_MS = 8 * 3600000;
 const WEEK = ['一', '二', '三', '四', '五', '六', '日'];
@@ -60,6 +62,19 @@ function diaryError(code) {
     return '暂时连不上小鸟手账，请重试。';
 }
 
+// 同一天补进活动后可以重试；书信与其已读状态不影响本次试写。
+function aiEntryVersion(entry) {
+    return JSON.stringify([entry.title, entry.text, entry.activities || []]);
+}
+
+function aiFeedback(code) {
+    const sample = '可以先看上方的图文样稿。';
+    if (code === 'LOGIN_REQUIRED') return '请回小窝重新登录后再试。' + sample;
+    if (code === 'OFFLINE' || code === 'NETWORK_ERROR') return '网络暂时连不上，稍后可重试。' + sample;
+    if (code === 'RATE_LIMITED') return '试写请求较多，稍后可重试。' + sample;
+    return '这次暂时无法生成 AI 日记。' + sample;
+}
+
 function diaryKinds(entry) {
     const activities = Array.isArray(entry?.activities) ? entry.activities : [];
     const kinds = new Set(activities.map(activity => activity.kind).filter(kind => kind === 'travel' || kind === 'study'));
@@ -69,6 +84,8 @@ function diaryKinds(entry) {
 
 Page({
     data: {
+        showAiSample: false, aiPreviewEnabled: AI_PREVIEW_ENABLED,
+        aiWriting: false, aiText: '', aiFeedback: '',
         weekLabels: WEEK, birdOptions: [],
         selected: '', view: 'week', mood: 'empty',
         navTop: 28, navHeight: 32, navRight: 108,
@@ -85,8 +102,40 @@ Page({
         this.calendarView = 'week';
         this.currentBirdId = '';
         this.noteDrafts = new Map();
+        this.aiDrafts = new Map();
         this.expandedLetterId = '';
         this.onResize();
+    },
+
+    toggleAiSample() {
+        this.setData({ showAiSample: !this.data.showAiSample });
+    },
+
+    async onAiWrite() {
+        if (!AI_PREVIEW_ENABLED) return;
+        const day = this.dayLoad;
+        if (!day?.entry || day.loading || day.error || !this.diary?.accountId) return;
+        const version = aiEntryVersion(day.entry);
+        const drafts = this.aiDrafts;
+        const previous = drafts.get(day.key);
+        if (previous?.version === version && (previous.loading || previous.text)) return;
+        const draft = { version, loading: true, text: '', feedback: '' };
+        drafts.set(day.key, draft);
+        this.renderCalendar();
+        try {
+            const response = await store.diaryAiPreview(day.petId, day.date);
+            const text = response?.data?.text;
+            if (response?.error || typeof text !== 'string' || !text.trim()) {
+                draft.feedback = aiFeedback(response?.error);
+            } else {
+                draft.text = text.trim();
+            }
+        } catch {
+            draft.feedback = aiFeedback('NETWORK_ERROR');
+        } finally {
+            draft.loading = false;
+            if (this.diaryVisible && this.aiDrafts === drafts && this.dayLoad?.key === day.key) this.renderCalendar();
+        }
     },
 
     onShow() {
@@ -126,6 +175,7 @@ Page({
             this.readAttempt = null;
             this.noteAttempt = null;
             this.noteDrafts.clear();
+            this.aiDrafts = new Map();
             this.serverDate = null;
         }
         this.diary = diary;
@@ -259,7 +309,10 @@ Page({
             ...activity, key: index, label: KIND[activity.kind]?.[1] || '活动',
         }));
         const draft = this.noteDrafts.get(this.dayLoad?.key);
+        const storedAi = entry && this.aiDrafts.get(this.dayLoad.key);
+        const ai = storedAi && storedAi.version === aiEntryVersion(entry) ? storedAi : null;
         this.setData({
+            aiWriting: Boolean(ai?.loading), aiText: ai?.text || '', aiFeedback: ai?.feedback || '',
             dates, selected: active, view: this.calendarView, periodLabel: monthly ? monthLabel : weekLabel,
             dateLabel: shortDate(day), weekday: '星期' + WEEK[(day.getUTCDay() + 6) % 7],
             isToday: active === this.today, signedIn: Boolean(this.diary.accountId),
