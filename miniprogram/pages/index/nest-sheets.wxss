@@ -462,3 +462,30 @@
     font-weight: 600;
 }
 .rename-glass .sheet-desc { font-size: 24rpx; }
+
+.login-glass .sheet-primary, .login-glass .sheet-secondary,
+.info-glass .sheet-primary, .claim-glass .sheet-primary {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 44px;
+    margin: 12rpx 0 0;
+    padding: 16rpx 24rpx;
+    border-radius: 99rpx;
+    background: #f8f5ef;
+    color: #312c27 !important;
+    line-height: 1.5;
+    text-align: center;
+}
+.login-glass .sheet-secondary, .claim-glass .sheet-primary {
+    border: 1px solid rgba(255,255,255,.32);
+    background: rgba(0,0,0,.18);
+    color: #fff !important;
+}
+page .release-media-retry, page .cloud-nest-status button {
+    border: 1px solid rgba(255,255,255,.32);
+    border-radius: 99rpx;
+    background: rgba(39,34,30,.84);
+    color: #fff !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}

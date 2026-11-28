@@ -124,8 +124,8 @@
 <view wx:if="{{toast}}" class="toast" style="bottom:{{layout.toastBottom}}rpx">{{toast}}</view>
 
     <!-- 底部弹出面板（网页端 <dialog> 的等价实现） -->
-    <view wx:if="{{sheet}}" class="sheet-mask {{sheet.type === 'supply' || sheet.type === 'spark' || sheet.type === 'wallet' || sheet.type === 'history' || sheet.type === 'switch' || sheet.type === 'rename' ? 'glass-mask' : ''}}" style="bottom:{{sheetMaskBottom}}rpx;padding-top:{{layout.inset}}rpx" bindtap="closeSheet">
-        <view class="sheet {{sheet.type === 'claim' ? 'claim-sheet' : ''}} {{sheet.type === 'supply' || sheet.type === 'spark' || sheet.type === 'wallet' || sheet.type === 'history' || sheet.type === 'switch' || sheet.type === 'rename' ? 'nest-glass' : ''}} {{sheet.type}}-glass" catchtap="noop">
+    <view wx:if="{{sheet}}" class="sheet-mask glass-mask" style="bottom:{{sheetMaskBottom}}rpx;padding-top:{{layout.inset}}rpx" bindtap="closeSheet">
+        <view class="sheet nest-glass {{sheet.type}}-glass" catchtap="noop">
             <view class="sheet-handle"></view>
             <view class="sheet-close" catchtap="closeSheet">×</view>
             <text class="sheet-title">{{sheet.title}}</text>
